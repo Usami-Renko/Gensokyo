@@ -1,5 +1,6 @@
 
 extern crate winit;
+#[macro_use]
 extern crate ash;
 
 #[cfg(target_os = "macos")]

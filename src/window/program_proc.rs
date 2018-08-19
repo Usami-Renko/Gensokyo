@@ -2,6 +2,7 @@
 use winit;
 use winit::{ VirtualKeyCode, Event, WindowEvent };
 
+use core::instance;
 use structures::Dimension2D;
 use constant::window;
 
@@ -20,13 +21,18 @@ pub struct ProgramBuilder<T> {
 
 impl <T> ProgramBuilder<T> where T: ProgramProc {
 
-    pub fn new(window_title: &str, procedure: T) -> ProgramBuilder<T> {
+    pub fn new(procedure: T) -> ProgramBuilder<T> {
         ProgramBuilder {
             window_size:  window::WINDOW_SIZE,
-            window_title: window_title.to_owned(),
+            window_title: window::WINDOW_TITLE.to_owned(),
 
             procedure,
         }
+    }
+
+    pub fn title(mut self, title: &str) -> ProgramBuilder<T> {
+        self.window_title = title.to_owned();
+        self
     }
 
     pub fn size(mut self, window_width: u32, window_height: u32) -> ProgramBuilder<T> {
@@ -71,12 +77,14 @@ impl<T> ProgramEnv<T> where T: ProgramProc {
 
     pub fn launch(&mut self) {
 
+        let _instance = instance::Instance::new().unwrap();
+
         self.main_loop();
     }
 
     fn main_loop(&mut self) {
 
-        let mut is_running  = true;
+        let mut is_running       = true;
         let mut is_first_resized = true;
 
         'mainloop: loop {

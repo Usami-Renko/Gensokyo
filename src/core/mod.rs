@@ -1,4 +1,9 @@
 
 
+mod debug;
+mod error;
 mod platforms;
-mod instance;
+
+pub mod instance;
+
+pub use self::debug::ValidationInfo;
