@@ -2,11 +2,15 @@
 
 use ash;
 use ash::vk;
-use ash::version::{ V1_0, EntryV1_0 };
+use ash::version::{ EntryV1_0, InstanceV1_0 };
 
+use core::{ EntryV1, InstanceV1 };
 use core::error::InstanceError;
 use core::platforms;
+use core::debug;
+
 use constant::core::*;
+use constant::VERBOSE;
 
 use std::ptr;
 use std::ffi::CString;
@@ -14,13 +18,16 @@ use std::os::raw::c_char;
 
 pub struct Instance {
 
-    entry:  ash::Entry<V1_0>,
-    handle: ash::Instance<V1_0>
+    pub entry:  EntryV1,
+    pub handle: InstanceV1,
 }
 
 impl Instance {
 
     pub fn new() -> Result<Instance, InstanceError> {
+
+        let entry = EntryV1::new()
+            .or(Err(InstanceError::EntryCreationError))?;
 
         let app_name    = CString::new(APPLICATION_NAME).unwrap();
         let engine_name = CString::new(ENGINE_NAME).unwrap();
@@ -35,7 +42,8 @@ impl Instance {
             api_version         : API_VERSION,
         };
 
-        let enable_layer_names = required_layers()?;
+        let enable_layer_names = required_layers(&entry)?;
+        let enable_layer_names: Vec<*const c_char> = enable_layer_names.iter().map(|l| l.as_ptr()).collect();
         let enable_extension_names = platforms::required_extension_names();
 
         let instance_create_info = vk::InstanceCreateInfo {
@@ -44,14 +52,12 @@ impl Instance {
             // No available flags for API version 1.0.82
             flags                      : vk::InstanceCreateFlags::empty(),
             p_application_info         : &app_info,
-            enabled_layer_count        : enable_layer_names.len()     as u32,
+            enabled_layer_count        : enable_layer_names.len() as u32,
             pp_enabled_layer_names     : enable_layer_names.as_ptr(),
             enabled_extension_count    : enable_extension_names.len() as u32,
             pp_enabled_extension_names : enable_extension_names.as_ptr(),
         };
 
-        let entry = ash::Entry::<V1_0>::new()
-            .or(Err(InstanceError::EntryCreationError))?;
         let instance_handle = unsafe {
             entry.create_instance(&instance_create_info, None)
                 .or(Err(InstanceError::InstanceCreationError))?
@@ -67,19 +73,28 @@ impl Instance {
 
 }
 
-fn required_layers() -> Result<Vec<*const c_char>, InstanceError> {
+impl Drop for Instance {
+
+    fn drop(&mut self) {
+        unsafe {
+            self.handle.destroy_instance(None);
+            if VERBOSE {
+                println!("[Info] Vulkan Instance had been destroy.");
+            }
+        }
+    }
+}
+
+fn required_layers(entry: &EntryV1) -> Result<Vec<CString>, InstanceError> {
 
     // required validation layer name if need  ---------------------------
     let mut enable_layer_names = vec![];
 
     if VALIDATION.is_enable {
-        if is_support_validation_layer() {
-            let required_validation_layer_raw_names: Vec<CString> = VALIDATION.required_validation_layers.iter()
+        if debug::is_support_validation_layer(entry, &VALIDATION.required_validation_layers)? {
+            enable_layer_names = VALIDATION.required_validation_layers.iter()
                 .map(|layer_name| CString::new(*layer_name).unwrap())
                 .collect();
-            for layer_name in required_validation_layer_raw_names.iter() {
-                enable_layer_names.push(layer_name.as_ptr());
-            }
         } else {
             return Err(InstanceError::ValidationLayerNotSupportError)
 
@@ -91,10 +106,7 @@ fn required_layers() -> Result<Vec<*const c_char>, InstanceError> {
     // currently not ohter layers is needed
     // -------------------------------------------------------------------
 
-    Ok(enable_layer_names)
-}
+//    let raw_names = enable_layer_names.iter().map
 
-fn is_support_validation_layer() -> bool {
-    // TODO: Impelemntation
-    unimplemented!()
+    Ok(enable_layer_names)
 }

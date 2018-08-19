@@ -1,7 +1,7 @@
 
 extern crate hakurei;
 
-use hakurei::preinclude::*;
+use hakurei::prelude::*;
 
 const WINDOW_TITLE: &'static str = "Trangle Example";
 const WINDOW_WIDTH:  u32 = 800;
