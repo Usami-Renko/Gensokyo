@@ -2,16 +2,10 @@
 use winit;
 use winit::{ VirtualKeyCode, Event, WindowEvent };
 
-use core::instance;
-use core::debug;
 use structures::Dimension2D;
 use constant::window;
-use constant::core::VALIDATION;
 
-pub trait ProgramProc {
-
-
-}
+use procedure::workflow::ProgramProc;
 
 pub struct ProgramBuilder<T> {
 
@@ -79,11 +73,11 @@ impl<T> ProgramEnv<T> where T: ProgramProc {
 
     pub fn launch(&mut self) {
 
-        let instance = instance::Instance::new().unwrap();
-        if VALIDATION.is_enable {
-            let _debugger = debug::Debugger::setup(&instance).unwrap();
-        }
+        // TODO: Refactor the following two lines
+        use core::physical::PhysicalRequirement;
+        let requirement = PhysicalRequirement::init();
 
+        let _core = self.initialize_core(requirement);
         self.main_loop();
     }
 

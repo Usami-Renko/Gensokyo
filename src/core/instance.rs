@@ -1,6 +1,5 @@
 
 
-use ash;
 use ash::vk;
 use ash::version::{ EntryV1_0, InstanceV1_0 };
 
@@ -71,11 +70,7 @@ impl Instance {
         Ok(instance)
     }
 
-}
-
-impl Drop for Instance {
-
-    fn drop(&mut self) {
+    pub fn clenaup(&self) {
         unsafe {
             self.handle.destroy_instance(None);
             if VERBOSE {

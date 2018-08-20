@@ -16,7 +16,7 @@ extern crate winapi;
 mod constant;
 mod core;
 mod structures;
-mod window;
+mod procedure;
 mod utility;
 
 pub mod prelude;

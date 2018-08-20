@@ -55,11 +55,8 @@ impl Debugger {
 
         Ok(debugger)
     }
-}
 
-impl Drop for Debugger {
-
-    fn drop(&mut self) {
+    pub fn cleanup(&self) {
         unsafe {
             self.loader.destroy_debug_report_callback_ext(self.callback, None);
 
@@ -96,14 +93,14 @@ impl VulkanFlags for [DebugReportFlags] {
 }
 
 unsafe extern "system" fn vulkan_debug_report_callback(
-    flags        : vk::DebugReportFlagsEXT,
-    obj_type     : vk::DebugReportObjectTypeEXT,
-    obj          : vk::uint64_t,
-    location     : vk::size_t,
-    code         : vk::int32_t,
-    layer_prefix : *const vk::c_char,
+    _flags        : vk::DebugReportFlagsEXT,
+    _obj_type     : vk::DebugReportObjectTypeEXT,
+    _obj          : vk::uint64_t,
+    _location     : vk::size_t,
+    _code         : vk::int32_t,
+    _layer_prefix : *const vk::c_char,
     p_message    : *const vk::c_char,
-    user_data    : *mut vk::c_void
+    _user_data    : *mut vk::c_void
 ) -> u32 {
 
     println!("[Debug] {:?}", CStr::from_ptr(p_message));

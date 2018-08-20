@@ -45,3 +45,25 @@ impl fmt::Display for ValidationError {
         write!(f, "Error: {}", description)
     }
 }
+
+
+pub enum PhysicalDeviceError {
+
+    NoSuitableDeviceError,
+    EnumerateDeviceError,
+    QueueRequirementNotSupportError,
+}
+
+impl fmt::Display for PhysicalDeviceError {
+
+    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+
+        let description = match self {
+            | PhysicalDeviceError::NoSuitableDeviceError           => "No Physical Device suitable for requirements.",
+            | PhysicalDeviceError::EnumerateDeviceError            => "Failed to enumerate Physical Devices.",
+            | PhysicalDeviceError::QueueRequirementNotSupportError => "Physical device does not support graphics or presentation requirement.",
+        };
+
+        write!(f, "Error: {}", description)
+    }
+}
