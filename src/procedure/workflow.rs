@@ -5,9 +5,9 @@ use core::instance::Instance;
 use core::debug::Debugger;
 use core::physical::{ PhysicalDevice, PhysicalRequirement };
 use core::surface::Surface;
+use core::device::LogicalDevice;
 
 use procedure::window::ProgramEnv;
-
 use constant::core::VALIDATION;
 
 pub trait ProgramProc {
@@ -21,6 +21,7 @@ pub struct CoreInfrastructure {
     debugger: Option<Debugger>,
     surface:  Surface,
     physical: PhysicalDevice,
+    device: LogicalDevice,
 }
 
 impl<T> ProgramEnv<T> where T: ProgramProc {
@@ -51,11 +52,17 @@ impl<T> ProgramEnv<T> where T: ProgramProc {
             | Err(err) => panic!(format!("[Error] {}", err.to_string())),
         };
 
+        let device = match LogicalDevice::new(&instance, &physical) {
+            | Ok(logical_device) => logical_device,
+            | Err(err) => panic!(format!("[Error] {}", err.to_string())),
+        };
+
         CoreInfrastructure {
             instance,
             debugger,
             surface,
             physical,
+            device,
         }
     }
 }
@@ -64,6 +71,7 @@ impl Drop for CoreInfrastructure {
 
     /// use cleanup function, so that the order of deinitialization can be customizable.
     fn drop(&mut self) {
+        self.device.cleanup();
         self.physical.cleanup();
         self.surface.cleanup();
 

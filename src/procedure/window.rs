@@ -75,7 +75,9 @@ impl<T> ProgramEnv<T> where T: ProgramProc {
 
         // TODO: Refactor the following two lines
         use core::physical::PhysicalRequirement;
-        let requirement = PhysicalRequirement::init();
+        use constant::core::DEVICE_EXTENSION;
+        let requirement = PhysicalRequirement::init()
+            .require_queue_extensions(DEVICE_EXTENSION.to_vec());
 
         let _core = self.initialize_core(&self.window, requirement);
         self.main_loop();

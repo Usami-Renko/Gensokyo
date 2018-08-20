@@ -13,14 +13,17 @@ use core::debug;
 use constant::core::*;
 use constant::VERBOSE;
 
+use utility::cast;
+
 use std::ptr;
 use std::ffi::CString;
-use std::os::raw::c_char;
 
 pub struct Instance {
 
     pub entry:  EntryV1,
     pub handle: InstanceV1,
+
+    pub enable_layer_names: Vec<CString>,
 }
 
 impl Instance {
@@ -44,17 +47,17 @@ impl Instance {
         };
 
         let enable_layer_names = required_layers(&entry)?;
-        let enable_layer_names: Vec<*const c_char> = enable_layer_names.iter().map(|l| l.as_ptr()).collect();
+        let enable_layer_names_ptr = cast::to_array_ptr(&enable_layer_names);
         let enable_extension_names = platforms::required_extension_names();
 
         let instance_create_info = vk::InstanceCreateInfo {
             s_type                     : vk::StructureType::InstanceCreateInfo,
             p_next                     : ptr::null(),
-            // No available flags for API version 1.0.82
+            // flags is reserved for future use in API version 1.0.82
             flags                      : vk::InstanceCreateFlags::empty(),
             p_application_info         : &app_info,
-            enabled_layer_count        : enable_layer_names.len() as u32,
-            pp_enabled_layer_names     : enable_layer_names.as_ptr(),
+            enabled_layer_count        : enable_layer_names_ptr.len() as u32,
+            pp_enabled_layer_names     : enable_layer_names_ptr.as_ptr(),
             enabled_extension_count    : enable_extension_names.len() as u32,
             pp_enabled_extension_names : enable_extension_names.as_ptr(),
         };
@@ -67,6 +70,8 @@ impl Instance {
         let instance = Instance {
             entry,
             handle: instance_handle,
+
+            enable_layer_names,
         };
 
         Ok(instance)

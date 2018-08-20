@@ -60,9 +60,9 @@ impl VulkanFlags for [QueueOperationType] {
 
 pub struct PhysicalQueueFamilies {
 
-    families          : Vec<vk::QueueFamilyProperties>,
-    family_indices    : QueueFamilyIndices,
-    operation_indices : QueueOperationIndices,
+    families           : Vec<vk::QueueFamilyProperties>,
+    pub family_indices : QueueFamilyIndices,
+    operation_indices  : QueueOperationIndices,
 }
 
 impl PhysicalQueueFamilies {

@@ -4,6 +4,7 @@ mod property;
 mod memory;
 mod family;
 mod requirement;
+mod extension;
 
 use ash::vk;
 use ash::version::InstanceV1_0;
@@ -18,17 +19,20 @@ use self::property::PhysicalProperties;
 use self::features::PhyscialFeatures;
 use self::memory::PhysicalMemory;
 use self::family::PhysicalQueueFamilies;
+use self::extension::PhysicalExtension;
 
 pub use ash::vk::PhysicalDeviceType as PhysicalDeviceType;
 pub use self::requirement::PhysicalRequirement;
+pub use self::extension::DeviceExtensionType;
 
 pub struct PhysicalDevice {
 
-    handle:     vk::PhysicalDevice,
-    properties: PhysicalProperties,
-    features:   PhyscialFeatures,
-    memory:     PhysicalMemory,
-    families:   PhysicalQueueFamilies,
+    pub handle     : vk::PhysicalDevice,
+    properties     : PhysicalProperties,
+    pub features   : PhyscialFeatures,
+    memory         : PhysicalMemory,
+    pub families   : PhysicalQueueFamilies,
+    pub extensions : PhysicalExtension,
 }
 
 impl PhysicalDevice {
@@ -42,13 +46,18 @@ impl PhysicalDevice {
         let mut optimal_device = None;
 
         for &physical_device in alternative_devices.iter() {
+
             let properties = PhysicalProperties::inspect(instance, physical_device);
             let is_properties_support = properties.check_requirements(&requirement.device_types);
             if is_properties_support == false { continue }
 
-            let features = PhyscialFeatures::inspect(instance, physical_device);
+            let mut features = PhyscialFeatures::inspect(instance, physical_device);
             let is_features_support = features.check_requirements(&requirement.features);
-            if is_features_support == false { continue }
+            if is_features_support {
+                features.enable_features(&requirement.features);
+            } else {
+                continue
+            }
 
             let memory = PhysicalMemory::inspect(instance, physical_device);
             let is_memory_support = memory.check_requirements();
@@ -58,6 +67,14 @@ impl PhysicalDevice {
             let is_families_support = families.check_requirements(&requirement.queue_operations);
             if is_families_support == false { continue }
 
+            let mut extensions = PhysicalExtension::inspect(instance, physical_device)?;
+            let is_extensions_support = extensions.check_requirements(&requirement.extensions);
+            if is_extensions_support {
+                extensions.enable_extensions(&requirement.extensions);
+            } else {
+                continue
+            }
+
             optimal_device = Some(
                 PhysicalDevice {
                     handle: physical_device,
@@ -65,6 +82,7 @@ impl PhysicalDevice {
                     features,
                     memory,
                     families,
+                    extensions,
                 }
             );
 

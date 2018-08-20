@@ -9,4 +9,5 @@ pub mod instance;
 pub mod debug;
 pub mod surface;
 pub mod physical;
+pub mod device;
 

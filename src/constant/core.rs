@@ -1,8 +1,11 @@
 
 
 use ash::vk::uint32_t;
+
 use core::ValidationInfo;
 use core::debug::DebugReportFlags;
+
+use core::physical::DeviceExtensionType;
 
 pub const APPLICATION_VERSION: uint32_t = vk_make_version!(1, 0, 0);
 pub const ENGINE_VERSION:      uint32_t = vk_make_version!(1, 0, 0);
@@ -23,4 +26,8 @@ pub const VALIDATION_FLAGS: [DebugReportFlags; 4] = [
     DebugReportFlags::InformationBit,
     DebugReportFlags::WarningBit,
     DebugReportFlags::PerformanceWarningBit,
+];
+
+pub const DEVICE_EXTENSION: [DeviceExtensionType; 1] = [
+    DeviceExtensionType::Swapchain,
 ];

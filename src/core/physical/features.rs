@@ -67,6 +67,7 @@ pub enum PhysicalFeatureType {
 pub struct PhyscialFeatures {
 
     handle: vk::PhysicalDeviceFeatures,
+    pub enables: Option<vk::PhysicalDeviceFeatures>,
 }
 
 impl PhyscialFeatures {
@@ -77,6 +78,7 @@ impl PhyscialFeatures {
 
         PhyscialFeatures {
             handle,
+            enables: None,
         }
     }
 
@@ -141,5 +143,82 @@ impl PhyscialFeatures {
                 | PhysicalFeatureType::InheritedQueries => self.handle.inherited_queries == 1,
             }
         })
+    }
+
+    pub fn enable_features(&mut self, require_features: &Vec<PhysicalFeatureType>) {
+        let mut enable_features = vk::PhysicalDeviceFeatures {
+            ..Default::default()
+        };
+
+        require_features.iter().for_each(|feature| {
+            match *feature {
+                | PhysicalFeatureType::RobustBufferAccess => enable_features.robust_buffer_access = 1,
+                | PhysicalFeatureType::FullDrawIndexUint32 => enable_features.full_draw_index_uint32 = 1,
+                | PhysicalFeatureType::ImageCubeArray => enable_features.image_cube_array = 1,
+                | PhysicalFeatureType::IndependentBlend => enable_features.independent_blend = 1,
+                | PhysicalFeatureType::GeometryShader => enable_features.geometry_shader = 1,
+                | PhysicalFeatureType::TessellationShader => enable_features.tessellation_shader = 1,
+                | PhysicalFeatureType::SampleRateShading => enable_features.sample_rate_shading = 1,
+                | PhysicalFeatureType::DualSrcBlend => enable_features.dual_src_blend = 1,
+                | PhysicalFeatureType::LogicOp => enable_features.logic_op = 1,
+                | PhysicalFeatureType::MultiDrawIndirect => enable_features.multi_draw_indirect = 1,
+                | PhysicalFeatureType::DrawIndirectFirstInstance => enable_features.draw_indirect_first_instance = 1,
+                | PhysicalFeatureType::DepthClamp => enable_features.depth_clamp = 1,
+                | PhysicalFeatureType::DepthBiasClamp => enable_features.depth_bias_clamp = 1,
+                | PhysicalFeatureType::FillModeNonSolid => enable_features.fill_mode_non_solid = 1,
+                | PhysicalFeatureType::DepthBounds => enable_features.depth_bounds = 1,
+                | PhysicalFeatureType::WideLines => enable_features.wide_lines = 1,
+                | PhysicalFeatureType::LargePoints => enable_features.large_points = 1,
+                | PhysicalFeatureType::AlphaToOne => enable_features.alpha_to_one = 1,
+                | PhysicalFeatureType::MultiViewport => enable_features.multi_viewport = 1,
+                | PhysicalFeatureType::SamplerAnisotropy => enable_features.sampler_anisotropy = 1,
+                | PhysicalFeatureType::TextureCompressionEtc2 => enable_features.texture_compression_etc2 = 1,
+                | PhysicalFeatureType::TextureCompressionAstcLdr => enable_features.texture_compression_astc_ldr = 1,
+                | PhysicalFeatureType::TextureCompressionBc => enable_features.texture_compression_bc = 1,
+                | PhysicalFeatureType::OcclusionQueryPrecise => enable_features.occlusion_query_precise = 1,
+                | PhysicalFeatureType::PipelineStatisticsQuery => enable_features.pipeline_statistics_query = 1,
+                | PhysicalFeatureType::VertexPipelineStoresAndAtomics => enable_features.vertex_pipeline_stores_and_atomics = 1,
+                | PhysicalFeatureType::FragmentStoresAndAtomics => enable_features.fragment_stores_and_atomics = 1,
+                | PhysicalFeatureType::ShaderTessellationAndGeometryPointSize => enable_features.shader_tessellation_and_geometry_point_size = 1,
+                | PhysicalFeatureType::ShaderImageGatherExtended => enable_features.shader_image_gather_extended = 1,
+                | PhysicalFeatureType::ShaderStorageImageExtendedFormats => enable_features.shader_storage_image_extended_formats = 1,
+                | PhysicalFeatureType::ShaderStorageImageMultisample => enable_features.shader_storage_image_multisample = 1,
+                | PhysicalFeatureType::ShaderStorageImageReadWithoutFormat => enable_features.shader_storage_image_read_without_format = 1,
+                | PhysicalFeatureType::ShaderStorageImageWriteQithoutFormat => enable_features.shader_storage_image_write_without_format = 1,
+                | PhysicalFeatureType::ShaderUniformBufferArrayDynamicIndexing => enable_features.shader_uniform_buffer_array_dynamic_indexing = 1,
+                | PhysicalFeatureType::ShaderSampledImageArrayDynamicIndexing => enable_features.shader_sampled_image_array_dynamic_indexing = 1,
+                | PhysicalFeatureType::ShaderStorageBufferArrayDynamicIndexing => enable_features.shader_storage_buffer_array_dynamic_indexing = 1,
+                | PhysicalFeatureType::ShaderStorageImageArrayDynamicIndexing => enable_features.shader_storage_image_array_dynamic_indexing = 1,
+                | PhysicalFeatureType::ShaderClipDistance => enable_features.shader_clip_distance = 1,
+                | PhysicalFeatureType::ShaderCullDistance => enable_features.shader_cull_distance = 1,
+                | PhysicalFeatureType::ShaderFloat64 => enable_features.shader_float64 = 1,
+                | PhysicalFeatureType::ShaderInt64 => enable_features.shader_int64 = 1,
+                | PhysicalFeatureType::ShaderInt16 => enable_features.shader_int16 = 1,
+                | PhysicalFeatureType::ShaderResourceResidency => enable_features.shader_resource_residency = 1,
+                | PhysicalFeatureType::ShaderResourceMinLod => enable_features.shader_resource_min_lod = 1,
+                | PhysicalFeatureType::SparseBinding => enable_features.sparse_binding = 1,
+                | PhysicalFeatureType::SparseResidencyBuffer => enable_features.sparse_residency_buffer = 1,
+                | PhysicalFeatureType::SparseResidencyImage2d => enable_features.sparse_residency_image2d = 1,
+                | PhysicalFeatureType::SparseResidencyImage3d => enable_features.sparse_residency_image3d = 1,
+                | PhysicalFeatureType::SparseResidency2samples => enable_features.sparse_residency2samples = 1,
+                | PhysicalFeatureType::SparseResidency4samples => enable_features.sparse_residency4samples = 1,
+                | PhysicalFeatureType::SparseResidency8samples => enable_features.sparse_residency8samples = 1,
+                | PhysicalFeatureType::SparseResidency16samples => enable_features.sparse_residency16samples = 1,
+                | PhysicalFeatureType::SparseResidencyAliased => enable_features.sparse_residency_aliased = 1,
+                | PhysicalFeatureType::VariableMultisampleRate => enable_features.variable_multisample_rate = 1,
+                | PhysicalFeatureType::InheritedQueries => enable_features.inherited_queries = 1,
+            };
+        });
+
+        self.enables = Some(enable_features);
+    }
+
+    pub fn get_enable_features(&self) -> vk::PhysicalDeviceFeatures {
+
+        if let Some(ref features) = self.enables {
+            features.clone()
+        } else {
+            vk::PhysicalDeviceFeatures { ..Default::default() }
+        }
     }
 }
