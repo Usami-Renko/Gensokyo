@@ -1,15 +1,18 @@
 
 use ash::vk;
 use ash::version::InstanceV1_0;
+use ash::vk::uint32_t;
 
 use core::instance::Instance;
 use core::error::PhysicalDeviceError;
+use core::surface::Surface;
+
 use utility::marker::VulkanFlags;
 
 pub struct QueueFamilyIndices {
 
-    pub graphics_index: usize,
-    pub present_index:  usize,
+    pub graphics_index: uint32_t,
+    pub present_index:  uint32_t,
     pub is_share_same_family: bool,
 }
 
@@ -64,21 +67,23 @@ pub struct PhysicalQueueFamilies {
 
 impl PhysicalQueueFamilies {
 
-    pub fn inspect(instance: &Instance, physical_device: vk::PhysicalDevice) -> Result<PhysicalQueueFamilies, PhysicalDeviceError> {
+    pub fn inspect(instance: &Instance, physical_device: vk::PhysicalDevice, surface: &Surface)
+        -> Result<PhysicalQueueFamilies, PhysicalDeviceError> {
 
         let families = instance.handle.get_physical_device_queue_family_properties(physical_device);
 
         let mut back_graphics_index = None;
         let mut back_present_index  = None;
 
-        let mut queue_index = 0_usize;
+        let mut queue_index: uint32_t = 0;
         for queue_family in families.iter() {
             if queue_family.queue_count > 0 && queue_family.queue_flags.subset(vk::QUEUE_GRAPHICS_BIT) {
                 back_graphics_index = Some(queue_index);
             }
 
-            // TODO: Add check for Presentation Support.
-            back_present_index = back_graphics_index;
+            if queue_family.queue_count > 0 && surface.is_present_support(physical_device, queue_index) {
+                back_present_index = Some(queue_index);
+            }
 
             if back_graphics_index.is_some() && back_present_index.is_some() {
                 break
@@ -88,9 +93,11 @@ impl PhysicalQueueFamilies {
         }
 
 
-        if back_present_index.is_none() || back_present_index.is_none() {
-
-            return Err(PhysicalDeviceError::QueueRequirementNotSupportError)
+        if back_graphics_index.is_none() {
+            return Err(PhysicalDeviceError::GraphicsQueueNotSupportError)
+        }
+        if back_present_index.is_none() {
+            return Err(PhysicalDeviceError::PresentQueueNotSupportError)
         }
 
         let family_indices = QueueFamilyIndices {

@@ -9,6 +9,7 @@ use ash::vk;
 use ash::version::InstanceV1_0;
 
 use core::instance::Instance;
+use core::surface::Surface;
 use core::error::PhysicalDeviceError;
 
 use constant::VERBOSE;
@@ -32,7 +33,8 @@ pub struct PhysicalDevice {
 
 impl PhysicalDevice {
 
-    pub fn new(instance: &Instance, requirement: PhysicalRequirement) -> Result<PhysicalDevice, PhysicalDeviceError> {
+    pub fn new(instance: &Instance, surface: &Surface, requirement: PhysicalRequirement)
+        -> Result<PhysicalDevice, PhysicalDeviceError> {
 
         let alternative_devices = instance.handle.enumerate_physical_devices()
             .or(Err(PhysicalDeviceError::EnumerateDeviceError))?;
@@ -52,7 +54,7 @@ impl PhysicalDevice {
             let is_memory_support = memory.check_requirements();
             if is_memory_support == false { continue }
 
-            let families = PhysicalQueueFamilies::inspect(instance, physical_device)?;
+            let families = PhysicalQueueFamilies::inspect(instance, physical_device, surface)?;
             let is_families_support = families.check_requirements(&requirement.queue_operations);
             if is_families_support == false { continue }
 

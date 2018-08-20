@@ -51,7 +51,8 @@ pub enum PhysicalDeviceError {
 
     NoSuitableDeviceError,
     EnumerateDeviceError,
-    QueueRequirementNotSupportError,
+    GraphicsQueueNotSupportError,
+    PresentQueueNotSupportError,
 }
 
 impl fmt::Display for PhysicalDeviceError {
@@ -59,9 +60,30 @@ impl fmt::Display for PhysicalDeviceError {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
 
         let description = match self {
-            | PhysicalDeviceError::NoSuitableDeviceError           => "No Physical Device suitable for requirements.",
-            | PhysicalDeviceError::EnumerateDeviceError            => "Failed to enumerate Physical Devices.",
-            | PhysicalDeviceError::QueueRequirementNotSupportError => "Physical device does not support graphics or presentation requirement.",
+            | PhysicalDeviceError::NoSuitableDeviceError        => "No Physical Device suitable for requirements.",
+            | PhysicalDeviceError::EnumerateDeviceError         => "Failed to enumerate Physical Devices.",
+            | PhysicalDeviceError::GraphicsQueueNotSupportError => "Physical device does not support graphics requirement.",
+            | PhysicalDeviceError::PresentQueueNotSupportError  => "Physical device does not support present requirement.",
+        };
+
+        write!(f, "Error: {}", description)
+    }
+}
+
+
+pub enum SurfaceError {
+
+    SurfaceCreationError,
+    SurfaceExtensionLoadError,
+}
+
+impl fmt::Display for SurfaceError {
+
+    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+
+        let description = match self {
+            | SurfaceError::SurfaceCreationError => "Failed to create Surface.",
+            | SurfaceError::SurfaceExtensionLoadError => "Failed to load Surface extension.",
         };
 
         write!(f, "Error: {}", description)

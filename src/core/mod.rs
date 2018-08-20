@@ -1,15 +1,12 @@
 
+pub use self::instance::{ EntryV1, InstanceV1 };
+pub use self::debug::ValidationInfo;
 
 mod error;
 mod platforms;
 
 pub mod instance;
 pub mod debug;
+pub mod surface;
 pub mod physical;
 
-pub use self::debug::ValidationInfo;
-
-use ash;
-use ash::version::V1_0;
-type EntryV1    = ash::Entry<V1_0>;
-type InstanceV1 = ash::Instance<V1_0>;

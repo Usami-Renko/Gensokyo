@@ -45,7 +45,7 @@ impl Debugger {
 
         let callback = unsafe {
             loader.create_debug_report_callback_ext(&debug_callback_create_info, None)
-                .or(Err(ValidationError::DebugReportCreationError))?
+                .or(Err(ValidationError::DebugCallbackCreationError))?
         };
 
         let debugger = Debugger {

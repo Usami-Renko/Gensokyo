@@ -77,7 +77,7 @@ impl<T> ProgramEnv<T> where T: ProgramProc {
         use core::physical::PhysicalRequirement;
         let requirement = PhysicalRequirement::init();
 
-        let _core = self.initialize_core(requirement);
+        let _core = self.initialize_core(&self.window, requirement);
         self.main_loop();
     }
 
