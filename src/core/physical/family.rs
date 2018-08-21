@@ -23,6 +23,7 @@ struct QueueOperationIndices {
     sparse_inding : Option<usize>,
 }
 
+#[derive(Debug, Clone, Copy, Eq, PartialEq)]
 pub enum QueueOperationType {
     Graphics,
     Compute,

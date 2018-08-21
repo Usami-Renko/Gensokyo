@@ -19,6 +19,7 @@ use std::os::raw::c_char;
 // TODO: The generation step hasn't been well test.
 
 #[allow(dead_code)]
+#[derive(Debug, Clone, Copy, Eq, PartialEq)]
 pub enum PrefabQueuePriority {
     Highest,
     High,
@@ -40,6 +41,7 @@ impl PrefabQueuePriority {
     }
 }
 
+#[derive(Debug, Clone, Copy, Eq, PartialEq)]
 pub enum PrefabQueue {
     GraphicsQueue,
     PresentQueue,

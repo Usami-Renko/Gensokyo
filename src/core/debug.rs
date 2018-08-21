@@ -68,7 +68,7 @@ impl Debugger {
 }
 
 #[allow(dead_code)]
-#[derive(Debug, Clone, Copy)]
+#[derive(Debug, Clone, Copy, Eq, PartialEq)]
 pub enum DebugReportFlags {
     ErrorBit,
     InformationBit,

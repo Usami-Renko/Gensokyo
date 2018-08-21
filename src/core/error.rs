@@ -1,7 +1,7 @@
 
 use std::fmt;
 
-#[derive(Clone, Debug)]
+#[derive(Debug, Clone, Copy, Eq, PartialEq)]
 pub enum InstanceError {
 
     EntryCreationError,
@@ -26,7 +26,7 @@ impl fmt::Display for InstanceError {
 }
 
 
-#[derive(Clone, Debug)]
+#[derive(Debug, Clone, Copy, Eq, PartialEq)]
 pub enum ValidationError {
 
     DebugReportCreationError,
@@ -47,6 +47,7 @@ impl fmt::Display for ValidationError {
 }
 
 
+#[derive(Debug, Clone, Copy, Eq, PartialEq)]
 pub enum PhysicalDeviceError {
 
     NoSuitableDeviceError,
@@ -73,6 +74,7 @@ impl fmt::Display for PhysicalDeviceError {
 }
 
 
+#[derive(Debug, Clone, Copy, Eq, PartialEq)]
 pub enum SurfaceError {
 
     SurfaceCreationError,
@@ -93,6 +95,7 @@ impl fmt::Display for SurfaceError {
 }
 
 
+#[derive(Debug, Clone, Copy, Eq, PartialEq)]
 pub enum DeviceError {
 
     DeviceCreationError,

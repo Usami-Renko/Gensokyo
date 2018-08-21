@@ -4,6 +4,7 @@ use ash::version::InstanceV1_0;
 
 use core::instance::Instance;
 
+#[derive(Debug, Clone, Copy, Eq, PartialEq)]
 pub enum PhysicalFeatureType {
 
     RobustBufferAccess,

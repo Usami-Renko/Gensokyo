@@ -10,7 +10,7 @@ use utility::cast;
 
 use std::ffi::CString;
 
-#[derive(Debug, Clone, Copy)]
+#[derive(Debug, Clone, Copy, Eq, PartialEq)]
 pub enum DeviceExtensionType {
     Swapchain,
 }
