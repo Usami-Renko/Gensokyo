@@ -5,7 +5,7 @@ use core::instance::Instance;
 use core::debug::Debugger;
 use core::physical::{ PhysicalDevice, PhysicalRequirement };
 use core::surface::Surface;
-use core::device::LogicalDevice;
+use core::device::{ LogicalDevice, LogicalDeviceBuilder, PrefabQueue };
 
 use procedure::window::ProgramEnv;
 use constant::core::VALIDATION;
@@ -52,7 +52,12 @@ impl<T> ProgramEnv<T> where T: ProgramProc {
             | Err(err) => panic!(format!("[Error] {}", err.to_string())),
         };
 
-        let device = match LogicalDevice::new(&instance, &physical) {
+        let device = match LogicalDeviceBuilder::init(&instance, &physical)
+            .setup_prefab_queue(&[
+                PrefabQueue::GraphicsQueue,
+                PrefabQueue::PresentQueue,
+            ]).build() {
+
             | Ok(logical_device) => logical_device,
             | Err(err) => panic!(format!("[Error] {}", err.to_string())),
         };

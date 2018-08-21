@@ -31,3 +31,4 @@ pub const VALIDATION_FLAGS: [DebugReportFlags; 4] = [
 pub const DEVICE_EXTENSION: [DeviceExtensionType; 1] = [
     DeviceExtensionType::Swapchain,
 ];
+

@@ -123,5 +123,8 @@ impl<T> ProgramEnv<T> where T: ProgramProc {
         }
     }
 
+    pub fn window_size(&self) -> Dimension2D {
+        self.window_size
+    }
 
 }

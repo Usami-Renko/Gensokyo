@@ -128,6 +128,10 @@ impl PhysicalQueueFamilies {
             }
         })
     }
+
+    pub fn queue_families_count(&self) -> usize {
+        self.families.len()
+    }
 }
 
 
