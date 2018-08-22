@@ -8,7 +8,7 @@ use core::physical::PhysicalDevice;
 use core::device::LogicalDevice;
 use core::device::queue::QueueUsage;
 use core::device::queue::{ QueueInfoTmp, QueueInfo };
-use core::error::DeviceError;
+use core::error::LogicalDeviceError;
 
 use utility::cast;
 use constant::VERBOSE;
@@ -176,7 +176,7 @@ impl<'a, 'b> LogicalDeviceBuilder<'a, 'b> {
         (queue_create_infos, queue_info_tmps)
     }
 
-    pub fn build(&self) -> Result<LogicalDevice, DeviceError> {
+    pub fn build(&self) -> Result<LogicalDevice, LogicalDeviceError> {
 
         let (queue_create_infos, queue_info_tmps) = self.generate_queue_create_info();
 
@@ -201,7 +201,7 @@ impl<'a, 'b> LogicalDeviceBuilder<'a, 'b> {
 
         let device_handle = unsafe {
             self.instance.handle.create_device(self.physical_device.handle, &device_create_info, None)
-                .or(Err(DeviceError::DeviceCreationError))?
+                .or(Err(LogicalDeviceError::DeviceCreationError))?
         };
 
         let mut queues = vec![];

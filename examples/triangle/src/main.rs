@@ -21,7 +21,12 @@ fn main() {
     let mut program = ProgramBuilder::new(procecure)
         .title(WINDOW_TITLE)
         .size(WINDOW_WIDTH, WINDOW_HEIGHT)
-        .build().unwrap();
+        .build();
 
-    program.launch();
+    match program.launch() {
+        | Ok(_) => (),
+        | Err(err) => {
+            panic!("[Error] {}", err)
+        }
+    }
 }

@@ -2,6 +2,7 @@
 extern crate winit;
 #[macro_use]
 extern crate ash;
+extern crate num;
 
 #[cfg(target_os = "macos")]
 extern crate metal_rs;
@@ -15,6 +16,7 @@ extern crate winapi;
 
 mod constant;
 mod core;
+mod swapchain;
 mod structures;
 mod procedure;
 mod utility;

@@ -111,7 +111,7 @@ unsafe extern "system" fn vulkan_debug_report_callback(
 pub fn is_support_validation_layer(entry: &EntryV1, required_validation_layers: &[&str]) -> Result<bool, InstanceError> {
 
     let layer_properties = entry.enumerate_instance_layer_properties()
-        .or(Err(InstanceError::InstanceLayerPropertiesEnumerateError))?;
+        .or(Err(InstanceError::LayerPropertiesEnumerateError))?;
 
     // Print the layer name to console in verbose mode.
     if VERBOSE {

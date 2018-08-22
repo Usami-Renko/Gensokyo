@@ -1,6 +1,7 @@
 
 pub mod core;
 pub mod window;
+pub mod swapchain;
 
 pub use self::window::WINDOW_SIZE;
 

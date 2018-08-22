@@ -1,5 +1,6 @@
 
 use std::fmt;
+use std::error::Error;
 
 #[derive(Debug, Clone, Copy, Eq, PartialEq)]
 pub enum InstanceError {
@@ -7,18 +8,19 @@ pub enum InstanceError {
     EntryCreationError,
     ValidationLayerNotSupportError,
     InstanceCreationError,
-    InstanceLayerPropertiesEnumerateError,
+    LayerPropertiesEnumerateError,
 }
 
+impl Error for InstanceError {}
 impl fmt::Display for InstanceError {
 
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
 
         let description = match self {
-            | InstanceError::EntryCreationError                    => "Failed to create Entry Object.",
-            | InstanceError::ValidationLayerNotSupportError        => "Validation Layer is not support.",
-            | InstanceError::InstanceCreationError                 => "Failed to create Instance Object.",
-            | InstanceError::InstanceLayerPropertiesEnumerateError => "Failed to enumerate Instance Layer Properties.",
+            | InstanceError::EntryCreationError             => "Failed to create Entry Object.",
+            | InstanceError::ValidationLayerNotSupportError => "Validation Layer is not support.",
+            | InstanceError::InstanceCreationError          => "Failed to create Instance Object.",
+            | InstanceError::LayerPropertiesEnumerateError  => "Failed to enumerate Instance Layer Properties.",
         };
 
         write!(f, "Error: {}", description)
@@ -33,6 +35,7 @@ pub enum ValidationError {
     DebugCallbackCreationError,
 }
 
+impl Error for ValidationError {}
 impl fmt::Display for ValidationError {
 
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
@@ -57,6 +60,7 @@ pub enum PhysicalDeviceError {
     EnumerateExtensionsError,
 }
 
+impl Error for PhysicalDeviceError {}
 impl fmt::Display for PhysicalDeviceError {
 
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
@@ -78,16 +82,23 @@ impl fmt::Display for PhysicalDeviceError {
 pub enum SurfaceError {
 
     SurfaceCreationError,
-    SurfaceExtensionLoadError,
+    ExtensionLoadError,
+    QueryCapabilitiesError,
+    QueryFormatsError,
+    QueryPresentModeError,
 }
 
+impl Error for SurfaceError {}
 impl fmt::Display for SurfaceError {
 
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
 
         let description = match self {
-            | SurfaceError::SurfaceCreationError => "Failed to create Surface.",
-            | SurfaceError::SurfaceExtensionLoadError => "Failed to load Surface extension.",
+            | SurfaceError::SurfaceCreationError   => "Failed to create Surface.",
+            | SurfaceError::ExtensionLoadError     => "Failed to load Surface extension.",
+            | SurfaceError::QueryCapabilitiesError => "Failed to query surface capabilities.",
+            | SurfaceError::QueryFormatsError      => "Failed to query surface formats.",
+            | SurfaceError::QueryPresentModeError  => "Failed to query surface present mode.",
         };
 
         write!(f, "Error: {}", description)
@@ -96,17 +107,18 @@ impl fmt::Display for SurfaceError {
 
 
 #[derive(Debug, Clone, Copy, Eq, PartialEq)]
-pub enum DeviceError {
+pub enum LogicalDeviceError {
 
     DeviceCreationError,
 }
 
-impl fmt::Display for DeviceError {
+impl Error for LogicalDeviceError {}
+impl fmt::Display for LogicalDeviceError {
 
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
 
         let description = match self {
-            | DeviceError::DeviceCreationError => "Failed to create Logical Device.",
+            | LogicalDeviceError::DeviceCreationError => "Failed to create Logical Device.",
         };
 
         write!(f, "Error: {}", description)

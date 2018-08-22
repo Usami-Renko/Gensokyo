@@ -23,7 +23,7 @@ impl LogicalDevice {
             handle,
             queues,
             graphics_queue_index,
-            present_queue_index
+            present_queue_index,
         }
     }
 

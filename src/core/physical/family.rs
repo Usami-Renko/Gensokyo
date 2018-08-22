@@ -76,21 +76,21 @@ impl PhysicalQueueFamilies {
         let mut back_graphics_index = None;
         let mut back_present_index  = None;
 
-        let mut queue_index: uint32_t = 0;
+        let mut queue_family_index: uint32_t = 0;
         for queue_family in families.iter() {
             if queue_family.queue_count > 0 && queue_family.queue_flags.subset(vk::QUEUE_GRAPHICS_BIT) {
-                back_graphics_index = Some(queue_index);
+                back_graphics_index = Some(queue_family_index);
             }
 
-            if queue_family.queue_count > 0 && surface.is_present_support(physical_device, queue_index) {
-                back_present_index = Some(queue_index);
+            if queue_family.queue_count > 0 && surface.is_present_support(physical_device, queue_family_index) {
+                back_present_index = Some(queue_family_index);
             }
 
             if back_graphics_index.is_some() && back_present_index.is_some() {
                 break
             }
 
-            queue_index += 1;
+            queue_family_index += 1;
         }
 
 
