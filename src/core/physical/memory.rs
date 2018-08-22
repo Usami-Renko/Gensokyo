@@ -2,7 +2,7 @@
 use ash::vk;
 use ash::version::InstanceV1_0;
 
-use core::instance::Instance;
+use core::instance::HaInstance;
 
 pub struct PhysicalMemory {
 
@@ -11,7 +11,7 @@ pub struct PhysicalMemory {
 
 impl PhysicalMemory {
 
-    pub fn inspect(instance: &Instance, physical_device: vk::PhysicalDevice) -> PhysicalMemory {
+    pub fn inspect(instance: &HaInstance, physical_device: vk::PhysicalDevice) -> PhysicalMemory {
 
         let handle = instance.handle.get_physical_device_memory_properties(physical_device);
 

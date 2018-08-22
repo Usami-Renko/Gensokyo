@@ -9,8 +9,8 @@ mod extension;
 use ash::vk;
 use ash::version::InstanceV1_0;
 
-use core::instance::Instance;
-use core::surface::Surface;
+use core::instance::HaInstance;
+use core::surface::HaSurface;
 use core::error::PhysicalDeviceError;
 
 use constant::VERBOSE;
@@ -25,7 +25,7 @@ pub use ash::vk::PhysicalDeviceType as PhysicalDeviceType;
 pub use self::requirement::PhysicalRequirement;
 pub use self::extension::DeviceExtensionType;
 
-pub struct PhysicalDevice {
+pub struct HaPhysicalDevice {
 
     pub handle     : vk::PhysicalDevice,
     properties     : PhysicalProperties,
@@ -35,10 +35,10 @@ pub struct PhysicalDevice {
     pub extensions : PhysicalExtension,
 }
 
-impl PhysicalDevice {
+impl HaPhysicalDevice {
 
-    pub fn new(instance: &Instance, surface: &Surface, requirement: PhysicalRequirement)
-        -> Result<PhysicalDevice, PhysicalDeviceError> {
+    pub fn new(instance: &HaInstance, surface: &HaSurface, requirement: PhysicalRequirement)
+               -> Result<HaPhysicalDevice, PhysicalDeviceError> {
 
         let alternative_devices = instance.handle.enumerate_physical_devices()
             .or(Err(PhysicalDeviceError::EnumerateDeviceError))?;
@@ -76,7 +76,7 @@ impl PhysicalDevice {
             }
 
             optimal_device = Some(
-                PhysicalDevice {
+                HaPhysicalDevice {
                     handle: physical_device,
                     properties,
                     features,

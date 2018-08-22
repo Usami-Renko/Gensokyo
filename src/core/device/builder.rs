@@ -3,9 +3,9 @@ use ash::vk;
 use ash::version::{ InstanceV1_0, DeviceV1_0 };
 use ash::vk::uint32_t;
 
-use core::instance::Instance;
-use core::physical::PhysicalDevice;
-use core::device::LogicalDevice;
+use core::instance::HaInstance;
+use core::physical::HaPhysicalDevice;
+use core::device::HaLogicalDevice;
 use core::device::queue::QueueUsage;
 use core::device::queue::{ QueueInfoTmp, QueueInfo };
 use core::error::LogicalDeviceError;
@@ -56,8 +56,8 @@ pub struct LogicalDeviceBuilder<'a, 'b> {
     family_queue_counts : Vec<uint32_t>,
     total_queue_count   : usize,
 
-    instance            : &'a Instance,
-    physical_device     : &'b PhysicalDevice,
+    instance            : &'a HaInstance,
+    physical_device     : &'b HaPhysicalDevice,
 
     graphics_index      : Option<usize>,
     present_index       : Option<usize>,
@@ -65,7 +65,7 @@ pub struct LogicalDeviceBuilder<'a, 'b> {
 
 impl<'a, 'b> LogicalDeviceBuilder<'a, 'b> {
 
-    pub fn init(instance: &'a Instance, physical: &'b PhysicalDevice) -> LogicalDeviceBuilder<'a, 'b> {
+    pub fn init(instance: &'a HaInstance, physical: &'b HaPhysicalDevice) -> LogicalDeviceBuilder<'a, 'b> {
 
         let queue_family_count = physical.families.queue_families_count();
 
@@ -176,7 +176,7 @@ impl<'a, 'b> LogicalDeviceBuilder<'a, 'b> {
         (queue_create_infos, queue_info_tmps)
     }
 
-    pub fn build(&self) -> Result<LogicalDevice, LogicalDeviceError> {
+    pub fn build(&self) -> Result<HaLogicalDevice, LogicalDeviceError> {
 
         let (queue_create_infos, queue_info_tmps) = self.generate_queue_create_info();
 
@@ -213,7 +213,7 @@ impl<'a, 'b> LogicalDeviceBuilder<'a, 'b> {
             queues.push(queue_info);
         }
 
-        let device = LogicalDevice::new(device_handle, queues, self.graphics_index, self.present_index);
+        let device = HaLogicalDevice::new(device_handle, queues, self.graphics_index, self.present_index);
 
         Ok(device)
     }

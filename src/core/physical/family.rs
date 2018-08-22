@@ -3,9 +3,9 @@ use ash::vk;
 use ash::version::InstanceV1_0;
 use ash::vk::uint32_t;
 
-use core::instance::Instance;
+use core::instance::HaInstance;
 use core::error::PhysicalDeviceError;
-use core::surface::Surface;
+use core::surface::HaSurface;
 
 use utility::marker::VulkanFlags;
 
@@ -68,8 +68,8 @@ pub struct PhysicalQueueFamilies {
 
 impl PhysicalQueueFamilies {
 
-    pub fn inspect(instance: &Instance, physical_device: vk::PhysicalDevice, surface: &Surface)
-        -> Result<PhysicalQueueFamilies, PhysicalDeviceError> {
+    pub fn inspect(instance: &HaInstance, physical_device: vk::PhysicalDevice, surface: &HaSurface)
+                   -> Result<PhysicalQueueFamilies, PhysicalDeviceError> {
 
         let families = instance.handle.get_physical_device_queue_family_properties(physical_device);
 

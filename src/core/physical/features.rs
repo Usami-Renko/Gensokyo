@@ -2,7 +2,7 @@
 use ash::vk;
 use ash::version::InstanceV1_0;
 
-use core::instance::Instance;
+use core::instance::HaInstance;
 
 #[derive(Debug, Clone, Copy, Eq, PartialEq)]
 pub enum PhysicalFeatureType {
@@ -73,7 +73,7 @@ pub struct PhyscialFeatures {
 
 impl PhyscialFeatures {
 
-    pub fn inspect(instance: &Instance, physical_device: vk::PhysicalDevice) -> PhyscialFeatures {
+    pub fn inspect(instance: &HaInstance, physical_device: vk::PhysicalDevice) -> PhyscialFeatures {
 
         let handle = instance.handle.get_physical_device_features(physical_device);
 

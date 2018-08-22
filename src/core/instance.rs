@@ -18,7 +18,7 @@ use utility::cast;
 use std::ptr;
 use std::ffi::CString;
 
-pub struct Instance {
+pub struct HaInstance {
 
     pub entry:  EntryV1,
     pub handle: InstanceV1,
@@ -26,9 +26,9 @@ pub struct Instance {
     pub enable_layer_names: Vec<CString>,
 }
 
-impl Instance {
+impl HaInstance {
 
-    pub fn new() -> Result<Instance, InstanceError> {
+    pub fn new() -> Result<HaInstance, InstanceError> {
 
         let entry = EntryV1::new()
             .or(Err(InstanceError::EntryCreationError))?;
@@ -67,7 +67,7 @@ impl Instance {
                 .or(Err(InstanceError::InstanceCreationError))?
         };
 
-        let instance = Instance {
+        let instance = HaInstance {
             entry,
             handle: instance_handle,
 

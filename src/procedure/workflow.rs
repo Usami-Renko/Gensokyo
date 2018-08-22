@@ -1,12 +1,12 @@
 
 use winit;
 
-use core::instance::Instance;
-use core::debug::Debugger;
-use core::physical::{ PhysicalDevice, PhysicalRequirement };
-use core::surface::Surface;
-use core::device::{ LogicalDevice, LogicalDeviceBuilder, PrefabQueue };
-use swapchain::{ Swapchain, SwapchainBuilder };
+use core::instance::HaInstance;
+use core::debug::HaDebugger;
+use core::physical::{ HaPhysicalDevice, PhysicalRequirement };
+use core::surface::HaSurface;
+use core::device::{ HaLogicalDevice, LogicalDeviceBuilder, PrefabQueue };
+use swapchain::{ HaSwapchain, SwapchainBuilder };
 
 use procedure::window::ProgramEnv;
 use procedure::error::ProcedureError;
@@ -21,12 +21,12 @@ pub trait ProgramProc {
 
 pub struct CoreInfrastructure<'win> {
 
-    instance  : Instance,
-    debugger  : Option<Debugger>,
-    surface   : Surface<'win>,
-    physical  : PhysicalDevice,
-    device    : LogicalDevice,
-    swapchain : Swapchain,
+    instance  : HaInstance,
+    debugger  : Option<HaDebugger>,
+    surface   : HaSurface<'win>,
+    physical  : HaPhysicalDevice,
+    device    : HaLogicalDevice,
+    swapchain : HaSwapchain,
 }
 
 impl<'win, T> ProgramEnv<T> where T: ProgramProc {
@@ -34,21 +34,21 @@ impl<'win, T> ProgramEnv<T> where T: ProgramProc {
     pub fn initialize_core(&self, window: &'win winit::Window, requirement: PhysicalRequirement)
         -> Result<CoreInfrastructure<'win>, ProcedureError> {
 
-        let instance = Instance::new()
+        let instance = HaInstance::new()
             .map_err(|e| ProcedureError::Instance(e))?;
 
         let debugger = if VALIDATION.is_enable {
-            let debugger = Debugger::setup(&instance)
+            let debugger = HaDebugger::setup(&instance)
                 .map_err(|e| ProcedureError::Validation(e))?;
             Some(debugger)
         } else {
             None
         };
 
-        let surface = Surface::new(&instance, window)
+        let surface = HaSurface::new(&instance, window)
             .map_err(|e| ProcedureError::Surface(e))?;
 
-        let physical = PhysicalDevice::new(&instance, &surface, requirement)
+        let physical = HaPhysicalDevice::new(&instance, &surface, requirement)
             .map_err(|e| ProcedureError::PhysicalDevice(e))?;
 
         let device = LogicalDeviceBuilder::init(&instance, &physical)
@@ -77,7 +77,7 @@ impl<'win, T> ProgramEnv<T> where T: ProgramProc {
     }
 }
 
-impl<'w> Drop for CoreInfrastructure<'w> {
+impl<'win> Drop for CoreInfrastructure<'win> {
 
     /// use cleanup function, so that the order of deinitialization can be customizable.
     fn drop(&mut self) {

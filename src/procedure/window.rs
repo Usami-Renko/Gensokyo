@@ -25,7 +25,6 @@ impl WindowInfo {
 pub struct ProgramBuilder<T> {
 
     window_info: WindowInfo,
-
     procedure: T,
 }
 

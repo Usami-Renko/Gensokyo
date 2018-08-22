@@ -4,7 +4,7 @@ use ash::vk::uint32_t;
 
 use num::clamp;
 
-use core::surface::Surface;
+use core::surface::HaSurface;
 use core::error::SurfaceError;
 
 pub struct SwapchainSupport {
@@ -16,7 +16,7 @@ pub struct SwapchainSupport {
 
 impl SwapchainSupport {
 
-    pub fn query_support(surface: &Surface, physical: vk::PhysicalDevice) -> Result<SwapchainSupport, SurfaceError> {
+    pub fn query_support(surface: &HaSurface, physical: vk::PhysicalDevice) -> Result<SwapchainSupport, SurfaceError> {
         Ok(SwapchainSupport {
             capabilities  : surface.capabilities(physical)?,
             formats       : surface.formats(physical)?,
@@ -24,7 +24,7 @@ impl SwapchainSupport {
         })
     }
 
-    pub fn extent(&self, surface: &Surface) -> vk::Extent2D {
+    pub fn extent(&self, surface: &HaSurface) -> vk::Extent2D {
 
         const SPECIAL_EXTEND: uint32_t = 0xFFFF_FFFF;
         if self.capabilities.current_extent.width  == SPECIAL_EXTEND &&

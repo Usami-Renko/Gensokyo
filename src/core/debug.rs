@@ -5,7 +5,7 @@ use ash::extensions::DebugReport;
 
 use core::EntryV1;
 use core::error::InstanceError;
-use core::instance::Instance;
+use core::instance::HaInstance;
 use core::error::ValidationError;
 
 use constant::VERBOSE;
@@ -21,15 +21,15 @@ pub struct ValidationInfo {
     pub required_validation_layers: [&'static str; 1],
 }
 
-pub struct Debugger {
+pub struct HaDebugger {
 
     loader: DebugReport,
     callback: vk::DebugReportCallbackEXT,
 }
 
-impl Debugger {
+impl HaDebugger {
 
-    pub fn setup(instance: &Instance) -> Result<Debugger, ValidationError> {
+    pub fn setup(instance: &HaInstance) -> Result<HaDebugger, ValidationError> {
 
         let loader = DebugReport::new(&instance.entry, &instance.handle)
             .or(Err(ValidationError::DebugReportCreationError))?;
@@ -48,7 +48,7 @@ impl Debugger {
                 .or(Err(ValidationError::DebugCallbackCreationError))?
         };
 
-        let debugger = Debugger {
+        let debugger = HaDebugger {
             loader,
             callback,
         };

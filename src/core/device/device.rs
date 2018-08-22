@@ -7,7 +7,7 @@ use core::device::queue::QueueInfo;
 
 use constant::VERBOSE;
 
-pub struct LogicalDevice {
+pub struct HaLogicalDevice {
 
     pub handle: ash::Device<V1_0>,
     queues: Vec<QueueInfo>,
@@ -16,10 +16,10 @@ pub struct LogicalDevice {
     pub present_queue_index:  Option<usize>,
 }
 
-impl LogicalDevice {
+impl HaLogicalDevice {
 
-    pub fn new(handle: ash::Device<V1_0>, queues: Vec<QueueInfo>, graphics_queue_index: Option<usize>, present_queue_index:  Option<usize>) -> LogicalDevice {
-        LogicalDevice {
+    pub fn new(handle: ash::Device<V1_0>, queues: Vec<QueueInfo>, graphics_queue_index: Option<usize>, present_queue_index:  Option<usize>) -> HaLogicalDevice {
+        HaLogicalDevice {
             handle,
             queues,
             graphics_queue_index,

@@ -4,12 +4,12 @@ use ash::vk;
 use ash::vk::uint32_t;
 use ash::version::DeviceV1_0;
 
-use core::instance::Instance;
-use core::physical::PhysicalDevice;
-use core::device::LogicalDevice;
-use core::surface::Surface;
+use core::instance::HaInstance;
+use core::physical::HaPhysicalDevice;
+use core::device::HaLogicalDevice;
+use core::surface::HaSurface;
 
-use swapchain::chain::Swapchain;
+use swapchain::chain::HaSwapchain;
 use swapchain::support::SwapchainSupport;
 use swapchain::error::SwapchainInitError;
 
@@ -41,9 +41,9 @@ impl VulkanFlags for [SwapchainCreateFlag] {
 
 pub struct SwapchainBuilder<'vk, 'win: 'vk> {
 
-    instance: &'vk Instance,
-    device:   &'vk LogicalDevice,
-    surface:  &'vk Surface<'win>,
+    instance: &'vk HaInstance,
+    device:   &'vk HaLogicalDevice,
+    surface:  &'vk HaSurface<'win>,
 
     support: SwapchainSupport,
     image_share_info: SwapchainImageShaingInfo,
@@ -52,8 +52,8 @@ pub struct SwapchainBuilder<'vk, 'win: 'vk> {
 
 impl<'builder, 'vk: 'builder, 'win: 'vk> SwapchainBuilder<'vk, 'win> {
 
-    pub fn init(instance: &'vk Instance, physical: &PhysicalDevice, device: &'vk LogicalDevice, surface: &'vk Surface<'win>)
-        -> Result<SwapchainBuilder<'vk, 'win>, SwapchainInitError> {
+    pub fn init(instance: &'vk HaInstance, physical: &HaPhysicalDevice, device: &'vk HaLogicalDevice, surface: &'vk HaSurface<'win>)
+                -> Result<SwapchainBuilder<'vk, 'win>, SwapchainInitError> {
 
         let support = SwapchainSupport::query_support(surface, physical.handle)
             .or_else(|error| {
@@ -82,7 +82,7 @@ impl<'builder, 'vk: 'builder, 'win: 'vk> SwapchainBuilder<'vk, 'win> {
         self
     }
 
-    pub fn build(&self) -> Result<Swapchain, SwapchainInitError> {
+    pub fn build(&self) -> Result<HaSwapchain, SwapchainInitError> {
 
         let prefer_format = self.support.optimal_format();
         let prefer_present_mode = self.support.optimal_present_mode();
@@ -136,7 +136,7 @@ impl<'builder, 'vk: 'builder, 'win: 'vk> SwapchainBuilder<'vk, 'win> {
 
         let views = generate_imageviews(self.device, prefer_format.format, &images)?;
 
-        let swapchain = Swapchain::new(handle, loader, images, views, prefer_format.format, extent);
+        let swapchain = HaSwapchain::new(handle, loader, images, views, prefer_format.format, extent);
         Ok(swapchain)
     }
 }
@@ -146,7 +146,7 @@ struct SwapchainImageShaingInfo {
     mode: vk::SharingMode,
     queue_family_indices: Vec<uint32_t>,
 }
-fn sharing_mode(device: &LogicalDevice) -> Result<SwapchainImageShaingInfo, SwapchainInitError> {
+fn sharing_mode(device: &HaLogicalDevice) -> Result<SwapchainImageShaingInfo, SwapchainInitError> {
 
     let graphics_queue = device.graphics_queue()
         .ok_or(SwapchainInitError::GraphicsQueueNotAvailable)?;
@@ -171,8 +171,8 @@ fn sharing_mode(device: &LogicalDevice) -> Result<SwapchainImageShaingInfo, Swap
     Ok(share_info)
 }
 
-fn generate_imageviews(device: &LogicalDevice, format: vk::Format, images: &Vec<vk::Image>)
-    -> Result<Vec<vk::ImageView>, SwapchainInitError> {
+fn generate_imageviews(device: &HaLogicalDevice, format: vk::Format, images: &Vec<vk::Image>)
+                       -> Result<Vec<vk::ImageView>, SwapchainInitError> {
 
     let mut imageviews = vec![];
 

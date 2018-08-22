@@ -1,5 +1,5 @@
 
-pub use self::chain::Swapchain;
+pub use self::chain::HaSwapchain;
 pub use self::builder::SwapchainBuilder;
 pub use self::error::SwapchainInitError;
 

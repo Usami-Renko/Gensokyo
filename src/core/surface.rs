@@ -4,7 +4,7 @@ use ash::vk;
 
 use winit;
 
-use core::instance::Instance;
+use core::instance::HaInstance;
 use core::platforms;
 use core::error::SurfaceError;
 
@@ -12,7 +12,7 @@ use structures::Dimension2D;
 
 use constant::VERBOSE;
 
-pub struct Surface<'win> {
+pub struct HaSurface<'win> {
 
     pub handle: vk::SurfaceKHR,
     loader: ash::extensions::Surface,
@@ -20,9 +20,9 @@ pub struct Surface<'win> {
     window: &'win winit::Window,
 }
 
-impl<'win> Surface<'win> {
+impl<'win> HaSurface<'win> {
 
-    pub fn new(instance: &Instance, window: &'win winit::Window) -> Result<Surface<'win>, SurfaceError> {
+    pub fn new(instance: &HaInstance, window: &'win winit::Window) -> Result<HaSurface<'win>, SurfaceError> {
 
         let surface = unsafe {
             platforms::generate_surface(&instance.entry, &instance.handle, window)
@@ -33,7 +33,7 @@ impl<'win> Surface<'win> {
             .or(Err(SurfaceError::ExtensionLoadError))?;
 
 
-        let surface = Surface {
+        let surface = HaSurface {
             handle: surface,
             loader,
 
