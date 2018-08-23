@@ -15,8 +15,8 @@ pub struct HaSwapchain {
     images: Vec<vk::Image>,
     views:  Vec<vk::ImageView>,
 
-    format: vk::Format,
-    extent: vk::Extent2D,
+    pub format: vk::Format,
+    pub extent: vk::Extent2D,
 }
 
 impl HaSwapchain {

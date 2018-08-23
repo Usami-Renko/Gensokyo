@@ -69,7 +69,7 @@ pub struct ProgramEnv<T: ProgramProc> {
     event_loop: winit::EventsLoop,
     window_info: WindowInfo,
 
-    procedure: T,
+    pub procedure: T,
 }
 
 impl<T> ProgramEnv<T> where T: ProgramProc {

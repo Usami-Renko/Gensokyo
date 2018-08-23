@@ -22,17 +22,17 @@ impl HaViewport {
 
     pub fn setup(extent: vk::Extent2D) -> HaViewport {
 
-        let handles = [
+        let handles = vec![
             vk::Viewport {
                 x: 0.0, y: 0.0,
                 width:  extent.width  as c_float,
                 height: extent.height as c_float,
                 min_depth: 0.0,
-                max_depth: 0.0,
+                max_depth: 1.0,
             },
         ];
 
-        let scissors = [
+        let scissors = vec![
             vk::Rect2D {
                 offset: vk::Offset2D { x: 0, y: 0 },
                 extent,
@@ -48,7 +48,6 @@ impl HaViewport {
     pub fn add_scissor(&mut self, scissor: vk::Rect2D) {
         self.scissors.push(scissor);
     }
-
 
     pub fn info(&self) -> vk::PipelineViewportStateCreateInfo {
         vk::PipelineViewportStateCreateInfo {

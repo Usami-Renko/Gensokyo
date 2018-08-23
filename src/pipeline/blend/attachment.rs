@@ -73,7 +73,7 @@ impl BlendAttachemnt {
         self.dst_alpha_factor = dst_factor;
     }
     pub fn set_color_masks(&mut self, masks: &[ColorComponentFlag]) {
-        self.color_write_mask = masks.clone();
+        self.color_write_mask = masks.flags();
     }
 }
 

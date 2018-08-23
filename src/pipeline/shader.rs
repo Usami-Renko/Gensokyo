@@ -1,5 +1,6 @@
 
 use ash::vk;
+use ash::version::DeviceV1_0;
 
 use core::device::HaLogicalDevice;
 
@@ -7,24 +8,67 @@ use pipeline::error::ShaderError;
 
 use constant::VERBOSE;
 
-use std::path::Path;
+use std::path::{ Path, PathBuf };
 use std::ffi::CString;
 use std::fs::File;
 use std::io::Read;
 use std::ptr;
 
-pub struct HaShaderInfo<'p> {
+pub struct HaShaderInfo {
 
-    usage : ShaderStageType,
-    path  : &'p Path,
-    main  : Option<CString>,
+    stage: ShaderStageType,
+    path  : PathBuf,
+    main  : CString,
 }
 
 impl HaShaderInfo {
 
-    pub fn setup(usage: ShaderStageType, path: &Path, main_func: Option<&str>) -> HaShaderInfo {
-        let main = main_func.and_then(|s| Some(CString::new(s).unwrap()));
-        HaShaderInfo { usage, path, main, }
+    pub fn setup(stage: ShaderStageType, source_path: &Path, main_func: Option<&str>) -> HaShaderInfo {
+        let main = main_func.and_then(|s| Some(CString::new(s).unwrap()))
+            .unwrap_or(CString::new("main").unwrap());
+        let path = PathBuf::from(source_path);
+
+        HaShaderInfo { stage, path, main, }
+    }
+
+    pub fn build(&self, device: &HaLogicalDevice) -> Result<HaShaderModule, ShaderError> {
+
+        let codes = self.load_source()?;
+        let handle = self.create_module(device, &codes)?;
+
+        let shader_module = HaShaderModule {
+            handle,
+            stage: self.stage,
+            main: self.main.clone()
+        };
+        Ok(shader_module)
+    }
+
+    fn load_source(&self) -> Result<Vec<u8>, ShaderError> {
+
+        let spv = File::open(self.path.to_owned())
+            .or(Err(ShaderError::SourceNotFoundError))?;
+        let bytes: Vec<u8> = spv.bytes()
+            .filter_map(|byte| byte.ok()).collect();
+
+        Ok(bytes)
+    }
+
+    fn create_module(&self, device: &HaLogicalDevice, codes: &Vec<u8>) -> Result<vk::ShaderModule, ShaderError> {
+
+        let module_create_info = vk::ShaderModuleCreateInfo {
+            s_type    : vk::StructureType::ShaderModuleCreateInfo,
+            p_next    : ptr::null(),
+            // flags is reserved for future use in API version 1.0.82.
+            flags     : vk::ShaderModuleCreateFlags::empty(),
+            code_size : codes.len(),
+            p_code    : codes.as_ptr() as *const u32,
+        };
+
+        unsafe {
+            device.handle.create_shader_module(&module_create_info, None)
+                .or(Err(ShaderError::ModuleCreationError))
+        }
     }
 }
 
@@ -42,7 +86,7 @@ pub enum ShaderStageType {
 }
 
 impl ShaderStageType {
-    fn module(&self) -> vk::ShaderStageFlags {
+    pub(super) fn stage(&self) -> vk::ShaderStageFlags {
         match *self {
             | ShaderStageType::VertexStage                 => vk::SHADER_STAGE_VERTEX_BIT,
             | ShaderStageType::GeometryStage               => vk::SHADER_STAGE_GEOMETRY_BIT,
@@ -56,79 +100,29 @@ impl ShaderStageType {
     }
 }
 
-struct ShaderBuilder<'d, 'p> {
 
-    device : &'d HaLogicalDevice,
-    info   : HaShaderInfo<'p>,
+pub struct HaShaderModule {
+
+    pub(in super) main   : CString,
+    pub(in super) stage  : ShaderStageType,
+    pub(in super) handle : vk::ShaderModule,
 }
 
-impl ShaderBuilder {
+impl HaShaderModule {
 
-    pub fn setup(device: &HaLogicalDevice, info: HaShaderInfo) -> ShaderBuilder {
-        ShaderBuilder { device, info, }
-    }
-
-    pub fn build(&self) -> Result<HaShaderModule, ShaderError> {
-
-        let codes = self.load_source()?;
-        let handle = self.create_module(&codes)?;
-
-        let info = vk::PipelineShaderStageCreateInfo {
+    pub fn info(&self) -> vk::PipelineShaderStageCreateInfo {
+        vk::PipelineShaderStageCreateInfo {
             s_type : vk::StructureType::PipelineShaderStageCreateInfo,
             p_next : ptr::null(),
             // flags is reserved for future use in API version 1.0.82.
             flags  : vk::PipelineShaderStageCreateFlags::empty(),
-            stage  : self.info.usage.module(),
-            module : handle,
-            p_name : self.info.main.as_ptr(),
+            stage  : self.stage.stage(),
+            module : self.handle,
+            p_name : self.main.as_ptr(),
             // TODO: This field has not been covered.
             p_specialization_info: ptr::null(),
-        };
-
-        let shader_module = HaShaderModule {
-            handle,
-            info,
-        };
-
-        Ok(shader_module)
-    }
-
-    fn load_source(&self) -> Result<Vec<u8>, ShaderError> {
-
-        let spv = File::open(self.info.path)
-            .or(Err(ShaderError::SourceNotFoundError))?;
-        let bytes: Vec<u8> = spv.bytes()
-            .filter_map(|byte| byte.ok()).collect();
-
-        Ok(bytes)
-    }
-
-    fn create_module(&self, codes: &Vec<u8>) -> Result<vk::ShaderModule, ShaderError> {
-
-        let module_create_info = vk::ShaderModuleCreateInfo {
-            s_type    : vk::StructureType::ShaderModuleCreateInfo,
-            p_next    : ptr::null(),
-            // flags is reserved for future use in API version 1.0.82.
-            flags     : vk::ShaderModuleCreateFlags::empty(),
-            code_size : codes.len(),
-            p_code    : codes.as_ptr() as *const u32,
-        };
-
-        unsafe {
-            self.device.handle.create_shader_module(&module_create_info, None)
-                .or(Err(ShaderError::ModuleCreationError))
         }
     }
-
-}
-
-pub struct HaShaderModule {
-
-    handle : vk::ShaderModule,
-    info   : vk::PipelineShaderStageCreateInfo,
-}
-
-impl HaShaderModule {
 
     pub fn cleanup(&self, device: &HaLogicalDevice) {
 

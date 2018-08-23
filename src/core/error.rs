@@ -23,7 +23,7 @@ impl fmt::Display for InstanceError {
             | InstanceError::LayerPropertiesEnumerateError  => "Failed to enumerate Instance Layer Properties.",
         };
 
-        write!(f, "Error: {}", description)
+        write!(f, "{}", description)
     }
 }
 
@@ -45,7 +45,7 @@ impl fmt::Display for ValidationError {
             | ValidationError::DebugCallbackCreationError => "Failed to create DebugReport Callback Object.",
         };
 
-        write!(f, "Error: {}", description)
+        write!(f, "{}", description)
     }
 }
 
@@ -73,7 +73,7 @@ impl fmt::Display for PhysicalDeviceError {
             | PhysicalDeviceError::EnumerateExtensionsError     => "Failed to enumerate Device Extensions."
         };
 
-        write!(f, "Error: {}", description)
+        write!(f, "{}", description)
     }
 }
 
@@ -101,7 +101,7 @@ impl fmt::Display for SurfaceError {
             | SurfaceError::QueryPresentModeError  => "Failed to query surface present mode.",
         };
 
-        write!(f, "Error: {}", description)
+        write!(f, "{}", description)
     }
 }
 
@@ -121,6 +121,6 @@ impl fmt::Display for LogicalDeviceError {
             | LogicalDeviceError::DeviceCreationError => "Failed to create Logical Device.",
         };
 
-        write!(f, "Error: {}", description)
+        write!(f, "{}", description)
     }
 }

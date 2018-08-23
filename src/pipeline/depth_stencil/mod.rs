@@ -3,7 +3,6 @@ mod depth;
 mod stencil;
 
 use ash::vk;
-use ash::vk::Bool32;
 
 pub use self::stencil::{ StencilTest, StencilOpState };
 pub use self::depth::DepthTest;
@@ -58,10 +57,10 @@ impl HaDepthStencil {
     }
 
     pub fn set_depth(&mut self, depth: DepthTest) {
-        self.depth = depth.alias();
+        self.depth = depth;
     }
     pub fn set_stencil(&mut self, stencil: StencilTest) {
-        self.stencil = stencil.alias();
+        self.stencil = stencil;
     }
 
     pub fn info(&self) -> vk::PipelineDepthStencilStateCreateInfo {

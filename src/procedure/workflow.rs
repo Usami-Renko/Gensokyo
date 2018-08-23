@@ -8,6 +8,10 @@ use core::surface::HaSurface;
 use core::device::{ HaLogicalDevice, LogicalDeviceBuilder, PrefabQueue };
 use swapchain::{ HaSwapchain, SwapchainBuilder };
 
+use pipeline::graphics::GraphicsPipeline;
+use pipeline::graphics::builder::{ GraphicsPipelineConfig, GraphicsPipelineBuilder };
+use pipeline::{ HaShaderInfo, HaInputAssembly, HaViewport };
+
 use procedure::window::ProgramEnv;
 use procedure::error::ProcedureError;
 
@@ -16,7 +20,8 @@ use constant::swapchain::SWAPCHAIN_IMAGE_COUNT;
 
 pub trait ProgramProc {
 
-
+    fn configure_shaders(&self) -> Vec<HaShaderInfo>;
+    fn configure_inputs(&self)  -> HaInputAssembly;
 }
 
 pub struct CoreInfrastructure<'win> {
@@ -27,6 +32,7 @@ pub struct CoreInfrastructure<'win> {
     physical  : HaPhysicalDevice,
     device    : HaLogicalDevice,
     swapchain : HaSwapchain,
+    graphics_pipelines: Vec<GraphicsPipeline>,
 }
 
 impl<'win, T> ProgramEnv<T> where T: ProgramProc {
@@ -64,6 +70,22 @@ impl<'win, T> ProgramEnv<T> where T: ProgramProc {
             .build()
             .map_err(|e| ProcedureError::SwapchainCreation(e))?;
 
+        // TODO: Currently just configuration a single pipeline.
+        let shaders = self.procedure.configure_shaders();
+        let inputs = self.procedure.configure_inputs();
+
+        let viewport = HaViewport::setup(swapchain.extent);
+
+        let mut pipeline_config = GraphicsPipelineConfig::init(shaders, inputs);
+        pipeline_config.setup_viewport(viewport);
+        pipeline_config.finish_config();
+
+        let mut pipeline_builder = GraphicsPipelineBuilder::init();
+        pipeline_builder.add_config(pipeline_config);
+
+        let graphics_pipelines = pipeline_builder.build(&device)
+            .map_err(|e| ProcedureError::Pipeline(e))?;
+
         let core = CoreInfrastructure {
             instance,
             debugger,
@@ -71,6 +93,7 @@ impl<'win, T> ProgramEnv<T> where T: ProgramProc {
             physical,
             device,
             swapchain,
+            graphics_pipelines,
         };
 
         Ok(core)
@@ -81,6 +104,10 @@ impl<'win> Drop for CoreInfrastructure<'win> {
 
     /// use cleanup function, so that the order of deinitialization can be customizable.
     fn drop(&mut self) {
+
+        self.graphics_pipelines.iter().for_each(|pipeline|{
+            pipeline.clean(&self.device);
+        });
         self.swapchain.cleanup(&self.device);
         self.device.cleanup();
         self.physical.cleanup();

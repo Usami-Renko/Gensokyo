@@ -30,6 +30,6 @@ impl fmt::Display for SwapchainInitError {
             | SwapchainInitError::ImageViewCreationError      => "Failed to create Swapchain ImageView.",
         };
 
-        write!(f, "Error: {}", description)
+        write!(f, "{}", description)
     }
 }

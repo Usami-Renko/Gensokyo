@@ -1,28 +1,31 @@
 
 use ash::vk;
 use ash::vk::uint32_t;
+use ash::version::DeviceV1_0;
 
 use core::device::HaLogicalDevice;
 
 use pipeline::error::PipelineError;
 
+use constant::VERBOSE;
+
 use std::ptr;
 
 // TODO: This module need futher development yet.
 
-pub struct HaPipelineLayout {
+pub struct PipelineLayoutBuilder {
 
     descriptor_layouts : Vec<vk::DescriptorSetLayout>,
     push_constants     : Vec<vk::PushConstantRange>,
 }
 
-impl HaPipelineLayout {
+impl PipelineLayoutBuilder {
 
-    pub fn init() -> HaPipelineLayout {
-        HaPipelineLayout { ..Default::default() }
+    pub fn init() -> PipelineLayoutBuilder {
+        PipelineLayoutBuilder { ..Default::default() }
     }
 
-    fn build(&self, device: &HaLogicalDevice) -> Result<vk::PipelineLayout, PipelineError> {
+    pub fn build(&self, device: &HaLogicalDevice) -> Result<vk::PipelineLayout, PipelineError> {
         let create_info = self.info();
 
         unsafe {
@@ -52,12 +55,34 @@ impl HaPipelineLayout {
     }
 }
 
-impl Default for HaPipelineLayout {
+impl Default for PipelineLayoutBuilder {
 
-    fn default() -> HaPipelineLayout {
-        HaPipelineLayout {
+    fn default() -> PipelineLayoutBuilder {
+        PipelineLayoutBuilder {
             descriptor_layouts: vec![],
-            push_constants: vec![],
+            push_constants:     vec![],
+        }
+    }
+}
+
+pub struct HaPipelineLayout {
+
+    handle: vk::PipelineLayout,
+}
+
+impl HaPipelineLayout {
+
+    pub fn new(handle: vk::PipelineLayout) -> HaPipelineLayout {
+        HaPipelineLayout { handle, }
+    }
+
+    pub fn cleanup(&self, device: &HaLogicalDevice) {
+        unsafe {
+            device.handle.destroy_pipeline_layout(self.handle, None);
+        }
+
+        if VERBOSE {
+            println!("[Info] Pipeline Layout has been destroy.");
         }
     }
 }

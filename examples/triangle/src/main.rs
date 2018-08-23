@@ -2,6 +2,9 @@
 extern crate hakurei;
 
 use hakurei::prelude::*;
+use hakurei::pipeline::{ HaShaderInfo, HaInputAssembly, ShaderStageType };
+
+use std::path::Path;
 
 const WINDOW_TITLE: &'static str = "Trangle Example";
 const WINDOW_WIDTH:  u32 = 800;
@@ -13,6 +16,27 @@ struct TriangleProcedure {
 
 impl ProgramProc for TriangleProcedure {
 
+    fn configure_shaders(&self) -> Vec<HaShaderInfo> {
+
+        let vertex_shader = HaShaderInfo::setup(
+            ShaderStageType::VertexStage,
+            Path::new("src/triangle.vert.spv"),
+            None);
+        let fragment_shader = HaShaderInfo::setup(
+            ShaderStageType::FragmentStage,
+            Path::new("src/triangle.frag.spv"),
+            None);
+
+        vec![
+            vertex_shader,
+            fragment_shader,
+        ]
+    }
+
+    fn configure_inputs(&self) -> HaInputAssembly {
+
+        HaInputAssembly::init()
+    }
 }
 
 fn main() {

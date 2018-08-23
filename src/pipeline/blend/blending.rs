@@ -1,6 +1,6 @@
 
 use ash::vk;
-use ash::vk::{ Bool32, uint32_t };
+use ash::vk::uint32_t;
 
 use pipeline::blend::logic_op::HaLogicalOp;
 use pipeline::blend::attachment::BlendAttachemnt;
@@ -10,12 +10,24 @@ use std::os::raw::c_float;
 
 #[derive(Debug, Clone, Copy, Eq, PartialEq)]
 pub enum HaBlendPrefab {
-    Disable,
+    Default,
+    Unset,
 }
 impl HaBlendPrefab {
     fn generate(&self) -> HaBlend {
         match *self {
-            | HaBlendPrefab::Disable => HaBlend { ..Default::default() },
+            | HaBlendPrefab::Default => HaBlend {
+                logic_op: HaLogicalOp::disable(),
+                attachments: vec![
+                    BlendAttachemnt::default(),
+                ],
+                blend_constants: [0.0, 0.0, 0.0, 0.0],
+            },
+            | HaBlendPrefab::Unset => HaBlend {
+                logic_op: HaLogicalOp::disable(),
+                attachments: vec![],
+                blend_constants: [0.0, 0.0, 0.0, 0.0],
+            },
         }
     }
 }
@@ -32,7 +44,7 @@ pub struct HaBlend {
 
 impl HaBlend {
 
-    pub fn init() -> HaBlend() {
+    pub fn init() -> HaBlend {
         HaBlend { ..Default::default() }
     }
 
@@ -48,7 +60,7 @@ impl HaBlend {
             s_type : vk::StructureType::PipelineColorBlendStateCreateInfo,
             p_next : ptr::null(),
             // flags is reserved for future use in API version 1.0.82.
-            flags  : vk::PipelineColorBlendStateCreateFlags::null(),
+            flags  : vk::PipelineColorBlendStateCreateFlags::empty(),
             logic_op_enable  : self.logic_op.enable,
             logic_op         : self.logic_op.op,
             attachment_count : attchement_infos.len() as uint32_t,
@@ -71,10 +83,6 @@ impl HaBlend {
 impl Default for HaBlend {
 
     fn default() -> HaBlend {
-        HaBlend {
-            logic_op: HaLogicalOp::disable(),
-            attachments: vec![],
-            blend_constants: [0.0, 0.0, 0.0, 0.0],
-        }
+        HaBlendPrefab::Default.generate()
     }
 }

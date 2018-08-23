@@ -28,6 +28,6 @@ members = [
     "examples/triangle"
 ]
 
-[[bin]]
-name = "triangle"
-path ="examples/triangle/src/main.rs"
+#[[bin]]
+#name = "triangle"
+#path ="examples/triangle/src/main.rs"

@@ -6,8 +6,8 @@ use std::ptr;
 // TODO: This module need futher development yet.
 pub struct HaInputAssembly {
 
-    state    : vk::PipelineVertexInputStateCreateInfo,
-    assembly : vk::PipelineInputAssemblyStateCreateInfo,
+    pub(in super) state    : vk::PipelineVertexInputStateCreateInfo,
+    pub(in super) assembly : vk::PipelineInputAssemblyStateCreateInfo,
 }
 
 impl HaInputAssembly {

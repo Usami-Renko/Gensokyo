@@ -1,5 +1,5 @@
 
-pub use self::shader::HaShaderInfo;
+pub use self::shader::{ HaShaderInfo, ShaderStageType };
 pub use self::input_assembly::HaInputAssembly;
 pub use self::tessellation::HaTessellationState;
 pub use self::rasterizer::{ HaRasterizer, RasterizerPrefab, CullModeType, DepthBias };
@@ -15,7 +15,7 @@ pub type PolygonMode   = ash::vk::PolygonMode;
 pub type LogicOp       = ash::vk::LogicOp;
 pub type CompareOp     = ash::vk::CompareOp;
 
-mod graphics;
+pub(crate) mod graphics;
 mod compute;
 mod shader;
 mod input_assembly;
@@ -27,4 +27,4 @@ mod depth_stencil;
 mod blend;
 mod dynamic;
 mod layout;
-mod error;
+pub mod error;

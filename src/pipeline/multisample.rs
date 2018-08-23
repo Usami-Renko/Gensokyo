@@ -42,6 +42,7 @@ impl HaMultisample {
         prefab.generate()
     }
 
+    #[inline]
     pub fn info(&self) -> vk::PipelineMultisampleStateCreateInfo {
         vk::PipelineMultisampleStateCreateInfo {
             s_type : vk::StructureType::PipelineMultisampleStateCreateInfo,
@@ -52,7 +53,7 @@ impl HaMultisample {
             rasterization_samples : self.sample_count.flag(),
             sample_shading_enable : self.sample_shading.enable,
             min_sample_shading    : self.sample_shading.min_sample,
-            p_sample_mask         : self.sample_shading.sample_masks.as_ptr(),
+            p_sample_mask         : &self.sample_shading.sample_masks,
             alpha_to_coverage_enable : self.alpha_to_coverage_enable,
             alpha_to_one_enable      : self.alpha_to_one_enalbe,
         }
@@ -88,7 +89,7 @@ impl Default for HaMultisample {
 pub struct SampleShading {
     enable       : Bool32,
     min_sample   : c_float,
-    sample_masks : Vec<uint32_t>,
+    sample_masks : uint32_t,
 }
 
 impl SampleShading {
@@ -96,12 +97,12 @@ impl SampleShading {
     pub fn disable() -> SampleShading {
         SampleShading {
             enable       : vk::VK_FALSE,
-            min_sample   : 1.0,
-            sample_masks : vec![],
+            min_sample   : 0.0,
+            sample_masks : 0,
         }
     }
 
-    pub fn setup(min_sample: c_float, sample_masks: Vec<uint32_t>) -> SampleShading {
+    pub fn setup(min_sample: c_float, sample_masks: uint32_t) -> SampleShading {
         SampleShading { enable: vk::VK_TRUE, min_sample, sample_masks, }
     }
 }

@@ -19,7 +19,7 @@ impl fmt::Display for ShaderError {
             | ShaderError::ModuleCreationError => "Failed to create Shader Module.",
         };
 
-        write!(f, "Error: {}", description)
+        write!(f, "{}", description)
     }
 }
 
@@ -27,6 +27,7 @@ impl fmt::Display for ShaderError {
 #[derive(Debug, Clone, Copy, Eq, PartialEq)]
 pub enum PipelineError {
 
+    Shader(ShaderError),
     PipelineCreationError,
     LayoutCreationError,
 }
@@ -36,12 +37,11 @@ impl fmt::Display for PipelineError {
 
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
 
-        let description = match self {
-            | PipelineError::PipelineCreationError => "Failed to create Pipeline.",
-            | PipelineError::LayoutCreationError   => "Failed to create Pipeline Layout.",
-        };
-
-        write!(f, "Error: {}", description)
+        match self {
+            | PipelineError::Shader(ref e)         => write!(f, "{}", e.to_string()),
+            | PipelineError::PipelineCreationError => write!(f, "{}", "Failed to create Pipeline."),
+            | PipelineError::LayoutCreationError   => write!(f, "{}", "Failed to create Pipeline Layout."),
+        }
     }
 }
 
