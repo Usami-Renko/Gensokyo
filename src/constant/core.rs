@@ -3,7 +3,7 @@
 use ash::vk::uint32_t;
 
 use core::ValidationInfo;
-use core::debug::DebugReportFlags;
+use core::debug::DebugReportFlag;
 
 use core::physical::DeviceExtensionType;
 
@@ -21,11 +21,11 @@ pub const VALIDATION: ValidationInfo = ValidationInfo {
     ],
 };
 
-pub const VALIDATION_FLAGS: [DebugReportFlags; 4] = [
-    DebugReportFlags::ErrorBit,
-    DebugReportFlags::InformationBit,
-    DebugReportFlags::WarningBit,
-    DebugReportFlags::PerformanceWarningBit,
+pub const VALIDATION_FLAGS: [DebugReportFlag; 4] = [
+    DebugReportFlag::ErrorBit,
+    DebugReportFlag::InformationBit,
+    DebugReportFlag::WarningBit,
+    DebugReportFlag::PerformanceWarningBit,
 ];
 
 pub const DEVICE_EXTENSION: [DeviceExtensionType; 1] = [

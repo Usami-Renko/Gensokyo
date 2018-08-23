@@ -188,7 +188,7 @@ impl<'a, 'b> LogicalDeviceBuilder<'a, 'b> {
         let device_create_info = vk::DeviceCreateInfo {
             s_type                     : vk::StructureType::DeviceCreateInfo,
             p_next                     : ptr::null(),
-            // flags is reserved for future use in API version 1.0.82
+            // flags is reserved for future use in API version 1.0.82.
             flags                      : vk::DeviceCreateFlags::empty(),
             queue_create_info_count    : queue_create_infos.len() as uint32_t,
             p_queue_create_infos       : queue_create_infos.as_ptr(),

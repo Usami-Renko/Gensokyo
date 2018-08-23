@@ -5,6 +5,7 @@ mod memory;
 mod family;
 mod requirement;
 mod extension;
+mod limits;
 
 use ash::vk;
 use ash::version::InstanceV1_0;

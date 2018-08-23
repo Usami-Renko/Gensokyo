@@ -69,7 +69,7 @@ impl HaDebugger {
 
 #[allow(dead_code)]
 #[derive(Debug, Clone, Copy, Eq, PartialEq)]
-pub enum DebugReportFlags {
+pub enum DebugReportFlag {
     ErrorBit,
     InformationBit,
     DebugBit,
@@ -77,17 +77,17 @@ pub enum DebugReportFlags {
     PerformanceWarningBit,
 }
 
-impl VulkanFlags for [DebugReportFlags] {
+impl VulkanFlags for [DebugReportFlag] {
     type FlagType = vk::DebugReportFlagsEXT;
 
     fn flags(&self) -> Self::FlagType {
         self.iter().fold(vk::DebugReportFlagsEXT::empty(), |acc, flag| {
             match *flag {
-                | DebugReportFlags::ErrorBit              => acc | vk::DEBUG_REPORT_ERROR_BIT_EXT,
-                | DebugReportFlags::InformationBit        => acc | vk::DEBUG_REPORT_INFORMATION_BIT_EXT,
-                | DebugReportFlags::DebugBit              => acc | vk::DEBUG_REPORT_DEBUG_BIT_EXT,
-                | DebugReportFlags::WarningBit            => acc | vk::DEBUG_REPORT_WARNING_BIT_EXT,
-                | DebugReportFlags::PerformanceWarningBit => acc | vk::DEBUG_REPORT_PERFORMANCE_WARNING_BIT_EXT,
+                | DebugReportFlag::ErrorBit              => acc | vk::DEBUG_REPORT_ERROR_BIT_EXT,
+                | DebugReportFlag::InformationBit        => acc | vk::DEBUG_REPORT_INFORMATION_BIT_EXT,
+                | DebugReportFlag::DebugBit              => acc | vk::DEBUG_REPORT_DEBUG_BIT_EXT,
+                | DebugReportFlag::WarningBit            => acc | vk::DEBUG_REPORT_WARNING_BIT_EXT,
+                | DebugReportFlag::PerformanceWarningBit => acc | vk::DEBUG_REPORT_PERFORMANCE_WARNING_BIT_EXT,
             }
         })
     }
