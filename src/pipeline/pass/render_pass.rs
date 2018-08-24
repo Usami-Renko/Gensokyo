@@ -1,6 +1,4 @@
 
-//! Create Render Pass for temporary use.
-
 use ash::vk;
 use ash::version::DeviceV1_0;
 
@@ -8,11 +6,28 @@ use core::device::HaLogicalDevice;
 
 use std::ptr;
 
-pub fn temp_render_pass(device: &HaLogicalDevice) -> vk::RenderPass {
+
+pub struct HaRenderPass {
+
+    pub handle: vk::RenderPass,
+}
+
+impl HaRenderPass {
+
+    pub fn cleanup(&self, device: &HaLogicalDevice) {
+        unsafe {
+            device.handle.destroy_render_pass(self.handle, None);}
+    }
+}
+
+
+
+/// Create Render Pass
+pub fn temp_render_pass(device: &HaLogicalDevice) -> HaRenderPass {
 
     let color_attchemnt = vk::AttachmentDescription {
         flags: vk::AttachmentDescriptionFlags::empty(),
-        format: vk::Format::R8g8b8a8Unorm,
+        format: vk::Format::B8g8r8a8Unorm,
         samples: vk::SAMPLE_COUNT_1_BIT,
         load_op: vk::AttachmentLoadOp::Clear,
         store_op: vk::AttachmentStoreOp::Store,
@@ -56,8 +71,12 @@ pub fn temp_render_pass(device: &HaLogicalDevice) -> vk::RenderPass {
         p_dependencies: ptr::null(),
     };
 
-    unsafe {
+    let handle = unsafe {
         device.handle.create_render_pass(&renderpass_create_info, None)
             .unwrap()
+    };
+
+    HaRenderPass {
+        handle,
     }
 }

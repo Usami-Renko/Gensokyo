@@ -71,10 +71,6 @@ impl HaDebugger {
     pub fn cleanup(&self) {
         unsafe {
             self.loader.destroy_debug_report_callback_ext(self.callback, None);
-
-            if VERBOSE {
-                println!("[info] DebugReport Callback had been destroy.")
-            }
         }
     }
 }

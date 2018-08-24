@@ -9,7 +9,6 @@ use core::platforms;
 use core::debug;
 
 use constant::core::*;
-use constant::VERBOSE;
 
 use utility::cast;
 
@@ -88,9 +87,6 @@ impl HaInstance {
     pub fn clenaup(&self) {
         unsafe {
             self.handle.destroy_instance(None);
-            if VERBOSE {
-                println!("[Info] Vulkan Instance had been destroy.");
-            }
         }
     }
 }

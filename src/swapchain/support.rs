@@ -7,6 +7,8 @@ use num::clamp;
 use core::surface::HaSurface;
 use core::error::SurfaceError;
 
+use constant::swapchain::{ PREFER_SURFACE_FORMAT, PREFER_SURFACE_COLOR_SPACE, PREFER_PRESENT_MODE };
+
 pub struct SwapchainSupport {
 
     capabilities:  vk::SurfaceCapabilitiesKHR,
@@ -24,7 +26,7 @@ impl SwapchainSupport {
         })
     }
 
-    pub fn extent(&self, surface: &HaSurface) -> vk::Extent2D {
+    pub fn optimal_extent(&self, surface: &HaSurface) -> vk::Extent2D {
 
         const SPECIAL_EXTEND: uint32_t = 0xFFFF_FFFF;
         if self.capabilities.current_extent.width  == SPECIAL_EXTEND &&
@@ -50,18 +52,19 @@ impl SwapchainSupport {
         }
     }
 
+    // TODO: Make format preference configurable.
     pub fn optimal_format(&self) -> vk::SurfaceFormatKHR {
 
         if self.formats.len() == 1 && self.formats[0].format == vk::Format::Undefined {
             return vk::SurfaceFormatKHR {
-                format      : vk::Format::B8g8r8a8Unorm,
-                color_space : vk::ColorSpaceKHR::SrgbNonlinear,
+                format      : PREFER_SURFACE_FORMAT,
+                color_space : PREFER_SURFACE_COLOR_SPACE,
             }
         }
 
         for available_format in self.formats.iter() {
-            if available_format.format == vk::Format::B8g8r8a8Unorm &&
-                available_format.color_space == vk::ColorSpaceKHR::SrgbNonlinear {
+            if available_format.format == PREFER_SURFACE_FORMAT &&
+                available_format.color_space == PREFER_SURFACE_COLOR_SPACE {
 
                 return available_format.clone()
             }
@@ -70,9 +73,10 @@ impl SwapchainSupport {
         self.formats.first().unwrap().clone()
     }
 
+    // TODO: Make present mode preference configurable.
     pub fn optimal_present_mode(&self) -> vk::PresentModeKHR {
 
-        let mut best_mode = vk::PresentModeKHR::Fifo;
+        let mut best_mode = PREFER_PRESENT_MODE;
 
         for &available_mode in self.present_modes.iter() {
             match available_mode {

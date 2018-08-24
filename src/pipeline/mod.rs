@@ -16,7 +16,8 @@ pub type LogicOp       = ash::vk::LogicOp;
 pub type CompareOp     = ash::vk::CompareOp;
 
 pub(crate) mod graphics;
-mod compute;
+pub(crate) mod compute;
+pub(crate) mod pass;
 mod shader;
 mod input_assembly;
 mod tessellation;

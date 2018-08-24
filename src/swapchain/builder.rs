@@ -13,7 +13,12 @@ use swapchain::chain::HaSwapchain;
 use swapchain::support::SwapchainSupport;
 use swapchain::error::SwapchainInitError;
 
-use constant::swapchain::SWAPCHAIN_IMAGE_COUNT;
+use pipeline::pass::HaRenderPass;
+use resources::framebuffer::{ HaFramebuffer, FramebufferBuilder };
+use resources::image::{ HaImage, HaImageView };
+
+use constant::swapchain::{ SWAPCHAIN_IMAGE_COUNT, FRAMEBUFFER_LAYERS };
+use structures::dimension::BufferDimension;
 use utility::marker::VulkanFlags;
 
 use std::ptr;
@@ -41,19 +46,18 @@ impl VulkanFlags for [SwapchainCreateFlag] {
 
 pub struct SwapchainBuilder<'vk, 'win: 'vk> {
 
-    instance: &'vk HaInstance,
-    device:   &'vk HaLogicalDevice,
-    surface:  &'vk HaSurface<'win>,
+    device:  &'vk HaLogicalDevice,
+    surface: &'vk HaSurface<'win>,
 
     support: SwapchainSupport,
     image_share_info: SwapchainImageShaingInfo,
     image_count: uint32_t,
 }
 
-impl<'builder, 'vk: 'builder, 'win: 'vk> SwapchainBuilder<'vk, 'win> {
+impl<'vk, 'win: 'vk> SwapchainBuilder<'vk, 'win> {
 
-    pub fn init(instance: &'vk HaInstance, physical: &HaPhysicalDevice, device: &'vk HaLogicalDevice, surface: &'vk HaSurface<'win>)
-                -> Result<SwapchainBuilder<'vk, 'win>, SwapchainInitError> {
+    pub fn init(physical: &HaPhysicalDevice, device: &'vk HaLogicalDevice, surface: &'vk HaSurface<'win>)
+        -> Result<SwapchainBuilder<'vk, 'win>, SwapchainInitError> {
 
         let support = SwapchainSupport::query_support(surface, physical.handle)
             .or_else(|error| {
@@ -65,9 +69,8 @@ impl<'builder, 'vk: 'builder, 'win: 'vk> SwapchainBuilder<'vk, 'win> {
         let image_share_info = sharing_mode(device)?;
 
         let swapchain = SwapchainBuilder {
-            instance,
-            surface,
             device,
+            surface,
 
             support,
             image_share_info,
@@ -77,16 +80,17 @@ impl<'builder, 'vk: 'builder, 'win: 'vk> SwapchainBuilder<'vk, 'win> {
         Ok(swapchain)
     }
 
-    pub fn set_image_count(&'builder mut self, image_count: uint32_t) -> &'builder mut SwapchainBuilder<'vk, 'win> {
+    pub fn set_image_count(&mut self, image_count: uint32_t) -> &mut SwapchainBuilder<'vk, 'win> {
         self.image_count = image_count;
         self
     }
 
-    pub fn build(&self) -> Result<HaSwapchain, SwapchainInitError> {
+    pub fn build(&self, instance: &HaInstance, render_pass: &HaRenderPass)
+        -> Result<HaSwapchain, SwapchainInitError> {
 
         let prefer_format = self.support.optimal_format();
         let prefer_present_mode = self.support.optimal_present_mode();
-        let extent = self.support.extent(self.surface);
+        let prefer_extent = self.support.optimal_extent(self.surface);
 
         let swapchain_create_info = vk::SwapchainCreateInfoKHR {
             s_type: vk::StructureType::SwapchainCreateInfoKhr,
@@ -98,7 +102,7 @@ impl<'builder, 'vk: 'builder, 'win: 'vk> SwapchainBuilder<'vk, 'win> {
             min_image_count   : self.image_count,
             image_format      : prefer_format.format,
             image_color_space : prefer_format.color_space,
-            image_extent      : extent,
+            image_extent      : prefer_extent,
             // the number of views in a multiview/stereo surface.
             // this value must be greater than 0.
             // for non-stereoscopic-3D applications, this value is 1
@@ -123,7 +127,7 @@ impl<'builder, 'vk: 'builder, 'win: 'vk> SwapchainBuilder<'vk, 'win> {
             old_swapchain            : vk::SwapchainKHR::null(),
         };
 
-        let loader = ash::extensions::Swapchain::new(&self.instance.handle, &self.device.handle)
+        let loader = ash::extensions::Swapchain::new(&instance.handle, &self.device.handle)
             .or(Err(SwapchainInitError::ExtensionLoadError))?;
 
         let handle = unsafe {
@@ -132,11 +136,24 @@ impl<'builder, 'vk: 'builder, 'win: 'vk> SwapchainBuilder<'vk, 'win> {
         };
 
         let images = loader.get_swapchain_images_khr(handle)
-            .or(Err(SwapchainInitError::SwapchainImageGetError))?;
+            .or(Err(SwapchainInitError::SwapchainImageGetError))?
+            .iter().map(|&v| HaImage { handle: v }).collect();
 
         let views = generate_imageviews(self.device, prefer_format.format, &images)?;
 
-        let swapchain = HaSwapchain::new(handle, loader, images, views, prefer_format.format, extent);
+        let buffer_dimension = BufferDimension::init(prefer_extent, FRAMEBUFFER_LAYERS);
+        let framebuffers = generate_framebuffers(self.device, &views, render_pass, &buffer_dimension)?;
+
+        let swapchain = HaSwapchain {
+            handle,
+            loader,
+            images,
+            views,
+            framebuffers,
+
+            format: prefer_format.format,
+            extent: prefer_extent,
+        };
         Ok(swapchain)
     }
 }
@@ -171,20 +188,20 @@ fn sharing_mode(device: &HaLogicalDevice) -> Result<SwapchainImageShaingInfo, Sw
     Ok(share_info)
 }
 
-fn generate_imageviews(device: &HaLogicalDevice, format: vk::Format, images: &Vec<vk::Image>)
-                       -> Result<Vec<vk::ImageView>, SwapchainInitError> {
+fn generate_imageviews(device: &HaLogicalDevice, format: vk::Format, images: &Vec<HaImage>)
+    -> Result<Vec<HaImageView>, SwapchainInitError> {
 
     let mut imageviews = vec![];
 
     // TODO: Wrap this logical in future image section.
-    for &image in images.iter() {
+    for image in images.iter() {
 
         let imageview_create_info = vk::ImageViewCreateInfo {
             s_type: vk::StructureType::ImageViewCreateInfo,
             p_next: ptr::null(),
             // flags is reserved for future use in API version 1.0.82
             flags: vk::ImageViewCreateFlags::empty(),
-            image,
+            image: image.handle,
             view_type: vk::ImageViewType::Type2d,
             format,
             // specifies a remapping of color components
@@ -204,13 +221,32 @@ fn generate_imageviews(device: &HaLogicalDevice, format: vk::Format, images: &Ve
             }
         };
 
-        let imageview = unsafe {
+        let handle = unsafe {
             device.handle.create_image_view(&imageview_create_info, None)
                 .or(Err(SwapchainInitError::ImageViewCreationError))?
         };
 
-        imageviews.push(imageview);
+        let image_view = HaImageView {
+            handle,
+        };
+        imageviews.push(image_view);
     }
 
     Ok(imageviews)
 }
+
+fn generate_framebuffers(device: &HaLogicalDevice, views: &Vec<HaImageView>, render_pass: &HaRenderPass, dimension: &BufferDimension)
+    -> Result<Vec<HaFramebuffer>, SwapchainInitError> {
+
+    let mut framebuffers = vec![];
+    for view in views.iter() {
+        let mut builder = FramebufferBuilder::init(dimension);
+        builder.add_attachment(view);
+        let framebuffer = builder.build(device, render_pass)
+            .map_err(|e| SwapchainInitError::Framebuffer(e))?;
+        framebuffers.push(framebuffer);
+    }
+
+    Ok(framebuffers)
+}
+

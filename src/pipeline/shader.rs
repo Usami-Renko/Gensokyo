@@ -6,8 +6,6 @@ use core::device::HaLogicalDevice;
 
 use pipeline::error::ShaderError;
 
-use constant::VERBOSE;
-
 use std::path::{ Path, PathBuf };
 use std::ffi::CString;
 use std::fs::File;
@@ -128,10 +126,6 @@ impl HaShaderModule {
 
         unsafe {
             device.handle.destroy_shader_module(self.handle, None);
-        }
-
-        if VERBOSE {
-            println!("[Info] Shader Module had been destroy.");
         }
     }
 }

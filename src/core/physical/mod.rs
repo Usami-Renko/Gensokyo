@@ -101,8 +101,6 @@ impl HaPhysicalDevice {
 
     pub fn cleanup(&self) {
         // No method for delete physical device
-        if VERBOSE {
-            println!("[Info] Physical Device had been destroy.");
-        }
+        // leave it empty
     }
 }

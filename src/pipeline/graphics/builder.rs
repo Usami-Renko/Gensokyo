@@ -17,12 +17,10 @@ use pipeline::{
     depth_stencil::HaDepthStencil,
     blend::HaBlend,
     dynamic::HaDynamicState,
+    pass::HaRenderPass,
     layout::{ PipelineLayoutBuilder, HaPipelineLayout },
     error::PipelineError,
 };
-
-// TODO: Remove this import in the future.
-use pipeline::graphics::tmp::temp_render_pass;
 
 use utility::marker::VulkanFlags;
 
@@ -78,6 +76,7 @@ pub struct GraphicsPipelineConfig {
     depth_stencil  : Option<HaDepthStencil>,
     blend          : Option<HaBlend>,
     dynamic        : Option<HaDynamicState>,
+    render_pass    : Option<HaRenderPass>,
 
     shader_modules : Vec<HaShaderModule>,
     layout_builder : PipelineLayoutBuilder,
@@ -85,7 +84,7 @@ pub struct GraphicsPipelineConfig {
 
 impl GraphicsPipelineConfig {
 
-    pub fn init(shaders: Vec<HaShaderInfo>, inputs: HaInputAssembly) -> GraphicsPipelineConfig {
+    pub fn init(shaders: Vec<HaShaderInfo>, inputs: HaInputAssembly, pass: HaRenderPass) -> GraphicsPipelineConfig {
 
         GraphicsPipelineConfig {
             shaders,
@@ -97,6 +96,7 @@ impl GraphicsPipelineConfig {
             depth_stencil  : None,
             blend          : None,
             dynamic        : None,
+            render_pass    : Some(pass),
 
             shader_modules : vec![],
             layout_builder : PipelineLayoutBuilder::init(),
@@ -107,12 +107,6 @@ impl GraphicsPipelineConfig {
         // TODO: Configure layout property here
         // code goes here...
     }
-
-//    fn info(&self, pipeline_layout: vk::PipelineLayout, render_pass: vk::RenderPass)
-//        -> Result<vk::GraphicsPipelineCreateInfo, PipelineError> {
-//
-//        Ok(info)
-//    }
 }
 
 pub struct GraphicsPipelineBuilder {
@@ -143,7 +137,6 @@ impl GraphicsPipelineBuilder {
         }
 
         let mut layouts = vec![];
-        let mut render_passes = vec![];
         let mut infos = vec![];
 
         for config in self.configs.iter() {
@@ -168,10 +161,6 @@ impl GraphicsPipelineBuilder {
             let pipeline_layout = config.layout_builder.build(device)?;
             layouts.push(pipeline_layout);
 
-            // TODO: Remove this import in the future.
-            let temporary_render_pass = temp_render_pass(device);
-            render_passes.push(temporary_render_pass);
-
             let graphics_pipeline_create_info = vk::GraphicsPipelineCreateInfo {
                 s_type: vk::StructureType::GraphicsPipelineCreateInfo,
                 p_next: ptr::null(),
@@ -189,8 +178,8 @@ impl GraphicsPipelineBuilder {
                 p_tessellation_state   : tessellation_info,
                 p_dynamic_state        : dynamic_info,
                 layout: pipeline_layout,
-                // TODO: Fixed Render Pass Module in future.
-                render_pass: temporary_render_pass,
+                render_pass: config.render_pass.as_ref().unwrap().handle,
+                // TODO: Add configuration for this field.
                 subpass: 0,
                 // TODO: Add configuration for this field.
                 base_pipeline_handle: vk::Pipeline::null(),
@@ -206,13 +195,15 @@ impl GraphicsPipelineBuilder {
         };
 
         let mut pipelines = vec![];
-        for i in 0..self.configs.len() {
+        for (i, config) in self.configs.iter_mut().enumerate() {
+            let render_pass = config.render_pass.take().unwrap(); // transfer ownership of HaRenderPass.
             let pipeline = GraphicsPipeline {
                 handle: handles[i],
                 layout: HaPipelineLayout::new(layouts[i]),
-                render_pass: render_passes[i],
+                pass:   render_pass,
             };
             pipelines.push(pipeline);
+
         }
 
         self.clean_shader_modules(device);

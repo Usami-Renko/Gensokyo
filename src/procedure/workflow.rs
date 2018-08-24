@@ -20,8 +20,10 @@ use constant::swapchain::SWAPCHAIN_IMAGE_COUNT;
 
 pub trait ProgramProc {
 
-    fn configure_shaders(&self) -> Vec<HaShaderInfo>;
-    fn configure_inputs(&self)  -> HaInputAssembly;
+    // TODO: Redesign the API to support multi-pipeline
+    fn configure_shaders(&self)     -> Vec<HaShaderInfo>;
+    fn configure_inputs(&self)      -> HaInputAssembly;
+//    fn configure_render_pass(&self) -> HaRenderPass;
 }
 
 pub struct CoreInfrastructure<'win> {
@@ -64,19 +66,23 @@ impl<'win, T> ProgramEnv<T> where T: ProgramProc {
             ]).build()
             .map_err(|e| ProcedureError::LogicalDevice(e))?;
 
-        let swapchain = SwapchainBuilder::init(&instance, &physical, &device, &surface)
-            .map_err(|e| ProcedureError::SwapchainCreation(e))?
-            .set_image_count(SWAPCHAIN_IMAGE_COUNT)
-            .build()
-            .map_err(|e| ProcedureError::SwapchainCreation(e))?;
 
         // TODO: Currently just configuration a single pipeline.
         let shaders = self.procedure.configure_shaders();
         let inputs = self.procedure.configure_inputs();
+//        let render_pass = self.procedure.configure_render_pass();
+        use pipeline::pass::render_pass::temp_render_pass;
+        let render_pass = temp_render_pass(&device);
+
+        let swapchain = SwapchainBuilder::init(&physical, &device, &surface)
+            .map_err(|e| ProcedureError::SwapchainCreation(e))?
+            .set_image_count(SWAPCHAIN_IMAGE_COUNT)
+            .build(&instance, &render_pass)
+            .map_err(|e| ProcedureError::SwapchainCreation(e))?;
 
         let viewport = HaViewport::setup(swapchain.extent);
 
-        let mut pipeline_config = GraphicsPipelineConfig::init(shaders, inputs);
+        let mut pipeline_config = GraphicsPipelineConfig::init(shaders, inputs, render_pass);
         pipeline_config.setup_viewport(viewport);
         pipeline_config.finish_config();
 

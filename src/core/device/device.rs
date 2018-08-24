@@ -5,8 +5,6 @@ use ash::version::DeviceV1_0;
 
 use core::device::queue::QueueInfo;
 
-use constant::VERBOSE;
-
 pub struct HaLogicalDevice {
 
     pub handle: ash::Device<V1_0>,
@@ -39,10 +37,6 @@ impl HaLogicalDevice {
 
         unsafe {
             self.handle.destroy_device(None);
-
-            if VERBOSE {
-                println!("[Info] Logical Device had been destroy.");
-            }
         }
     }
 }

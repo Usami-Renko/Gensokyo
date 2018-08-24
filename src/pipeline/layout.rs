@@ -7,8 +7,6 @@ use core::device::HaLogicalDevice;
 
 use pipeline::error::PipelineError;
 
-use constant::VERBOSE;
-
 use std::ptr;
 
 // TODO: This module need futher development yet.
@@ -79,10 +77,6 @@ impl HaPipelineLayout {
     pub fn cleanup(&self, device: &HaLogicalDevice) {
         unsafe {
             device.handle.destroy_pipeline_layout(self.handle, None);
-        }
-
-        if VERBOSE {
-            println!("[Info] Pipeline Layout has been destroy.");
         }
     }
 }

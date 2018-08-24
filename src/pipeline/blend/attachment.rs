@@ -46,7 +46,7 @@ impl BlendAttachemnt {
         prefab.generate()
     }
 
-    pub fn info(&self) -> vk::PipelineColorBlendAttachmentState {
+    pub fn state(&self) -> vk::PipelineColorBlendAttachmentState {
         vk::PipelineColorBlendAttachmentState {
             blend_enable: self.enable,
             src_color_blend_factor : self.src_color_factor,

@@ -10,8 +10,6 @@ use core::error::SurfaceError;
 
 use structures::Dimension2D;
 
-use constant::VERBOSE;
-
 /// Wrapper class for vk::Surface.
 pub struct HaSurface<'win> {
 
@@ -94,10 +92,6 @@ impl<'win> HaSurface<'win> {
 
         unsafe {
             self.loader.destroy_surface_khr(self.handle, None);
-        }
-
-        if VERBOSE {
-            println!("[Info] Surface had been destroy.");
         }
     }
 }
