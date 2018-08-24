@@ -27,7 +27,3 @@ winapi = { version = "0.3.5", features = ["windef", "winuser"] }
 members = [
     "examples/triangle"
 ]
-
-#[[bin]]
-#name = "triangle"
-#path ="examples/triangle/src/main.rs"

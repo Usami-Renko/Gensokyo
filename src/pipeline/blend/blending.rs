@@ -2,8 +2,8 @@
 use ash::vk;
 use ash::vk::uint32_t;
 
-use pipeline::blend::logic_op::HaLogicalOp;
 use pipeline::blend::attachment::BlendAttachemnt;
+use structures::logic_op::HaLogicalOp;
 
 use std::ptr;
 use std::os::raw::c_float;

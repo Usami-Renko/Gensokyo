@@ -3,8 +3,8 @@ use ash::vk;
 use ash::vk::Bool32;
 
 pub struct HaLogicalOp {
-    pub(in super) enable : Bool32,
-    pub(in super) op     : vk::LogicOp,
+    pub(crate) enable : Bool32,
+    pub(crate) op     : vk::LogicOp,
 }
 impl HaLogicalOp {
 

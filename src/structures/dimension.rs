@@ -22,7 +22,6 @@ pub struct Dimension3D {
 
 impl fmt::Display for Dimension1D {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
-
         write!(f, "size: {}", self.size)
     }
 }

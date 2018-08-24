@@ -1,10 +1,8 @@
 
-use ash;
 use ash::vk;
-use ash::version::{ V1_0, EntryV1_0, InstanceV1_0 };
+use ash::version::{ EntryV1_0, InstanceV1_0 };
 
-pub type EntryV1    = ash::Entry<V1_0>;
-pub type InstanceV1 = ash::Instance<V1_0>;
+use core::{ EntryV1, InstanceV1 };
 
 use core::error::InstanceError;
 use core::platforms;
