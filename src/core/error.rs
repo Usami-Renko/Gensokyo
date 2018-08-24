@@ -2,6 +2,7 @@
 use std::fmt;
 use std::error::Error;
 
+/// possible error may occur during the creation of vk::Instance.
 #[derive(Debug, Clone, Copy, Eq, PartialEq)]
 pub enum InstanceError {
 
@@ -28,6 +29,7 @@ impl fmt::Display for InstanceError {
 }
 
 
+/// possible error may occur during the initialization of Validation Layer.
 #[derive(Debug, Clone, Copy, Eq, PartialEq)]
 pub enum ValidationError {
 
@@ -50,6 +52,7 @@ impl fmt::Display for ValidationError {
 }
 
 
+/// possible error may occur during the creation of vk::PhysicalDevice.
 #[derive(Debug, Clone, Copy, Eq, PartialEq)]
 pub enum PhysicalDeviceError {
 
@@ -78,6 +81,7 @@ impl fmt::Display for PhysicalDeviceError {
 }
 
 
+/// possible error may occur during the creation of vk::Surface.
 #[derive(Debug, Clone, Copy, Eq, PartialEq)]
 pub enum SurfaceError {
 
@@ -106,6 +110,7 @@ impl fmt::Display for SurfaceError {
 }
 
 
+/// possible error may occur during the creation of vk::Device.
 #[derive(Debug, Clone, Copy, Eq, PartialEq)]
 pub enum LogicalDeviceError {
 

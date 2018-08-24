@@ -16,24 +16,33 @@ use utility::marker::VulkanFlags;
 use std::ptr;
 use std::ffi::CStr;
 
+/// a struct stores all need information during the initialization of Validation Layer.
 pub struct ValidationInfo {
+    // tell if validation layer should be enabled.
     pub is_enable: bool,
+    // the layer names required for validation layer support.
     pub required_validation_layers: [&'static str; 1],
 }
 
+/// Wrapper class for vk::DebugReport object.
 pub struct HaDebugger {
 
+    /// the handle of vk::DebugReport object.
     loader: DebugReport,
+    /// the handle of callback function used in Validation Layer.
     callback: vk::DebugReportCallbackEXT,
 }
 
 impl HaDebugger {
 
+    /// initialize debug extension loader and vk::DebugReport object.
     pub fn setup(instance: &HaInstance) -> Result<HaDebugger, ValidationError> {
 
+        // load the debug extension
         let loader = DebugReport::new(&instance.entry, &instance.handle)
             .or(Err(ValidationError::DebugReportCreationError))?;
 
+        // configurate debug callback.
         let debug_callback_create_info = vk::DebugReportCallbackCreateInfoEXT {
             s_type       : vk::StructureType::DebugReportCallbackCreateInfoExt,
             p_next       : ptr::null(),
@@ -56,6 +65,9 @@ impl HaDebugger {
         Ok(debugger)
     }
 
+    /// Some cleaning operations before this object was uninitialized.
+    ///
+    /// For HaDebugger, it destroy the vk::DebugReport object.
     pub fn cleanup(&self) {
         unsafe {
             self.loader.destroy_debug_report_callback_ext(self.callback, None);
@@ -67,6 +79,7 @@ impl HaDebugger {
     }
 }
 
+/// the message type that Validation Layer would report for.
 #[allow(dead_code)]
 #[derive(Debug, Clone, Copy, Eq, PartialEq)]
 pub enum DebugReportFlag {
@@ -80,6 +93,7 @@ pub enum DebugReportFlag {
 impl VulkanFlags for [DebugReportFlag] {
     type FlagType = vk::DebugReportFlagsEXT;
 
+    /// Convenient method to combine flags.
     fn flags(&self) -> Self::FlagType {
         self.iter().fold(vk::DebugReportFlagsEXT::empty(), |acc, flag| {
             match *flag {
@@ -93,6 +107,7 @@ impl VulkanFlags for [DebugReportFlag] {
     }
 }
 
+/// the callback function in Debug Report.
 unsafe extern "system" fn vulkan_debug_report_callback(
     _flags        : vk::DebugReportFlagsEXT,
     _obj_type     : vk::DebugReportObjectTypeEXT,
@@ -100,7 +115,7 @@ unsafe extern "system" fn vulkan_debug_report_callback(
     _location     : vk::size_t,
     _code         : vk::int32_t,
     _layer_prefix : *const vk::c_char,
-    p_message    : *const vk::c_char,
+    p_message     : *const vk::c_char,
     _user_data    : *mut vk::c_void
 ) -> u32 {
 
@@ -108,6 +123,7 @@ unsafe extern "system" fn vulkan_debug_report_callback(
     vk::VK_FALSE
 }
 
+/// helper function to check if all required layers of validation layer are satisfied.
 pub fn is_support_validation_layer(entry: &EntryV1, required_validation_layers: &[&str]) -> Result<bool, InstanceError> {
 
     let layer_properties = entry.enumerate_instance_layer_properties()
