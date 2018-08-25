@@ -14,7 +14,7 @@ pub struct HaSwapchain {
 
     pub(super) images       : Vec<HaImage>,
     pub(super) views        : Vec<HaImageView>,
-    pub(super) framebuffers : Vec<HaFramebuffer>,
+    pub(crate) framebuffers : Vec<HaFramebuffer>,
 
     pub format: vk::Format,
     pub extent: vk::Extent2D,

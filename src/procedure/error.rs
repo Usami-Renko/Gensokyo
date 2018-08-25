@@ -4,6 +4,7 @@ use winit;
 use core::error::{ InstanceError, ValidationError, PhysicalDeviceError, SurfaceError, LogicalDeviceError };
 use swapchain::SwapchainInitError;
 use pipeline::error::PipelineError;
+use resources::error::CommandError;
 
 use std::fmt;
 use std::error::Error;
@@ -46,6 +47,7 @@ pub enum ProcedureError {
     LogicalDevice(LogicalDeviceError),
     SwapchainCreation(SwapchainInitError),
     Pipeline(PipelineError),
+    Command(CommandError),
 }
 
 impl Error for ProcedureError {
@@ -58,6 +60,7 @@ impl Error for ProcedureError {
             | ProcedureError::LogicalDevice(ref e)     => Some(e),
             | ProcedureError::SwapchainCreation(ref e) => Some(e),
             | ProcedureError::Pipeline(ref e)          => Some(e),
+            | ProcedureError::Command(ref e)           => Some(e),
         }
     }
 }

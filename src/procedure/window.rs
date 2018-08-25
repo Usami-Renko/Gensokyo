@@ -84,10 +84,15 @@ impl<T> ProgramEnv<T> where T: ProgramProc {
 
         let window = self.window_info.build(&self.event_loop)
             .map_err(|e| RuntimeError::Window(e))?;
-        let _core = self.initialize_core(&window, requirement)
+        let core = self.initialize_core(&window, requirement)
+            .map_err(|e| RuntimeError::Procedure(e))?;
+        let resources = self.load_resources(&core)
             .map_err(|e| RuntimeError::Procedure(e))?;
 
         self.main_loop();
+
+        resources.cleanup(&core);
+        core.cleanup();
 
         Ok(())
     }

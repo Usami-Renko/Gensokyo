@@ -6,7 +6,7 @@ use ash::version::DeviceV1_0;
 use core::device::HaLogicalDevice;
 
 use pipeline::{
-    graphics::GraphicsPipeline,
+    graphics::HaGraphicsPipeline,
 
     shader::{ HaShaderInfo, HaShaderModule },
     input_assembly::HaInputAssembly,
@@ -18,7 +18,7 @@ use pipeline::{
     blend::HaBlend,
     dynamic::HaDynamicState,
     pass::HaRenderPass,
-    layout::{ PipelineLayoutBuilder, HaPipelineLayout },
+    layout::PipelineLayoutBuilder,
     error::PipelineError,
 };
 
@@ -125,7 +125,7 @@ impl GraphicsPipelineBuilder {
         self.configs.push(config);
     }
 
-    pub fn build(&mut self, device: &HaLogicalDevice) -> Result<Vec<GraphicsPipeline>, PipelineError> {
+    pub fn build(&mut self, device: &HaLogicalDevice) -> Result<Vec<HaGraphicsPipeline>, PipelineError> {
 
         for config in self.configs.iter_mut() {
             let mut shader_modules = vec![];
@@ -197,11 +197,7 @@ impl GraphicsPipelineBuilder {
         let mut pipelines = vec![];
         for (i, config) in self.configs.iter_mut().enumerate() {
             let render_pass = config.render_pass.take().unwrap(); // transfer ownership of HaRenderPass.
-            let pipeline = GraphicsPipeline {
-                handle: handles[i],
-                layout: HaPipelineLayout::new(layouts[i]),
-                pass:   render_pass,
-            };
+            let pipeline = HaGraphicsPipeline::new(handles[i], layouts[i], render_pass);
             pipelines.push(pipeline);
 
         }

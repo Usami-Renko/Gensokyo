@@ -4,6 +4,7 @@ use ash::version::InstanceV1_0;
 
 use core::instance::HaInstance;
 
+#[allow(dead_code)]
 #[derive(Debug, Clone, Copy, Eq, PartialEq)]
 pub enum PhysicalFeatureType {
 

@@ -10,6 +10,7 @@ use std::ptr;
 pub struct HaRenderPass {
 
     pub handle: vk::RenderPass,
+    pub clear_values: Vec<vk::ClearValue>,
 }
 
 impl HaRenderPass {
@@ -78,5 +79,12 @@ pub fn temp_render_pass(device: &HaLogicalDevice) -> HaRenderPass {
 
     HaRenderPass {
         handle,
+        clear_values: vec![
+            vk::ClearValue {
+                color: vk::ClearColorValue {
+                    float32: [0.0, 0.0, 0.0, 1.0],
+                }
+            }
+        ],
     }
 }

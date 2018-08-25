@@ -9,16 +9,28 @@ use core::device::HaLogicalDevice;
 use pipeline::layout::HaPipelineLayout;
 use pipeline::pass::HaRenderPass;
 
-pub struct GraphicsPipeline {
+pub struct HaGraphicsPipeline {
 
-    handle: vk::Pipeline,
+    pub(crate) handle: vk::Pipeline,
     layout: HaPipelineLayout,
-    pass:   HaRenderPass,
+    pub(crate) pass: HaRenderPass,
+
+    pub(crate) bind_point: vk::PipelineBindPoint,
 }
 
-impl GraphicsPipeline {
+impl HaGraphicsPipeline {
 
-    pub fn clean(&self, device: &HaLogicalDevice) {
+    pub(super) fn new(handle: vk::Pipeline, layout: vk::PipelineLayout, pass: HaRenderPass) -> HaGraphicsPipeline {
+        HaGraphicsPipeline {
+            handle,
+            layout: HaPipelineLayout::new(layout),
+            pass,
+
+            bind_point: vk::PipelineBindPoint::Graphics,
+        }
+    }
+
+    pub(crate) fn clean(&self, device: &HaLogicalDevice) {
         unsafe { device.handle.destroy_pipeline(self.handle, None); }
         self.layout.cleanup(device);
         self.pass.cleanup(device);

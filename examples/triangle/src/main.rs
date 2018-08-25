@@ -3,6 +3,8 @@ extern crate hakurei;
 
 use hakurei::prelude::*;
 use hakurei::pipeline::{ HaShaderInfo, HaInputAssembly, ShaderStageType };
+use hakurei::resources::command::{ HaCommandRecorder, CommandBufferUsageFlag };
+use hakurei::resources::CommandError;
 
 use std::path::Path;
 
@@ -36,6 +38,20 @@ impl ProgramProc for TriangleProcedure {
     fn configure_inputs(&self) -> HaInputAssembly {
 
         HaInputAssembly::init()
+    }
+
+    fn configure_commands(&self, buffer: &HaCommandRecorder, frame_index: usize) -> Result<(), CommandError> {
+
+        let usage_flags = [
+            CommandBufferUsageFlag::SimultaneousUseBit
+        ];
+
+        buffer.begin_record(&usage_flags)?
+            .begin_render_pass(frame_index)
+            .bind_pipeline()
+            .draw(3, 1, 0, 0)
+            .end_render_pass()
+            .finish()
     }
 }
 

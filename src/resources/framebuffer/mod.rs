@@ -10,7 +10,7 @@ use core::device::HaLogicalDevice;
 
 pub struct HaFramebuffer {
 
-    handle: vk::Framebuffer,
+    pub(crate) handle: vk::Framebuffer,
 }
 
 impl HaFramebuffer {
