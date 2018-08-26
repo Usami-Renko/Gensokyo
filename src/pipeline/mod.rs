@@ -28,4 +28,5 @@ mod depth_stencil;
 mod blend;
 mod dynamic;
 mod layout;
+pub(crate) mod stages;
 pub mod error;

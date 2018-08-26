@@ -30,7 +30,7 @@ impl HaGraphicsPipeline {
         }
     }
 
-    pub(crate) fn clean(&self, device: &HaLogicalDevice) {
+    pub(crate) fn cleanup(&self, device: &HaLogicalDevice) {
         unsafe { device.handle.destroy_pipeline(self.handle, None); }
         self.layout.cleanup(device);
         self.pass.cleanup(device);

@@ -2,9 +2,10 @@
 use winit;
 
 use core::error::{ InstanceError, ValidationError, PhysicalDeviceError, SurfaceError, LogicalDeviceError };
-use swapchain::SwapchainInitError;
+use swapchain::error::SwapchainError;
 use pipeline::error::PipelineError;
 use resources::error::CommandError;
+use sync::error::SyncError;
 
 use std::fmt;
 use std::error::Error;
@@ -45,22 +46,24 @@ pub enum ProcedureError {
     Surface(SurfaceError),
     PhysicalDevice(PhysicalDeviceError),
     LogicalDevice(LogicalDeviceError),
-    SwapchainCreation(SwapchainInitError),
+    Swapchain(SwapchainError),
     Pipeline(PipelineError),
     Command(CommandError),
+    Sync(SyncError),
 }
 
 impl Error for ProcedureError {
     fn cause(&self) -> Option<&Error> {
         match *self {
-            | ProcedureError::Instance(ref e)          => Some(e),
-            | ProcedureError::Validation(ref e)        => Some(e),
-            | ProcedureError::Surface(ref e)           => Some(e),
-            | ProcedureError::PhysicalDevice(ref e)    => Some(e),
-            | ProcedureError::LogicalDevice(ref e)     => Some(e),
-            | ProcedureError::SwapchainCreation(ref e) => Some(e),
-            | ProcedureError::Pipeline(ref e)          => Some(e),
-            | ProcedureError::Command(ref e)           => Some(e),
+            | ProcedureError::Instance(ref e)       => Some(e),
+            | ProcedureError::Validation(ref e)     => Some(e),
+            | ProcedureError::Surface(ref e)        => Some(e),
+            | ProcedureError::PhysicalDevice(ref e) => Some(e),
+            | ProcedureError::LogicalDevice(ref e)  => Some(e),
+            | ProcedureError::Swapchain(ref e)      => Some(e),
+            | ProcedureError::Pipeline(ref e)       => Some(e),
+            | ProcedureError::Command(ref e)        => Some(e),
+            | ProcedureError::Sync(ref e)           => Some(e),
         }
     }
 }

@@ -6,8 +6,9 @@ use core::device::HaLogicalDevice;
 use swapchain::HaSwapchain;
 use pipeline::graphics::HaGraphicsPipeline;
 use resources::command::record::HaCommandRecorder;
-
 use resources::error::CommandError;
+
+use utility::marker::Handles;
 
 #[allow(dead_code)]
 #[derive(Debug, Clone, Copy, Eq, PartialEq)]
@@ -44,7 +45,7 @@ impl CommandBufferUsage {
 
 pub struct HaCommandBuffer {
 
-    pub(super) handle: vk::CommandBuffer,
+    pub(crate) handle: vk::CommandBuffer,
     pub(super) usage: CommandBufferUsage,
 }
 
@@ -63,4 +64,13 @@ impl<'buffer, 'vk: 'buffer> HaCommandBuffer {
         Ok(recorder)
     }
 
+}
+
+impl<'re> Handles for [&'re HaCommandBuffer] {
+    type HandleType = vk::CommandBuffer;
+
+    #[inline]
+    fn handles(&self) -> Vec<Self::HandleType> {
+        self.iter().map(|c| c.handle).collect()
+    }
 }

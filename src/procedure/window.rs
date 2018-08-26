@@ -4,8 +4,9 @@ use winit::{ VirtualKeyCode, Event, WindowEvent };
 
 use structures::Dimension2D;
 use constant::window;
+use constant::sync::SYNCHRONOUT_FRAME;
 
-use procedure::workflow::ProgramProc;
+use procedure::workflow::{ CoreInfrastructure, HaResources, ProgramProc };
 use procedure::error::RuntimeError;
 
 struct WindowInfo {
@@ -86,21 +87,23 @@ impl<T> ProgramEnv<T> where T: ProgramProc {
             .map_err(|e| RuntimeError::Window(e))?;
         let core = self.initialize_core(&window, requirement)
             .map_err(|e| RuntimeError::Procedure(e))?;
-        let resources = self.load_resources(&core)
+        let mut resources = self.load_resources(&core)
             .map_err(|e| RuntimeError::Procedure(e))?;
 
-        self.main_loop();
+        self.main_loop(&core, &mut resources);
+        self.wait_idle(&core.device);
 
-        resources.cleanup(&core);
+        resources.cleanup(&core.device);
         core.cleanup();
 
         Ok(())
     }
 
-    fn main_loop(&mut self) {
+    fn main_loop(&mut self, core: &CoreInfrastructure, resources: &mut HaResources) {
 
         let mut is_running       = true;
         let mut is_first_resized = true;
+        let mut current_fame = 0_usize;
 
         'mainloop: loop {
             self.event_loop.poll_events(|event| {
@@ -131,9 +134,14 @@ impl<T> ProgramEnv<T> where T: ProgramProc {
                 }
             });
 
+
+            self.draw_frame(current_fame, core, resources);
+
             if is_running == false {
                 break 'mainloop
             }
+
+            current_fame = (current_fame + 1) % SYNCHRONOUT_FRAME;
         }
     }
 }

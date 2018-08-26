@@ -115,6 +115,9 @@ impl fmt::Display for SurfaceError {
 pub enum LogicalDeviceError {
 
     DeviceCreationError,
+    GraphicsQueueUnavailable,
+    QueueSubmitError,
+    WaitIdleError,
 }
 
 impl Error for LogicalDeviceError {}
@@ -123,7 +126,10 @@ impl fmt::Display for LogicalDeviceError {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
 
         let description = match self {
-            | LogicalDeviceError::DeviceCreationError => "Failed to create Logical Device.",
+            | LogicalDeviceError::DeviceCreationError      => "Failed to create Logical Device.",
+            | LogicalDeviceError::GraphicsQueueUnavailable => "Graphics Queue is not available for device operation.",
+            | LogicalDeviceError::QueueSubmitError         => "Device failed to submit queue.",
+            | LogicalDeviceError::WaitIdleError            => "Device failed to wait idle.",
         };
 
         write!(f, "{}", description)

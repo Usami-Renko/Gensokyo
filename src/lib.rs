@@ -18,6 +18,7 @@ mod constant;
 mod core;
 mod swapchain;
 mod procedure;
+mod sync;
 mod utility;
 
 pub mod structures;
