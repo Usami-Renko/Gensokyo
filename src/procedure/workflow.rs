@@ -10,9 +10,9 @@ use core::device::QueueSubmitBundle;
 use core::error::LogicalDeviceError;
 use swapchain::{ HaSwapchain, SwapchainBuilder };
 use swapchain::error::{ SwapchainError, SwapchainRuntimeError };
-use pipeline::graphics::HaGraphicsPipeline;
-use pipeline::graphics::builder::{ GraphicsPipelineConfig, GraphicsPipelineBuilder };
-use pipeline::{ HaShaderInfo, HaInputAssembly, HaViewport };
+use pipeline::graphics::{ HaGraphicsPipeline, GraphicsPipelineConfig, GraphicsPipelineBuilder };
+use pipeline::state::HaViewport;
+use pipeline::shader::HaShaderInfo;
 use pipeline::stages::PipelineStageFlag;
 use resources::command::pool::HaCommandPool;
 use resources::command::buffer::HaCommandBuffer;
@@ -34,7 +34,6 @@ pub trait ProgramProc {
 
     // TODO: Redesign the API to support multi-pipeline
     fn configure_shaders(&self)     -> Vec<HaShaderInfo>;
-    fn configure_inputs(&self)      -> HaInputAssembly;
 //    fn configure_render_pass(&self) -> HaRenderPass;
     fn configure_commands(&self, buffer: &HaCommandRecorder, frame_index: usize) -> Result<(), CommandError>;
 }
@@ -109,7 +108,6 @@ impl<'win, T> ProgramEnv<T> where T: ProgramProc {
 
         // TODO: Currently just configuration a single pipeline.
         let shaders = self.procedure.configure_shaders();
-        let inputs = self.procedure.configure_inputs();
         //        let render_pass = self.procedure.configure_render_pass();
         use pipeline::pass::render_pass::temp_render_pass;
         let render_pass = temp_render_pass(&core.device);
@@ -123,7 +121,7 @@ impl<'win, T> ProgramEnv<T> where T: ProgramProc {
 
         // pipeline
         let viewport = HaViewport::setup(swapchain.extent);
-        let mut pipeline_config = GraphicsPipelineConfig::init(shaders, inputs, render_pass);
+        let mut pipeline_config = GraphicsPipelineConfig::init(shaders, render_pass);
         pipeline_config.setup_viewport(viewport);
         pipeline_config.finish_config();
 
@@ -231,6 +229,8 @@ impl<'win, T> ProgramEnv<T> where T: ProgramProc {
         device.wait_idle()
             .map_err(|e| ProcedureError::LogicalDevice(e))
     }
+
+
 }
 
 impl<'win> CoreInfrastructure<'win> {

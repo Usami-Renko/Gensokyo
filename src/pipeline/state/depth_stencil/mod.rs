@@ -47,10 +47,6 @@ impl HaDepthStencilPrefab {
 
 impl HaDepthStencil {
 
-    /// Initialize HaDepthStencil with default setting (enable depth test, disable stencil test).
-    pub fn init() -> HaDepthStencil {
-        HaDepthStencil { ..Default::default() }
-    }
 
     pub fn setup(prefab: HaDepthStencilPrefab) -> HaDepthStencil {
         prefab.generate()
@@ -86,6 +82,7 @@ impl HaDepthStencil {
 
 impl Default for HaDepthStencil {
 
+    /// Initialize HaDepthStencil with default setting (enable depth test, disable stencil test).
     fn default() -> HaDepthStencil {
         HaDepthStencilPrefab::EnableDepth.generate()
     }

@@ -4,19 +4,19 @@ use ash::vk::uint32_t;
 
 use std::ptr;
 
-pub struct HaTessellationState {
+pub struct HaTessellation {
 
     /// points_count is number of control points per patch.
     ///
     /// patchControlPoints must be greater than zero and less than or equal to vkPhysicalDeviceLimits::maxTessellationPatchSize.
     points_count: uint32_t,
-    max_count: uint32_t,
+    max_count:    uint32_t,
 }
 
-impl HaTessellationState {
+impl HaTessellation {
 
-    pub fn setup(points_count: uint32_t) -> HaTessellationState {
-        HaTessellationState {
+    pub fn setup(points_count: uint32_t) -> HaTessellation {
+        HaTessellation {
             points_count,
             // TODO: Add limitation check for points_count filed in future.
             max_count: 0,
@@ -33,4 +33,3 @@ impl HaTessellationState {
         }
     }
 }
-

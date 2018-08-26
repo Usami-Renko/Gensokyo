@@ -13,13 +13,6 @@ pub struct HaViewport {
 
 impl HaViewport {
 
-    pub fn init() -> HaViewport {
-        HaViewport {
-            handles:  vec![],
-            scissors: vec![],
-        }
-    }
-
     pub fn setup(extent: vk::Extent2D) -> HaViewport {
 
         let handles = vec![
@@ -55,10 +48,20 @@ impl HaViewport {
             p_next : ptr::null(),
             // flags is reserved for future use in API version 1.0.82.
             flags  : vk::PipelineViewportStateCreateFlags::empty(),
-            viewport_count : self.handles.len() as uint32_t,
+            viewport_count : self.handles.len()  as uint32_t,
             p_viewports    : self.handles.as_ptr(),
             scissor_count  : self.scissors.len() as uint32_t,
             p_scissors     : self.scissors.as_ptr(),
+        }
+    }
+}
+
+impl Default for HaViewport {
+
+    fn default() -> HaViewport {
+        HaViewport {
+            handles:  vec![],
+            scissors: vec![],
         }
     }
 }

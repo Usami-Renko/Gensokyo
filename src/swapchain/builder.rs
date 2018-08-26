@@ -60,11 +60,7 @@ impl<'vk, 'win: 'vk> SwapchainBuilder<'vk, 'win> {
         -> Result<SwapchainBuilder<'vk, 'win>, SwapchainInitError> {
 
         let support = SwapchainSupport::query_support(surface, physical.handle)
-            .or_else(|error| {
-                println!("[Error] {}", error.to_string());
-                Err(SwapchainInitError::SurfacePropertiesQueryError)
-            }
-        )?;
+            .map_err(|e| SwapchainInitError::SurfacePropertiesQuery(e))?;
 
         let image_share_info = sharing_mode(device)?;
 

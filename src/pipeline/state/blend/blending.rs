@@ -2,7 +2,7 @@
 use ash::vk;
 use ash::vk::uint32_t;
 
-use pipeline::blend::attachment::BlendAttachemnt;
+use pipeline::state::blend::attachment::BlendAttachemnt;
 use utility::logic_op::HaLogicalOp;
 
 use std::ptr;
@@ -43,10 +43,6 @@ pub struct HaBlend {
 }
 
 impl HaBlend {
-
-    pub fn init() -> HaBlend {
-        HaBlend { ..Default::default() }
-    }
 
     pub fn setup(prefab: HaBlendPrefab) -> HaBlend {
         prefab.generate()

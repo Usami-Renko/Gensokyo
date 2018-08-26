@@ -49,10 +49,6 @@ impl RasterizerPrefab {
 
 impl HaRasterizer {
 
-    pub fn init() -> HaRasterizer {
-        HaRasterizer { ..Default::default() }
-    }
-
     pub fn setup(prefab: RasterizerPrefab) -> HaRasterizer {
         prefab.generate()
     }

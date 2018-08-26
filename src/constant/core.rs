@@ -1,5 +1,4 @@
 
-
 use ash::vk::uint32_t;
 
 use core::ValidationInfo;

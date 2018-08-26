@@ -34,10 +34,6 @@ impl MultisamplePrefab {
 
 impl HaMultisample {
 
-    pub fn init() -> HaMultisample {
-        HaMultisample { ..Default::default() }
-    }
-
     pub fn setup(prefab: MultisamplePrefab) -> HaMultisample {
         prefab.generate()
     }

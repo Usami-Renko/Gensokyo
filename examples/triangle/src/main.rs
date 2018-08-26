@@ -2,7 +2,7 @@
 extern crate hakurei;
 
 use hakurei::prelude::*;
-use hakurei::pipeline::{ HaShaderInfo, HaInputAssembly, ShaderStageType };
+use hakurei::pipeline::{ HaShaderInfo, ShaderStageType };
 use hakurei::resources::command::{ HaCommandRecorder, CommandBufferUsageFlag };
 use hakurei::resources::CommandError;
 
@@ -33,11 +33,6 @@ impl ProgramProc for TriangleProcedure {
             vertex_shader,
             fragment_shader,
         ]
-    }
-
-    fn configure_inputs(&self) -> HaInputAssembly {
-
-        HaInputAssembly::init()
     }
 
     fn configure_commands(&self, buffer: &HaCommandRecorder, frame_index: usize) -> Result<(), CommandError> {
