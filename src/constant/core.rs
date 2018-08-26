@@ -21,9 +21,16 @@ pub const VALIDATION: ValidationInfo = ValidationInfo {
     ],
 };
 
+#[cfg(feature = "verbose")]
 pub const VALIDATION_FLAGS: [DebugReportFlag; 4] = [
     DebugReportFlag::ErrorBit,
     DebugReportFlag::InformationBit,
+    DebugReportFlag::WarningBit,
+    DebugReportFlag::PerformanceWarningBit,
+];
+#[cfg(not(feature = "verbose"))]
+pub const VALIDATION_FLAGS: [DebugReportFlag; 3] = [
+    DebugReportFlag::ErrorBit,
     DebugReportFlag::WarningBit,
     DebugReportFlag::PerformanceWarningBit,
 ];

@@ -10,7 +10,7 @@ use resources::image::HaImageView;
 use resources::error::FramebufferError;
 use pipeline::pass::HaRenderPass;
 
-use structures::dimension::BufferDimension;
+use utility::dimension::BufferDimension;
 
 use std::ptr;
 

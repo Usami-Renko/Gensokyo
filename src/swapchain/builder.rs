@@ -18,7 +18,7 @@ use resources::framebuffer::{ HaFramebuffer, FramebufferBuilder };
 use resources::image::{ HaImage, HaImageView };
 
 use constant::swapchain::{ SWAPCHAIN_IMAGE_COUNT, FRAMEBUFFER_LAYERS };
-use structures::dimension::BufferDimension;
+use utility::dimension::BufferDimension;
 use utility::marker::VulkanFlags;
 
 use std::ptr;

@@ -8,7 +8,7 @@ use core::instance::HaInstance;
 use core::platforms;
 use core::error::SurfaceError;
 
-use structures::Dimension2D;
+use utility::dimension::Dimension2D;
 
 /// Wrapper class for vk::Surface.
 pub struct HaSurface<'win> {

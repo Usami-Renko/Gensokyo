@@ -16,7 +16,7 @@ impl TimePeriod {
             | TimePeriod::Immediate => 0,
             | TimePeriod::Time(time) =>
                 (time.subsec_nanos() as uint64_t) + time.as_secs() * 1_000_000_000,
-            | TimePeriod::Infinte => u64::max_value(),
+            | TimePeriod::Infinte => uint64_t::max_value(),
         }
     }
 }

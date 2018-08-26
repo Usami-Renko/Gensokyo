@@ -11,7 +11,7 @@ use core::error::LogicalDeviceError;
 
 use sync::HaFence;
 use sync::error::SyncError;
-use structures::time::TimePeriod;
+use utility::time::TimePeriod;
 use utility::marker::Handles;
 
 use std::ptr;

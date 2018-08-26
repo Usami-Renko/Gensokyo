@@ -21,7 +21,6 @@ mod procedure;
 mod sync;
 mod utility;
 
-pub mod structures;
 pub mod pipeline;
 pub mod resources;
 pub mod prelude;

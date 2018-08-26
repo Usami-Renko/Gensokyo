@@ -27,3 +27,7 @@ winapi = { version = "0.3.5", features = ["windef", "winuser"] }
 members = [
     "examples/triangle"
 ]
+
+[features]
+verbose = []
+

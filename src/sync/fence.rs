@@ -7,7 +7,7 @@ use core::device::HaLogicalDevice;
 use sync::error::SyncError;
 use utility::marker::VulkanFlags;
 
-use structures::time::TimePeriod;
+use utility::time::TimePeriod;
 use utility::marker::Handles;
 
 use std::ptr;

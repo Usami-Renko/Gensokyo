@@ -2,7 +2,7 @@
 use ash::vk;
 use ash::vk::uint32_t;
 
-use structures::time::TimePeriod;
+use utility::time::TimePeriod;
 
 pub const SWAPCHAIN_IMAGE_COUNT: uint32_t = 2;
 /// the value of layers property in vk::Framebuffer.

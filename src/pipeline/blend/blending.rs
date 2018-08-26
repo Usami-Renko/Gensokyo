@@ -3,7 +3,7 @@ use ash::vk;
 use ash::vk::uint32_t;
 
 use pipeline::blend::attachment::BlendAttachemnt;
-use structures::logic_op::HaLogicalOp;
+use utility::logic_op::HaLogicalOp;
 
 use std::ptr;
 use std::os::raw::c_float;

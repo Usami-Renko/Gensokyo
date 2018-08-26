@@ -28,7 +28,7 @@ use constant::core::VALIDATION;
 use constant::swapchain::SWAPCHAIN_IMAGE_COUNT;
 use constant::sync::SYNCHRONOUT_FRAME;
 
-use structures::time::TimePeriod;
+use utility::time::TimePeriod;
 
 pub trait ProgramProc {
 
