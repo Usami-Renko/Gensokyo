@@ -4,7 +4,6 @@ use ash::vk::uint32_t;
 
 use std::ptr;
 
-// TODO: This module need futher development yet.
 pub struct HaVertexInput {
 
     bindings:   Vec<vk::VertexInputBindingDescription>,

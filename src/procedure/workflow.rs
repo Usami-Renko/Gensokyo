@@ -12,8 +12,9 @@ use swapchain::{ HaSwapchain, SwapchainBuilder };
 use swapchain::error::{ SwapchainError, SwapchainRuntimeError };
 use pipeline::graphics::{ HaGraphicsPipeline, GraphicsPipelineConfig, GraphicsPipelineBuilder };
 use pipeline::state::HaViewport;
-use pipeline::shader::HaShaderInfo;
+use pipeline::shader::module::HaShaderInfo;
 use pipeline::stages::PipelineStageFlag;
+use pipeline::shader::input::VertexInputDescription;
 use resources::command::pool::HaCommandPool;
 use resources::command::buffer::HaCommandBuffer;
 use resources::command::CommandBufferUsage;
@@ -33,7 +34,8 @@ use utility::time::TimePeriod;
 pub trait ProgramProc {
 
     // TODO: Redesign the API to support multi-pipeline
-    fn configure_shaders(&self)     -> Vec<HaShaderInfo>;
+    fn configure_shaders(&self)      -> Vec<HaShaderInfo>;
+    fn configure_vertex_input(&self) -> VertexInputDescription;
 //    fn configure_render_pass(&self) -> HaRenderPass;
     fn configure_commands(&self, buffer: &HaCommandRecorder, frame_index: usize) -> Result<(), CommandError>;
 }
@@ -108,6 +110,7 @@ impl<'win, T> ProgramEnv<T> where T: ProgramProc {
 
         // TODO: Currently just configuration a single pipeline.
         let shaders = self.procedure.configure_shaders();
+        let input_desc = self.procedure.configure_vertex_input();
         //        let render_pass = self.procedure.configure_render_pass();
         use pipeline::pass::render_pass::temp_render_pass;
         let render_pass = temp_render_pass(&core.device);
@@ -121,7 +124,7 @@ impl<'win, T> ProgramEnv<T> where T: ProgramProc {
 
         // pipeline
         let viewport = HaViewport::setup(swapchain.extent);
-        let mut pipeline_config = GraphicsPipelineConfig::init(shaders, render_pass);
+        let mut pipeline_config = GraphicsPipelineConfig::init(shaders, input_desc, render_pass);
         pipeline_config.setup_viewport(viewport);
         pipeline_config.finish_config();
 

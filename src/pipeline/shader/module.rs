@@ -73,13 +73,22 @@ impl HaShaderInfo {
 #[derive(Debug, Clone, Copy, Eq, PartialEq)]
 pub enum ShaderStageType {
 
+    /// VertexStage specifies the vertex stage.
     VertexStage,
-    GeometryStage,
+    /// TessellationControlStage the tessellation control stage.
     TessellationControlStage,
+    /// TessellationEvaluationStage specifies the tessellation evaluation stage.
     TessellationEvaluationStage,
+    /// GeometryStage specifies the geometry stage.
+    GeometryStage,
+    /// FragmentStage specifies the fragment stage.
     FragmentStage,
+    /// ComputeStage specifies the compute stage.
     ComputeStage,
+    /// AllGraphicsStage is a combination of bits used as shorthand to specify all graphics stages (excluding the compute stage).
     AllGraphicsStage,
+    /// AllStage is a combination of bits used as shorthand to specify all shader stages supported by the device,
+    /// including all additional stages which are introduced by extensions.
     AllStage,
 }
 
@@ -101,9 +110,9 @@ impl ShaderStageType {
 
 pub struct HaShaderModule {
 
-    pub(in super) main   : CString,
-    pub(in super) stage  : ShaderStageType,
-    pub(in super) handle : vk::ShaderModule,
+    pub(super) main   : CString,
+    pub(super) stage  : ShaderStageType,
+    pub(super) handle : vk::ShaderModule,
 }
 
 impl HaShaderModule {

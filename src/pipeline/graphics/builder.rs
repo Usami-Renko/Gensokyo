@@ -8,7 +8,8 @@ use core::device::HaLogicalDevice;
 use pipeline::{
     graphics::HaGraphicsPipeline,
 
-    shader::{ HaShaderInfo, HaShaderModule },
+    shader::module::{ HaShaderModule, HaShaderInfo },
+    shader::input::VertexInputDescription,
     state::PipelineStates,
     state::HaVertexInput,
     state::HaInputAssembly,
@@ -35,12 +36,14 @@ pub enum PipelineCreateFlag {
     ///
     /// Using this flag may reduce the time taken to create the pipeline.
     DisableOptimizationBit,
-    /// AllowDerivativesBit specifies that the pipeline to be created is allowed to be the parent of a pipeline that will be created in a subsequent call to vkCreateGraphicsPipelines or vkCreateComputePipelines.
+    /// AllowDerivativesBit specifies that the pipeline to be created is allowed to be the parent of a pipeline
+    /// that will be created in a subsequent call to vkCreateGraphicsPipelines or vkCreateComputePipelines.
     AllowDerivativesBit,
     /// DerivativeBit specifies that the pipeline to be created will be a child of a previously created parent pipeline.
     DerivativeBit,
     // TODO: Others flags are not supported in ash yet.
-    // ViewIndexFromDeviceIndexBit specifies that any shader input variables decorated as ViewIndex will be assigned values as if they were decorated as DeviceIndex.
+    // ViewIndexFromDeviceIndexBit specifies that any shader input variables decorated as ViewIndex will be assigned values
+    // as if they were decorated as DeviceIndex.
     //ViewIndexFromDeviceIndexBit,
     // Same as ViewIndexFromDeviceIndexBit.
     //ViewIndexFromDeviceIndexBitKHR,
@@ -79,11 +82,11 @@ pub struct GraphicsPipelineConfig {
 
 impl GraphicsPipelineConfig {
 
-    pub fn init(shaders: Vec<HaShaderInfo>, pass: HaRenderPass) -> GraphicsPipelineConfig {
+    pub fn init(shaders: Vec<HaShaderInfo>, input: VertexInputDescription, pass: HaRenderPass) -> GraphicsPipelineConfig {
 
         GraphicsPipelineConfig {
             shaders,
-            states         : PipelineStates::default(),
+            states         : PipelineStates::setup(input),
             render_pass    : Some(pass),
 
             shader_modules : vec![],

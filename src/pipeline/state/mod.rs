@@ -35,11 +35,12 @@ pub struct PipelineStates {
     pub(super) dynamic       : Option<HaDynamicState>,
 }
 
-impl Default for PipelineStates {
+use pipeline::shader::input::VertexInputDescription;
+impl PipelineStates {
 
-    fn default() -> PipelineStates {
+    pub fn setup(input: VertexInputDescription) -> PipelineStates {
         PipelineStates {
-            vertex_input  : HaVertexInput::default(),
+            vertex_input  : input.desc(),
             input_assembly: HaInputAssembly::default(),
             viewport      : HaViewport::default(),
             rasterizer    : HaRasterizer::default(),
