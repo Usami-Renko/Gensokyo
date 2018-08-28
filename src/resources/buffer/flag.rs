@@ -3,7 +3,6 @@ use ash::vk;
 
 use utility::marker::VulkanFlags;
 
-#[allow(dead_code)]
 #[derive(Debug, Clone, Copy, Eq, PartialEq)]
 pub enum BufferCreateFlag {
     /// SparseBindingBit specifies that the buffer will be backed using sparse memory binding.
@@ -32,7 +31,6 @@ impl VulkanFlags for [BufferCreateFlag] {
     }
 }
 
-#[allow(dead_code)]
 #[derive(Debug, Clone, Copy, Eq, PartialEq)]
 pub enum BufferUsage {
     /// TransferSrcBit specifies that the buffer can be used as the source of a transfer command.

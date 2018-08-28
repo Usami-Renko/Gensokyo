@@ -13,8 +13,8 @@ use resources::framebuffer::HaFramebuffer;
 use constant::swapchain::ACQUIRE_IMAGE_TIME_OUT;
 use utility::marker::Handles;
 
-use sync::HaFence;
-use sync::HaSemaphore;
+use sync::fence::HaFence;
+use sync::semaphore::HaSemaphore;
 
 use std::ptr;
 
@@ -23,9 +23,9 @@ pub struct HaSwapchain {
     pub(super) handle: vk::SwapchainKHR,
     pub(super) loader: ash::extensions::Swapchain,
 
-    pub(super) images       : Vec<HaImage>,
-    pub(super) views        : Vec<HaImageView>,
-    pub(crate) framebuffers : Vec<HaFramebuffer>,
+    pub(super) _images      : Vec<HaImage>,
+    pub(super) views       : Vec<HaImageView>,
+    pub(crate) framebuffers: Vec<HaFramebuffer>,
 
     pub format: vk::Format,
     pub extent: vk::Extent2D,

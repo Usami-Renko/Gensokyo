@@ -5,15 +5,15 @@ use ash::version::DeviceV1_0;
 use core::device::HaLogicalDevice;
 
 use pipeline::layout::HaPipelineLayout;
-use pipeline::pass::HaRenderPass;
+use pipeline::pass::render_pass::HaRenderPass;
 
 pub struct HaGraphicsPipeline {
 
-    pub(crate) handle: vk::Pipeline,
+    pub handle: vk::Pipeline,
+    pub pass: HaRenderPass,
     layout: HaPipelineLayout,
-    pub(crate) pass: HaRenderPass,
 
-    pub(crate) bind_point: vk::PipelineBindPoint,
+    pub bind_point: vk::PipelineBindPoint,
 }
 
 impl HaGraphicsPipeline {
@@ -28,7 +28,7 @@ impl HaGraphicsPipeline {
         }
     }
 
-    pub(crate) fn cleanup(&self, device: &HaLogicalDevice) {
+    pub fn cleanup(&self, device: &HaLogicalDevice) {
         unsafe { device.handle.destroy_pipeline(self.handle, None); }
         self.layout.cleanup(device);
         self.pass.cleanup(device);

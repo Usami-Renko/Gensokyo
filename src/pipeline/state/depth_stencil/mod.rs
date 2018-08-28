@@ -1,13 +1,12 @@
 
-mod depth;
-mod stencil;
+pub mod depth;
+pub mod stencil;
 
 use ash::vk;
-
-pub use self::stencil::{ StencilTest, StencilOpState };
-pub use self::depth::DepthTest;
-
 use std::ptr;
+
+use pipeline::state::depth_stencil::depth::DepthTest;
+use pipeline::state::depth_stencil::stencil::StencilTest;
 
 pub struct HaDepthStencil {
 
@@ -26,19 +25,19 @@ impl HaDepthStencilPrefab {
     fn generate(&self) -> HaDepthStencil {
         match *self {
             | HaDepthStencilPrefab::Disable => HaDepthStencil {
-                depth:   DepthTest::disable(),
+                depth  : DepthTest::disable(),
                 stencil: StencilTest::disable(),
             },
             | HaDepthStencilPrefab::EnableDepth => HaDepthStencil {
-                depth:   DepthTest::enable(true, vk::CompareOp::Less, false),
+                depth  : DepthTest::enable(true, vk::CompareOp::Less, false),
                 stencil: StencilTest::disable(),
             },
             | HaDepthStencilPrefab::EnableStencil => HaDepthStencil {
-                depth:   DepthTest::disable(),
+                depth  : DepthTest::disable(),
                 stencil: StencilTest::enalbe(),
             },
             | HaDepthStencilPrefab::EnableDepthStencil => HaDepthStencil {
-                depth:   DepthTest::enable(true, vk::CompareOp::Less, false),
+                depth  : DepthTest::enable(true, vk::CompareOp::Less, false),
                 stencil: StencilTest::enalbe(),
             },
         }
@@ -74,7 +73,7 @@ impl HaDepthStencil {
 
             stencil_test_enable: self.stencil.enable,
             front: self.stencil.front.origin(),
-            back:  self.stencil.back.origin(),
+            back : self.stencil.back.origin(),
 
         }
     }

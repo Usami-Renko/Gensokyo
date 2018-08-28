@@ -2,7 +2,7 @@
 use ash::vk;
 use ash::vk::uint32_t;
 
-use sync::HaSemaphore;
+use sync::semaphore::HaSemaphore;
 
 use pipeline::stages::PipelineStageFlag;
 use resources::command::buffer::HaCommandBuffer;

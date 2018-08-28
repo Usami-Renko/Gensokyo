@@ -6,28 +6,27 @@ use ash::version::DeviceV1_0;
 use core::device::HaLogicalDevice;
 
 use resources::command::buffer::HaCommandBuffer;
-use resources::buffer::HaBuffer;
 use resources::error::CommandError;
 
-use pipeline::graphics::HaGraphicsPipeline;
-use swapchain::HaSwapchain;
-use utility::allocator::BufferBindingInfos;
+use pipeline::graphics::pipeline::HaGraphicsPipeline;
+use swapchain::chain::HaSwapchain;
+use resources::repository::BufferBindingInfos;
 use utility::marker::VulkanFlags;
 
 use std::ptr;
 
-pub struct HaCommandRecorder<'buffer, 'vk> {
+pub struct HaCommandRecorder<'buffer, 're> {
 
     pub(super) buffer:    &'buffer HaCommandBuffer,
-    pub(super) device:    &'vk HaLogicalDevice,
-    pub(super) swapchain: &'vk HaSwapchain,
-    pub(super) pipeline:  &'vk HaGraphicsPipeline,
+    pub(super) device:    &'re HaLogicalDevice,
+    pub(super) swapchain: &'re HaSwapchain,
+    pub(super) pipeline:  &'re HaGraphicsPipeline,
 }
 
-impl<'buffer, 'vk> HaCommandRecorder<'buffer, 'vk> {
+impl<'buffer, 're> HaCommandRecorder<'buffer, 're> {
 
     pub fn begin_record(&'buffer self, flags: &[CommandBufferUsageFlag])
-        -> Result<&HaCommandRecorder<'buffer, 'vk>, CommandError> {
+        -> Result<&HaCommandRecorder<'buffer, 're>, CommandError> {
 
         let begin_info = vk::CommandBufferBeginInfo {
             s_type: vk::StructureType::CommandBufferBeginInfo,
@@ -49,7 +48,7 @@ impl<'buffer, 'vk> HaCommandRecorder<'buffer, 'vk> {
 
 
     pub fn begin_render_pass(&self, framebuffer_index: usize)
-        -> &HaCommandRecorder<'buffer, 'vk> {
+        -> &HaCommandRecorder<'buffer, 're> {
 
         let begin_info = vk::RenderPassBeginInfo {
             s_type: vk::StructureType::RenderPassBeginInfo,
@@ -73,7 +72,7 @@ impl<'buffer, 'vk> HaCommandRecorder<'buffer, 'vk> {
         self
     }
 
-    pub fn bind_pipeline(&self) -> &HaCommandRecorder<'buffer, 'vk> {
+    pub fn bind_pipeline(&self) -> &HaCommandRecorder<'buffer, 're> {
         unsafe {
             self.device.handle.cmd_bind_pipeline(self.buffer.handle,
                 self.pipeline.bind_point,
@@ -84,7 +83,7 @@ impl<'buffer, 'vk> HaCommandRecorder<'buffer, 'vk> {
     }
 
     pub fn bind_vertex_buffers(&self, first_binding: uint32_t, binding_infos: &BufferBindingInfos)
-        -> &HaCommandRecorder<'buffer, 'vk> {
+        -> &HaCommandRecorder<'buffer, 're> {
 
         unsafe {
             self.device.handle.cmd_bind_vertex_buffers(
@@ -98,7 +97,7 @@ impl<'buffer, 'vk> HaCommandRecorder<'buffer, 'vk> {
     }
 
     pub fn draw(&self, vertex_count: uint32_t, instance_count: uint32_t, first_vertex: uint32_t, first_instance: uint32_t)
-        -> &HaCommandRecorder<'buffer, 'vk> {
+        -> &HaCommandRecorder<'buffer, 're> {
 
         unsafe {
             self.device.handle.cmd_draw(self.buffer.handle,
@@ -110,7 +109,7 @@ impl<'buffer, 'vk> HaCommandRecorder<'buffer, 'vk> {
         self
     }
 
-    pub fn end_render_pass(&self) -> &HaCommandRecorder<'buffer, 'vk> {
+    pub fn end_render_pass(&self) -> &HaCommandRecorder<'buffer, 're> {
         unsafe { self.device.handle.cmd_end_render_pass(self.buffer.handle) };
         self
     }
@@ -125,7 +124,6 @@ impl<'buffer, 'vk> HaCommandRecorder<'buffer, 'vk> {
 }
 
 
-#[allow(dead_code)]
 #[derive(Debug, Clone, Copy, Eq, PartialEq)]
 pub enum CommandBufferUsageFlag {
     /// OneTimeSubmitBit specifies that each recording of the command buffer will only be submitted once,

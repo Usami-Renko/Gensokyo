@@ -1,5 +1,6 @@
 
-pub use self::render_pass::HaRenderPass;
 
-pub mod render_pass;
+pub(crate) mod render_pass;
 mod subpass;
+
+pub mod prelude;

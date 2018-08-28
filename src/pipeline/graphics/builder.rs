@@ -6,21 +6,21 @@ use ash::version::DeviceV1_0;
 use core::device::HaLogicalDevice;
 
 use pipeline::{
-    graphics::HaGraphicsPipeline,
+    graphics::pipeline::HaGraphicsPipeline,
 
     shader::module::{ HaShaderModule, HaShaderInfo },
     shader::input::VertexInputDescription,
     state::PipelineStates,
-    state::HaVertexInput,
-    state::HaInputAssembly,
-    state::HaViewport,
-    state::HaRasterizer,
-    state::HaMultisample,
-    state::HaDepthStencil,
-    state::HaBlend,
-    state::HaTessellation,
-    state::HaDynamicState,
-    pass::HaRenderPass,
+    state::vertex_input::HaVertexInput,
+    state::input_assembly::HaInputAssembly,
+    state::viewport::HaViewport,
+    state::rasterizer::HaRasterizer,
+    state::multisample::HaMultisample,
+    state::depth_stencil::HaDepthStencil,
+    state::blend::blending::HaBlend,
+    state::tessellation::HaTessellation,
+    state::dynamic::HaDynamicState,
+    pass::render_pass::HaRenderPass,
     layout::PipelineLayoutBuilder,
     error::PipelineError,
 };
@@ -29,7 +29,6 @@ use utility::marker::VulkanFlags;
 
 use std::ptr;
 
-#[allow(dead_code)]
 #[derive(Debug, Clone, Copy, Eq, PartialEq)]
 pub enum PipelineCreateFlag {
     /// DisableOptimizationBit specifies that the created pipeline will not be optimized.
@@ -200,24 +199,14 @@ impl GraphicsPipelineBuilder {
 
 impl GraphicsPipelineConfig {
 
-    #[allow(dead_code)]
     pub fn resetup_shader(&mut self, shaders: Vec<HaShaderInfo>) { self.shaders = shaders; }
-    #[allow(dead_code)]
     pub fn setup_input_vertex(&mut self, vertex_infos: HaVertexInput) { self.states.vertex_input = vertex_infos; }
-    #[allow(dead_code)]
     pub fn setup_input_assembly(&mut self, assembly: HaInputAssembly) { self.states.input_assembly = assembly; }
-    #[allow(dead_code)]
     pub fn setup_viewport(&mut self, viewport: HaViewport) { self.states.viewport = viewport; }
-    #[allow(dead_code)]
     pub fn setup_rasterizer(&mut self, rasterizer: HaRasterizer) { self.states.rasterizer = rasterizer; }
-    #[allow(dead_code)]
     pub fn setup_multisample(&mut self, multisample: HaMultisample) { self.states.multisample = multisample; }
-    #[allow(dead_code)]
     pub fn setup_depth_stencil(&mut self, depth_stencil: HaDepthStencil) { self.states.depth_stencil = depth_stencil; }
-    #[allow(dead_code)]
     pub fn setup_blend(&mut self, blend: HaBlend) { self.states.blend = blend; }
-    #[allow(dead_code)]
     pub fn setup_tessllation(&mut self, tessellation: HaTessellation) { self.states.tessellation = Some(tessellation); }
-    #[allow(dead_code)]
     pub fn setup_dynamic(&mut self, dynamic_state: HaDynamicState) { self.states.dynamic = Some(dynamic_state); }
 }

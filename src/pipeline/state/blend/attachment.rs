@@ -98,7 +98,6 @@ impl Default for BlendAttachemnt {
     }
 }
 
-#[allow(dead_code)]
 #[derive(Debug, Clone, Copy, Eq, PartialEq)]
 pub enum ColorComponentFlag { R, G, B, A }
 impl VulkanFlags for [ColorComponentFlag] {

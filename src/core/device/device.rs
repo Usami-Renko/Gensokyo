@@ -9,7 +9,7 @@ use core::device::queue::QueueInfo;
 use core::device::queue::QueueSubmitBundle;
 use core::error::LogicalDeviceError;
 
-use sync::HaFence;
+use sync::fence::HaFence;
 use sync::error::SyncError;
 use utility::time::TimePeriod;
 use utility::marker::Handles;
@@ -18,16 +18,16 @@ use std::ptr;
 
 pub struct HaLogicalDevice {
 
-    pub handle: ash::Device<V1_0>,
-    queues: Vec<QueueInfo>,
+    pub(crate) handle: ash::Device<V1_0>,
+    pub(crate) queues: Vec<QueueInfo>,
 
-    pub graphics_queue_index: Option<usize>,
-    pub present_queue_index:  Option<usize>,
+    pub(crate) graphics_queue_index: Option<usize>,
+    pub(crate) present_queue_index:  Option<usize>,
 }
 
 impl<'resource> HaLogicalDevice {
 
-    pub fn new(handle: ash::Device<V1_0>, queues: Vec<QueueInfo>, graphics_queue_index: Option<usize>, present_queue_index:  Option<usize>) -> HaLogicalDevice {
+    pub(crate) fn new(handle: ash::Device<V1_0>, queues: Vec<QueueInfo>, graphics_queue_index: Option<usize>, present_queue_index:  Option<usize>) -> HaLogicalDevice {
         HaLogicalDevice {
             handle,
             queues,
@@ -36,11 +36,11 @@ impl<'resource> HaLogicalDevice {
         }
     }
 
-    pub fn graphics_queue(&self) -> Option<&QueueInfo> {
+    pub(crate) fn graphics_queue(&self) -> Option<&QueueInfo> {
         Some(&self.queues[self.graphics_queue_index?])
     }
 
-    pub fn present_queue(&self) -> Option<&QueueInfo> {
+    pub(crate) fn present_queue(&self) -> Option<&QueueInfo> {
         Some(&self.queues[self.present_queue_index?])
     }
 
@@ -117,7 +117,7 @@ impl<'resource> HaLogicalDevice {
             .or(Err(LogicalDeviceError::WaitIdleError))
     }
 
-    pub fn cleanup(&self) {
+    pub(crate) fn cleanup(&self) {
 
         unsafe {
             self.handle.destroy_device(None);

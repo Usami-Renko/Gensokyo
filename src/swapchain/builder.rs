@@ -13,7 +13,7 @@ use swapchain::chain::HaSwapchain;
 use swapchain::support::SwapchainSupport;
 use swapchain::error::SwapchainInitError;
 
-use pipeline::pass::HaRenderPass;
+use pipeline::pass::render_pass::HaRenderPass;
 use resources::framebuffer::{ HaFramebuffer, FramebufferBuilder };
 use resources::image::{ HaImage, HaImageView };
 
@@ -23,6 +23,7 @@ use utility::marker::VulkanFlags;
 
 use std::ptr;
 
+// FIXME: Add configuration for this flag and remove #[allow(dead_code)]
 #[allow(dead_code)]
 #[derive(Debug, Clone, Copy, Eq, PartialEq)]
 enum SwapchainCreateFlag {
@@ -143,7 +144,7 @@ impl<'vk, 'win: 'vk> SwapchainBuilder<'vk, 'win> {
         let swapchain = HaSwapchain {
             handle,
             loader,
-            images,
+            _images: images,
             views,
             framebuffers,
 

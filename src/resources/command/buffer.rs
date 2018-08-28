@@ -3,14 +3,13 @@ use ash::vk;
 
 use core::device::HaLogicalDevice;
 
-use swapchain::HaSwapchain;
-use pipeline::graphics::HaGraphicsPipeline;
+use swapchain::chain::HaSwapchain;
+use pipeline::graphics::pipeline::HaGraphicsPipeline;
 use resources::command::record::HaCommandRecorder;
 use resources::error::CommandError;
 
 use utility::marker::Handles;
 
-#[allow(dead_code)]
 #[derive(Debug, Clone, Copy, Eq, PartialEq)]
 pub enum CommandBufferUsage {
     /// UnitaryCommand specifies that only primary command buffer will be used in the render pass,

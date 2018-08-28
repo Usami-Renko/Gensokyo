@@ -29,11 +29,11 @@ pub use self::extension::DeviceExtensionType;
 pub struct HaPhysicalDevice {
 
     pub(crate) handle     : vk::PhysicalDevice,
-    pub(crate) properties     : PhysicalProperties,
-    pub(crate) features   : PhyscialFeatures,
-    pub(crate) memory : PhysicalMemory,
-    pub(crate) families   : PhysicalQueueFamilies,
-    pub(crate) extensions : PhysicalExtension,
+    pub(super) properties : PhysicalProperties,
+    pub(super) features   : PhyscialFeatures,
+    pub(crate) memory     : PhysicalMemory,
+    pub(super) families   : PhysicalQueueFamilies,
+    pub(super) extensions : PhysicalExtension,
 }
 
 impl HaPhysicalDevice {

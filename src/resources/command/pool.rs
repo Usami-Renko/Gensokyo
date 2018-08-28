@@ -75,7 +75,6 @@ impl HaCommandPool {
     }
 }
 
-#[allow(dead_code)]
 #[derive(Debug, Clone, Copy, Eq, PartialEq)]
 pub enum CommandPoolFlag {
     /// TransientBit specifies that command buffers allocated from the pool will be short-lived, meaning that they will be reset or freed in a relatively short timeframe.

@@ -3,6 +3,7 @@ use ash::vk::uint64_t;
 
 use std::time::Duration;
 
+#[derive(Debug, Copy, Clone)]
 pub enum TimePeriod {
     Immediate,
     Time(Duration),

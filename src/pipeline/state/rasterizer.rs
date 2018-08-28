@@ -4,8 +4,6 @@ use ash::vk;
 use std::os::raw::c_float;
 use std::ptr;
 
-use pipeline::{ PolygonMode, FrontFaceType, };
-
 pub struct HaRasterizer {
 
     /// The method of rasterization for polygons.
@@ -76,13 +74,13 @@ impl HaRasterizer {
     }
 
 
-    pub fn set_polygon_mode(&mut self, mode: PolygonMode) {
+    pub fn set_polygon_mode(&mut self, mode: vk::PolygonMode) {
         self.polygon_mode = mode;
     }
     pub fn set_cull_mode(&mut self, mode: CullModeType) {
         self.cull_mode = mode.flag();
     }
-    pub fn set_front_face(&mut self, face: FrontFaceType) {
+    pub fn set_front_face(&mut self, face: vk::FrontFace) {
         self.front_face = face;
     }
     pub fn set_line_width(&mut self, width: c_float) {

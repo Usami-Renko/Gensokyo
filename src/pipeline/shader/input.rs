@@ -2,7 +2,7 @@
 use ash::vk;
 use ash::vk::uint32_t;
 
-use pipeline::state::HaVertexInput;
+use pipeline::state::vertex_input::HaVertexInput;
 use pipeline::shader::module::HaShaderInfo;
 
 #[derive(Debug)]

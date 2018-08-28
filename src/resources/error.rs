@@ -95,3 +95,27 @@ impl fmt::Display for MemoryError {
         write!(f, "{}", description)
     }
 }
+
+#[derive(Debug, Clone, Eq, PartialEq)]
+pub enum AllocatorError {
+
+    Buffer(BufferError),
+    Memory(MemoryError),
+    NoAvailableBufferAttach,
+    MemoryNotYetAllocated,
+}
+
+impl Error for AllocatorError {}
+impl fmt::Display for AllocatorError {
+
+    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+
+        let description = match self {
+            | AllocatorError::Buffer(ref e) => e.to_string(),
+            | AllocatorError::Memory(ref e) => e.to_string(),
+            | AllocatorError::NoAvailableBufferAttach => String::from("There must be buffer attached to allocator before allocate memory."),
+            | AllocatorError::MemoryNotYetAllocated   => String::from("The memory is not allocated yet. Memory must be allocated first before using it."),
+        };
+        write!(f, "{}", description)
+    }
+}

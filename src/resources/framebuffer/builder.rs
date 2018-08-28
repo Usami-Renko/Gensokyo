@@ -8,7 +8,7 @@ use core::device::HaLogicalDevice;
 use resources::framebuffer::HaFramebuffer;
 use resources::image::HaImageView;
 use resources::error::FramebufferError;
-use pipeline::pass::HaRenderPass;
+use pipeline::pass::render_pass::HaRenderPass;
 
 use utility::dimension::BufferDimension;
 

@@ -22,7 +22,7 @@ impl HaFence {
     pub fn setup(device: &HaLogicalDevice, sign: bool) -> Result<HaFence, SyncError> {
 
         let flags = if sign {
-            vk::FENCE_CREATE_SIGNALED_BIT
+            [&FenceCreateFlag::Signaled].flags()
         } else {
             vk::FenceCreateFlags::empty()
         };
@@ -94,7 +94,6 @@ impl Handles for [HaFence] {
 }
 
 
-#[allow(dead_code)]
 #[derive(Debug, Clone, Copy, Eq, PartialEq)]
 pub enum FenceCreateFlag {
     /// Signaled specifies that the fence object is created in the signaled state.

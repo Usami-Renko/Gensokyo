@@ -5,7 +5,7 @@ use core::error::{ InstanceError, ValidationError, PhysicalDeviceError, SurfaceE
 use swapchain::error::SwapchainError;
 use pipeline::error::PipelineError;
 use resources::error::CommandError;
-use utility::allocator::error::AllocatorError;
+use resources::error::AllocatorError;
 use sync::error::SyncError;
 
 use std::fmt;

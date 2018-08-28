@@ -10,7 +10,6 @@ pub struct HaTessellation {
     ///
     /// patchControlPoints must be greater than zero and less than or equal to vkPhysicalDeviceLimits::maxTessellationPatchSize.
     points_count: uint32_t,
-    max_count:    uint32_t,
 }
 
 impl HaTessellation {
@@ -18,8 +17,6 @@ impl HaTessellation {
     pub fn setup(points_count: uint32_t) -> HaTessellation {
         HaTessellation {
             points_count,
-            // TODO: Add limitation check for points_count filed in future.
-            max_count: 0,
         }
     }
 

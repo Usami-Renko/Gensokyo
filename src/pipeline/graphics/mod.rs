@@ -1,6 +1,5 @@
 
-pub use self::pipeline::HaGraphicsPipeline;
-pub use self::builder::{ GraphicsPipelineBuilder, GraphicsPipelineConfig, PipelineCreateFlag };
+pub(crate) mod builder;
+pub(crate) mod pipeline;
 
-mod builder;
-mod pipeline;
+pub mod prelude;

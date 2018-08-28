@@ -96,6 +96,7 @@ impl<T> ProgramEnv<T> where T: ProgramProc {
         self.wait_idle(&core.device)
             .map_err(|e| RuntimeError::Procedure(e))?;
 
+        self.procedure.cleanup(&core.device);
         resources.cleanup(&core.device);
         core.cleanup();
 
