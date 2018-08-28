@@ -12,13 +12,14 @@ use swapchain::{ HaSwapchain, SwapchainBuilder };
 use swapchain::error::{ SwapchainError, SwapchainRuntimeError };
 use pipeline::graphics::{ HaGraphicsPipeline, GraphicsPipelineConfig, GraphicsPipelineBuilder };
 use pipeline::state::HaViewport;
-use pipeline::shader::module::HaShaderInfo;
 use pipeline::stages::PipelineStageFlag;
-use pipeline::shader::input::VertexInputDescription;
+use pipeline::shader::input::VertexContent;
 use resources::command::pool::HaCommandPool;
 use resources::command::buffer::HaCommandBuffer;
 use resources::command::CommandBufferUsage;
 use resources::command::HaCommandRecorder;
+use resources::buffer::{ BufferConfig, BufferUsage };
+use resources::memory::MemoryPropertyFlag;
 use resources::error::CommandError;
 use sync::{ HaFence, HaSemaphore };
 
@@ -30,14 +31,16 @@ use constant::swapchain::SWAPCHAIN_IMAGE_COUNT;
 use constant::sync::SYNCHRONOUT_FRAME;
 
 use utility::time::TimePeriod;
+use utility::allocator::HaBufferAllocator;
+use utility::allocator::error::AllocatorError;
 
 pub trait ProgramProc {
 
     // TODO: Redesign the API to support multi-pipeline
-    fn configure_shaders(&self)      -> Vec<HaShaderInfo>;
-    fn configure_vertex_input(&self) -> VertexInputDescription;
+    fn configure_shaders(&self) -> VertexContent;
 //    fn configure_render_pass(&self) -> HaRenderPass;
-    fn configure_commands(&self, buffer: &HaCommandRecorder, frame_index: usize) -> Result<(), CommandError>;
+    fn configure_buffers(&mut self, allocator: &mut HaBufferAllocator) -> Result<(), AllocatorError>;
+    fn configure_commands(&self, allocator: &HaBufferAllocator, buffer: &HaCommandRecorder, frame_index: usize) -> Result<(), CommandError>;
 }
 
 pub struct CoreInfrastructure<'win> {
@@ -45,8 +48,8 @@ pub struct CoreInfrastructure<'win> {
     instance  : HaInstance,
     debugger  : Option<HaDebugger>,
     surface   : HaSurface<'win>,
-    physical  : HaPhysicalDevice,
-    pub(super) device : HaLogicalDevice,
+    pub(crate) physical : HaPhysicalDevice,
+    pub(crate) device   : HaLogicalDevice,
     command_pool: HaCommandPool,
 }
 
@@ -54,7 +57,7 @@ pub struct HaResources {
 
     swapchain : HaSwapchain,
     graphics_pipelines: Vec<HaGraphicsPipeline>,
-    command_buffers: Vec<HaCommandBuffer>,
+    command_buffers   : Vec<HaCommandBuffer>,
 
     // sync
     image_awaits:  Vec<HaSemaphore>,
@@ -106,11 +109,12 @@ impl<'win, T> ProgramEnv<T> where T: ProgramProc {
         Ok(core)
     }
 
-    pub(super) fn load_resources(&self, core: &CoreInfrastructure) -> Result<HaResources, ProcedureError> {
+    pub(super) fn load_resources(&mut self, core: &CoreInfrastructure) -> Result<HaResources, ProcedureError> {
 
         // TODO: Currently just configuration a single pipeline.
-        let shaders = self.procedure.configure_shaders();
-        let input_desc = self.procedure.configure_vertex_input();
+        let vertex_content = self.procedure.configure_shaders();
+        let shaders = vertex_content.infos;
+        let input_desc = vertex_content.description;
         //        let render_pass = self.procedure.configure_render_pass();
         use pipeline::pass::render_pass::temp_render_pass;
         let render_pass = temp_render_pass(&core.device);
@@ -134,6 +138,12 @@ impl<'win, T> ProgramEnv<T> where T: ProgramProc {
         let graphics_pipelines = pipeline_builder.build(&core.device)
             .map_err(|e| ProcedureError::Pipeline(e))?;
 
+
+        // vertex buffer and send data to memory
+        let mut allocator = HaBufferAllocator::new(&core.device, &core.physical);
+        self.procedure.configure_buffers(&mut allocator)
+            .map_err(|e| ProcedureError::Allocator(e))?;
+
         // command buffers
         let mut command_buffers = core.command_pool
             .allocate(&core.device, CommandBufferUsage::UnitaryCommand, swapchain.framebuffers.len())
@@ -142,7 +152,7 @@ impl<'win, T> ProgramEnv<T> where T: ProgramProc {
             // TODO: Fixed the configure to only one pipeline.
             let recorder = command_buffer.setup_record(&core.device, &swapchain, &graphics_pipelines[0])
                 .map_err(|e| ProcedureError::Command(e))?;
-            self.procedure.configure_commands(&recorder, frame_index)
+            self.procedure.configure_commands(&allocator, &recorder, frame_index)
                 .map_err(|e| ProcedureError::Command(e))?;
         }
 
@@ -261,6 +271,7 @@ impl HaResources {
         self.image_awaits.iter().for_each(|i| i.cleanup(device));
         self.render_awaits.iter().for_each(|r| r.cleanup(device));
         self.sync_fences.iter().for_each(|f| f.cleanup(device));
+
         self.graphics_pipelines.iter().for_each(|pipeline|{
             pipeline.cleanup(device);
         });

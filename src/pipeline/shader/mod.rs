@@ -2,5 +2,6 @@
 pub(crate) mod module;
 pub(crate) mod input;
 
-mod marco;
+mod macros;
 pub mod prelude;
+

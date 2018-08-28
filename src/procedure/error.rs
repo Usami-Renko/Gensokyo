@@ -5,6 +5,7 @@ use core::error::{ InstanceError, ValidationError, PhysicalDeviceError, SurfaceE
 use swapchain::error::SwapchainError;
 use pipeline::error::PipelineError;
 use resources::error::CommandError;
+use utility::allocator::error::AllocatorError;
 use sync::error::SyncError;
 
 use std::fmt;
@@ -50,6 +51,7 @@ pub enum ProcedureError {
     Pipeline(PipelineError),
     Command(CommandError),
     Sync(SyncError),
+    Allocator(AllocatorError),
 }
 
 impl Error for ProcedureError {
@@ -64,6 +66,7 @@ impl Error for ProcedureError {
             | ProcedureError::Pipeline(ref e)       => Some(e),
             | ProcedureError::Command(ref e)        => Some(e),
             | ProcedureError::Sync(ref e)           => Some(e),
+            | ProcedureError::Allocator(ref e)      => Some(e),
         }
     }
 }

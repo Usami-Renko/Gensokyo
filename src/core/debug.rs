@@ -46,7 +46,7 @@ impl HaDebugger {
         let debug_callback_create_info = vk::DebugReportCallbackCreateInfoEXT {
             s_type       : vk::StructureType::DebugReportCallbackCreateInfoExt,
             p_next       : ptr::null(),
-            // Enum DebugReportFlags enumerate all available flags
+            // Enum DebugReportFlags enumerate all available flags.
             flags        : VALIDATION_FLAGS.flags(),
             pfn_callback : vulkan_debug_report_callback,
             p_user_data  : ptr::null_mut(),

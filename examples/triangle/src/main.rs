@@ -3,8 +3,7 @@
 extern crate hakurei;
 
 use hakurei::prelude::*;
-use hakurei::resources::command::{ HaCommandRecorder, CommandBufferUsageFlag };
-use hakurei::resources::CommandError;
+use hakurei::resources::prelude::*;
 use hakurei::pipeline::shader::prelude::*;
 
 use std::path::Path;
@@ -17,26 +16,21 @@ define_input! {
     #[binding = 0, rate = vertex]
     struct Vertex {
         #[location = 0, format = vec2]
-        pos: [f32; 2],
+        pos:   [f32; 2],
         #[location = 1, format = vec4]
         color: [f32; 4],
     }
 }
 
-const VERTEX_DATA: [Vertex; 3] = [
-    Vertex { pos: [ 0.0, -0.5], color: [1.0, 1.0, 1.0, 1.0], },
-    Vertex { pos: [ 0.5,  0.5], color: [0.0, 1.0, 0.0, 1.0], },
-    Vertex { pos: [-0.5,  0.5], color: [0.0, 0.0, 1.0, 1.0], },
-];
 
 struct TriangleProcedure {
+
 
 }
 
 impl ProgramProc for TriangleProcedure {
 
-    fn configure_shaders(&self) -> Vec<HaShaderInfo> {
-
+    fn configure_shaders(&self) -> VertexContent {
         let vertex_shader = HaShaderInfo::setup(
             ShaderStageType::VertexStage,
             Path::new("src/triangle.vert.spv"),
@@ -46,17 +40,43 @@ impl ProgramProc for TriangleProcedure {
             Path::new("src/triangle.frag.spv"),
             None);
 
-        vec![
+        let infos = vec![
             vertex_shader,
             fragment_shader,
-        ]
+        ];
+
+        VertexContent {
+            infos,
+            description: Vertex::desc(),
+        }
     }
 
-    fn configure_vertex_input(&self) -> VertexInputDescription {
-        Vertex::desc()
+    fn configure_buffers(&mut self, allocator: &mut HaBufferAllocator) -> Result<(), AllocatorError> {
+
+        let data = vec![
+            Vertex { pos: [ 0.0, -0.5], color: [1.0, 1.0, 1.0, 1.0], },
+            Vertex { pos: [ 0.5,  0.5], color: [0.0, 1.0, 0.0, 1.0], },
+            Vertex { pos: [-0.5,  0.5], color: [0.0, 0.0, 1.0, 1.0], },
+        ];
+
+        let buffer_config = BufferConfig {
+            data: &data,
+            usage: BufferUsage::VertexBufferBit,
+            buffer_flags: &[],
+            memory_flags: &[
+                MemoryPropertyFlag::HostVisibleBit,
+                MemoryPropertyFlag::HostCoherentBit,
+            ],
+        };
+
+        allocator.attach_buffer(buffer_config)?;
+        allocator.allocate()?;
+        allocator.tranfer_data(&data)?;
+
+        Ok(())
     }
 
-    fn configure_commands(&self, buffer: &HaCommandRecorder, frame_index: usize) -> Result<(), CommandError> {
+    fn configure_commands(&self, allocator: &HaBufferAllocator, buffer: &HaCommandRecorder, frame_index: usize) -> Result<(), CommandError> {
 
         let usage_flags = [
             CommandBufferUsageFlag::SimultaneousUseBit
@@ -65,10 +85,13 @@ impl ProgramProc for TriangleProcedure {
         buffer.begin_record(&usage_flags)?
             .begin_render_pass(frame_index)
             .bind_pipeline()
+//            .bind_vertex_buffers(0, &self.binding_infos.as_ref().unwrap())
+            .bind_vertex_buffers(0, &allocator.binding_infos())
             .draw(3, 1, 0, 0)
             .end_render_pass()
             .finish()
     }
+
 }
 
 fn main() {

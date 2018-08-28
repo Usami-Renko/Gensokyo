@@ -6,10 +6,12 @@ use ash::version::DeviceV1_0;
 use core::device::HaLogicalDevice;
 
 use resources::command::buffer::HaCommandBuffer;
+use resources::buffer::HaBuffer;
 use resources::error::CommandError;
 
 use pipeline::graphics::HaGraphicsPipeline;
 use swapchain::HaSwapchain;
+use utility::allocator::BufferBindingInfos;
 use utility::marker::VulkanFlags;
 
 use std::ptr;
@@ -76,6 +78,20 @@ impl<'buffer, 'vk> HaCommandRecorder<'buffer, 'vk> {
             self.device.handle.cmd_bind_pipeline(self.buffer.handle,
                 self.pipeline.bind_point,
                 self.pipeline.handle)
+        };
+
+        self
+    }
+
+    pub fn bind_vertex_buffers(&self, first_binding: uint32_t, binding_infos: &BufferBindingInfos)
+        -> &HaCommandRecorder<'buffer, 'vk> {
+
+        unsafe {
+            self.device.handle.cmd_bind_vertex_buffers(
+                self.buffer.handle,
+                first_binding,
+                &binding_infos.handles,
+                &binding_infos.offsets)
         };
 
         self

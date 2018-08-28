@@ -47,3 +47,51 @@ impl fmt::Display for CommandError {
         write!(f, "{}", description)
     }
 }
+
+
+/// possible error may occur during the use of vk::Buffer.
+#[derive(Debug, Clone, Copy, Eq, PartialEq)]
+pub enum BufferError {
+
+    BufferCreationError,
+}
+
+impl Error for BufferError {}
+impl fmt::Display for BufferError {
+
+    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+
+        let description = match self {
+            | BufferError::BufferCreationError       => "Failed to create Buffer object",
+
+        };
+        write!(f, "{}", description)
+    }
+}
+
+/// possible error may occur during the use of vk::DeviceMemory.
+#[derive(Debug, Clone, Copy, Eq, PartialEq)]
+pub enum MemoryError {
+
+    NoSuitableMemoryError,
+    MemoryNotYetAllocateError,
+    AllocateMemoryError,
+    BindMemoryError,
+    MapMemoryError,
+}
+
+impl Error for MemoryError {}
+impl fmt::Display for MemoryError {
+
+    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+
+        let description = match self {
+            | MemoryError::NoSuitableMemoryError     => "Failed to find suitable memory type for Buffer memory allocation.",
+            | MemoryError::MemoryNotYetAllocateError => "The memory must be allocated before transfering data.",
+            | MemoryError::AllocateMemoryError       => "Failed to allocate memory for buffer object.",
+            | MemoryError::BindMemoryError           => "Failed to bind memory to buffer object.",
+            | MemoryError::MapMemoryError            => "Failed to map memory for buffer object.",
+        };
+        write!(f, "{}", description)
+    }
+}

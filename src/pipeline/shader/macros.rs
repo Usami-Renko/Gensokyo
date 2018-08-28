@@ -1,19 +1,19 @@
 
 #[macro_export]
 macro_rules! vk_format {
-    ($float:path)  => (Format::R32Sfloat);
-    ($double:path) => (Format::R64Sfloat);
-    ($vec2:path)   => (Format::R32g32Sfloat);
-    ($vec3:path)   => (Format::R32g32b32Sfloat);
-    ($vec4:path)   => (Format::R32g32b32a32Sfloat);
-    ($ivec2:path)  => (Format::R32g32Sint);
-    ($uvec4:path)  => (Format::R32g32b32a32Sint);
+    (float)  => (Format::R32Sfloat);
+    (double) => (Format::R64Sfloat);
+    (vec2)   => (Format::R32g32Sfloat);
+    (vec3)   => (Format::R32g32b32Sfloat);
+    (vec4)   => (Format::R32g32b32a32Sfloat);
+    (ivec2)  => (Format::R32g32Sint);
+    (uvec4)  => (Format::R32g32b32a32Sint);
 }
 
 #[macro_export]
 macro_rules! vertex_rate {
-    ($vertex:path)   => (VertexInputRate::Vertex);
-    ($instance:path) => (VertexInputRate::Instance);
+    (vertex)   => (VertexInputRate::Vertex);
+    (instance) => (VertexInputRate::Instance);
 }
 
 // the macro is copy from crate 'memoffset' v0.2
