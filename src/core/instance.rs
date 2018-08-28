@@ -1,34 +1,35 @@
 
-use ash;
 use ash::vk;
-use ash::version::{ V1_0, EntryV1_0, InstanceV1_0 };
+use ash::version::{ EntryV1_0, InstanceV1_0 };
 
-pub type EntryV1    = ash::Entry<V1_0>;
-pub type InstanceV1 = ash::Instance<V1_0>;
+use core::{ EntryV1, InstanceV1 };
 
 use core::error::InstanceError;
 use core::platforms;
 use core::debug;
 
 use constant::core::*;
-use constant::VERBOSE;
 
 use utility::cast;
 
 use std::ptr;
 use std::ffi::CString;
 
-pub struct Instance {
+/// Wrapper class for vk::Instance object.
+pub struct HaInstance {
 
+    /// the object used in instance creation define in ash crate.
     pub entry:  EntryV1,
+    /// handle of vk::Instance.
     pub handle: InstanceV1,
-
+    /// save the names of vulkan layers enabled in instance creation.
     pub enable_layer_names: Vec<CString>,
 }
 
-impl Instance {
+impl HaInstance {
 
-    pub fn new() -> Result<Instance, InstanceError> {
+    /// initialize vk::Instance object
+    pub fn new() -> Result<HaInstance, InstanceError> {
 
         let entry = EntryV1::new()
             .or(Err(InstanceError::EntryCreationError))?;
@@ -46,14 +47,16 @@ impl Instance {
             api_version         : API_VERSION,
         };
 
+        // get the names of required vulkan layers.
         let enable_layer_names = required_layers(&entry)?;
         let enable_layer_names_ptr = cast::to_array_ptr(&enable_layer_names);
+        // get the names of required vulkan extensions.
         let enable_extension_names = platforms::required_extension_names();
 
         let instance_create_info = vk::InstanceCreateInfo {
             s_type                     : vk::StructureType::InstanceCreateInfo,
             p_next                     : ptr::null(),
-            // flags is reserved for future use in API version 1.0.82
+            // flags is reserved for future use in API version 1.0.82.
             flags                      : vk::InstanceCreateFlags::empty(),
             p_application_info         : &app_info,
             enabled_layer_count        : enable_layer_names_ptr.len() as u32,
@@ -62,14 +65,15 @@ impl Instance {
             pp_enabled_extension_names : enable_extension_names.as_ptr(),
         };
 
-        let instance_handle = unsafe {
+        // create vk::Instance object.
+        let handle = unsafe {
             entry.create_instance(&instance_create_info, None)
                 .or(Err(InstanceError::InstanceCreationError))?
         };
 
-        let instance = Instance {
+        let instance = HaInstance {
             entry,
-            handle: instance_handle,
+            handle,
 
             enable_layer_names,
         };
@@ -77,16 +81,19 @@ impl Instance {
         Ok(instance)
     }
 
+    /// Some cleaning operations before this object was uninitialized.
+    ///
+    /// For HaInstance, it destroy the vk::Instance object.
     pub fn clenaup(&self) {
         unsafe {
             self.handle.destroy_instance(None);
-            if VERBOSE {
-                println!("[Info] Vulkan Instance had been destroy.");
-            }
         }
     }
 }
 
+/// Convenient function to get the names of required vulkan layers.
+///
+/// Return an vector of CString if succeeds, or an error explan the detail.
 fn required_layers(entry: &EntryV1) -> Result<Vec<CString>, InstanceError> {
 
     // required validation layer name if need  ---------------------------

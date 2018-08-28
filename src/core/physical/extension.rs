@@ -3,7 +3,7 @@ use ash;
 use ash::vk;
 use ash::version::InstanceV1_0;
 
-use core::instance::Instance;
+use core::instance::HaInstance;
 use core::error::PhysicalDeviceError;
 
 use utility::cast;
@@ -32,7 +32,7 @@ pub struct PhysicalExtension {
 
 impl PhysicalExtension {
 
-    pub fn inspect(instance: &Instance, physical_device: vk::PhysicalDevice) -> Result<PhysicalExtension, PhysicalDeviceError> {
+    pub fn inspect(instance: &HaInstance, physical_device: vk::PhysicalDevice) -> Result<PhysicalExtension, PhysicalDeviceError> {
 
         let handles = instance.handle.enumerate_device_extension_properties(physical_device)
             .or(Err(PhysicalDeviceError::EnumerateExtensionsError))?;

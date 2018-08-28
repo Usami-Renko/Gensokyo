@@ -3,9 +3,9 @@ use ash::vk;
 use ash::version::InstanceV1_0;
 use ash::vk::uint32_t;
 
-use core::instance::Instance;
+use core::instance::HaInstance;
 use core::error::PhysicalDeviceError;
-use core::surface::Surface;
+use core::surface::HaSurface;
 
 use utility::marker::VulkanFlags;
 
@@ -68,29 +68,29 @@ pub struct PhysicalQueueFamilies {
 
 impl PhysicalQueueFamilies {
 
-    pub fn inspect(instance: &Instance, physical_device: vk::PhysicalDevice, surface: &Surface)
-        -> Result<PhysicalQueueFamilies, PhysicalDeviceError> {
+    pub fn inspect(instance: &HaInstance, physical_device: vk::PhysicalDevice, surface: &HaSurface)
+                   -> Result<PhysicalQueueFamilies, PhysicalDeviceError> {
 
         let families = instance.handle.get_physical_device_queue_family_properties(physical_device);
 
         let mut back_graphics_index = None;
         let mut back_present_index  = None;
 
-        let mut queue_index: uint32_t = 0;
+        let mut queue_family_index: uint32_t = 0;
         for queue_family in families.iter() {
             if queue_family.queue_count > 0 && queue_family.queue_flags.subset(vk::QUEUE_GRAPHICS_BIT) {
-                back_graphics_index = Some(queue_index);
+                back_graphics_index = Some(queue_family_index);
             }
 
-            if queue_family.queue_count > 0 && surface.is_present_support(physical_device, queue_index) {
-                back_present_index = Some(queue_index);
+            if queue_family.queue_count > 0 && surface.is_present_support(physical_device, queue_family_index) {
+                back_present_index = Some(queue_family_index);
             }
 
             if back_graphics_index.is_some() && back_present_index.is_some() {
                 break
             }
 
-            queue_index += 1;
+            queue_family_index += 1;
         }
 
 

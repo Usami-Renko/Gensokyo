@@ -1,4 +1,5 @@
 
+pub(crate) mod window;
+pub(crate) mod workflow;
 
-pub mod window;
-pub mod workflow;
+mod error;

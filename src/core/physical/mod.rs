@@ -5,12 +5,13 @@ mod memory;
 mod family;
 mod requirement;
 mod extension;
+mod limits;
 
 use ash::vk;
 use ash::version::InstanceV1_0;
 
-use core::instance::Instance;
-use core::surface::Surface;
+use core::instance::HaInstance;
+use core::surface::HaSurface;
 use core::error::PhysicalDeviceError;
 
 use constant::VERBOSE;
@@ -25,20 +26,20 @@ pub use ash::vk::PhysicalDeviceType as PhysicalDeviceType;
 pub use self::requirement::PhysicalRequirement;
 pub use self::extension::DeviceExtensionType;
 
-pub struct PhysicalDevice {
+pub struct HaPhysicalDevice {
 
-    pub handle     : vk::PhysicalDevice,
-    properties     : PhysicalProperties,
-    pub features   : PhyscialFeatures,
-    memory         : PhysicalMemory,
-    pub families   : PhysicalQueueFamilies,
-    pub extensions : PhysicalExtension,
+    pub(crate) handle     : vk::PhysicalDevice,
+    pub(super) properties : PhysicalProperties,
+    pub(super) features   : PhyscialFeatures,
+    pub(crate) memory     : PhysicalMemory,
+    pub(super) families   : PhysicalQueueFamilies,
+    pub(super) extensions : PhysicalExtension,
 }
 
-impl PhysicalDevice {
+impl HaPhysicalDevice {
 
-    pub fn new(instance: &Instance, surface: &Surface, requirement: PhysicalRequirement)
-        -> Result<PhysicalDevice, PhysicalDeviceError> {
+    pub fn new(instance: &HaInstance, surface: &HaSurface, requirement: PhysicalRequirement)
+               -> Result<HaPhysicalDevice, PhysicalDeviceError> {
 
         let alternative_devices = instance.handle.enumerate_physical_devices()
             .or(Err(PhysicalDeviceError::EnumerateDeviceError))?;
@@ -76,7 +77,7 @@ impl PhysicalDevice {
             }
 
             optimal_device = Some(
-                PhysicalDevice {
+                HaPhysicalDevice {
                     handle: physical_device,
                     properties,
                     features,
@@ -100,8 +101,6 @@ impl PhysicalDevice {
 
     pub fn cleanup(&self) {
         // No method for delete physical device
-        if VERBOSE {
-            println!("[Info] Physical Device had been destroy.");
-        }
+        // leave it empty
     }
 }

@@ -3,7 +3,7 @@ use ash::vk;
 use ash::vk::uint32_t;
 use ash::version::InstanceV1_0;
 
-use core::instance::Instance;
+use core::instance::HaInstance;
 use core::physical::PhysicalDeviceType;
 use utility::cast;
 
@@ -17,7 +17,7 @@ pub struct PhysicalProperties {
 
 impl PhysicalProperties {
 
-    pub fn inspect(instance: &Instance, physical_device: vk::PhysicalDevice) -> PhysicalProperties {
+    pub fn inspect(instance: &HaInstance, physical_device: vk::PhysicalDevice) -> PhysicalProperties {
 
         let handle = instance.handle.get_physical_device_properties(physical_device);
         let device_name = cast::vk_to_string(&handle.device_name);
@@ -59,4 +59,5 @@ impl PhysicalProperties {
         println!("\tDevice Type: {}", device_type_description);
     }
 }
+
 

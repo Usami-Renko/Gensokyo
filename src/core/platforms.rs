@@ -20,7 +20,7 @@ use cocoa::appkit::{ NSView, NSWindow };
 #[cfg(target_os = "macos")]
 use objc::runtime::YES;
 
-// required extension ------------------------------------------------------
+/// get the names of required extension used in macOS.
 #[cfg(target_os = "macos")]
 pub fn required_extension_names() -> Vec<*const i8> {
     vec![
@@ -30,6 +30,7 @@ pub fn required_extension_names() -> Vec<*const i8> {
     ]
 }
 
+/// get the names of required extension used in Windows.
 #[cfg(all(windows))]
 pub fn required_extension_names() -> Vec<*const i8> {
     vec![
@@ -39,6 +40,7 @@ pub fn required_extension_names() -> Vec<*const i8> {
     ]
 }
 
+/// get the names of required extensions used in linux.
 #[cfg(all(unix, not(target_os = "android"), not(target_os = "macos")))]
 pub fn required_extension_names() -> Vec<*const i8> {
     vec![
@@ -47,9 +49,9 @@ pub fn required_extension_names() -> Vec<*const i8> {
         DebugReport::name().as_ptr(),
     ]
 }
-// ------------------------------------------------------------------------
 
-// create surface ---------------------------------------------------------
+
+/// get the required surface used in linux.
 #[cfg(all(unix, not(target_os = "android"), not(target_os = "macos")))]
 pub unsafe fn generate_surface<E: EntryV1_0, I: InstanceV1_0>(
     entry: &E,
@@ -74,6 +76,7 @@ pub unsafe fn generate_surface<E: EntryV1_0, I: InstanceV1_0>(
     xlib_surface_loader.create_xlib_surface_khr(&x11_create_info, None)
 }
 
+/// get the required surface used in macOS.
 #[cfg(target_os = "macos")]
 pub unsafe fn generate_surface<E: EntryV1_0, I: InstanceV1_0>(
     entry: &E,
@@ -111,6 +114,7 @@ pub unsafe fn generate_surface<E: EntryV1_0, I: InstanceV1_0>(
     macos_surface_loader.create_macos_surface_mvk(&create_info, None)
 }
 
+/// get the required surface used in Windows.
 #[cfg(target_os = "windows")]
 pub unsafe fn generate_surface<E: EntryV1_0, I: InstanceV1_0>(
     entry: &E,

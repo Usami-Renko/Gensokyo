@@ -1,8 +1,11 @@
 
-pub mod core;
-pub mod window;
-
-pub use self::window::WINDOW_SIZE;
+pub(crate) mod core;
+pub(crate) mod window;
+pub(crate) mod swapchain;
+pub(crate) mod sync;
 
 /// Set this true to enable verbose log information.
-pub const VERBOSE: bool = true;
+#[cfg(feature = "verbose")]
+pub(crate) const VERBOSE: bool = true;
+#[cfg(not(feature = "verbose"))]
+pub(crate) const VERBOSE: bool = false;

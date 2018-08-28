@@ -2,6 +2,11 @@
 use ash::vk;
 use ash::vk::uint32_t;
 
+use sync::semaphore::HaSemaphore;
+
+use pipeline::stages::PipelineStageFlag;
+use resources::command::buffer::HaCommandBuffer;
+
 #[derive(Debug, Clone, Copy)]
 pub enum QueueUsage {
     Graphics,
@@ -28,6 +33,14 @@ impl QueueInfo {
             queue_index  : info.queue_index,
         }
     }
+}
+
+pub struct QueueSubmitBundle<'vec, 're: 'vec> {
+
+    pub wait_semaphores: &'vec [&'re HaSemaphore],
+    pub sign_semaphores: &'vec [&'re HaSemaphore],
+    pub wait_stages    : &'vec [PipelineStageFlag],
+    pub commands       : &'vec [&'re HaCommandBuffer],
 }
 
 pub struct QueueInfoTmp {

@@ -1,13 +1,14 @@
 
-pub use self::instance::{ EntryV1, InstanceV1 };
-pub use self::debug::ValidationInfo;
+use ash;
+pub(crate) type EntryV1    = ash::Entry<ash::version::V1_0>;
+pub(crate) type InstanceV1 = ash::Instance<ash::version::V1_0>;
+pub(crate) use self::debug::ValidationInfo;
 
-mod error;
 mod platforms;
 
-pub mod instance;
-pub mod debug;
-pub mod surface;
-pub mod physical;
-pub mod device;
-
+pub(crate) mod instance;
+pub(crate) mod debug;
+pub(crate) mod surface;
+pub(crate) mod physical;
+pub(crate) mod device;
+pub(crate) mod error;

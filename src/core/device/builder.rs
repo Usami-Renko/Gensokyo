@@ -3,12 +3,12 @@ use ash::vk;
 use ash::version::{ InstanceV1_0, DeviceV1_0 };
 use ash::vk::uint32_t;
 
-use core::instance::Instance;
-use core::physical::PhysicalDevice;
-use core::device::LogicalDevice;
+use core::instance::HaInstance;
+use core::physical::HaPhysicalDevice;
+use core::device::HaLogicalDevice;
 use core::device::queue::QueueUsage;
 use core::device::queue::{ QueueInfoTmp, QueueInfo };
-use core::error::DeviceError;
+use core::error::LogicalDeviceError;
 
 use utility::cast;
 use constant::VERBOSE;
@@ -18,6 +18,7 @@ use std::os::raw::c_char;
 
 // TODO: The generation step hasn't been well test.
 
+// FIXME: Remove #[allow(dead_code)] after being able to configure priority.
 #[allow(dead_code)]
 #[derive(Debug, Clone, Copy, Eq, PartialEq)]
 pub enum PrefabQueuePriority {
@@ -56,8 +57,8 @@ pub struct LogicalDeviceBuilder<'a, 'b> {
     family_queue_counts : Vec<uint32_t>,
     total_queue_count   : usize,
 
-    instance            : &'a Instance,
-    physical_device     : &'b PhysicalDevice,
+    instance            : &'a HaInstance,
+    physical_device     : &'b HaPhysicalDevice,
 
     graphics_index      : Option<usize>,
     present_index       : Option<usize>,
@@ -65,7 +66,7 @@ pub struct LogicalDeviceBuilder<'a, 'b> {
 
 impl<'a, 'b> LogicalDeviceBuilder<'a, 'b> {
 
-    pub fn init(instance: &'a Instance, physical: &'b PhysicalDevice) -> LogicalDeviceBuilder<'a, 'b> {
+    pub fn init(instance: &'a HaInstance, physical: &'b HaPhysicalDevice) -> LogicalDeviceBuilder<'a, 'b> {
 
         let queue_family_count = physical.families.queue_families_count();
 
@@ -176,7 +177,7 @@ impl<'a, 'b> LogicalDeviceBuilder<'a, 'b> {
         (queue_create_infos, queue_info_tmps)
     }
 
-    pub fn build(&self) -> Result<LogicalDevice, DeviceError> {
+    pub fn build(&self) -> Result<HaLogicalDevice, LogicalDeviceError> {
 
         let (queue_create_infos, queue_info_tmps) = self.generate_queue_create_info();
 
@@ -188,7 +189,7 @@ impl<'a, 'b> LogicalDeviceBuilder<'a, 'b> {
         let device_create_info = vk::DeviceCreateInfo {
             s_type                     : vk::StructureType::DeviceCreateInfo,
             p_next                     : ptr::null(),
-            // flags is reserved for future use in API version 1.0.82
+            // flags is reserved for future use in API version 1.0.82.
             flags                      : vk::DeviceCreateFlags::empty(),
             queue_create_info_count    : queue_create_infos.len() as uint32_t,
             p_queue_create_infos       : queue_create_infos.as_ptr(),
@@ -201,7 +202,7 @@ impl<'a, 'b> LogicalDeviceBuilder<'a, 'b> {
 
         let device_handle = unsafe {
             self.instance.handle.create_device(self.physical_device.handle, &device_create_info, None)
-                .or(Err(DeviceError::DeviceCreationError))?
+                .or(Err(LogicalDeviceError::DeviceCreationError))?
         };
 
         let mut queues = vec![];
@@ -213,7 +214,7 @@ impl<'a, 'b> LogicalDeviceBuilder<'a, 'b> {
             queues.push(queue_info);
         }
 
-        let device = LogicalDevice::new(device_handle, queues, self.graphics_index, self.present_index);
+        let device = HaLogicalDevice::new(device_handle, queues, self.graphics_index, self.present_index);
 
         Ok(device)
     }

@@ -1,31 +1,35 @@
 
 use std::fmt;
+use std::error::Error;
 
+/// possible error may occur during the creation of vk::Instance.
 #[derive(Debug, Clone, Copy, Eq, PartialEq)]
 pub enum InstanceError {
 
     EntryCreationError,
     ValidationLayerNotSupportError,
     InstanceCreationError,
-    InstanceLayerPropertiesEnumerateError,
+    LayerPropertiesEnumerateError,
 }
 
+impl Error for InstanceError {}
 impl fmt::Display for InstanceError {
 
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
 
         let description = match self {
-            | InstanceError::EntryCreationError                    => "Failed to create Entry Object.",
-            | InstanceError::ValidationLayerNotSupportError        => "Validation Layer is not support.",
-            | InstanceError::InstanceCreationError                 => "Failed to create Instance Object.",
-            | InstanceError::InstanceLayerPropertiesEnumerateError => "Failed to enumerate Instance Layer Properties.",
+            | InstanceError::EntryCreationError             => "Failed to create Entry Object.",
+            | InstanceError::ValidationLayerNotSupportError => "Validation Layer is not support.",
+            | InstanceError::InstanceCreationError          => "Failed to create Instance Object.",
+            | InstanceError::LayerPropertiesEnumerateError  => "Failed to enumerate Instance Layer Properties.",
         };
 
-        write!(f, "Error: {}", description)
+        write!(f, "{}", description)
     }
 }
 
 
+/// possible error may occur during the initialization of Validation Layer.
 #[derive(Debug, Clone, Copy, Eq, PartialEq)]
 pub enum ValidationError {
 
@@ -33,6 +37,7 @@ pub enum ValidationError {
     DebugCallbackCreationError,
 }
 
+impl Error for ValidationError {}
 impl fmt::Display for ValidationError {
 
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
@@ -42,11 +47,12 @@ impl fmt::Display for ValidationError {
             | ValidationError::DebugCallbackCreationError => "Failed to create DebugReport Callback Object.",
         };
 
-        write!(f, "Error: {}", description)
+        write!(f, "{}", description)
     }
 }
 
 
+/// possible error may occur during the creation of vk::PhysicalDevice.
 #[derive(Debug, Clone, Copy, Eq, PartialEq)]
 pub enum PhysicalDeviceError {
 
@@ -57,6 +63,7 @@ pub enum PhysicalDeviceError {
     EnumerateExtensionsError,
 }
 
+impl Error for PhysicalDeviceError {}
 impl fmt::Display for PhysicalDeviceError {
 
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
@@ -69,46 +76,62 @@ impl fmt::Display for PhysicalDeviceError {
             | PhysicalDeviceError::EnumerateExtensionsError     => "Failed to enumerate Device Extensions."
         };
 
-        write!(f, "Error: {}", description)
+        write!(f, "{}", description)
     }
 }
 
 
+/// possible error may occur during the creation of vk::Surface.
 #[derive(Debug, Clone, Copy, Eq, PartialEq)]
 pub enum SurfaceError {
 
     SurfaceCreationError,
-    SurfaceExtensionLoadError,
+    ExtensionLoadError,
+    QueryCapabilitiesError,
+    QueryFormatsError,
+    QueryPresentModeError,
 }
 
+impl Error for SurfaceError {}
 impl fmt::Display for SurfaceError {
 
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
 
         let description = match self {
-            | SurfaceError::SurfaceCreationError => "Failed to create Surface.",
-            | SurfaceError::SurfaceExtensionLoadError => "Failed to load Surface extension.",
+            | SurfaceError::SurfaceCreationError   => "Failed to create Surface.",
+            | SurfaceError::ExtensionLoadError     => "Failed to load Surface extension.",
+            | SurfaceError::QueryCapabilitiesError => "Failed to query surface capabilities.",
+            | SurfaceError::QueryFormatsError      => "Failed to query surface formats.",
+            | SurfaceError::QueryPresentModeError  => "Failed to query surface present mode.",
         };
 
-        write!(f, "Error: {}", description)
+        write!(f, "{}", description)
     }
 }
 
 
+/// possible error may occur during the creation of vk::Device.
 #[derive(Debug, Clone, Copy, Eq, PartialEq)]
-pub enum DeviceError {
+pub enum LogicalDeviceError {
 
     DeviceCreationError,
+    GraphicsQueueUnavailable,
+    QueueSubmitError,
+    WaitIdleError,
 }
 
-impl fmt::Display for DeviceError {
+impl Error for LogicalDeviceError {}
+impl fmt::Display for LogicalDeviceError {
 
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
 
         let description = match self {
-            | DeviceError::DeviceCreationError => "Failed to create Logical Device.",
+            | LogicalDeviceError::DeviceCreationError      => "Failed to create Logical Device.",
+            | LogicalDeviceError::GraphicsQueueUnavailable => "Graphics Queue is not available for device operation.",
+            | LogicalDeviceError::QueueSubmitError         => "Device failed to submit queue.",
+            | LogicalDeviceError::WaitIdleError            => "Device failed to wait idle.",
         };
 
-        write!(f, "Error: {}", description)
+        write!(f, "{}", description)
     }
 }
