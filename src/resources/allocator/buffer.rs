@@ -6,8 +6,9 @@ use core::device::HaLogicalDevice;
 use core::physical::HaPhysicalDevice;
 
 use resources::buffer::{ HaBuffer, BufferConfig };
-use resources::memory::{HaMemoryAbstract, HaDeviceMemory};
+use resources::memory::{ HaMemoryAbstract, HaDeviceMemory };
 use resources::repository::HaBufferRepository;
+use resources::error::MemoryError;
 use resources::error::AllocatorError;
 
 // TODO: Currently HaBufferAllocator only support operation in single queue family.
@@ -22,6 +23,8 @@ pub struct HaBufferAllocator<'re> {
     spaces  : Vec<vk::DeviceSize>,
     /// The index of memory type that available to use.
     candidate_memories: Vec<usize>,
+
+    mem_flag: vk::MemoryPropertyFlags,
 }
 
 impl<'re> HaBufferAllocator<'re> {
@@ -36,6 +39,7 @@ impl<'re> HaBufferAllocator<'re> {
             buffers: vec![],
             spaces : vec![],
             candidate_memories: vec![],
+            mem_flag: vk::MemoryPropertyFlags::all(),
         }
     }
 
@@ -44,17 +48,24 @@ impl<'re> HaBufferAllocator<'re> {
         let buffer = HaBuffer::generate(self.device, config.data, config.usage, config.buffer_flags, None)
             .map_err(|e| AllocatorError::Buffer(e))?;
         let required_size = buffer.require_memory_size();
+        let required_memory_flag = config.memory_flags.flags();
 
         self.candidate_memories = self.physical.memory.find_memory_type(
             buffer.require_memory_type_bits(),
-            config.memory_flags.flags(),
+            required_memory_flag,
             if self.candidate_memories.is_empty() { None } else { Some(&self.candidate_memories) }
         ).map_err(|e| AllocatorError::Memory(e))?;
 
-        self.buffers.push(buffer);
-        self.spaces.push(required_size);
+        if self.mem_flag.subset(required_memory_flag) {
 
-        Ok(())
+            self.mem_flag = self.mem_flag & required_memory_flag;
+            self.buffers.push(buffer);
+            self.spaces.push(required_size);
+
+            Ok(())
+        } else {
+            Err(AllocatorError::Memory(MemoryError::NoSuitableMemoryError))
+        }
     }
 
     /// Allocate memory for buffers, and bind those buffer to the memory. All resource store in BufferRepository Object.
@@ -74,7 +85,8 @@ impl<'re> HaBufferAllocator<'re> {
         let memory = HaDeviceMemory::allocate(
             self.physical, self.device,
             allocate_size,
-            optimal_memory_index
+            optimal_memory_index,
+            self.mem_flag
         ).map_err(|e| AllocatorError::Memory(e))?;
 
         // bind buffers to memory

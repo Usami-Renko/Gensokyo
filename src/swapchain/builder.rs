@@ -63,7 +63,7 @@ impl<'vk, 'win: 'vk> SwapchainBuilder<'vk, 'win> {
         let support = SwapchainSupport::query_support(surface, physical.handle)
             .map_err(|e| SwapchainInitError::SurfacePropertiesQuery(e))?;
 
-        let image_share_info = sharing_mode(device)?;
+        let image_share_info = sharing_mode(device);
 
         let swapchain = SwapchainBuilder {
             device,
@@ -93,7 +93,7 @@ impl<'vk, 'win: 'vk> SwapchainBuilder<'vk, 'win> {
             s_type: vk::StructureType::SwapchainCreateInfoKhr,
             p_next: ptr::null(),
             // TODO: Vulkan 1.1 introduced flags for SwapchainCreateInfoKHR, add flags selection in future.
-            flags   : vk::SwapchainCreateFlagsKHR::empty(),
+            flags : vk::SwapchainCreateFlagsKHR::empty(),
 
             surface           : self.surface.handle,
             min_image_count   : self.image_count,
@@ -160,14 +160,9 @@ struct SwapchainImageShaingInfo {
     mode: vk::SharingMode,
     queue_family_indices: Vec<uint32_t>,
 }
-fn sharing_mode(device: &HaLogicalDevice) -> Result<SwapchainImageShaingInfo, SwapchainInitError> {
+fn sharing_mode(device: &HaLogicalDevice) -> SwapchainImageShaingInfo {
 
-    let graphics_queue = device.graphics_queue()
-        .ok_or(SwapchainInitError::GraphicsQueueNotAvailable)?;
-    let present_queue  = device.present_queue()
-        .ok_or(SwapchainInitError::PresentQueueNotAvailable)?;
-
-    let share_info = if graphics_queue.family_index == present_queue.family_index {
+    if device.graphics_queue.family_index == device.present_queue.family_index {
         SwapchainImageShaingInfo {
             mode: vk::SharingMode::Exclusive,
             queue_family_indices: vec![],
@@ -176,13 +171,12 @@ fn sharing_mode(device: &HaLogicalDevice) -> Result<SwapchainImageShaingInfo, Sw
         SwapchainImageShaingInfo {
             mode: vk::SharingMode::Concurrent,
             queue_family_indices: vec![
-                graphics_queue.family_index,
-                present_queue.family_index,
+                device.graphics_queue.family_index,
+                device.present_queue.family_index,
             ],
         }
-    };
+    }
 
-    Ok(share_info)
 }
 
 fn generate_imageviews(device: &HaLogicalDevice, format: vk::Format, images: &Vec<HaImage>)

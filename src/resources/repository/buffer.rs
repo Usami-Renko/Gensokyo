@@ -60,11 +60,16 @@ impl HaBufferRepository {
 
         let memory = self.memory.as_ref().ok_or(AllocatorError::MemoryNotYetAllocated)?;
 
-        let data_size = self.spaces[buffer_index];
-        let data_ptr = memory.map(device, self.offsets[buffer_index], data_size)
+        let size = self.spaces[buffer_index];
+        let offset = self.offsets[buffer_index];
+
+        let data_ptr = memory.map(device, offset, size)
             .map_err(|e| AllocatorError::Memory(e))?;
-        self.buffers[buffer_index].copy_data(data_ptr, data_size, data);
-        memory.unmap(device);
+
+        self.buffers[buffer_index].copy_data(data_ptr, size, data);
+
+        memory.unmap(device, offset, size)
+            .map_err(|e| AllocatorError::Memory(e))?;
 
         Ok(())
     }

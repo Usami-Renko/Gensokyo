@@ -12,7 +12,8 @@ use utility::marker::VulkanFlags;
 pub struct QueueFamilyIndices {
 
     pub graphics_index: uint32_t,
-    pub present_index:  uint32_t,
+    pub present_index : uint32_t,
+    pub transfer_index: uint32_t,
     pub is_share_same_family: bool,
 }
 
@@ -69,24 +70,26 @@ pub struct PhysicalQueueFamilies {
 impl PhysicalQueueFamilies {
 
     pub fn inspect(instance: &HaInstance, physical_device: vk::PhysicalDevice, surface: &HaSurface)
-                   -> Result<PhysicalQueueFamilies, PhysicalDeviceError> {
+        -> Result<PhysicalQueueFamilies, PhysicalDeviceError> {
 
         let families = instance.handle.get_physical_device_queue_family_properties(physical_device);
 
         let mut back_graphics_index = None;
         let mut back_present_index  = None;
+        let mut back_transfer_index = None;
 
         let mut queue_family_index: uint32_t = 0;
         for queue_family in families.iter() {
-            if queue_family.queue_count > 0 && queue_family.queue_flags.subset(vk::QUEUE_GRAPHICS_BIT) {
+            if queue_family.queue_count > 0 && queue_family.queue_flags.subset(vk::QUEUE_GRAPHICS_BIT & vk::QUEUE_TRANSFER_BIT) {
                 back_graphics_index = Some(queue_family_index);
+                back_transfer_index = Some(queue_family_index);
             }
 
             if queue_family.queue_count > 0 && surface.is_present_support(physical_device, queue_family_index) {
                 back_present_index = Some(queue_family_index);
             }
 
-            if back_graphics_index.is_some() && back_present_index.is_some() {
+            if back_graphics_index.is_some() && back_present_index.is_some() && back_transfer_index.is_some() {
                 break
             }
 
@@ -100,11 +103,17 @@ impl PhysicalQueueFamilies {
         if back_present_index.is_none() {
             return Err(PhysicalDeviceError::PresentQueueNotSupportError)
         }
+        if back_transfer_index.is_none() {
+            return Err(PhysicalDeviceError::TransferQueueNotSupportError)
+        }
 
         let family_indices = QueueFamilyIndices {
             graphics_index: back_graphics_index.unwrap(),
-            present_index:  back_present_index.unwrap(),
-            is_share_same_family: back_present_index.unwrap() == back_present_index.unwrap(),
+            present_index : back_present_index.unwrap(),
+            transfer_index: back_transfer_index.unwrap(),
+            is_share_same_family:
+                (back_graphics_index.unwrap() == back_present_index.unwrap()) &&
+                (back_graphics_index.unwrap() == back_transfer_index.unwrap()),
         };
 
         let operation_indices = generate_operation_indices(&families);

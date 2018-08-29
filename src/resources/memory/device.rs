@@ -17,12 +17,12 @@ pub struct HaDeviceMemory {
     _size      : vk::DeviceSize,
     _type_index: uint32_t,
     _mem_type  : vk::MemoryType,
+    flag       : vk::MemoryPropertyFlags,
 }
 
 impl HaMemoryAbstract for HaDeviceMemory {
 
-    fn allocate(physical: &HaPhysicalDevice, device: &HaLogicalDevice, size: vk::DeviceSize, type_index: usize)
-                -> Result<HaDeviceMemory, MemoryError> {
+    fn allocate(physical: &HaPhysicalDevice, device: &HaLogicalDevice, size: vk::DeviceSize, type_index: usize, flag: vk::MemoryPropertyFlags) -> Result<HaDeviceMemory, MemoryError> {
 
         let allocate_info = vk::MemoryAllocateInfo {
             s_type: vk::StructureType::MemoryAllocateInfo,
@@ -43,6 +43,7 @@ impl HaMemoryAbstract for HaDeviceMemory {
             _size: size,
             _type_index: type_index as uint32_t,
             _mem_type: mem_type,
+            flag,
         };
         Ok(memory)
     }
@@ -57,8 +58,7 @@ impl HaMemoryAbstract for HaDeviceMemory {
         Ok(())
     }
 
-    fn map(&self, device: &HaLogicalDevice, offset: vk::DeviceSize, size: vk::DeviceSize)
-           -> Result<*mut vk::c_void, MemoryError> {
+    fn map(&self, device: &HaLogicalDevice, offset: vk::DeviceSize, size: vk::DeviceSize) -> Result<*mut vk::c_void, MemoryError> {
 
         let data_ptr = unsafe {
             device.handle.map_memory(
@@ -75,11 +75,30 @@ impl HaMemoryAbstract for HaDeviceMemory {
         Ok(data_ptr)
     }
 
-    fn unmap(&self, device: &HaLogicalDevice) {
+    fn unmap(&self, device: &HaLogicalDevice, offset: vk::DeviceSize, size: vk::DeviceSize) -> Result<(), MemoryError> {
+
+        // TODO: Currently support flush a single range.
+        if !self.flag.subset(vk::MEMORY_PROPERTY_HOST_COHERENT_BIT) { // if not contain coherent bit
+            let flush_rages = [
+                vk::MappedMemoryRange {
+                    s_type: vk::StructureType::MappedMemoryRange,
+                    p_next: ptr::null(),
+                    memory: self.handle,
+                    offset,
+                    size,
+                }
+            ];
+            unsafe {
+                device.handle.flush_mapped_memory_ranges(&flush_rages)
+                    .or(Err(MemoryError::FlushMemoryError))?
+            }
+        }
 
         unsafe {
             device.handle.unmap_memory(self.handle)
         }
+
+        Ok(())
     }
 }
 

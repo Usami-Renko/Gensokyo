@@ -78,6 +78,7 @@ pub enum MemoryError {
     AllocateMemoryError,
     BindMemoryError,
     MapMemoryError,
+    FlushMemoryError,
 }
 
 impl Error for MemoryError {}
@@ -91,6 +92,7 @@ impl fmt::Display for MemoryError {
             | MemoryError::AllocateMemoryError       => "Failed to allocate memory for buffer object.",
             | MemoryError::BindMemoryError           => "Failed to bind memory to buffer object.",
             | MemoryError::MapMemoryError            => "Failed to map memory for buffer object.",
+            | MemoryError::FlushMemoryError          => "Failed to flush certain range of memory.",
         };
         write!(f, "{}", description)
     }

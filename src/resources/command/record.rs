@@ -121,6 +121,24 @@ impl<'buffer, 're> HaCommandRecorder<'buffer, 're> {
         };
         Ok(())
     }
+
+//    pub fn pipeline_barrrier(&self) -> Result<&HaCommandRecorder<'buffer, 're>, CommandError> {
+//
+//        let image_barrier = vk::ImageMemoryBarrier {
+//            s_type: vk::StructureType::ImageMemoryBarrier,
+//            p_next: ptr::null(),
+//            src_access_mask: vk::ACCESS_MEMORY_READ_BIT,
+//            dst_access_mask: vk::ACCESS_MEMORY_READ_BIT,
+//            old_layout: vk::ImageLayout::Undefined,
+//            new_layout: vk::ImageLayout::PresentSrcKhr,
+//            src_queue_family_index: self.device.present_queue_index.unwrap() as uint32_t,
+//            dst_queue_family_index: self.device.graphics_queue_index.unwrap() as uint32_t,
+//            image: Image
+//            subresource_range: ImageSubresourceRange
+//        };
+//
+//
+//    }
 }
 
 

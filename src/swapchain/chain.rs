@@ -4,7 +4,7 @@ use ash::vk;
 use ash::vk::uint32_t;
 
 use core::device::HaLogicalDevice;
-use core::device::QueueInfo;
+use core::device::HaQueue;
 
 use swapchain::error::SwapchainRuntimeError;
 
@@ -23,7 +23,7 @@ pub struct HaSwapchain {
     pub(super) handle: vk::SwapchainKHR,
     pub(super) loader: ash::extensions::Swapchain,
 
-    pub(super) _images      : Vec<HaImage>,
+    pub(super) _images     : Vec<HaImage>,
     pub(super) views       : Vec<HaImageView>,
     pub(crate) framebuffers: Vec<HaFramebuffer>,
 
@@ -70,8 +70,9 @@ impl HaSwapchain {
         }
     }
 
-    pub fn present(&self, wait_semaphores: &[&HaSemaphore], image_index: uint32_t, queue: &QueueInfo)
+    pub fn present(&self, wait_semaphores: &[&HaSemaphore], image_index: uint32_t, queue: &HaQueue)
         -> Result<(), SwapchainRuntimeError> {
+
         let semaphores = wait_semaphores.handles();
 
         let present_info = vk::PresentInfoKHR {
@@ -79,10 +80,10 @@ impl HaSwapchain {
             p_next: ptr::null(),
             /// wait_semaphores specifies the semaphores to wait for before issuing the present request.
             wait_semaphore_count: semaphores.len() as uint32_t,
-            p_wait_semaphores:    semaphores.as_ptr(),
+            p_wait_semaphores   : semaphores.as_ptr(),
             // Currently just support a single swapchain.
             swapchain_count: 1,
-            p_swapchains:    [self.handle].as_ptr(),
+            p_swapchains   : [self.handle].as_ptr(),
             p_image_indices: &image_index,
             // VKResult of each swapchain
             p_results: ptr::null_mut(),

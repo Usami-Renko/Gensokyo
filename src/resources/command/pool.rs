@@ -23,14 +23,11 @@ impl HaCommandPool {
     pub fn setup(device: &HaLogicalDevice, flags: &[CommandPoolFlag])
         -> Result<HaCommandPool, CommandError> {
 
-        let graphcis_family_index = device.graphics_queue_index
-            .ok_or(CommandError::QueueFamilyUnavailable)?;
-
         let info = vk::CommandPoolCreateInfo {
             s_type: vk::StructureType::CommandPoolCreateInfo,
             p_next: ptr::null(),
             flags: flags.flags(),
-            queue_family_index: graphcis_family_index as uint32_t,
+            queue_family_index: device.graphics_queue.family_index,
         };
 
         let handle = unsafe {

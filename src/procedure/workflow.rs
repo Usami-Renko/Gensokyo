@@ -5,9 +5,7 @@ use core::instance::HaInstance;
 use core::debug::HaDebugger;
 use core::physical::{ HaPhysicalDevice, PhysicalRequirement };
 use core::surface::HaSurface;
-use core::device::{ HaLogicalDevice, LogicalDeviceBuilder, PrefabQueue };
-use core::device::QueueSubmitBundle;
-use core::error::LogicalDeviceError;
+use core::device::{ HaLogicalDevice, LogicalDeviceBuilder, QueueSubmitBundle, DeviceQueueIdentifier };
 use swapchain::chain::HaSwapchain;
 use swapchain::builder::SwapchainBuilder;
 use swapchain::error::{ SwapchainError, SwapchainRuntimeError };
@@ -87,12 +85,9 @@ impl<'win, T> ProgramEnv<T> where T: ProgramProc {
         let physical = HaPhysicalDevice::new(&instance, &surface, requirement)
             .map_err(|e| ProcedureError::PhysicalDevice(e))?;
 
+        // Initialize the device with default queues. (one graphics queue, one present queue, one transfer queue)
         let device = LogicalDeviceBuilder::init(&instance, &physical)
-            .setup_prefab_queue(&[
-                PrefabQueue::GraphicsQueue,
-                PrefabQueue::PresentQueue,
-            ]).build()
-            .map_err(|e| ProcedureError::LogicalDevice(e))?;
+            .build().map_err(|e| ProcedureError::LogicalDevice(e))?;
 
         let command_pool = HaCommandPool::setup(&device, &[])
             .map_err(|e| ProcedureError::Command(e))?;
@@ -218,12 +213,17 @@ impl<'win, T> ProgramEnv<T> where T: ProgramProc {
             },
         ];
 
-        core.device.submit(&submit_infos, Some(fence_to_wait))
+        core.device.submit(&submit_infos, Some(fence_to_wait), DeviceQueueIdentifier::Graphics)
             .map_err(|e| ProcedureError::LogicalDevice(e))?;
 
-        let graphics_queue = core.device.graphics_queue()
-            .ok_or(ProcedureError::LogicalDevice(LogicalDeviceError::GraphicsQueueUnavailable))?;
-        let present_result = resources.swapchain.present(&[&resources.render_awaits[current_frame]], image_index, graphics_queue);
+        // FIXME: Use present queue will cause crash. Image ownership transfer is necessary,
+        // see https://github.com/KhronosGroup/Vulkan-Docs/wiki/Synchronization-Examples.
+        // or see https://software.intel.com/en-us/articles/api-without-secrets-introduction-to-vulkan-part-3
+        let present_result = resources.swapchain.present(
+            &[&resources.render_awaits[current_frame]],
+            image_index,
+            &core.device.graphics_queue
+        );
         if let Err(e) = present_result {
             match e {
                 | SwapchainRuntimeError::SurfaceOutOfDateError

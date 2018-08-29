@@ -60,6 +60,18 @@ pub fn temp_render_pass(device: &HaLogicalDevice) -> HaRenderPass {
         color_attchemnt,
     ];
 
+    let subpass_dependencies = [
+        vk::SubpassDependency {
+            src_subpass: vk::VK_SUBPASS_EXTERNAL,
+            dst_subpass: 0,
+            src_stage_mask: vk::PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT,
+            dst_stage_mask: vk::PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT,
+            src_access_mask: vk::AccessFlags::empty(),
+            dst_access_mask: vk::ACCESS_COLOR_ATTACHMENT_READ_BIT| vk::ACCESS_COLOR_ATTACHMENT_WRITE_BIT,
+            dependency_flags: vk::DependencyFlags::empty(),
+        },
+    ];
+
     let renderpass_create_info = vk::RenderPassCreateInfo {
         s_type: vk::StructureType::RenderPassCreateInfo,
         p_next: ptr::null(),
@@ -68,8 +80,8 @@ pub fn temp_render_pass(device: &HaLogicalDevice) -> HaRenderPass {
         p_attachments: render_pass_attachemnts.as_ptr(),
         subpass_count: 1,
         p_subpasses: &subpass,
-        dependency_count: 0,
-        p_dependencies: ptr::null(),
+        dependency_count: subpass_dependencies.len() as u32,
+        p_dependencies: subpass_dependencies.as_ptr(),
     };
 
     let handle = unsafe {

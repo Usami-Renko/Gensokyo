@@ -60,6 +60,7 @@ pub enum PhysicalDeviceError {
     EnumerateDeviceError,
     GraphicsQueueNotSupportError,
     PresentQueueNotSupportError,
+    TransferQueueNotSupportError,
     EnumerateExtensionsError,
 }
 
@@ -73,6 +74,7 @@ impl fmt::Display for PhysicalDeviceError {
             | PhysicalDeviceError::EnumerateDeviceError         => "Failed to enumerate Physical Devices.",
             | PhysicalDeviceError::GraphicsQueueNotSupportError => "Physical device does not support graphics requirement.",
             | PhysicalDeviceError::PresentQueueNotSupportError  => "Physical device does not support present requirement.",
+            | PhysicalDeviceError::TransferQueueNotSupportError => "Physical device does not support transfer requirement",
             | PhysicalDeviceError::EnumerateExtensionsError     => "Failed to enumerate Device Extensions."
         };
 
@@ -115,7 +117,6 @@ impl fmt::Display for SurfaceError {
 pub enum LogicalDeviceError {
 
     DeviceCreationError,
-    GraphicsQueueUnavailable,
     QueueSubmitError,
     WaitIdleError,
 }
@@ -127,7 +128,6 @@ impl fmt::Display for LogicalDeviceError {
 
         let description = match self {
             | LogicalDeviceError::DeviceCreationError      => "Failed to create Logical Device.",
-            | LogicalDeviceError::GraphicsQueueUnavailable => "Graphics Queue is not available for device operation.",
             | LogicalDeviceError::QueueSubmitError         => "Device failed to submit queue.",
             | LogicalDeviceError::WaitIdleError            => "Device failed to wait idle.",
         };
