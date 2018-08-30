@@ -20,6 +20,17 @@ impl Error for SwapchainError {
     }
 }
 
+impl From<SwapchainInitError> for SwapchainError {
+    fn from(error: SwapchainInitError) -> Self {
+        SwapchainError::Init(error)
+    }
+}
+impl From<SwapchainRuntimeError> for SwapchainError {
+    fn from(error: SwapchainRuntimeError) -> Self {
+        SwapchainError::Runtime(error)
+    }
+}
+
 impl fmt::Display for SwapchainError {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
 

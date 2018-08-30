@@ -71,6 +71,28 @@ impl Error for ProcedureError {
     }
 }
 
+macro_rules! impl_from_err {
+    ($impl_err:ident, $sub_err:ident, $from_err:ty) => (
+
+        impl From<$from_err> for $impl_err {
+            fn from(error: $from_err) -> Self {
+                $impl_err::$sub_err(error)
+            }
+        }
+    )
+}
+
+impl_from_err!(ProcedureError, Instance, InstanceError);
+impl_from_err!(ProcedureError, Validation, ValidationError);
+impl_from_err!(ProcedureError, Surface, SurfaceError);
+impl_from_err!(ProcedureError, PhysicalDevice, PhysicalDeviceError);
+impl_from_err!(ProcedureError, LogicalDevice, LogicalDeviceError);
+impl_from_err!(ProcedureError, Swapchain, SwapchainError);
+impl_from_err!(ProcedureError, Pipeline, PipelineError);
+impl_from_err!(ProcedureError, Command, CommandError);
+impl_from_err!(ProcedureError, Sync, SyncError);
+impl_from_err!(ProcedureError, Allocator, AllocatorError);
+
 impl fmt::Display for ProcedureError {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
 
@@ -83,3 +105,4 @@ impl fmt::Display for ProcedureError {
         write!(f, "{}", description)
     }
 }
+

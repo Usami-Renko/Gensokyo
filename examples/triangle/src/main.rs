@@ -31,7 +31,7 @@ define_input! {
 }
 
 const VERTEX_DATA: [Vertex; 3] = [
-    Vertex { pos: [ 0.0, -0.5], color: [0.5, 1.0, 1.0, 1.0], },
+    Vertex { pos: [ 0.0, -0.5], color: [1.0, 0.0, 0.0, 1.0], },
     Vertex { pos: [ 0.5,  0.5], color: [0.0, 1.0, 0.0, 1.0], },
     Vertex { pos: [-0.5,  0.5], color: [0.0, 0.0, 1.0, 1.0], },
 ];
@@ -100,9 +100,7 @@ impl ProgramProc for TriangleProcedure {
         render_pass_builder.add_dependenty(dependency);
 
         // render pass
-        let render_pass = render_pass_builder.build(device, swapchain)
-            .map_err(|e| ProcedureError::Pipeline(e))?;
-
+        let render_pass = render_pass_builder.build(device, swapchain)?;
         // pipeline
         let viewport = HaViewport::setup(swapchain.extent);
         let pipeline_config = GraphicsPipelineConfig::init(shader_infos, vertex_input_desc, render_pass)
@@ -112,8 +110,7 @@ impl ProgramProc for TriangleProcedure {
         let mut pipeline_builder = GraphicsPipelineBuilder::init();
         pipeline_builder.add_config(pipeline_config);
 
-        let mut graphics_pipelines = pipeline_builder.build(device)
-            .map_err(|e| ProcedureError::Pipeline(e))?;
+        let mut graphics_pipelines = pipeline_builder.build(device)?;
         self.graphics_pipeline = graphics_pipelines.pop().unwrap();
 
         Ok(())
@@ -133,50 +130,40 @@ impl ProgramProc for TriangleProcedure {
         };
 
         let mut allocator = generator.buffer_allocator();
-        allocator.attach_buffer(buffer_config)
-            .map_err(|e| ProcedureError::Allocator(e))?;
+        allocator.attach_buffer(buffer_config)?;
 
-        let repository = allocator.allocate()
-            .map_err(|e| ProcedureError::Allocator(e))?;
-        repository.tranfer_data(device, &self.vertex_data, 0)
-            .map_err(|e| ProcedureError::Allocator(e))?;
+        let repository = allocator.allocate()?;
+        repository.tranfer_data(device, &self.vertex_data, 0)?;
         self.vertex_buffer = repository;
 
 
         // command buffer
-        let command_pool = HaCommandPool::setup(&device, &[])
-            .map_err(|e| ProcedureError::Command(e))?;
+        let command_pool = HaCommandPool::setup(&device, &[])?;
 
         let command_buffer_count = self.graphics_pipeline.frame_count();
         let mut command_buffers = command_pool
-            .allocate(device, CommandBufferUsage::UnitaryCommand, command_buffer_count)
-            .map_err(|e| ProcedureError::Command(e))?;
-
+            .allocate(device, CommandBufferUsage::UnitaryCommand, command_buffer_count)?;
 
         for (frame_index, command_buffer) in command_buffers.iter_mut().enumerate() {
-            let recorder = command_buffer.setup_record(device, &self.graphics_pipeline)
-                .map_err(|e| ProcedureError::Command(e))?;
+            let recorder = command_buffer.setup_record(device, &self.graphics_pipeline)?;
             let usage_flags = [
                 CommandBufferUsageFlag::SimultaneousUseBit
             ];
 
-            recorder.begin_record(&usage_flags)
-                .map_err(|e| ProcedureError::Command(e))?
+            recorder.begin_record(&usage_flags)?
                 .begin_render_pass(frame_index)
                 .bind_pipeline()
                 .bind_vertex_buffers(0, &self.vertex_buffer.binding_infos())
                 .draw(self.vertex_data.len() as uint32_t, 1, 0, 0)
                 .end_render_pass()
-                .finish()
-                .map_err(|e| ProcedureError::Command(e))?;
+                .finish()?;
         }
         self.command_pool    = command_pool;
         self.command_buffers = command_buffers;
 
         // sync
         for _ in 0..self.graphics_pipeline.frame_count() {
-            let present_available = HaSemaphore::setup(device)
-                .map_err(|e| ProcedureError::Sync(e))?;
+            let present_available = HaSemaphore::setup(device)?;
             self.present_availables.push(present_available);
         }
 
@@ -195,8 +182,7 @@ impl ProgramProc for TriangleProcedure {
             },
         ];
 
-        device.submit(&submit_infos, Some(device_available), DeviceQueueIdentifier::Graphics)
-            .map_err(|e| ProcedureError::LogicalDevice(e))?;
+        device.submit(&submit_infos, Some(device_available), DeviceQueueIdentifier::Graphics)?;
 
         return Ok(&self.present_availables[image_index])
     }

@@ -86,12 +86,12 @@ impl<T> ProgramEnv<T> where T: ProgramProc {
 
         let window = self.window_info.build(&self.event_loop)
             .map_err(|e| RuntimeError::Window(e))?;
-        let core = self.initialize_core(&window, requirement)
+        let mut core = self.initialize_core(&window, requirement)
             .map_err(|e| RuntimeError::Procedure(e))?;
         let mut resources = self.load_resources(&core)
             .map_err(|e| RuntimeError::Procedure(e))?;
 
-        self.main_loop(&core, &mut resources)
+        self.main_loop(&mut core, &mut resources)
             .map_err(|e| RuntimeError::Procedure(e))?;
         self.wait_idle(&core.device)
             .map_err(|e| RuntimeError::Procedure(e))?;
@@ -103,7 +103,7 @@ impl<T> ProgramEnv<T> where T: ProgramProc {
         Ok(())
     }
 
-    fn main_loop(&mut self, core: &CoreInfrastructure, resources: &mut HaResources) -> Result<(), ProcedureError> {
+    fn main_loop(&mut self, core: &mut CoreInfrastructure, resources: &mut HaResources) -> Result<(), ProcedureError> {
 
         let mut is_running       = true;
         let mut is_first_resized = true;
