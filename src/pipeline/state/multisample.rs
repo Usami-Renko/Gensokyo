@@ -8,13 +8,13 @@ use std::os::raw::c_float;
 pub struct HaMultisample {
 
     /// The number of samples per pixel used in rasterization.
-    sample_count: SampleCountType,
+    sample_count  : SampleCountType,
     /// Sample shading can be used to specify a minimum number of unique samples to process for each fragment.
     sample_shading: SampleShading,
     /// Controls whether a temporary coverage value is generated based on the alpha component of the fragment’s first color output.
-    alpha_to_coverage_enable : Bool32,
+    alpha_to_coverage_enable: Bool32,
     /// Controls whether the alpha component of the fragment’s first color output is replaced with one.
-    alpha_to_one_enalbe      : Bool32,
+    alpha_to_one_enalbe     : Bool32,
 }
 
 
@@ -46,7 +46,7 @@ impl HaMultisample {
             // flags is reserved for future use in API version 1.0.82.
             flags  : vk::PipelineMultisampleStateCreateFlags::empty(),
 
-            rasterization_samples : self.sample_count.flag(),
+            rasterization_samples : self.sample_count.value(),
             sample_shading_enable : self.sample_shading.enable,
             min_sample_shading    : self.sample_shading.min_sample,
             p_sample_mask         : &self.sample_shading.sample_masks,
@@ -109,7 +109,7 @@ pub enum SampleCountType {
     Count1Bit, Count2Bit, Count4Bit, Count8Bit, Count16Bit, Count32Bit, Count64Bit,
 }
 impl SampleCountType {
-    fn flag(&self) -> vk::SampleCountFlags {
+    pub(crate) fn value(&self) -> vk::SampleCountFlags {
         match *self {
             | SampleCountType::Count1Bit  => vk::SAMPLE_COUNT_1_BIT,
             | SampleCountType::Count2Bit  => vk::SAMPLE_COUNT_2_BIT,

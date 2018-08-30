@@ -7,11 +7,16 @@ use core::device::HaLogicalDevice;
 use core::device::HaQueue;
 
 use swapchain::error::SwapchainRuntimeError;
+use swapchain::error::SwapchainInitError;
 
+use pipeline::pass::render::HaRenderPass;
 use resources::image::{ HaImage, HaImageView };
-use resources::framebuffer::HaFramebuffer;
-use constant::swapchain::ACQUIRE_IMAGE_TIME_OUT;
+use resources::framebuffer::{ HaFramebuffer, FramebufferBuilder };
+use utility::dimension::BufferDimension;
 use utility::marker::Handles;
+
+use constant::swapchain::ACQUIRE_IMAGE_TIME_OUT;
+use constant::swapchain::FRAMEBUFFER_LAYERS;
 
 use sync::fence::HaFence;
 use sync::semaphore::HaSemaphore;
@@ -109,6 +114,25 @@ impl HaSwapchain {
     pub fn recreate(&mut self) {
         // TODO: Need Implementation
         unimplemented!()
+    }
+
+    pub fn create_framebuffers(&mut self, device: &HaLogicalDevice, render_pass: &HaRenderPass)
+        -> Result<(), SwapchainInitError> {
+
+        let dimension = BufferDimension::init(self.extent, FRAMEBUFFER_LAYERS);
+
+        let mut framebuffers = vec![];
+        for view in self.views.iter() {
+            let mut builder = FramebufferBuilder::init(&dimension);
+            builder.add_attachment(view);
+            let framebuffer = builder.build(device, render_pass)
+                .map_err(|e| SwapchainInitError::Framebuffer(e))?;
+            framebuffers.push(framebuffer);
+        }
+
+        self.framebuffers = framebuffers;
+
+        Ok(())
     }
 
     pub fn cleanup(&self, device: &HaLogicalDevice) {

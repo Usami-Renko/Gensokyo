@@ -11,7 +11,7 @@ use procedure::error::RuntimeError;
 use procedure::error::ProcedureError;
 
 struct WindowInfo {
-    window_size:  Dimension2D,
+    window_size : Dimension2D,
     window_title: String,
 }
 

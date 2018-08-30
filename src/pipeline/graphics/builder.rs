@@ -20,7 +20,7 @@ use pipeline::{
     state::blend::blending::HaBlend,
     state::tessellation::HaTessellation,
     state::dynamic::HaDynamicState,
-    pass::render_pass::HaRenderPass,
+    pass::render::HaRenderPass,
     layout::PipelineLayoutBuilder,
     error::PipelineError,
 };

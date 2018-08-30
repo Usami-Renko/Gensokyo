@@ -1,6 +1,9 @@
 
 
-pub(crate) mod render_pass;
+pub(crate) mod render;
+mod attachment;
 mod subpass;
+mod dependency;
+mod builder;
 
 pub mod prelude;

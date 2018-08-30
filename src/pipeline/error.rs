@@ -23,11 +23,11 @@ impl fmt::Display for ShaderError {
     }
 }
 
-
 #[derive(Debug, Clone, Copy, Eq, PartialEq)]
 pub enum PipelineError {
 
     Shader(ShaderError),
+    RenderPassCreationError,
     PipelineCreationError,
     LayoutCreationError,
 }
@@ -38,9 +38,10 @@ impl fmt::Display for PipelineError {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
 
         match self {
-            | PipelineError::Shader(ref e)         => write!(f, "{}", e.to_string()),
-            | PipelineError::PipelineCreationError => write!(f, "{}", "Failed to create Pipeline."),
-            | PipelineError::LayoutCreationError   => write!(f, "{}", "Failed to create Pipeline Layout."),
+            | PipelineError::Shader(ref e)           => write!(f, "{}", e.to_string()),
+            | PipelineError::RenderPassCreationError => write!(f, "Failed to create RenderPass object"),
+            | PipelineError::PipelineCreationError   => write!(f, "Failed to create Pipeline."),
+            | PipelineError::LayoutCreationError     => write!(f, "Failed to create Pipeline Layout."),
         }
     }
 }

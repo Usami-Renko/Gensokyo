@@ -137,7 +137,7 @@ impl<'buffer, 're> HaCommandRecorder<'buffer, 're> {
 //            subresource_range: ImageSubresourceRange
 //        };
 //
-//
+//        unimplemented!()
 //    }
 }
 

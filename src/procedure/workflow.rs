@@ -35,7 +35,6 @@ pub trait ProgramProc {
 
     // TODO: Redesign the API to support multi-pipeline
     fn configure_shaders(&self) -> VertexContent;
-//    fn configure_render_pass(&self) -> HaRenderPass;
     fn configure_buffers(&mut self, device: &HaLogicalDevice, generator: &ResourceGenerator) -> Result<(), AllocatorError>;
     fn configure_commands(&self, buffer: &HaCommandRecorder, frame_index: usize) -> Result<(), CommandError>;
     fn cleanup(&self, device: &HaLogicalDevice);
@@ -46,8 +45,8 @@ pub struct CoreInfrastructure<'win> {
     instance  : HaInstance,
     debugger  : Option<HaDebugger>,
     surface   : HaSurface<'win>,
-    pub(crate) physical : HaPhysicalDevice,
-    pub(crate) device   : HaLogicalDevice,
+    pub(crate) physical: HaPhysicalDevice,
+    pub(crate) device  : HaLogicalDevice,
     command_pool: HaCommandPool,
 }
 
@@ -110,15 +109,34 @@ impl<'win, T> ProgramEnv<T> where T: ProgramProc {
         let vertex_content = self.procedure.configure_shaders();
         let shaders = vertex_content.infos;
         let input_desc = vertex_content.description;
-        //        let render_pass = self.procedure.configure_render_pass();
-        use pipeline::pass::render_pass::temp_render_pass;
-        let render_pass = temp_render_pass(&core.device);
 
         // swapchain
-        let swapchain = SwapchainBuilder::init(&core.physical, &core.device, &core.surface)
+        let mut swapchain = SwapchainBuilder::init(&core.physical, &core.device, &core.surface)
             .map_err(|e| ProcedureError::Swapchain(SwapchainError::Init(e)))?
             .set_image_count(SWAPCHAIN_IMAGE_COUNT)
-            .build(&core.instance, &render_pass)
+            .build(&core.instance)
+            .map_err(|e| ProcedureError::Swapchain(SwapchainError::Init(e)))?;
+
+        // render pass
+        use pipeline::pass::prelude::*;
+        let mut render_pass_builder = RenderPassBuilder::new();
+        let first_subpass = render_pass_builder.new_subpass(SubpassType::Graphics);
+
+        let color_attachment = RenderAttachement::setup(RenderAttachementPrefab::Common, swapchain.format);
+        let _attachment_index = render_pass_builder.add_attachemnt(color_attachment, first_subpass, AttachmentType::Color);
+
+        let mut dependency = RenderDependency::setup(RenderDependencyPrefab::Common, SUBPASS_EXTERAL, first_subpass);
+        dependency.set_stage(PipelineStageFlag::ColorAttachmentOutputBit, PipelineStageFlag::ColorAttachmentOutputBit);
+        dependency.set_access(&[], &[
+            AccessFlag::ColorAttachmentReadBit,
+            AccessFlag::ColorAttachmentWriteBit,
+        ]);
+        render_pass_builder.add_dependenty(dependency);
+
+        let render_pass = render_pass_builder.build(&core.device)
+            .map_err(|e| ProcedureError::Pipeline(e))?;
+        // swapchain framebuffer creation need renderpass.
+        swapchain.create_framebuffers(&core.device, &render_pass)
             .map_err(|e| ProcedureError::Swapchain(SwapchainError::Init(e)))?;
 
         // pipeline
@@ -208,7 +226,7 @@ impl<'win, T> ProgramEnv<T> where T: ProgramProc {
             QueueSubmitBundle {
                 wait_semaphores: &[&resources.image_awaits[current_frame]],
                 sign_semaphores: &[&resources.render_awaits[current_frame]],
-                wait_stages    : &[PipelineStageFlag::ColorAttachmentOutBit],
+                wait_stages    : &[PipelineStageFlag::ColorAttachmentOutputBit],
                 commands       : &[&resources.command_buffers[current_frame]],
             },
         ];

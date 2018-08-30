@@ -5,7 +5,7 @@ use ash::version::DeviceV1_0;
 use core::device::HaLogicalDevice;
 
 use pipeline::layout::HaPipelineLayout;
-use pipeline::pass::render_pass::HaRenderPass;
+use pipeline::pass::render::HaRenderPass;
 
 pub struct HaGraphicsPipeline {
 

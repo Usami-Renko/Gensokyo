@@ -30,11 +30,11 @@ pub enum PipelineStageFlag {
     ///
     /// This stage also includes subpass store operations for framebuffer attachments with a depth/stencil format.
     LateFragmentTestsBit,
-    /// ColorAttachmentOutBit specifies the stage of the pipeline after blending where the final color values are output from the pipeline.
+    /// ColorAttachmentOutputBit specifies the stage of the pipeline after blending where the final color values are output from the pipeline.
     ///
     /// This stage also includes subpass load and store operations and multisample resolve operations
     /// for framebuffer attachments with a color format.
-    ColorAttachmentOutBit,
+    ColorAttachmentOutputBit,
     /// ComputeShaderBit specifies the execution of a compute shader.
     ComputeShaderBit,
     /// TransferBit specifies the execution of copy commands.
@@ -72,7 +72,7 @@ impl PipelineStageFlag {
             | PipelineStageFlag::FragmentShaderBit               => vk::PIPELINE_STAGE_FRAGMENT_SHADER_BIT,
             | PipelineStageFlag::EarlyFragmentTestsBit           => vk::PIPELINE_STAGE_EARLY_FRAGMENT_TESTS_BIT,
             | PipelineStageFlag::LateFragmentTestsBit            => vk::PIPELINE_STAGE_LATE_FRAGMENT_TESTS_BIT,
-            | PipelineStageFlag::ColorAttachmentOutBit           => vk::PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT,
+            | PipelineStageFlag::ColorAttachmentOutputBit        => vk::PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT,
             | PipelineStageFlag::ComputeShaderBit                => vk::PIPELINE_STAGE_COMPUTE_SHADER_BIT,
             | PipelineStageFlag::TransferBit                     => vk::PIPELINE_STAGE_TRANSFER_BIT,
             | PipelineStageFlag::BottomOfPipeBit                 => vk::PIPELINE_STAGE_BOTTOM_OF_PIPE_BIT,
@@ -99,7 +99,7 @@ impl VulkanFlags for [PipelineStageFlag] {
                 | PipelineStageFlag::FragmentShaderBit               => acc | vk::PIPELINE_STAGE_FRAGMENT_SHADER_BIT,
                 | PipelineStageFlag::EarlyFragmentTestsBit           => acc | vk::PIPELINE_STAGE_EARLY_FRAGMENT_TESTS_BIT,
                 | PipelineStageFlag::LateFragmentTestsBit            => acc | vk::PIPELINE_STAGE_LATE_FRAGMENT_TESTS_BIT,
-                | PipelineStageFlag::ColorAttachmentOutBit           => acc | vk::PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT,
+                | PipelineStageFlag::ColorAttachmentOutputBit        => acc | vk::PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT,
                 | PipelineStageFlag::ComputeShaderBit                => acc | vk::PIPELINE_STAGE_COMPUTE_SHADER_BIT,
                 | PipelineStageFlag::TransferBit                     => acc | vk::PIPELINE_STAGE_TRANSFER_BIT,
                 | PipelineStageFlag::BottomOfPipeBit                 => acc | vk::PIPELINE_STAGE_BOTTOM_OF_PIPE_BIT,

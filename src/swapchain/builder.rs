@@ -13,12 +13,9 @@ use swapchain::chain::HaSwapchain;
 use swapchain::support::SwapchainSupport;
 use swapchain::error::SwapchainInitError;
 
-use pipeline::pass::render_pass::HaRenderPass;
-use resources::framebuffer::{ HaFramebuffer, FramebufferBuilder };
 use resources::image::{ HaImage, HaImageView };
 
-use constant::swapchain::{ SWAPCHAIN_IMAGE_COUNT, FRAMEBUFFER_LAYERS };
-use utility::dimension::BufferDimension;
+use constant::swapchain::SWAPCHAIN_IMAGE_COUNT;
 use utility::marker::VulkanFlags;
 
 use std::ptr;
@@ -82,7 +79,7 @@ impl<'vk, 'win: 'vk> SwapchainBuilder<'vk, 'win> {
         self
     }
 
-    pub fn build(&self, instance: &HaInstance, render_pass: &HaRenderPass)
+    pub fn build(&self, instance: &HaInstance)
         -> Result<HaSwapchain, SwapchainInitError> {
 
         let prefer_format = self.support.optimal_format();
@@ -138,15 +135,12 @@ impl<'vk, 'win: 'vk> SwapchainBuilder<'vk, 'win> {
 
         let views = generate_imageviews(self.device, prefer_format.format, &images)?;
 
-        let buffer_dimension = BufferDimension::init(prefer_extent, FRAMEBUFFER_LAYERS);
-        let framebuffers = generate_framebuffers(self.device, &views, render_pass, &buffer_dimension)?;
-
         let swapchain = HaSwapchain {
             handle,
             loader,
             _images: images,
             views,
-            framebuffers,
+            framebuffers: vec![],
 
             format: prefer_format.format,
             extent: prefer_extent,
@@ -225,19 +219,3 @@ fn generate_imageviews(device: &HaLogicalDevice, format: vk::Format, images: &Ve
 
     Ok(imageviews)
 }
-
-fn generate_framebuffers(device: &HaLogicalDevice, views: &Vec<HaImageView>, render_pass: &HaRenderPass, dimension: &BufferDimension)
-    -> Result<Vec<HaFramebuffer>, SwapchainInitError> {
-
-    let mut framebuffers = vec![];
-    for view in views.iter() {
-        let mut builder = FramebufferBuilder::init(dimension);
-        builder.add_attachment(view);
-        let framebuffer = builder.build(device, render_pass)
-            .map_err(|e| SwapchainInitError::Framebuffer(e))?;
-        framebuffers.push(framebuffer);
-    }
-
-    Ok(framebuffers)
-}
-
