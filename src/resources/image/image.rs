@@ -5,7 +5,7 @@ use utility::marker::VulkanEnum;
 
 pub struct HaImage {
 
-    pub handle: vk::Image,
+    pub(crate) handle: vk::Image,
 }
 
 // TODO: Map to raw value

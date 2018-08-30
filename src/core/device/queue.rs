@@ -5,7 +5,7 @@ use ash::vk::uint32_t;
 use sync::semaphore::HaSemaphore;
 
 use pipeline::stages::PipelineStageFlag;
-use resources::command::buffer::HaCommandBuffer;
+use resources::command::HaCommandBuffer;
 
 #[derive(Debug, Clone, Copy)]
 pub enum QueueUsage {

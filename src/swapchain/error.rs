@@ -3,7 +3,6 @@ use std::fmt;
 use std::error::Error;
 
 use core::error::SurfaceError;
-use resources::error::FramebufferError;
 
 #[derive(Debug, Clone, Eq, PartialEq)]
 pub enum SwapchainError {
@@ -45,7 +44,6 @@ pub enum SwapchainInitError {
     PresentQueueNotAvailable,
     SwapchainImageGetError,
     ImageViewCreationError,
-    Framebuffer(FramebufferError),
 }
 
 impl Error for SwapchainInitError {}
@@ -60,7 +58,6 @@ impl fmt::Display for SwapchainInitError {
             | SwapchainInitError::PresentQueueNotAvailable      => write!(f, "Present Queue is not available"),
             | SwapchainInitError::SwapchainImageGetError        => write!(f, "Failed to get swapchain image from swapchain."),
             | SwapchainInitError::ImageViewCreationError        => write!(f, "Failed to create Swapchain ImageView."),
-            | SwapchainInitError::Framebuffer(ref e)            => write!(f, "{}", e),
         }
     }
 }

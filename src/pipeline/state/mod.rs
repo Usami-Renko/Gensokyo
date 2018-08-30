@@ -11,7 +11,7 @@ pub(crate) mod dynamic;
 
 pub mod prelude;
 
-pub struct PipelineStates {
+pub(crate) struct PipelineStates {
 
     pub(super) vertex_input  : vertex_input::HaVertexInput,
     pub(super) input_assembly: input_assembly::HaInputAssembly,
@@ -19,7 +19,7 @@ pub struct PipelineStates {
     pub(super) rasterizer    : rasterizer::HaRasterizer,
     pub(super) multisample   : multisample::HaMultisample,
     pub(super) depth_stencil : depth_stencil::HaDepthStencil,
-    pub(super) blend         : blend::blending::HaBlend,
+    pub(super) blend         : blend::HaBlend,
     pub(super) tessellation  : Option<tessellation::HaTessellation>,
     pub(super) dynamic       : Option<dynamic::HaDynamicState>,
 }
@@ -27,7 +27,7 @@ pub struct PipelineStates {
 use pipeline::shader::input::VertexInputDescription;
 impl PipelineStates {
 
-    pub fn setup(input: VertexInputDescription) -> PipelineStates {
+    pub(crate) fn setup(input: VertexInputDescription) -> PipelineStates {
         PipelineStates {
             vertex_input  : input.desc(),
             input_assembly: input_assembly::HaInputAssembly::default(),
@@ -35,7 +35,7 @@ impl PipelineStates {
             rasterizer    : rasterizer::HaRasterizer::default(),
             multisample   : multisample::HaMultisample::default(),
             depth_stencil : depth_stencil::HaDepthStencil::default(),
-            blend         : blend::blending::HaBlend::default(),
+            blend         : blend::HaBlend::default(),
             tessellation  : None,
             dynamic       : None,
         }

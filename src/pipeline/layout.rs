@@ -19,11 +19,7 @@ pub struct PipelineLayoutBuilder {
 
 impl PipelineLayoutBuilder {
 
-    pub fn init() -> PipelineLayoutBuilder {
-        PipelineLayoutBuilder { ..Default::default() }
-    }
-
-    pub fn build(&self, device: &HaLogicalDevice) -> Result<vk::PipelineLayout, PipelineError> {
+    pub(super) fn build(&self, device: &HaLogicalDevice) -> Result<vk::PipelineLayout, PipelineError> {
         let create_info = self.info();
 
         unsafe {
@@ -70,11 +66,17 @@ pub struct HaPipelineLayout {
 
 impl HaPipelineLayout {
 
-    pub fn new(handle: vk::PipelineLayout) -> HaPipelineLayout {
+    pub fn uninitialize() -> HaPipelineLayout {
+        HaPipelineLayout {
+            handle: vk::PipelineLayout::null(),
+        }
+    }
+
+    pub(super) fn new(handle: vk::PipelineLayout) -> HaPipelineLayout {
         HaPipelineLayout { handle, }
     }
 
-    pub fn cleanup(&self, device: &HaLogicalDevice) {
+    pub(super) fn cleanup(&self, device: &HaLogicalDevice) {
         unsafe {
             device.handle.destroy_pipeline_layout(self.handle, None);
         }

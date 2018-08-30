@@ -4,14 +4,19 @@ use ash::vk::uint32_t;
 use ash::version::DeviceV1_0;
 
 use core::device::HaLogicalDevice;
+use swapchain::chain::HaSwapchain;
 
 use pipeline::pass::render::HaRenderPass;
 use pipeline::pass::attachment::RenderAttachement;
 use pipeline::pass::subpass::{ RenderSubpass, AttachmentType, SubpassType };
 use pipeline::pass::dependency::RenderDependency;
-use pipeline::error::PipelineError;
+use pipeline::error::{ RenderPassError, PipelineError };
 
+use resources::framebuffer::{ HaFramebuffer, FramebufferBuilder };
+
+use utility::dimension::BufferDimension;
 use utility::marker::VulkanEnum;
+use constant::swapchain::FRAMEBUFFER_LAYERS;
 
 use std::ptr;
 
@@ -77,7 +82,7 @@ impl RenderPassBuilder {
         self.dependencies.push(dependency);
     }
 
-    pub fn build(&self, device: &HaLogicalDevice) -> Result<HaRenderPass, PipelineError> {
+    pub fn build(&self, device: &HaLogicalDevice, swapchain: &HaSwapchain) -> Result<HaRenderPass, PipelineError> {
 
         let attachments : Vec<vk::AttachmentDescription> = self.attachments.iter().map(|a| a.desc()).collect();
         let subpasses   : Vec<vk::SubpassDescription>    = self.subpasses.iter().map(|r| r.desc()).collect();
@@ -98,13 +103,37 @@ impl RenderPassBuilder {
 
         let handle = unsafe {
             device.handle.create_render_pass(&create_info, None)
-                .or(Err(PipelineError::RenderPassCreationError))?
+                .or(Err(PipelineError::RenderPass(RenderPassError::RenderPassCreationError)))?
         };
+
+        let framebuffers = generate_framebuffers(device, swapchain, handle)
+            .map_err(|e| PipelineError::RenderPass(e))?;
 
         let render_pass = HaRenderPass {
             handle,
-            clear_values: self.clear_values.clone()
+            clear_values: self.clear_values.clone(),
+
+            framebuffers,
+            framebuffer_extent: swapchain.extent,
         };
         Ok(render_pass)
     }
 }
+
+fn generate_framebuffers(device: &HaLogicalDevice, swapchain: &HaSwapchain, render_pass: vk::RenderPass)
+    -> Result<Vec<HaFramebuffer>, RenderPassError> {
+
+    let dimension = BufferDimension::init(swapchain.extent, FRAMEBUFFER_LAYERS);
+
+    let mut framebuffers = vec![];
+    for view in swapchain.views.iter() {
+        let mut builder = FramebufferBuilder::init(&dimension);
+        builder.add_attachment(view);
+        let framebuffer = builder.build(device, render_pass)
+            .map_err(|e| RenderPassError::Framebuffer(e))?;
+        framebuffers.push(framebuffer);
+    }
+
+    Ok(framebuffers)
+}
+

@@ -4,4 +4,3 @@ pub use self::generator::ResourceGenerator;
 
 mod generator;
 mod buffer;
-

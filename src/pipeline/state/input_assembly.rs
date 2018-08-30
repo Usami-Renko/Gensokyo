@@ -18,7 +18,7 @@ impl HaInputAssembly {
         }
     }
 
-    pub fn info(&self) -> vk::PipelineInputAssemblyStateCreateInfo {
+    pub(crate) fn info(&self) -> vk::PipelineInputAssemblyStateCreateInfo {
         vk::PipelineInputAssemblyStateCreateInfo {
             s_type   : vk::StructureType::PipelineInputAssemblyStateCreateInfo,
             p_next   : ptr::null(),

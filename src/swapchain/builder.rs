@@ -140,7 +140,6 @@ impl<'vk, 'win: 'vk> SwapchainBuilder<'vk, 'win> {
             loader,
             _images: images,
             views,
-            framebuffers: vec![],
 
             format: prefer_format.format,
             extent: prefer_extent,

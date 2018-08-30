@@ -4,6 +4,8 @@ use ash::vk;
 use utility::marker::VulkanFlags;
 use utility::marker::Handles;
 
+use utility::marker::VulkanEnum;
+
 #[derive(Debug, Clone, Copy, Eq, PartialEq)]
 pub enum PipelineStageFlag {
     /// TopOfPipeBit specifies the stage of the pipeline where any commands are initially received by the queue
@@ -59,8 +61,10 @@ pub enum PipelineStageFlag {
     AllCommandsBit,
 }
 
-impl PipelineStageFlag {
-    pub fn value(&self) -> vk::PipelineStageFlags {
+impl VulkanEnum for PipelineStageFlag {
+    type EnumType = vk::PipelineStageFlags;
+
+    fn value(&self) -> Self::EnumType {
         match *self {
             | PipelineStageFlag::TopOfPipeBit                    => vk::PIPELINE_STAGE_TOP_OF_PIPE_BIT,
             | PipelineStageFlag::DrawIndirectBit                 => vk::PIPELINE_STAGE_DRAW_INDIRECT_BIT,

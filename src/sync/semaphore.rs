@@ -16,6 +16,12 @@ pub struct HaSemaphore {
 
 impl HaSemaphore {
 
+    pub fn uninitialize() -> HaSemaphore {
+        HaSemaphore {
+            handle: vk::Semaphore::null(),
+        }
+    }
+
     pub fn setup(device: &HaLogicalDevice) -> Result<HaSemaphore, SyncError> {
 
         let create_info = vk::SemaphoreCreateInfo {

@@ -1,8 +1,6 @@
 
-pub use self::device::HaDeviceMemory;
 pub use self::flag::MemoryPropertyFlag;
-pub use self::traits::HaMemoryAbstract;
 
-mod device;
+pub(crate) mod device;
 mod flag;
-mod traits;
+pub(crate) mod traits;

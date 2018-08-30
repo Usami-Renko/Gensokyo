@@ -4,16 +4,16 @@ use ash::version::DeviceV1_0;
 
 use core::device::HaLogicalDevice;
 
-pub struct HaImageView {
+pub struct HaFramebuffer {
 
-    pub(crate) handle: vk::ImageView,
+    pub(crate) handle: vk::Framebuffer,
 }
 
-impl HaImageView {
+impl HaFramebuffer {
 
     pub fn cleanup(&self, device: &HaLogicalDevice) {
         unsafe {
-            device.handle.destroy_image_view(self.handle, None);
+            device.handle.destroy_framebuffer(self.handle, None);
         }
     }
 }

@@ -9,7 +9,6 @@ use resources::command::buffer::HaCommandBuffer;
 use resources::error::CommandError;
 
 use pipeline::graphics::pipeline::HaGraphicsPipeline;
-use swapchain::chain::HaSwapchain;
 use resources::repository::BufferBindingInfos;
 use utility::marker::VulkanFlags;
 
@@ -19,7 +18,6 @@ pub struct HaCommandRecorder<'buffer, 're> {
 
     pub(super) buffer:    &'buffer HaCommandBuffer,
     pub(super) device:    &'re HaLogicalDevice,
-    pub(super) swapchain: &'re HaSwapchain,
     pub(super) pipeline:  &'re HaGraphicsPipeline,
 }
 
@@ -54,10 +52,10 @@ impl<'buffer, 're> HaCommandRecorder<'buffer, 're> {
             s_type: vk::StructureType::RenderPassBeginInfo,
             p_next: ptr::null(),
             render_pass: self.pipeline.pass.handle,
-            framebuffer: self.swapchain.framebuffers[framebuffer_index].handle,
+            framebuffer: self.pipeline.pass.framebuffers[framebuffer_index].handle,
             render_area: vk::Rect2D {
                 offset: vk::Offset2D { x: 0, y: 0 },
-                extent: self.swapchain.extent,
+                extent: self.pipeline.pass.framebuffer_extent,
             },
             clear_value_count: self.pipeline.pass.clear_values.len() as uint32_t,
             p_clear_values   : self.pipeline.pass.clear_values.as_ptr(),

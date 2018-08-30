@@ -20,7 +20,7 @@ impl HaVertexInput {
         }
     }
 
-    pub fn info(&self) -> vk::PipelineVertexInputStateCreateInfo {
+    pub(crate) fn info(&self) -> vk::PipelineVertexInputStateCreateInfo {
         vk::PipelineVertexInputStateCreateInfo {
             s_type : vk::StructureType::PipelineVertexInputStateCreateInfo,
             p_next : ptr::null(),

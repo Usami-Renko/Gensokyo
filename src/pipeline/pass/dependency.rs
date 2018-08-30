@@ -5,6 +5,7 @@ use ash::vk::uint32_t;
 use pipeline::stages::PipelineStageFlag;
 
 use utility::marker::VulkanFlags;
+use utility::marker::VulkanEnum;
 
 pub enum RenderDependencyPrefab {
     Common,

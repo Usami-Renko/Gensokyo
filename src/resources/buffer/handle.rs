@@ -10,12 +10,14 @@ use resources::buffer::BufferUsage;
 use resources::buffer::BufferCreateFlag;
 use resources::error::BufferError;
 use resources::memory::MemoryPropertyFlag;
+
 use utility::marker::VulkanFlags;
+use utility::marker::VulkanEnum;
 
 use std::ptr;
 use std::mem;
 
-pub struct HaBuffer {
+pub(crate) struct HaBuffer {
 
     pub(crate) handle : vk::Buffer,
     _usage            : BufferUsage,

@@ -1,5 +1,4 @@
 
-pub use self::buffer::HaBufferRepository;
-pub use self::buffer::BufferBindingInfos;
+pub use self::buffer::{ HaBufferRepository, BufferBindingInfos };
 
 mod buffer;

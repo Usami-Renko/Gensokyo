@@ -42,7 +42,7 @@ impl HaViewport {
         self.scissors.push(scissor);
     }
 
-    pub fn info(&self) -> vk::PipelineViewportStateCreateInfo {
+    pub(crate) fn info(&self) -> vk::PipelineViewportStateCreateInfo {
         vk::PipelineViewportStateCreateInfo {
             s_type : vk::StructureType::PipelineViewportStateCreateInfo,
             p_next : ptr::null(),

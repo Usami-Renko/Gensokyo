@@ -20,7 +20,7 @@ impl HaDynamicState {
         HaDynamicState { states, }
     }
 
-    pub fn info(&self) -> vk::PipelineDynamicStateCreateInfo {
+    pub(crate) fn info(&self) -> vk::PipelineDynamicStateCreateInfo {
         vk::PipelineDynamicStateCreateInfo {
             s_type : vk::StructureType::PipelineDynamicStateCreateInfo,
             p_next : ptr::null(),

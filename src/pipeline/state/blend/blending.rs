@@ -3,7 +3,9 @@ use ash::vk;
 use ash::vk::uint32_t;
 
 use pipeline::state::blend::attachment::BlendAttachemnt;
+
 use utility::logic_op::HaLogicalOp;
+use utility::marker::Prefab;
 
 use std::ptr;
 use std::os::raw::c_float;
@@ -13,8 +15,11 @@ pub enum HaBlendPrefab {
     Default,
     Unset,
 }
-impl HaBlendPrefab {
-    fn generate(&self) -> HaBlend {
+
+impl Prefab for HaBlendPrefab {
+    type PrefabType = HaBlend;
+
+    fn generate(&self) -> Self::PrefabType {
         match *self {
             | HaBlendPrefab::Default => HaBlend {
                 logic_op: HaLogicalOp::disable(),
@@ -48,7 +53,7 @@ impl HaBlend {
         prefab.generate()
     }
 
-    pub fn info(&self) -> vk::PipelineColorBlendStateCreateInfo {
+    pub(crate) fn info(&self) -> vk::PipelineColorBlendStateCreateInfo {
         let attchement_infos: Vec<vk::PipelineColorBlendAttachmentState> = self.attachments.iter()
             .map(|a| a.state()).collect();
 

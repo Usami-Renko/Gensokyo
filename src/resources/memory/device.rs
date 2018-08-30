@@ -104,7 +104,7 @@ impl HaMemoryAbstract for HaDeviceMemory {
 
 impl HaDeviceMemory {
 
-    pub fn cleanup(&self, device: &HaLogicalDevice) {
+    pub(crate) fn cleanup(&self, device: &HaLogicalDevice) {
         unsafe {
             device.handle.free_memory(self.handle, None);
         }

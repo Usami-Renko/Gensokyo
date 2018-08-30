@@ -17,7 +17,7 @@ pub enum SubpassType {
     Compute,
 }
 impl SubpassType {
-    pub fn bind_point(&self) -> vk::PipelineBindPoint {
+    pub(super) fn bind_point(&self) -> vk::PipelineBindPoint {
         match *self {
             SubpassType::Graphics => vk::PipelineBindPoint::Graphics,
             SubpassType::Compute  => vk::PipelineBindPoint::Compute,
@@ -63,7 +63,7 @@ pub(super) struct RenderSubpass {
 
 impl RenderSubpass {
 
-    pub fn empty() -> RenderSubpass {
+    pub(super) fn empty() -> RenderSubpass {
         RenderSubpass {
             bind_point    : vk::PipelineBindPoint::Graphics,
             inputs        : vec![],
@@ -91,22 +91,22 @@ impl RenderSubpass {
         }
     }
 
-    pub fn set_bind_point(&mut self, bind_point: vk::PipelineBindPoint) {
+    pub(super) fn set_bind_point(&mut self, bind_point: vk::PipelineBindPoint) {
         self.bind_point = bind_point;
     }
-    pub fn add_input(&mut self, attachment: vk::AttachmentReference) {
+    pub(super) fn add_input(&mut self, attachment: vk::AttachmentReference) {
         self.inputs.push(attachment);
     }
-    pub fn add_color(&mut self, attachment: vk::AttachmentReference) {
+    pub(super) fn add_color(&mut self, attachment: vk::AttachmentReference) {
         self.colors.push(attachment);
     }
-    pub fn add_resolve(&mut self, attachment: vk::AttachmentReference) {
+    pub(super) fn add_resolve(&mut self, attachment: vk::AttachmentReference) {
         self.resolves.push(attachment);
     }
-    pub fn add_depth_stencil(&mut self, attachment: vk::AttachmentReference) {
+    pub(super) fn add_depth_stencil(&mut self, attachment: vk::AttachmentReference) {
         self.depth_stencils.push(attachment);
     }
-    pub fn add_preserve(&mut self, attachment_index: uint32_t) {
+    pub(super) fn add_preserve(&mut self, attachment_index: uint32_t) {
         self.preserves.push(attachment_index);
     }
 }

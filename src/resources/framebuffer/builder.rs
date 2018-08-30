@@ -8,7 +8,6 @@ use core::device::HaLogicalDevice;
 use resources::framebuffer::HaFramebuffer;
 use resources::image::HaImageView;
 use resources::error::FramebufferError;
-use pipeline::pass::render::HaRenderPass;
 
 use utility::dimension::BufferDimension;
 
@@ -29,7 +28,7 @@ impl<'i> FramebufferBuilder<'i> {
         }
     }
 
-    pub fn build(&self, device: &HaLogicalDevice, render_pass: &HaRenderPass) -> Result<HaFramebuffer, FramebufferError> {
+    pub fn build(&self, device: &HaLogicalDevice, render_pass: vk::RenderPass) -> Result<HaFramebuffer, FramebufferError> {
         let attachments: Vec<vk::ImageView> = self.attachments.iter()
             .map(|a| a.handle).collect();
 
@@ -38,7 +37,7 @@ impl<'i> FramebufferBuilder<'i> {
             p_next: ptr::null(),
             // flags is reserved for future use in API version 1.0.82
             flags: vk::FramebufferCreateFlags::empty(),
-            render_pass: render_pass.handle,
+            render_pass,
             attachment_count: attachments.len() as uint32_t,
             p_attachments:    attachments.as_ptr(),
             width : self.dimension.extent.width,
@@ -51,7 +50,9 @@ impl<'i> FramebufferBuilder<'i> {
                 .or(Err(FramebufferError::FramebufferCreationError))?
         };
 
-        let framebuffer = HaFramebuffer::new(handle);
+        let framebuffer = HaFramebuffer {
+            handle,
+        };
         Ok(framebuffer)
     }
 

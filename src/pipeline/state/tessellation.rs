@@ -20,7 +20,7 @@ impl HaTessellation {
         }
     }
 
-    pub fn info(&self) -> vk::PipelineTessellationStateCreateInfo {
+    pub(crate) fn info(&self) -> vk::PipelineTessellationStateCreateInfo {
         vk::PipelineTessellationStateCreateInfo {
             s_type : vk::StructureType::PipelineTessellationStateCreateInfo,
             p_next : ptr::null(),

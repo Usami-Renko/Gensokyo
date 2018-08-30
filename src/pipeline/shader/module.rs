@@ -6,6 +6,8 @@ use core::device::HaLogicalDevice;
 
 use pipeline::error::ShaderError;
 
+use utility::marker::VulkanEnum;
+
 use std::path::{ Path, PathBuf };
 use std::ffi::CString;
 use std::fs::File;
@@ -92,8 +94,10 @@ pub enum ShaderStageType {
     AllStage,
 }
 
-impl ShaderStageType {
-    pub(super) fn stage(&self) -> vk::ShaderStageFlags {
+impl VulkanEnum for ShaderStageType {
+    type EnumType = vk::ShaderStageFlags;
+
+    fn value(&self) -> Self::EnumType {
         match *self {
             | ShaderStageType::VertexStage                 => vk::SHADER_STAGE_VERTEX_BIT,
             | ShaderStageType::GeometryStage               => vk::SHADER_STAGE_GEOMETRY_BIT,
@@ -117,13 +121,13 @@ pub struct HaShaderModule {
 
 impl HaShaderModule {
 
-    pub fn info(&self) -> vk::PipelineShaderStageCreateInfo {
+    pub(crate) fn info(&self) -> vk::PipelineShaderStageCreateInfo {
         vk::PipelineShaderStageCreateInfo {
             s_type : vk::StructureType::PipelineShaderStageCreateInfo,
             p_next : ptr::null(),
             // flags is reserved for future use in API version 1.0.82.
             flags  : vk::PipelineShaderStageCreateFlags::empty(),
-            stage  : self.stage.stage(),
+            stage  : self.stage.value(),
             module : self.handle,
             p_name : self.main.as_ptr(),
             // TODO: This field has not been covered.
@@ -131,7 +135,7 @@ impl HaShaderModule {
         }
     }
 
-    pub fn cleanup(&self, device: &HaLogicalDevice) {
+    pub(crate) fn cleanup(&self, device: &HaLogicalDevice) {
 
         unsafe {
             device.handle.destroy_shader_module(self.handle, None);

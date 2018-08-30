@@ -4,9 +4,9 @@ use ash::vk;
 use core::device::HaLogicalDevice;
 
 use resources::buffer::HaBuffer;
-use resources::memory::HaDeviceMemory;
+use resources::memory::device::HaDeviceMemory;
+use resources::memory::traits::HaMemoryAbstract;
 use resources::error::AllocatorError;
-use resources::memory::HaMemoryAbstract;
 
 pub struct HaBufferRepository {
 
@@ -38,7 +38,7 @@ impl HaBufferRepository {
         }
     }
 
-    pub fn store(buffers: Vec<HaBuffer>, memory: HaDeviceMemory, spaces: Vec<vk::DeviceSize>) -> HaBufferRepository {
+    pub(crate) fn store(buffers: Vec<HaBuffer>, memory: HaDeviceMemory, spaces: Vec<vk::DeviceSize>) -> HaBufferRepository {
 
         let mut current: vk::DeviceSize = 0;
         let mut offsets = vec![];

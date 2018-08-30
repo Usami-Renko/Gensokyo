@@ -4,6 +4,9 @@ use ash::vk;
 use std::os::raw::c_float;
 use std::ptr;
 
+use utility::marker::VulkanEnum;
+use utility::marker::Prefab;
+
 pub struct HaRasterizer {
 
     /// The method of rasterization for polygons.
@@ -37,8 +40,10 @@ pub enum RasterizerPrefab {
     Common,
 }
 
-impl RasterizerPrefab {
-    fn generate(&self) -> HaRasterizer {
+impl Prefab for RasterizerPrefab {
+    type PrefabType = HaRasterizer;
+
+    fn generate(&self) -> Self::PrefabType {
         match *self {
             | RasterizerPrefab::Common => HaRasterizer { ..Default::default() },
         }
@@ -51,7 +56,7 @@ impl HaRasterizer {
         prefab.generate()
     }
 
-    pub fn info(&self) -> vk::PipelineRasterizationStateCreateInfo {
+    pub(crate) fn info(&self) -> vk::PipelineRasterizationStateCreateInfo {
         vk::PipelineRasterizationStateCreateInfo {
             s_type: vk::StructureType::PipelineRasterizationStateCreateInfo,
             p_next: ptr::null(),
@@ -78,7 +83,7 @@ impl HaRasterizer {
         self.polygon_mode = mode;
     }
     pub fn set_cull_mode(&mut self, mode: CullModeType) {
-        self.cull_mode = mode.flag();
+        self.cull_mode = mode.value();
     }
     pub fn set_front_face(&mut self, face: vk::FrontFace) {
         self.front_face = face;
@@ -144,9 +149,11 @@ impl DepthBias {
 pub enum CullModeType {
     None, Front, Back, FrontAndBack,
 }
-impl CullModeType {
 
-    fn flag(&self) -> vk::CullModeFlags {
+impl VulkanEnum for CullModeType {
+    type EnumType = vk::CullModeFlags;
+
+    fn value(&self) -> Self::EnumType {
         match *self {
             | CullModeType::None         => vk::CULL_MODE_NONE,
             | CullModeType::Front        => vk::CULL_MODE_FRONT_BIT,

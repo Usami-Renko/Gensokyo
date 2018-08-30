@@ -9,14 +9,24 @@ use pipeline::pass::render::HaRenderPass;
 
 pub struct HaGraphicsPipeline {
 
-    pub handle: vk::Pipeline,
+    pub(crate) handle: vk::Pipeline,
     pub pass: HaRenderPass,
     layout: HaPipelineLayout,
 
-    pub bind_point: vk::PipelineBindPoint,
+    pub(crate) bind_point: vk::PipelineBindPoint,
 }
 
 impl HaGraphicsPipeline {
+
+    pub fn uninitialize() -> HaGraphicsPipeline {
+        HaGraphicsPipeline {
+            handle: vk::Pipeline::null(),
+            pass: HaRenderPass::uninitialize(),
+            layout: HaPipelineLayout::uninitialize(),
+
+            bind_point: vk::PipelineBindPoint::Graphics,
+        }
+    }
 
     pub(super) fn new(handle: vk::Pipeline, layout: vk::PipelineLayout, pass: HaRenderPass) -> HaGraphicsPipeline {
         HaGraphicsPipeline {
@@ -26,6 +36,10 @@ impl HaGraphicsPipeline {
 
             bind_point: vk::PipelineBindPoint::Graphics,
         }
+    }
+
+    pub fn frame_count(&self) -> usize {
+        self.pass.framebuffers.len()
     }
 
     pub fn cleanup(&self, device: &HaLogicalDevice) {

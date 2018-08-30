@@ -5,6 +5,26 @@ use ash::vk::{ Bool32, uint32_t };
 use std::ptr;
 use std::os::raw::c_float;
 
+use utility::marker::VulkanEnum;
+use utility::marker::Prefab;
+
+
+#[derive(Debug, Clone, Copy, Eq, PartialEq)]
+pub enum MultisamplePrefab {
+    /// Disable multisample configuration.
+    Disable,
+}
+
+impl Prefab for MultisamplePrefab {
+    type PrefabType = HaMultisample;
+
+    fn generate(&self) -> Self::PrefabType {
+        match *self {
+            | MultisamplePrefab::Disable => HaMultisample { ..Default::default() },
+        }
+    }
+}
+
 pub struct HaMultisample {
 
     /// The number of samples per pixel used in rasterization.
@@ -17,29 +37,13 @@ pub struct HaMultisample {
     alpha_to_one_enalbe     : Bool32,
 }
 
-
-#[derive(Debug, Clone, Copy, Eq, PartialEq)]
-pub enum MultisamplePrefab {
-    /// Disable multisample configuration.
-    Disable,
-}
-
-impl MultisamplePrefab {
-    fn generate(&self) -> HaMultisample {
-        match *self {
-            | MultisamplePrefab::Disable => HaMultisample { ..Default::default() },
-        }
-    }
-}
-
 impl HaMultisample {
 
     pub fn setup(prefab: MultisamplePrefab) -> HaMultisample {
         prefab.generate()
     }
 
-    #[inline]
-    pub fn info(&self) -> vk::PipelineMultisampleStateCreateInfo {
+    pub(crate) fn info(&self) -> vk::PipelineMultisampleStateCreateInfo {
         vk::PipelineMultisampleStateCreateInfo {
             s_type : vk::StructureType::PipelineMultisampleStateCreateInfo,
             p_next : ptr::null(),
@@ -108,8 +112,11 @@ impl SampleShading {
 pub enum SampleCountType {
     Count1Bit, Count2Bit, Count4Bit, Count8Bit, Count16Bit, Count32Bit, Count64Bit,
 }
-impl SampleCountType {
-    pub(crate) fn value(&self) -> vk::SampleCountFlags {
+
+impl VulkanEnum for SampleCountType {
+    type EnumType = vk::SampleCountFlags;
+
+    fn value(&self) -> Self::EnumType {
         match *self {
             | SampleCountType::Count1Bit  => vk::SAMPLE_COUNT_1_BIT,
             | SampleCountType::Count2Bit  => vk::SAMPLE_COUNT_2_BIT,

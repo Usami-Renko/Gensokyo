@@ -5,12 +5,15 @@ pub mod stencil;
 use ash::vk;
 use std::ptr;
 
-use pipeline::state::depth_stencil::depth::DepthTest;
-use pipeline::state::depth_stencil::stencil::StencilTest;
+pub use self::depth::DepthTest;
+pub use self::stencil::StencilTest;
+pub use self::stencil::StencilOpState;
+
+use utility::marker::Prefab;
 
 pub struct HaDepthStencil {
 
-    depth: DepthTest,
+    depth  : DepthTest,
     stencil: StencilTest,
 }
 
@@ -21,8 +24,11 @@ pub enum HaDepthStencilPrefab {
     EnableStencil,
     EnableDepthStencil,
 }
-impl HaDepthStencilPrefab {
-    fn generate(&self) -> HaDepthStencil {
+
+impl Prefab for HaDepthStencilPrefab {
+    type PrefabType = HaDepthStencil;
+
+    fn generate(&self) -> Self::PrefabType {
         match *self {
             | HaDepthStencilPrefab::Disable => HaDepthStencil {
                 depth  : DepthTest::disable(),
@@ -46,7 +52,6 @@ impl HaDepthStencilPrefab {
 
 impl HaDepthStencil {
 
-
     pub fn setup(prefab: HaDepthStencilPrefab) -> HaDepthStencil {
         prefab.generate()
     }
@@ -58,7 +63,7 @@ impl HaDepthStencil {
         self.stencil = stencil;
     }
 
-    pub fn info(&self) -> vk::PipelineDepthStencilStateCreateInfo {
+    pub(crate) fn info(&self) -> vk::PipelineDepthStencilStateCreateInfo {
         vk::PipelineDepthStencilStateCreateInfo {
             s_type : vk::StructureType::PipelineDepthStencilStateCreateInfo,
             p_next : ptr::null(),

@@ -1,9 +1,8 @@
 
-pub use self::buffer::CommandBufferUsage;
-pub use self::pool::CommandPoolFlag;
-pub use self::record::HaCommandRecorder;
-pub use self::record::CommandBufferUsageFlag;
+pub use self::buffer::{ HaCommandBuffer, CommandBufferUsage };
+pub use self::pool::{ HaCommandPool, CommandPoolFlag };
+pub use self::record::{ HaCommandRecorder, CommandBufferUsageFlag };
 
-pub(crate) mod pool;
-pub(crate) mod buffer;
+mod pool;
+mod buffer;
 mod record;

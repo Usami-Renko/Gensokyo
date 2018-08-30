@@ -1,9 +1,8 @@
 
-pub use self::flag::BufferUsage;
-pub use self::flag::BufferCreateFlag;
-
-pub use self::handle::HaBuffer;
+pub use self::flag::{ BufferCreateFlag, BufferUsage };
 pub use self::handle::BufferConfig;
+
+pub(crate) use self::handle::HaBuffer;
 
 mod flag;
 mod handle;

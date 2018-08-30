@@ -20,6 +20,12 @@ pub struct HaCommandPool {
 
 impl HaCommandPool {
 
+    pub fn uninitialize() -> HaCommandPool {
+        HaCommandPool {
+            handle: vk::CommandPool::null(),
+        }
+    }
+
     pub fn setup(device: &HaLogicalDevice, flags: &[CommandPoolFlag])
         -> Result<HaCommandPool, CommandError> {
 

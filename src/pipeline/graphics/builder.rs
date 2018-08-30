@@ -17,7 +17,7 @@ use pipeline::{
     state::rasterizer::HaRasterizer,
     state::multisample::HaMultisample,
     state::depth_stencil::HaDepthStencil,
-    state::blend::blending::HaBlend,
+    state::blend::HaBlend,
     state::tessellation::HaTessellation,
     state::dynamic::HaDynamicState,
     pass::render::HaRenderPass,
@@ -89,13 +89,15 @@ impl GraphicsPipelineConfig {
             render_pass    : Some(pass),
 
             shader_modules : vec![],
-            layout_builder : PipelineLayoutBuilder::init(),
+            layout_builder : PipelineLayoutBuilder::default(),
         }
     }
 
-    pub fn finish_config(&mut self) {
+    pub fn finish_config(self) -> GraphicsPipelineConfig {
         // TODO: Configure layout property here
         // code goes here...
+
+        self
     }
 }
 
@@ -199,14 +201,44 @@ impl GraphicsPipelineBuilder {
 
 impl GraphicsPipelineConfig {
 
-    pub fn resetup_shader(&mut self, shaders: Vec<HaShaderInfo>) { self.shaders = shaders; }
-    pub fn setup_input_vertex(&mut self, vertex_infos: HaVertexInput) { self.states.vertex_input = vertex_infos; }
-    pub fn setup_input_assembly(&mut self, assembly: HaInputAssembly) { self.states.input_assembly = assembly; }
-    pub fn setup_viewport(&mut self, viewport: HaViewport) { self.states.viewport = viewport; }
-    pub fn setup_rasterizer(&mut self, rasterizer: HaRasterizer) { self.states.rasterizer = rasterizer; }
-    pub fn setup_multisample(&mut self, multisample: HaMultisample) { self.states.multisample = multisample; }
-    pub fn setup_depth_stencil(&mut self, depth_stencil: HaDepthStencil) { self.states.depth_stencil = depth_stencil; }
-    pub fn setup_blend(&mut self, blend: HaBlend) { self.states.blend = blend; }
-    pub fn setup_tessllation(&mut self, tessellation: HaTessellation) { self.states.tessellation = Some(tessellation); }
-    pub fn setup_dynamic(&mut self, dynamic_state: HaDynamicState) { self.states.dynamic = Some(dynamic_state); }
+    pub fn resetup_shader(mut self, shaders: Vec<HaShaderInfo>) -> GraphicsPipelineConfig {
+        self.shaders = shaders;
+        self
+    }
+    pub fn setup_input_vertex(mut self, vertex_infos: HaVertexInput) -> GraphicsPipelineConfig {
+        self.states.vertex_input = vertex_infos;
+        self
+    }
+    pub fn setup_input_assembly(mut self, assembly: HaInputAssembly) -> GraphicsPipelineConfig {
+        self.states.input_assembly = assembly;
+        self
+    }
+    pub fn setup_viewport(mut self, viewport: HaViewport) -> GraphicsPipelineConfig {
+        self.states.viewport = viewport;
+        self
+    }
+    pub fn setup_rasterizer(mut self, rasterizer: HaRasterizer) -> GraphicsPipelineConfig {
+        self.states.rasterizer = rasterizer;
+        self
+    }
+    pub fn setup_multisample(mut self, multisample: HaMultisample) -> GraphicsPipelineConfig {
+        self.states.multisample = multisample;
+        self
+    }
+    pub fn setup_depth_stencil(mut self, depth_stencil: HaDepthStencil) -> GraphicsPipelineConfig {
+        self.states.depth_stencil = depth_stencil;
+        self
+    }
+    pub fn setup_blend(mut self, blend: HaBlend) -> GraphicsPipelineConfig {
+        self.states.blend = blend;
+        self
+    }
+    pub fn setup_tessllation(mut self, tessellation: HaTessellation) -> GraphicsPipelineConfig {
+        self.states.tessellation = Some(tessellation);
+        self
+    }
+    pub fn setup_dynamic(mut self, dynamic_state: HaDynamicState) -> GraphicsPipelineConfig {
+        self.states.dynamic = Some(dynamic_state);
+        self
+    }
 }

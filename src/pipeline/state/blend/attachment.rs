@@ -3,13 +3,17 @@ use ash::vk;
 use ash::vk::Bool32;
 
 use utility::marker::VulkanFlags;
+use utility::marker::Prefab;
 
 #[derive(Debug, Clone, Copy, Eq, PartialEq)]
 pub enum BlendAttachmentPrefab {
     Disable,
 }
-impl BlendAttachmentPrefab {
-    fn generate(&self) -> BlendAttachemnt {
+
+impl Prefab for BlendAttachmentPrefab {
+    type PrefabType = BlendAttachemnt;
+
+    fn generate(&self) -> Self::PrefabType {
         match *self {
             | BlendAttachmentPrefab::Disable => BlendAttachemnt {
                 enable: vk::VK_FALSE,
@@ -46,7 +50,7 @@ impl BlendAttachemnt {
         prefab.generate()
     }
 
-    pub fn state(&self) -> vk::PipelineColorBlendAttachmentState {
+    pub(crate) fn state(&self) -> vk::PipelineColorBlendAttachmentState {
         vk::PipelineColorBlendAttachmentState {
             blend_enable: self.enable,
             src_color_blend_factor : self.src_color_factor,

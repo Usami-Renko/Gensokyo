@@ -2,6 +2,7 @@
 use ash::vk;
 
 use utility::marker::VulkanFlags;
+use utility::marker::VulkanEnum;
 
 #[derive(Debug, Clone, Copy, Eq, PartialEq)]
 pub enum BufferCreateFlag {
@@ -61,9 +62,11 @@ pub enum BufferUsage {
     /// vkCmdDrawIndexedIndirect, or vkCmdDispatchIndirect.
     IndirectBufferBit,
 }
-impl BufferUsage {
 
-    pub(super) fn value(&self) -> vk::BufferUsageFlags {
+impl VulkanEnum for BufferUsage {
+    type EnumType = vk::BufferUsageFlags;
+
+    fn value(&self) -> Self::EnumType {
         match *self {
             | BufferUsage::TransferSrcBit        => vk::BUFFER_USAGE_TRANSFER_SRC_BIT,
             | BufferUsage::TransferDstBit        => vk::BUFFER_USAGE_TRANSFER_DST_BIT,

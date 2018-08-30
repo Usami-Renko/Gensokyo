@@ -18,3 +18,9 @@ pub trait VulkanEnum {
 
     fn value(&self) -> Self::EnumType;
 }
+
+pub trait Prefab {
+    type PrefabType;
+
+    fn generate(&self) -> Self::PrefabType;
+}

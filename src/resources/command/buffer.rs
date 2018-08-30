@@ -3,7 +3,6 @@ use ash::vk;
 
 use core::device::HaLogicalDevice;
 
-use swapchain::chain::HaSwapchain;
 use pipeline::graphics::pipeline::HaGraphicsPipeline;
 use resources::command::record::HaCommandRecorder;
 use resources::error::CommandError;
@@ -22,6 +21,7 @@ pub enum CommandBufferUsage {
     /// and there will be primary command buffer used in render pass.
     SecondaryCommand,
 }
+
 impl CommandBufferUsage {
     pub(super) fn level(&self) -> vk::CommandBufferLevel {
         match *self {
@@ -50,13 +50,12 @@ pub struct HaCommandBuffer {
 
 impl<'buffer, 'vk: 'buffer> HaCommandBuffer {
 
-    pub fn setup_record(&'buffer self, device: &'vk HaLogicalDevice, swapchain: &'vk HaSwapchain, pipeline: &'vk HaGraphicsPipeline)
+    pub fn setup_record(&'buffer self, device: &'vk HaLogicalDevice, pipeline: &'vk HaGraphicsPipeline)
         -> Result<HaCommandRecorder<'buffer, 'vk>, CommandError> {
 
         let recorder = HaCommandRecorder {
             buffer: self,
             device,
-            swapchain,
             pipeline,
         };
 
