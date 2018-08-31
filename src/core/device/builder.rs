@@ -11,6 +11,8 @@ use core::device::queue::QueueUsage;
 use core::device::queue::{ HaQueue, QueueInfoTmp };
 use core::error::LogicalDeviceError;
 
+use resources::command::{ HaCommandPool, CommandPoolFlag };
+
 use utility::cast;
 use constant::VERBOSE;
 
@@ -204,14 +206,22 @@ impl<'a, 'b> LogicalDeviceBuilder<'a, 'b> {
 
         // Default queues
 
-        let device = HaLogicalDevice {
+        let mut device = HaLogicalDevice {
             handle,
             queues: all_queues,
 
             graphics_queue,
             present_queue,
             transfer_queue,
+
+            transfer_command_pool: HaCommandPool::uninitialize(),
         };
+
+        let transfer_command_pool = HaCommandPool::setup(&device, &[
+            CommandPoolFlag::TransientBit,
+        ]).map_err(|e| LogicalDeviceError::Command(e))?;
+        device.transfer_command_pool = transfer_command_pool;
+
         Ok(device)
     }
 

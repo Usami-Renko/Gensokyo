@@ -6,13 +6,12 @@ use ash::version::DeviceV1_0;
 
 use core::device::HaLogicalDevice;
 
-use resources::buffer::BufferUsage;
+use resources::buffer::BufferUsageFlag;
 use resources::buffer::BufferCreateFlag;
 use resources::error::BufferError;
 use resources::memory::MemoryPropertyFlag;
 
 use utility::marker::VulkanFlags;
-use utility::marker::VulkanEnum;
 
 use std::ptr;
 use std::mem;
@@ -20,31 +19,29 @@ use std::mem;
 pub(crate) struct HaBuffer {
 
     pub(crate) handle : vk::Buffer,
-    _usage            : BufferUsage,
     requirement       : vk::MemoryRequirements,
 }
 
-pub struct BufferConfig<'data, D> where D: 'data + Copy {
+pub struct BufferConfig<'flag> {
 
-    pub data: &'data Vec<D>,
-    pub usage: BufferUsage,
+    pub estimate_size: vk::DeviceSize,
+    pub usages       : &'flag [BufferUsageFlag],
     // TODO: Turn the flags into bool options.
-    pub buffer_flags: &'data [BufferCreateFlag],
-    pub memory_flags: &'data [MemoryPropertyFlag],
+    pub buffer_flags : &'flag [BufferCreateFlag],
+    pub memory_flags : &'flag [MemoryPropertyFlag],
 }
 
 impl HaBuffer {
 
     /// Generate a buffer object.
     ///
-    /// size is the size in bytes of the buffer to be created. size must be greater than 0.
+    /// estimate_size is the size in bytes of the buffer to be created. size must be greater than 0.
     ///
     /// If the buffer is accessed by one queue family, set sharing_queue_families to None,
     /// or set it the queue family indices to share accessing.
-    pub fn generate<D>(device: &HaLogicalDevice, data: &Vec<D>, usage: BufferUsage, flags: &[BufferCreateFlag], sharing_queue_families: Option<Vec<uint32_t>>)
+    pub fn generate(device: &HaLogicalDevice, estimate_size: vk::DeviceSize, usages: &[BufferUsageFlag], flags: &[BufferCreateFlag], sharing_queue_families: Option<Vec<uint32_t>>)
         -> Result<HaBuffer, BufferError> {
 
-        let estimate_size = (mem::size_of::<D>() * data.len()) as vk::DeviceSize;
         let (sharing_mode, indices) = match sharing_queue_families {
             | Some(families) => (vk::SharingMode::Concurrent, families),
             | None           => (vk::SharingMode::Exclusive, vec![]),
@@ -55,7 +52,7 @@ impl HaBuffer {
             p_next: ptr::null(),
             flags : flags.flags(),
             size  : estimate_size,
-            usage : usage.value(),
+            usage : usages.flags(),
             sharing_mode,
             queue_family_index_count: indices.len() as uint32_t,
             p_queue_family_indices  : indices.as_ptr(),
@@ -70,7 +67,6 @@ impl HaBuffer {
 
         let buffer = HaBuffer {
             handle,
-            _usage: usage,
             requirement,
         };
         Ok(buffer)

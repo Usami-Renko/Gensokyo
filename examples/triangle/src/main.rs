@@ -119,9 +119,9 @@ impl ProgramProc for TriangleProcedure {
     fn configure_resources(&mut self, device: &HaLogicalDevice, generator: &ResourceGenerator) -> Result<(), ProcedureError> {
 
         // vertex buffer
-        let buffer_config = BufferConfig {
-            data: &self.vertex_data,
-            usage: BufferUsage::VertexBufferBit,
+        let staging_buffer_config = BufferConfig {
+            estimate_size: data_size!(self.vertex_data, Vertex),
+            usages: &[BufferUsageFlag::TransferSrcBit],
             buffer_flags: &[],
             memory_flags: &[
                 MemoryPropertyFlag::HostVisibleBit,
@@ -129,13 +129,27 @@ impl ProgramProc for TriangleProcedure {
             ],
         };
 
-        let mut allocator = generator.buffer_allocator();
-        allocator.attach_buffer(buffer_config)?;
+        let vertex_buffer_config = BufferConfig {
+            estimate_size: data_size!(self.vertex_data, Vertex),
+            usages: &[
+                BufferUsageFlag::TransferDstBit,
+                BufferUsageFlag::VertexBufferBit,
+            ],
+            buffer_flags: &[],
+            memory_flags: &[MemoryPropertyFlag::DeviceLocalBit],
+        };
 
-        let repository = allocator.allocate()?;
-        repository.tranfer_data(device, &self.vertex_data, 0)?;
-        self.vertex_buffer = repository;
+        let mut staging_allocator = generator.buffer_allocator();
+        let staging_buffer_index = staging_allocator.attach_buffer(staging_buffer_config)?;
 
+        let staging_repository = staging_allocator.allocate()?;
+        staging_repository.tranfer_data(device, &self.vertex_data, staging_buffer_index)?;
+
+        let mut vertex_allocator = generator.buffer_allocator();
+        let vertex_buffer_index = vertex_allocator.attach_buffer(vertex_buffer_config)?;
+        self.vertex_buffer = vertex_allocator.allocate()?;
+        self.vertex_buffer.copy_data(device, &staging_repository, staging_buffer_index, vertex_buffer_index)?;
+        staging_repository.cleanup(device);
 
         // command buffer
         let command_pool = HaCommandPool::setup(&device, &[])?;
@@ -145,14 +159,14 @@ impl ProgramProc for TriangleProcedure {
             .allocate(device, CommandBufferUsage::UnitaryCommand, command_buffer_count)?;
 
         for (frame_index, command_buffer) in command_buffers.iter_mut().enumerate() {
-            let recorder = command_buffer.setup_record(device, &self.graphics_pipeline)?;
+            let recorder = command_buffer.setup_record(device);
             let usage_flags = [
                 CommandBufferUsageFlag::SimultaneousUseBit
             ];
 
             recorder.begin_record(&usage_flags)?
-                .begin_render_pass(frame_index)
-                .bind_pipeline()
+                .begin_render_pass(&self.graphics_pipeline, frame_index)
+                .bind_pipeline(&self.graphics_pipeline)
                 .bind_vertex_buffers(0, &self.vertex_buffer.binding_infos())
                 .draw(self.vertex_data.len() as uint32_t, 1, 0, 0)
                 .end_render_pass()

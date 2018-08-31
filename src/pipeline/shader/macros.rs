@@ -46,6 +46,13 @@ macro_rules! define_input {
 }
 
 #[macro_export]
+macro_rules! data_size {
+    ($data:expr, $d_type:ty) => (
+        (::std::mem::size_of::<$d_type>() * $data.len()) as DeviceSize
+    )
+}
+
+#[macro_export]
 macro_rules! vk_format {
     (float)  => (Format::R32Sfloat);
     (double) => (Format::R64Sfloat);

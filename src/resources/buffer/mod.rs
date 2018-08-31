@@ -1,5 +1,5 @@
 
-pub use self::flag::{ BufferCreateFlag, BufferUsage };
+pub use self::flag::{BufferCreateFlag, BufferUsageFlag};
 pub use self::handle::BufferConfig;
 
 pub(crate) use self::handle::HaBuffer;

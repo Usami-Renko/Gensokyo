@@ -5,11 +5,11 @@ use ash::version::DeviceV1_0;
 
 use core::device::HaLogicalDevice;
 
-use resources::command::buffer::HaCommandBuffer;
-use resources::command::buffer::CommandBufferUsage;
+use resources::command::buffer::{ HaCommandBuffer, CommandBufferUsage };
 use resources::error::CommandError;
 
 use utility::marker::VulkanFlags;
+use utility::marker::Handles;
 
 use std::ptr;
 
@@ -69,6 +69,14 @@ impl HaCommandPool {
         let buffers = handles.iter()
             .map(|&handle| HaCommandBuffer { handle, usage }).collect();
         Ok(buffers)
+    }
+
+    pub fn free(&self, device: &HaLogicalDevice, buffers_to_free: &[&HaCommandBuffer]) {
+        let buffer_handles = buffers_to_free.handles();
+
+        unsafe {
+            device.handle.free_command_buffers(self.handle, &buffer_handles);
+        }
     }
 
     pub fn cleanup(&self, device: &HaLogicalDevice) {

@@ -1,9 +1,10 @@
 
 use ash::vk;
 
-use core::device::HaLogicalDevice;
+use core::device::{ HaLogicalDevice, QueueSubmitBundle, DeviceQueueIdentifier };
 
 use resources::buffer::HaBuffer;
+use resources::command::{ CommandBufferUsageFlag, CommandBufferUsage };
 use resources::memory::device::HaDeviceMemory;
 use resources::memory::traits::HaMemoryAbstract;
 use resources::error::AllocatorError;
@@ -72,6 +73,49 @@ impl HaBufferRepository {
             .map_err(|e| AllocatorError::Memory(e))?;
 
         Ok(())
+    }
+
+    pub fn copy_data(&self, device: &HaLogicalDevice, from_repository: &HaBufferRepository, from_buffer_index: usize, to_buffer_index: usize) -> Result<(), AllocatorError> {
+
+        let mut command_buffers = device.transfer_command_pool.allocate(device, CommandBufferUsage::UnitaryCommand, 1)?;
+        let command_buffer = command_buffers.pop().unwrap();
+
+        let copy_regions = [
+            vk::BufferCopy {
+                src_offset : from_repository.offsets[from_buffer_index],
+                dst_offset : self.offsets[to_buffer_index],
+                size       : from_repository.spaces[from_buffer_index],
+            },
+        ];
+
+        let recorder = command_buffer.setup_record(device);
+        recorder.begin_record(&[CommandBufferUsageFlag::OneTimeSubmitBit])?
+            .copy_buffer(
+                from_repository.buffer_at(from_buffer_index),
+                self.buffer_at(to_buffer_index),
+                &copy_regions)
+            .finish()?;
+
+        let submit_infos = [
+            QueueSubmitBundle {
+                wait_semaphores: &[],
+                sign_semaphores: &[],
+                wait_stages    : &[],
+                commands       : &[&command_buffer],
+            },
+        ];
+
+        device.submit(&submit_infos, None, DeviceQueueIdentifier::Transfer)?;
+        // FIXME: Use fence would allow you to schedule multiple transfers simultaneously and wait for all of them complete, instead of executing one at a time.
+        let _ = device.wait_idle();
+
+        device.transfer_command_pool.free(device, &[&command_buffer]);
+
+        Ok(())
+    }
+
+    fn buffer_at(&self, index: usize) -> &HaBuffer {
+        &self.buffers[index]
     }
 
     pub fn binding_infos(&self) -> BufferBindingInfos {

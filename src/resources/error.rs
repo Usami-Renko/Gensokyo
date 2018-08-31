@@ -26,6 +26,7 @@ impl fmt::Display for FramebufferError {
 pub enum CommandError {
 
     QueueFamilyUnavailable,
+    QueueSubmitError,
     PoolCreationError,
     BufferAllocateError,
     RecordBeginError,
@@ -39,6 +40,7 @@ impl fmt::Display for CommandError {
 
         let description = match self {
             | CommandError::QueueFamilyUnavailable => "Graphics Queue Family is not available.",
+            | CommandError::QueueSubmitError       => "Failed to submit command to device.",
             | CommandError::PoolCreationError      => "Failed to create Command Pool.",
             | CommandError::BufferAllocateError    => "Failed to allocate Command Buffer.",
             | CommandError::RecordBeginError       => "Failed to begin Command Buffer recording.",
@@ -103,8 +105,16 @@ pub enum AllocatorError {
 
     Buffer(BufferError),
     Memory(MemoryError),
+    Command(CommandError),
     NoAvailableBufferAttach,
     MemoryNotYetAllocated,
+}
+
+impl From<CommandError> for AllocatorError {
+
+    fn from(error: CommandError) -> Self {
+        AllocatorError::Command(error)
+    }
 }
 
 impl Error for AllocatorError {}
@@ -113,10 +123,15 @@ impl fmt::Display for AllocatorError {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
 
         let description = match self {
-            | AllocatorError::Buffer(ref e) => e.to_string(),
-            | AllocatorError::Memory(ref e) => e.to_string(),
-            | AllocatorError::NoAvailableBufferAttach => String::from("There must be buffer attached to allocator before allocate memory."),
-            | AllocatorError::MemoryNotYetAllocated   => String::from("The memory is not allocated yet. Memory must be allocated first before using it."),
+            | AllocatorError::Buffer(ref e)  => e.to_string(),
+            | AllocatorError::Memory(ref e)  => e.to_string(),
+            | AllocatorError::Command(ref e) => e.to_string(),
+            | AllocatorError::NoAvailableBufferAttach => {
+                String::from("There must be buffer attached to allocator before allocate memory.")
+            },
+            | AllocatorError::MemoryNotYetAllocated   => {
+                String::from("The memory is not allocated yet. Memory must be allocated first before using it.")
+            },
         };
         write!(f, "{}", description)
     }

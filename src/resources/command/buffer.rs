@@ -3,9 +3,7 @@ use ash::vk;
 
 use core::device::HaLogicalDevice;
 
-use pipeline::graphics::pipeline::HaGraphicsPipeline;
 use resources::command::record::HaCommandRecorder;
-use resources::error::CommandError;
 
 use utility::marker::Handles;
 
@@ -50,21 +48,27 @@ pub struct HaCommandBuffer {
 
 impl<'buffer, 'vk: 'buffer> HaCommandBuffer {
 
-    pub fn setup_record(&'buffer self, device: &'vk HaLogicalDevice, pipeline: &'vk HaGraphicsPipeline)
-        -> Result<HaCommandRecorder<'buffer, 'vk>, CommandError> {
+    pub fn setup_record(&'buffer self, device: &'vk HaLogicalDevice)
+        -> HaCommandRecorder<'buffer, 'vk> {
 
-        let recorder = HaCommandRecorder {
+        HaCommandRecorder {
             buffer: self,
             device,
-            pipeline,
-        };
-
-        Ok(recorder)
+        }
     }
 
 }
 
 impl<'re> Handles for [&'re HaCommandBuffer] {
+    type HandleType = vk::CommandBuffer;
+
+    #[inline]
+    fn handles(&self) -> Vec<Self::HandleType> {
+        self.iter().map(|c| c.handle).collect()
+    }
+}
+
+impl Handles for [HaCommandBuffer] {
     type HandleType = vk::CommandBuffer;
 
     #[inline]

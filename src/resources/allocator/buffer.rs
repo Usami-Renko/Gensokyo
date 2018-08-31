@@ -44,9 +44,9 @@ impl<'re> HaBufferAllocator<'re> {
         }
     }
 
-    pub fn attach_buffer<D: Copy>(&mut self, config: BufferConfig<D>) -> Result<(), AllocatorError> {
+    pub fn attach_buffer(&mut self, config: BufferConfig) -> Result<usize, AllocatorError> {
 
-        let buffer = HaBuffer::generate(self.device, config.data, config.usage, config.buffer_flags, None)
+        let buffer = HaBuffer::generate(self.device, config.estimate_size, config.usages, config.buffer_flags, None)
             .map_err(|e| AllocatorError::Buffer(e))?;
         let required_size = buffer.require_memory_size();
         let required_memory_flag = config.memory_flags.flags();
@@ -63,7 +63,7 @@ impl<'re> HaBufferAllocator<'re> {
             self.buffers.push(buffer);
             self.spaces.push(required_size);
 
-            Ok(())
+            Ok(self.buffers.len() - 1)
         } else {
             Err(AllocatorError::Memory(MemoryError::NoSuitableMemoryError))
         }

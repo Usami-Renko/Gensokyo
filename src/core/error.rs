@@ -2,6 +2,8 @@
 use std::fmt;
 use std::error::Error;
 
+use resources::error::CommandError;
+
 /// possible error may occur during the creation of vk::Instance.
 #[derive(Debug, Clone, Copy, Eq, PartialEq)]
 pub enum InstanceError {
@@ -117,21 +119,18 @@ impl fmt::Display for SurfaceError {
 pub enum LogicalDeviceError {
 
     DeviceCreationError,
-    QueueSubmitError,
     WaitIdleError,
+    Command(CommandError),
 }
 
 impl Error for LogicalDeviceError {}
 impl fmt::Display for LogicalDeviceError {
 
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
-
-        let description = match self {
-            | LogicalDeviceError::DeviceCreationError      => "Failed to create Logical Device.",
-            | LogicalDeviceError::QueueSubmitError         => "Device failed to submit queue.",
-            | LogicalDeviceError::WaitIdleError            => "Device failed to wait idle.",
-        };
-
-        write!(f, "{}", description)
+        match self {
+            | LogicalDeviceError::DeviceCreationError  => write!(f, "Failed to create Logical Device."),
+            | LogicalDeviceError::WaitIdleError        => write!(f, "Device failed to wait idle."),
+            | LogicalDeviceError::Command(ref e)       => write!(f, "{}", e.to_string()),
+        }
     }
 }

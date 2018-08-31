@@ -2,7 +2,6 @@
 use ash::vk;
 
 use utility::marker::VulkanFlags;
-use utility::marker::VulkanEnum;
 
 #[derive(Debug, Clone, Copy, Eq, PartialEq)]
 pub enum BufferCreateFlag {
@@ -20,7 +19,6 @@ pub enum BufferCreateFlag {
 impl VulkanFlags for [BufferCreateFlag] {
     type FlagType = vk::BufferCreateFlags;
 
-    /// Convenient method to combine flags.
     fn flags(&self) -> Self::FlagType {
         self.iter().fold(vk::BufferCreateFlags::empty(), |acc, flag| {
             match *flag {
@@ -33,7 +31,7 @@ impl VulkanFlags for [BufferCreateFlag] {
 }
 
 #[derive(Debug, Clone, Copy, Eq, PartialEq)]
-pub enum BufferUsage {
+pub enum BufferUsageFlag {
     /// TransferSrcBit specifies that the buffer can be used as the source of a transfer command.
     ///
     ///  (see the definition of VK_PIPELINE_STAGE_TRANSFER_BIT).
@@ -63,20 +61,22 @@ pub enum BufferUsage {
     IndirectBufferBit,
 }
 
-impl VulkanEnum for BufferUsage {
-    type EnumType = vk::BufferUsageFlags;
+impl VulkanFlags for [BufferUsageFlag] {
+    type FlagType = vk::BufferUsageFlags;
 
-    fn value(&self) -> Self::EnumType {
-        match *self {
-            | BufferUsage::TransferSrcBit        => vk::BUFFER_USAGE_TRANSFER_SRC_BIT,
-            | BufferUsage::TransferDstBit        => vk::BUFFER_USAGE_TRANSFER_DST_BIT,
-            | BufferUsage::UniformTexelBufferBit => vk::BUFFER_USAGE_UNIFORM_TEXEL_BUFFER_BIT,
-            | BufferUsage::StorageTexelBufferBit => vk::BUFFER_USAGE_STORAGE_TEXEL_BUFFER_BIT,
-            | BufferUsage::UniformBufferBit      => vk::BUFFER_USAGE_UNIFORM_BUFFER_BIT,
-            | BufferUsage::StorageBufferBit      => vk::BUFFER_USAGE_STORAGE_BUFFER_BIT,
-            | BufferUsage::IndexBufferBit        => vk::BUFFER_USAGE_INDEX_BUFFER_BIT,
-            | BufferUsage::VertexBufferBit       => vk::BUFFER_USAGE_VERTEX_BUFFER_BIT,
-            | BufferUsage::IndirectBufferBit     => vk::BUFFER_USAGE_INDIRECT_BUFFER_BIT,
-        }
+    fn flags(&self) -> Self::FlagType {
+        self.iter().fold(vk::BufferUsageFlags::empty(), |acc, flag| {
+            match flag {
+                | BufferUsageFlag::TransferSrcBit        => acc | vk::BUFFER_USAGE_TRANSFER_SRC_BIT,
+                | BufferUsageFlag::TransferDstBit        => acc | vk::BUFFER_USAGE_TRANSFER_DST_BIT,
+                | BufferUsageFlag::UniformTexelBufferBit => acc | vk::BUFFER_USAGE_UNIFORM_TEXEL_BUFFER_BIT,
+                | BufferUsageFlag::StorageTexelBufferBit => acc | vk::BUFFER_USAGE_STORAGE_TEXEL_BUFFER_BIT,
+                | BufferUsageFlag::UniformBufferBit      => acc | vk::BUFFER_USAGE_UNIFORM_BUFFER_BIT,
+                | BufferUsageFlag::StorageBufferBit      => acc | vk::BUFFER_USAGE_STORAGE_BUFFER_BIT,
+                | BufferUsageFlag::IndexBufferBit        => acc | vk::BUFFER_USAGE_INDEX_BUFFER_BIT,
+                | BufferUsageFlag::VertexBufferBit       => acc | vk::BUFFER_USAGE_VERTEX_BUFFER_BIT,
+                | BufferUsageFlag::IndirectBufferBit     => acc | vk::BUFFER_USAGE_INDIRECT_BUFFER_BIT,
+            }
+        })
     }
 }

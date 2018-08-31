@@ -9,6 +9,9 @@ use core::device::queue::HaQueue;
 use core::device::queue::QueueSubmitBundle;
 use core::error::LogicalDeviceError;
 
+use resources::command::{ HaCommandPool };
+use resources::error::CommandError;
+
 use sync::fence::HaFence;
 use sync::error::SyncError;
 use utility::time::TimePeriod;
@@ -24,6 +27,8 @@ pub struct HaLogicalDevice {
     pub(crate) graphics_queue: HaQueue,
     pub(crate) present_queue : HaQueue,
     pub(crate) transfer_queue: HaQueue,
+
+    pub(crate) transfer_command_pool: HaCommandPool,
 }
 
 pub enum DeviceQueueIdentifier {
@@ -58,7 +63,7 @@ impl<'resource> HaLogicalDevice {
     }
 
     pub fn submit(&self, bundles: &[QueueSubmitBundle], fence: Option<&HaFence>, queue: DeviceQueueIdentifier)
-        -> Result<(), LogicalDeviceError> {
+        -> Result<(), CommandError> {
 
         // TODO: Add configuration to select submit queue family
         // TODO: Add Speed test to this function.
@@ -95,7 +100,7 @@ impl<'resource> HaLogicalDevice {
             .unwrap_or(HaFence::null_handle());
         unsafe {
             self.handle.queue_submit(queue.handle, &submit_infos, fence)
-                .or(Err(LogicalDeviceError::QueueSubmitError))?;
+                .or(Err(CommandError::QueueSubmitError))?;
         }
 
         Ok(())
@@ -109,6 +114,7 @@ impl<'resource> HaLogicalDevice {
     pub(crate) fn cleanup(&self) {
 
         unsafe {
+            self.transfer_command_pool.cleanup(self);
             self.handle.destroy_device(None);
         }
     }
