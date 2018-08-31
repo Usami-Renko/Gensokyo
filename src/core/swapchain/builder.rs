@@ -9,9 +9,9 @@ use core::physical::HaPhysicalDevice;
 use core::device::HaLogicalDevice;
 use core::surface::HaSurface;
 
-use swapchain::chain::HaSwapchain;
-use swapchain::support::SwapchainSupport;
-use swapchain::error::SwapchainInitError;
+use core::swapchain::chain::HaSwapchain;
+use core::swapchain::support::SwapchainSupport;
+use core::swapchain::error::SwapchainInitError;
 
 use resources::image::{ HaImage, HaImageView };
 

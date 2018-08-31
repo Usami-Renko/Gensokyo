@@ -16,7 +16,6 @@ extern crate winapi;
 
 mod constant;
 mod core;
-mod swapchain;
 mod procedure;
 mod utility;
 

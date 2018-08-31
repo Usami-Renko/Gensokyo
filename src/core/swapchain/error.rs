@@ -3,6 +3,7 @@ use std::fmt;
 use std::error::Error;
 
 use core::error::SurfaceError;
+use procedure::error::ProcedureError;
 
 #[derive(Debug, Clone, Eq, PartialEq)]
 pub enum SwapchainError {
@@ -28,6 +29,17 @@ impl From<SwapchainInitError> for SwapchainError {
 impl From<SwapchainRuntimeError> for SwapchainError {
     fn from(error: SwapchainRuntimeError) -> Self {
         SwapchainError::Runtime(error)
+    }
+}
+
+impl From<SwapchainInitError> for ProcedureError {
+    fn from(error: SwapchainInitError) -> Self {
+        SwapchainError::Init(error).into()
+    }
+}
+impl From<SwapchainRuntimeError> for ProcedureError {
+    fn from(error: SwapchainRuntimeError) -> Self {
+        SwapchainError::Runtime(error).into()
     }
 }
 

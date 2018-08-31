@@ -5,8 +5,7 @@ use ash::vk::uint32_t;
 
 use core::device::HaLogicalDevice;
 use core::device::HaQueue;
-
-use swapchain::error::SwapchainRuntimeError;
+use core::swapchain::error::SwapchainRuntimeError;
 
 use resources::image::{ HaImage, HaImageView };
 use utility::marker::Handles;

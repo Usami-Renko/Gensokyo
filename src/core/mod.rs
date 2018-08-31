@@ -11,4 +11,5 @@ pub(crate) mod debug;
 pub(crate) mod surface;
 pub(crate) mod physical;
 pub(crate) mod device;
+pub(crate) mod swapchain;
 pub(crate) mod error;

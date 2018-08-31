@@ -4,7 +4,7 @@ use ash::vk::uint32_t;
 use ash::version::DeviceV1_0;
 
 use core::device::HaLogicalDevice;
-use swapchain::chain::HaSwapchain;
+use core::swapchain::chain::HaSwapchain;
 
 use pipeline::pass::render::HaRenderPass;
 use pipeline::pass::attachment::RenderAttachement;

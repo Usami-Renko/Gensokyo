@@ -6,9 +6,9 @@ use core::debug::HaDebugger;
 use core::physical::{ HaPhysicalDevice, PhysicalRequirement };
 use core::surface::HaSurface;
 use core::device::{ HaLogicalDevice, LogicalDeviceBuilder };
-use swapchain::chain::HaSwapchain;
-use swapchain::builder::SwapchainBuilder;
-use swapchain::error::{ SwapchainError, SwapchainRuntimeError };
+use core::swapchain::chain::HaSwapchain;
+use core::swapchain::builder::SwapchainBuilder;
+use core::swapchain::error::{ SwapchainError, SwapchainRuntimeError };
 use resources::allocator::ResourceGenerator;
 use sync::fence::HaFence;
 use sync::semaphore::HaSemaphore;
@@ -67,21 +67,13 @@ impl<'win, T> ProgramEnv<T> where T: ProgramProc {
         // Initialize the device with default queues. (one graphics queue, one present queue, one transfer queue)
         let device = LogicalDeviceBuilder::init(&instance, &physical)
             .build()?;
-        let swapchain = SwapchainBuilder::init(&physical, &device, &surface)
-            .map_err(|e| SwapchainError::Init(e))?
+        let swapchain = SwapchainBuilder::init(&physical, &device, &surface)?
             .set_image_count(SWAPCHAIN_IMAGE_COUNT)
-            .build(&instance)
-            .map_err(|e| SwapchainError::Init(e))?;
+            .build(&instance)?;
 
         let core = CoreInfrastructure {
-            instance,
-            debugger,
-            surface,
-            physical,
-            device,
-            swapchain,
+            instance, debugger, surface, physical, device, swapchain,
         };
-
         Ok(core)
     }
 
@@ -131,8 +123,7 @@ impl<'win, T> ProgramEnv<T> where T: ProgramProc {
                 }
         };
 
-        fence_to_wait.reset(&core.device)
-            .map_err(|e| ProcedureError::Sync(e))?;
+        fence_to_wait.reset(&core.device)?;
 
         let present_available = self.procedure.draw(&core.device, fence_to_wait, &resources.image_awaits[current_frame], current_frame)?;
 

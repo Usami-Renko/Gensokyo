@@ -2,7 +2,7 @@
 use winit;
 
 use core::error::{ InstanceError, ValidationError, PhysicalDeviceError, SurfaceError, LogicalDeviceError };
-use swapchain::error::SwapchainError;
+use core::swapchain::error::SwapchainError;
 use pipeline::error::PipelineError;
 use resources::error::CommandError;
 use resources::error::AllocatorError;
