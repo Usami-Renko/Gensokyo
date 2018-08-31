@@ -25,7 +25,8 @@ winapi = { version = "0.3.5", features = ["windef", "libloaderapi"] }
 
 [workspace]
 members = [
-    "examples/triangle"
+    "examples/Eg001.triangle",
+    "examples/Eg002.draw_index",
 ]
 
 [features]

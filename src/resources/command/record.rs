@@ -1,6 +1,6 @@
 
 use ash::vk;
-use ash::vk::uint32_t;
+use ash::vk::{ uint32_t, int32_t };
 use ash::version::DeviceV1_0;
 
 use core::device::HaLogicalDevice;
@@ -10,7 +10,7 @@ use resources::command::buffer::HaCommandBuffer;
 use resources::error::CommandError;
 
 use pipeline::graphics::pipeline::HaGraphicsPipeline;
-use resources::repository::BufferBindingInfos;
+use resources::repository::{VertexBindingInfos, IndexBindingInfo};
 use utility::marker::VulkanFlags;
 
 use std::ptr;
@@ -72,46 +72,58 @@ impl<'buffer, 're> HaCommandRecorder<'buffer, 're> {
 
     pub fn bind_pipeline(&self, pipeline: &HaGraphicsPipeline) -> &HaCommandRecorder<'buffer, 're> {
         unsafe {
-            self.device.handle.cmd_bind_pipeline(self.buffer.handle,
-                pipeline.bind_point,
-                pipeline.handle)
+            self.device.handle.cmd_bind_pipeline(self.buffer.handle, pipeline.bind_point, pipeline.handle)
         };
 
         self
     }
 
-    pub fn bind_vertex_buffers(&self, first_binding: uint32_t, binding_infos: &BufferBindingInfos) -> &HaCommandRecorder<'buffer, 're> {
+    pub fn bind_vertex_buffers(&self, first_binding: uint32_t, binding_infos: &VertexBindingInfos) -> &HaCommandRecorder<'buffer, 're> {
         unsafe {
-            self.device.handle.cmd_bind_vertex_buffers(
-                self.buffer.handle,
-                first_binding,
-                &binding_infos.handles,
-                &binding_infos.offsets)
+            self.device.handle.cmd_bind_vertex_buffers(self.buffer.handle, first_binding, &binding_infos.handles, &binding_infos.offsets)
+        };
+        self
+    }
+    pub fn bind_index_buffers(&self, index_info: &IndexBindingInfo) -> &HaCommandRecorder<'buffer, 're> {
+        unsafe {
+            // TODO: Add configuration for IndexType.
+            self.device.handle.cmd_bind_index_buffer(self.buffer.handle, index_info.handle, index_info.offset, vk::IndexType::Uint32)
         };
         self
     }
 
     pub(crate) fn copy_buffer(&self, src_buffer: &HaBuffer, dst_buffer: &HaBuffer, region: &[vk::BufferCopy]) -> &HaCommandRecorder<'buffer, 're> {
         unsafe {
-            self.device.handle.cmd_copy_buffer(
-                self.buffer.handle,
-                src_buffer.handle,
-                dst_buffer.handle,
-                region)
+            self.device.handle.cmd_copy_buffer(self.buffer.handle, src_buffer.handle, dst_buffer.handle, region)
         };
         self
     }
 
     pub fn draw(&self, vertex_count: uint32_t, instance_count: uint32_t, first_vertex: uint32_t, first_instance: uint32_t) -> &HaCommandRecorder<'buffer, 're> {
         unsafe {
-            self.device.handle.cmd_draw(self.buffer.handle,
-                vertex_count,
-                instance_count,
-                first_vertex,
-                first_instance)
+            self.device.handle.cmd_draw(self.buffer.handle, vertex_count, instance_count, first_vertex, first_instance)
         };
         self
     }
+    pub fn draw_indexed(&self, index_count: uint32_t, instance_count: uint32_t, first_index: uint32_t, vertex_offset: int32_t, first_instance: uint32_t) -> &HaCommandRecorder<'buffer, 're> {
+        unsafe {
+            self.device.handle
+                .cmd_draw_indexed(self.buffer.handle, index_count, instance_count,first_index, vertex_offset, first_instance)
+        };
+        self
+    }
+//    pub fn draw_indirect(&self, buffer: &HaBuffer, offset: vk::DeviceSize, draw_count: uint32_t, stride: uint32_t) -> &HaCommandRecorder<'buffer, 're> {
+//        unsafe {
+//            self.device.handle.cmd_draw_indirect(self.buffer.handle, buffer.handle, offset, draw_count, stride)
+//        };
+//        self
+//    }
+//    pub fn draw_indexed_indirect(&self, buffer: &HaBuffer, offset: vk::DeviceSize, draw_count: uint32_t, stride: uint32_t) -> &HaCommandRecorder<'buffer, 're> {
+//        unsafe {
+//            self.device.handle.cmd_draw_indexed_indirect(self.buffer.handle, buffer.handle, offset, draw_count, stride)
+//        };
+//        self
+//    }
 
     pub fn end_render_pass(&self) -> &HaCommandRecorder<'buffer, 're> {
         unsafe { self.device.handle.cmd_end_render_pass(self.buffer.handle) };

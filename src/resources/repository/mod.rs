@@ -1,4 +1,4 @@
 
-pub use self::buffer::{ HaBufferRepository, BufferBindingInfos };
+pub use self::buffer::{HaBufferRepository, VertexBindingInfos, IndexBindingInfo};
 
 mod buffer;

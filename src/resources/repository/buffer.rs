@@ -20,10 +20,15 @@ pub struct HaBufferRepository {
     offsets: Vec<vk::DeviceSize>,
 }
 
-pub struct BufferBindingInfos {
+pub struct VertexBindingInfos {
 
     pub(crate) handles: Vec<vk::Buffer>,
     pub(crate) offsets: Vec<vk::DeviceSize>,
+}
+pub struct IndexBindingInfo {
+
+    pub(crate) handle: vk::Buffer,
+    pub(crate) offset: vk::DeviceSize,
 }
 
 
@@ -118,14 +123,25 @@ impl HaBufferRepository {
         &self.buffers[index]
     }
 
-    pub fn binding_infos(&self) -> BufferBindingInfos {
+    pub fn vertex_binding_infos(&self, indices: &[usize]) -> VertexBindingInfos {
 
-        let handles: Vec<vk::Buffer> = self.buffers.iter().map(|b| b.handle).collect();
-        let offsets = self.offsets.clone();
+        let mut handles = vec![];
+        for &index in indices.iter() {
+            handles.push(self.buffers[index].handle);
+        }
 
-        BufferBindingInfos {
+        VertexBindingInfos {
             handles,
-            offsets,
+            // FIXME: currently Offset field is not configurable.
+            offsets: vec![0; indices.len()],
+        }
+    }
+    pub fn index_binding_info(&self, index: usize) -> IndexBindingInfo {
+
+        IndexBindingInfo {
+            handle: self.buffers[index].handle,
+            // FIXME: currently Offset field is not configurable.
+            offset: 0,
         }
     }
 

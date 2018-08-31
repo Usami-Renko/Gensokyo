@@ -1,4 +1,3 @@
-
 #[macro_use]
 extern crate hakurei;
 
@@ -72,11 +71,11 @@ impl ProgramProc for TriangleProcedure {
         // shaders
         let vertex_shader = HaShaderInfo::setup(
             ShaderStageType::VertexStage,
-            Path::new("src/triangle.vert.spv"),
+            Path::new("shaders/triangle.vert.spv"),
             None);
         let fragment_shader = HaShaderInfo::setup(
             ShaderStageType::FragmentStage,
-            Path::new("src/triangle.frag.spv"),
+            Path::new("shaders/triangle.frag.spv"),
             None);
         let shader_infos = vec![
             vertex_shader,
@@ -99,9 +98,7 @@ impl ProgramProc for TriangleProcedure {
         ]);
         render_pass_builder.add_dependenty(dependency);
 
-        // render pass
         let render_pass = render_pass_builder.build(device, swapchain)?;
-        // pipeline
         let viewport = HaViewport::setup(swapchain.extent);
         let pipeline_config = GraphicsPipelineConfig::init(shader_infos, vertex_input_desc, render_pass)
             .setup_viewport(viewport)
@@ -167,7 +164,7 @@ impl ProgramProc for TriangleProcedure {
             recorder.begin_record(&usage_flags)?
                 .begin_render_pass(&self.graphics_pipeline, frame_index)
                 .bind_pipeline(&self.graphics_pipeline)
-                .bind_vertex_buffers(0, &self.vertex_buffer.binding_infos())
+                .bind_vertex_buffers(0, &self.vertex_buffer.vertex_binding_infos(&[vertex_buffer_index]))
                 .draw(self.vertex_data.len() as uint32_t, 1, 0, 0)
                 .end_render_pass()
                 .finish()?;
@@ -185,7 +182,7 @@ impl ProgramProc for TriangleProcedure {
     }
 
     fn draw(&mut self, device: &HaLogicalDevice, device_available: &HaFence, image_available: &HaSemaphore, image_index: usize)
-        -> Result<&HaSemaphore, ProcedureError> {
+            -> Result<&HaSemaphore, ProcedureError> {
 
         let submit_infos = [
             QueueSubmitBundle {
