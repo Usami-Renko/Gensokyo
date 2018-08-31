@@ -5,4 +5,5 @@ rust:
 
 script:
 - cargo build --manifest-path ./Cargo.toml
-- cargo build --manifest-path ./examples/triangle/Cargo.toml
+- cargo build --manifest-path ./examples/Eg001.triangle/Cargo.toml
+- cargo build --manifest-path ./examples/Eg002.draw_index/Cargo.toml
