@@ -6,10 +6,8 @@ use ash::version::DeviceV1_0;
 
 use core::device::HaLogicalDevice;
 
-use resources::buffer::BufferUsageFlag;
-use resources::buffer::BufferCreateFlag;
+use resources::buffer::BufferConfig;
 use resources::error::BufferError;
-use resources::memory::MemoryPropertyFlag;
 
 use utility::marker::VulkanFlags;
 
@@ -22,24 +20,13 @@ pub(crate) struct HaBuffer {
     requirement       : vk::MemoryRequirements,
 }
 
-pub struct BufferConfig<'flag> {
-
-    pub estimate_size: vk::DeviceSize,
-    pub usages       : &'flag [BufferUsageFlag],
-    // TODO: Turn the flags into bool options.
-    pub buffer_flags : &'flag [BufferCreateFlag],
-    pub memory_flags : &'flag [MemoryPropertyFlag],
-}
-
 impl HaBuffer {
 
     /// Generate a buffer object.
     ///
-    /// estimate_size is the size in bytes of the buffer to be created. size must be greater than 0.
-    ///
     /// If the buffer is accessed by one queue family, set sharing_queue_families to None,
     /// or set it the queue family indices to share accessing.
-    pub fn generate(device: &HaLogicalDevice, estimate_size: vk::DeviceSize, usages: &[BufferUsageFlag], flags: &[BufferCreateFlag], sharing_queue_families: Option<Vec<uint32_t>>)
+    pub fn generate(device: &HaLogicalDevice, config: &BufferConfig, sharing_queue_families: Option<Vec<uint32_t>>)
         -> Result<HaBuffer, BufferError> {
 
         let (sharing_mode, indices) = match sharing_queue_families {
@@ -50,9 +37,9 @@ impl HaBuffer {
         let create_info = vk::BufferCreateInfo {
             s_type: vk::StructureType::BufferCreateInfo,
             p_next: ptr::null(),
-            flags : flags.flags(),
-            size  : estimate_size,
-            usage : usages.flags(),
+            flags : config.buffer_flags.flags(),
+            size  : config.total_size,
+            usage : config.usages.flags(),
             sharing_mode,
             queue_family_index_count: indices.len() as uint32_t,
             p_queue_family_indices  : indices.as_ptr(),

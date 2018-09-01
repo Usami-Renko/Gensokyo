@@ -125,68 +125,65 @@ impl ProgramProc for DrawIndexProcedure {
     fn configure_resources(&mut self, device: &HaLogicalDevice, generator: &ResourceGenerator) -> Result<(), ProcedureError> {
 
         // vertex buffer
-        let staging_buffer_config = BufferConfig {
-            estimate_size: data_size!(self.vertex_data, Vertex),
-            usages: &[BufferUsageFlag::TransferSrcBit],
-            buffer_flags: &[],
-            memory_flags: &[
+        let mut staging_buffer_config = BufferConfig::init(
+            &[BufferUsageFlag::TransferSrcBit],
+            &[
                 MemoryPropertyFlag::HostVisibleBit,
                 MemoryPropertyFlag::HostCoherentBit,
-            ],
-        };
+            ]
+        );
+        let _ =  staging_buffer_config.add_item(data_size!(self.vertex_data, Vertex));
 
-        let vertex_buffer_config = BufferConfig {
-            estimate_size: data_size!(self.vertex_data, Vertex),
-            usages: &[
+        let mut vertex_buffer_config = BufferConfig::init(
+            &[
                 BufferUsageFlag::TransferDstBit,
                 BufferUsageFlag::VertexBufferBit,
             ],
-            buffer_flags: &[],
-            memory_flags: &[MemoryPropertyFlag::DeviceLocalBit],
-        };
+            &[MemoryPropertyFlag::DeviceLocalBit]
+        );
+        let _ = vertex_buffer_config.add_item(data_size!(self.vertex_data, Vertex));
 
         let mut staging_allocator = generator.buffer_allocator();
-        let staging_buffer_index = staging_allocator.attach_buffer(staging_buffer_config)?;
+        let staging_buffer_item = staging_allocator.attach_buffer(staging_buffer_config)?.pop().unwrap();
 
         let staging_repository = staging_allocator.allocate()?;
-        staging_repository.tranfer_data(device, &self.vertex_data, staging_buffer_index)?;
+        staging_repository.tranfer_data(device, &self.vertex_data, &staging_buffer_item)?;
 
         let mut vertex_allocator = generator.buffer_allocator();
-        let vertex_buffer_index = vertex_allocator.attach_buffer(vertex_buffer_config)?;
+        let vertex_buffer_item = vertex_allocator.attach_buffer(vertex_buffer_config)?.pop().unwrap();
         self.vertex_buffer = vertex_allocator.allocate()?;
-        self.vertex_buffer.copy_data(device, &staging_repository, staging_buffer_index, vertex_buffer_index)?;
+        self.vertex_buffer.copy_data(device, &staging_repository, &staging_buffer_item, &vertex_buffer_item)?;
         staging_repository.cleanup(device);
 
         // index buffer
-        let staging_buffer_config = BufferConfig {
-            estimate_size: data_size!(self.index_data, uint32_t),
-            usages: &[BufferUsageFlag::TransferSrcBit],
-            buffer_flags: &[],
-            memory_flags: &[
+        let mut staging_buffer_config = BufferConfig::init(
+            &[BufferUsageFlag::TransferSrcBit],
+            &[
                 MemoryPropertyFlag::HostVisibleBit,
                 MemoryPropertyFlag::HostCoherentBit,
-            ],
-        };
+            ]
+        );
+        let _ = staging_buffer_config.add_item(data_size!(self.index_data, uint32_t));
 
-        let index_buffer_config = BufferConfig {
-            estimate_size: data_size!(self.index_data, uint32_t),
-            usages: &[
+        let mut index_buffer_config = BufferConfig::init(
+            &[
                 BufferUsageFlag::TransferDstBit,
                 BufferUsageFlag::IndexBufferBit,
             ],
-            buffer_flags: &[],
-            memory_flags: &[MemoryPropertyFlag::DeviceLocalBit],
-        };
+            &[MemoryPropertyFlag::DeviceLocalBit]
+        );
+        let _ = index_buffer_config.add_item(data_size!(self.index_data, uint32_t));
+
         let mut staging_allocator = generator.buffer_allocator();
-        let staging_buffer_index = staging_allocator.attach_buffer(staging_buffer_config)?;
+        let staging_buffer_item = staging_allocator.attach_buffer(staging_buffer_config)?.pop().unwrap();
 
         let staging_repository = staging_allocator.allocate()?;
-        staging_repository.tranfer_data(device, &self.index_data, staging_buffer_index)?;
+        staging_repository.tranfer_data(device, &self.index_data, &staging_buffer_item)?;
 
         let mut index_allocator = generator.buffer_allocator();
-        let index_buffer_index = index_allocator.attach_buffer(index_buffer_config)?;
+        let index_buffer_item = index_allocator.attach_buffer(index_buffer_config)?.pop().unwrap();
         self.index_buffer = index_allocator.allocate()?;
-        self.index_buffer.copy_data(device, &staging_repository, staging_buffer_index, index_buffer_index)?;
+        self.index_buffer.copy_data(device, &staging_repository, &staging_buffer_item, &index_buffer_item)?;
         staging_repository.cleanup(device);
 
         // command buffer
@@ -205,8 +202,8 @@ impl ProgramProc for DrawIndexProcedure {
             recorder.begin_record(&usage_flags)?
                 .begin_render_pass(&self.graphics_pipeline, frame_index)
                 .bind_pipeline(&self.graphics_pipeline)
-                .bind_vertex_buffers(0, &self.vertex_buffer.vertex_binding_infos(&[vertex_buffer_index]))
-                .bind_index_buffers(&self.index_buffer.index_binding_info(index_buffer_index))
+                .bind_vertex_buffers(0, &self.vertex_buffer.vertex_binding_infos(&[&vertex_buffer_item]))
+                .bind_index_buffers(&self.index_buffer.index_binding_info(&index_buffer_item))
                 .draw_indexed(self.index_data.len() as uint32_t, 1, 0, 0, 0)
                 .end_render_pass()
                 .finish()?;

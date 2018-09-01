@@ -5,7 +5,8 @@ use utility::marker::VulkanFlags;
 use core::device::HaLogicalDevice;
 use core::physical::HaPhysicalDevice;
 
-use resources::buffer::{ HaBuffer, BufferConfig };
+use resources::buffer::HaBuffer;
+use resources::buffer::{ BufferConfig, BufferItem };
 use resources::memory::device::HaDeviceMemory;
 use resources::memory::traits::HaMemoryAbstract;
 use resources::repository::HaBufferRepository;
@@ -44,9 +45,9 @@ impl<'re> HaBufferAllocator<'re> {
         }
     }
 
-    pub fn attach_buffer(&mut self, config: BufferConfig) -> Result<usize, AllocatorError> {
+    pub fn attach_buffer(&mut self, config: BufferConfig) -> Result<Vec<BufferItem>, AllocatorError> {
 
-        let buffer = HaBuffer::generate(self.device, config.estimate_size, config.usages, config.buffer_flags, None)
+        let buffer = HaBuffer::generate(self.device, &config, None)
             .map_err(|e| AllocatorError::Buffer(e))?;
         let required_size = buffer.require_memory_size();
         let required_memory_flag = config.memory_flags.flags();
@@ -58,12 +59,25 @@ impl<'re> HaBufferAllocator<'re> {
         ).map_err(|e| AllocatorError::Memory(e))?;
 
         if self.mem_flag.subset(required_memory_flag) {
+            let buffer_index = self.buffers.len();
 
             self.mem_flag = self.mem_flag & required_memory_flag;
             self.buffers.push(buffer);
             self.spaces.push(required_size);
 
-            Ok(self.buffers.len() - 1)
+            let mut items = vec![];
+            let mut offset: vk::DeviceSize = 0;
+            for &item_size in config.items_size.iter() {
+                let item = BufferItem {
+                    buffer_index,
+                    offset,
+                    size: item_size,
+                };
+                items.push(item);
+                offset += item_size;
+            }
+
+            Ok(items)
         } else {
             Err(AllocatorError::Memory(MemoryError::NoSuitableMemoryError))
         }

@@ -3,7 +3,7 @@ use ash::vk;
 
 use core::device::{ HaLogicalDevice, QueueSubmitBundle, DeviceQueueIdentifier };
 
-use resources::buffer::HaBuffer;
+use resources::buffer::{ HaBuffer, BufferItem };
 use resources::command::{ CommandBufferUsageFlag, CommandBufferUsage };
 use resources::memory::device::HaDeviceMemory;
 use resources::memory::traits::HaMemoryAbstract;
@@ -14,9 +14,7 @@ pub struct HaBufferRepository {
     buffers: Vec<HaBuffer>,
     memory : Option<HaDeviceMemory>,
 
-    /// The size of each buffer occupy.
-    spaces : Vec<vk::DeviceSize>,
-    /// The offset of each buffer in meomory.
+    /// The offset of each buffer in memory.
     offsets: Vec<vk::DeviceSize>,
 }
 
@@ -39,7 +37,6 @@ impl HaBufferRepository {
             buffers: vec![],
             memory : None,
 
-            spaces : vec![],
             offsets: vec![],
         }
     }
@@ -57,47 +54,47 @@ impl HaBufferRepository {
             buffers,
             memory: Some(memory),
 
-            spaces,
             offsets,
         }
     }
 
-    pub fn tranfer_data<D: Copy>(&self, device: &HaLogicalDevice, data: &Vec<D>, buffer_index: usize) -> Result<(), AllocatorError> {
+    pub fn tranfer_data<D: Copy>(&self, device: &HaLogicalDevice, data: &Vec<D>, item: &BufferItem) -> Result<(), AllocatorError> {
 
-        let memory = self.memory.as_ref().ok_or(AllocatorError::MemoryNotYetAllocated)?;
+        let memory = self.memory.as_ref()
+            .ok_or(AllocatorError::MemoryNotYetAllocated)?;
 
-        let size = self.spaces[buffer_index];
-        let offset = self.offsets[buffer_index];
+        let offset = self.offsets[item.buffer_index] + item.offset;
 
-        let data_ptr = memory.map(device, offset, size)
+        let data_ptr = memory.map(device, offset, item.size)
             .map_err(|e| AllocatorError::Memory(e))?;
 
-        self.buffers[buffer_index].copy_data(data_ptr, size, data);
+        self.buffers[item.buffer_index].copy_data(data_ptr, item.size, data);
 
-        memory.unmap(device, offset, size)
+        // FIXME: No need to unmap size every time.
+        memory.unmap(device, offset, item.size)
             .map_err(|e| AllocatorError::Memory(e))?;
 
         Ok(())
     }
 
-    pub fn copy_data(&self, device: &HaLogicalDevice, from_repository: &HaBufferRepository, from_buffer_index: usize, to_buffer_index: usize) -> Result<(), AllocatorError> {
+    pub fn copy_data(&self, device: &HaLogicalDevice, from_repository: &HaBufferRepository, from_item: &BufferItem, to_item: &BufferItem) -> Result<(), AllocatorError> {
 
         let mut command_buffers = device.transfer_command_pool.allocate(device, CommandBufferUsage::UnitaryCommand, 1)?;
         let command_buffer = command_buffers.pop().unwrap();
 
         let copy_regions = [
             vk::BufferCopy {
-                src_offset : from_repository.offsets[from_buffer_index],
-                dst_offset : self.offsets[to_buffer_index],
-                size       : from_repository.spaces[from_buffer_index],
+                src_offset : from_repository.offsets[from_item.buffer_index] + from_item.offset,
+                dst_offset : self.offsets[to_item.buffer_index] + to_item.offset,
+                size       : to_item.size,
             },
         ];
 
         let recorder = command_buffer.setup_record(device);
         recorder.begin_record(&[CommandBufferUsageFlag::OneTimeSubmitBit])?
             .copy_buffer(
-                from_repository.buffer_at(from_buffer_index),
-                self.buffer_at(to_buffer_index),
+                from_repository.buffer_at(from_item.buffer_index),
+                self.buffer_at(to_item.buffer_index),
                 &copy_regions)
             .finish()?;
 
@@ -123,25 +120,25 @@ impl HaBufferRepository {
         &self.buffers[index]
     }
 
-    pub fn vertex_binding_infos(&self, indices: &[usize]) -> VertexBindingInfos {
+    pub fn vertex_binding_infos(&self, items: &[&BufferItem]) -> VertexBindingInfos {
 
         let mut handles = vec![];
-        for &index in indices.iter() {
-            handles.push(self.buffers[index].handle);
+        let mut offsets = vec![];
+        for item in items.iter() {
+            handles.push(self.buffers[item.buffer_index].handle);
+            offsets.push(item.offset);
         }
 
         VertexBindingInfos {
             handles,
-            // FIXME: currently Offset field is not configurable.
-            offsets: vec![0; indices.len()],
+            offsets,
         }
     }
-    pub fn index_binding_info(&self, index: usize) -> IndexBindingInfo {
+    pub fn index_binding_info(&self, item: &BufferItem) -> IndexBindingInfo {
 
         IndexBindingInfo {
-            handle: self.buffers[index].handle,
-            // FIXME: currently Offset field is not configurable.
-            offset: 0,
+            handle: self.buffers[item.buffer_index].handle,
+            offset: item.offset,
         }
     }
 
