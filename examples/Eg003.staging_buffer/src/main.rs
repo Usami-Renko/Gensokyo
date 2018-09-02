@@ -16,7 +16,7 @@ use hakurei::sync::prelude::*;
 
 use std::path::Path;
 
-const WINDOW_TITLE: &'static str = "Trangle Example";
+const WINDOW_TITLE: &'static str = "Staging Buffer Example";
 const WINDOW_WIDTH:  u32 = 800;
 const WINDOW_HEIGHT: u32 = 600;
 
@@ -36,7 +36,7 @@ const VERTEX_DATA: [Vertex; 3] = [
     Vertex { pos: [-0.5,  0.5], color: [0.0, 0.0, 1.0, 1.0], },
 ];
 
-struct TriangleProcedure {
+struct StagingBufferProcedure {
 
     vertex_data  : Vec<Vertex>,
     vertex_buffer: HaBufferRepository,
@@ -50,10 +50,10 @@ struct TriangleProcedure {
     present_availables: Vec<HaSemaphore>,
 }
 
-impl TriangleProcedure {
+impl StagingBufferProcedure {
 
-    fn new() -> TriangleProcedure {
-        TriangleProcedure {
+    fn new() -> StagingBufferProcedure {
+        StagingBufferProcedure {
             vertex_data  : VERTEX_DATA.to_vec(),
             vertex_buffer: HaBufferRepository::empty(),
             vertex_item  : BufferItem::unset(),
@@ -68,25 +68,46 @@ impl TriangleProcedure {
     }
 }
 
-impl ProgramProc for TriangleProcedure {
+impl ProgramProc for StagingBufferProcedure {
 
     fn configure_storage(&mut self, device: &HaLogicalDevice, generator: &ResourceGenerator) -> Result<(), ProcedureError> {
 
         // vertex buffer
-        let mut vertex_buffer_config = BufferConfig::init(
-            &[BufferUsageFlag::VertexBufferBit],
+        let mut staging_buffer_config = BufferConfig::init(
+            &[BufferUsageFlag::TransferSrcBit],
             &[
                 MemoryPropertyFlag::HostVisibleBit,
                 MemoryPropertyFlag::HostCoherentBit,
             ],
             &[]
         );
+        let _ = staging_buffer_config.add_item(data_size!(self.vertex_data, Vertex));
+
+        let mut vertex_buffer_config = BufferConfig::init(
+            &[
+                BufferUsageFlag::TransferDstBit,
+                BufferUsageFlag::VertexBufferBit,
+            ],
+            &[MemoryPropertyFlag::DeviceLocalBit],
+            &[]
+        );
         let _ = vertex_buffer_config.add_item(data_size!(self.vertex_data, Vertex));
+
+        let mut staging_allocator = generator.buffer_allocator();
+        let stage_buffer_item = staging_allocator.attach_buffer(staging_buffer_config)?.pop().unwrap();
+
+        let staging_repository = staging_allocator.allocate()?;
+        staging_repository.tranfer_data(device, &self.vertex_data, &stage_buffer_item)?;
 
         let mut vertex_allocator = generator.buffer_allocator();
         self.vertex_item = vertex_allocator.attach_buffer(vertex_buffer_config)?.pop().unwrap();
         self.vertex_buffer = vertex_allocator.allocate()?;
-        self.vertex_buffer.tranfer_data(device, &self.vertex_data, &self.vertex_item)?;
+        self.vertex_buffer.copy_data(
+            device,
+            &staging_repository,
+            &stage_buffer_item,
+            &self.vertex_item)?;
+        staging_repository.cleanup(device);
 
         Ok(())
     }
@@ -95,11 +116,11 @@ impl ProgramProc for TriangleProcedure {
         // shaders
         let vertex_shader = HaShaderInfo::setup(
             ShaderStageFlag::VertexStage,
-            Path::new("shaders/triangle.vert.spv"),
+            Path::new("shaders/staging.vert.spv"),
             None);
         let fragment_shader = HaShaderInfo::setup(
             ShaderStageFlag::FragmentStage,
-            Path::new("shaders/triangle.frag.spv"),
+            Path::new("shaders/staging.frag.spv"),
             None);
         let shader_infos = vec![
             vertex_shader,
@@ -172,7 +193,7 @@ impl ProgramProc for TriangleProcedure {
     }
 
     fn draw(&mut self, device: &HaLogicalDevice, device_available: &HaFence, image_available: &HaSemaphore, image_index: usize)
-        -> Result<&HaSemaphore, ProcedureError> {
+            -> Result<&HaSemaphore, ProcedureError> {
 
         let submit_infos = [
             QueueSubmitBundle {
@@ -202,7 +223,7 @@ impl ProgramProc for TriangleProcedure {
 
 fn main() {
 
-    let procecure = TriangleProcedure::new();
+    let procecure = StagingBufferProcedure::new();
     let mut program = ProgramBuilder::new(procecure)
         .title(WINDOW_TITLE)
         .size(WINDOW_WIDTH, WINDOW_HEIGHT)

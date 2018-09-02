@@ -26,7 +26,8 @@ winapi = { version = "0.3.5", features = ["windef", "libloaderapi"] }
 members = [
     "examples/Eg001.triangle",
     "examples/Eg002.index_buffer",
-    "examples/Eg004.uniform_buffer"
+    "examples/Eg003.staging_buffer",
+    "examples/Eg004.uniform_buffer",
 ]
 
 [features]

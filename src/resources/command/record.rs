@@ -66,7 +66,6 @@ impl<'buffer, 're> HaCommandRecorder<'buffer, 're> {
                 &begin_info,
                 self.buffer.usage.usage());
         }
-
         self
     }
 
@@ -74,7 +73,6 @@ impl<'buffer, 're> HaCommandRecorder<'buffer, 're> {
         unsafe {
             self.device.handle.cmd_bind_pipeline(self.buffer.handle, pipeline.bind_point, pipeline.handle)
         };
-
         self
     }
 

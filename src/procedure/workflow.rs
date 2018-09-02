@@ -24,7 +24,6 @@ use utility::time::TimePeriod;
 
 pub trait ProgramProc {
 
-    // TODO: Redesign the API to support multi-pipeline
     fn configure_storage(&mut self, device: &HaLogicalDevice, generator: &ResourceGenerator) -> Result<(), ProcedureError>;
     fn configure_pipeline(&mut self, device: &HaLogicalDevice, swapchain: &HaSwapchain) -> Result<(), ProcedureError>;
     fn configure_resources(&mut self, device: &HaLogicalDevice) -> Result<(), ProcedureError>;

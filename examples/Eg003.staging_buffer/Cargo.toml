@@ -1,0 +1,8 @@
+[package]
+name = "staging_buffer"
+version = "0.1.0"
+authors = ["usami-renko <usami-ssc@protonmail.com>"]
+description = "Use staging buffer to transfer vertex data to GPU."
+
+[dependencies]
+hakurei = { path = "../.." }
