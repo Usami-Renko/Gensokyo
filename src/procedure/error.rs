@@ -6,7 +6,9 @@ use core::swapchain::error::SwapchainError;
 use pipeline::error::PipelineError;
 use resources::error::CommandError;
 use resources::error::AllocatorError;
+use resources::error::DescriptorError;
 use sync::error::SyncError;
+
 
 use std::fmt;
 use std::error::Error;
@@ -51,6 +53,7 @@ pub enum ProcedureError {
     Pipeline(PipelineError),
     Command(CommandError),
     Sync(SyncError),
+    Descriptor(DescriptorError),
     Allocator(AllocatorError),
 }
 
@@ -66,6 +69,7 @@ impl Error for ProcedureError {
             | ProcedureError::Pipeline(ref e)       => Some(e),
             | ProcedureError::Command(ref e)        => Some(e),
             | ProcedureError::Sync(ref e)           => Some(e),
+            | ProcedureError::Descriptor(ref e)     => Some(e),
             | ProcedureError::Allocator(ref e)      => Some(e),
         }
     }
@@ -91,6 +95,7 @@ impl_from_err!(ProcedureError, Swapchain, SwapchainError);
 impl_from_err!(ProcedureError, Pipeline, PipelineError);
 impl_from_err!(ProcedureError, Command, CommandError);
 impl_from_err!(ProcedureError, Sync, SyncError);
+impl_from_err!(ProcedureError, Descriptor, DescriptorError);
 impl_from_err!(ProcedureError, Allocator, AllocatorError);
 
 impl fmt::Display for ProcedureError {

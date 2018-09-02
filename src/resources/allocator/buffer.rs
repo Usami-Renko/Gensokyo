@@ -1,6 +1,5 @@
 
 use ash::vk;
-use utility::marker::VulkanFlags;
 
 use core::device::HaLogicalDevice;
 use core::physical::HaPhysicalDevice;
@@ -12,6 +11,8 @@ use resources::memory::traits::HaMemoryAbstract;
 use resources::repository::HaBufferRepository;
 use resources::error::MemoryError;
 use resources::error::AllocatorError;
+
+use utility::aligment::bind_to_alignment;
 
 // TODO: Currently HaBufferAllocator only support operation in single queue family.
 
@@ -31,7 +32,7 @@ pub struct HaBufferAllocator<'re> {
 
 impl<'re> HaBufferAllocator<'re> {
 
-    pub fn new(physical: &'re HaPhysicalDevice, device: &'re HaLogicalDevice)
+    pub(super) fn new(physical: &'re HaPhysicalDevice, device: &'re HaLogicalDevice)
         -> HaBufferAllocator<'re> {
 
         HaBufferAllocator {
@@ -49,11 +50,10 @@ impl<'re> HaBufferAllocator<'re> {
 
         let buffer = HaBuffer::generate(self.device, &config, None)
             .map_err(|e| AllocatorError::Buffer(e))?;
-        let required_size = buffer.require_memory_size();
-        let required_memory_flag = config.memory_flags.flags();
+        let required_memory_flag = config.memory_flags;
 
         self.candidate_memories = self.physical.memory.find_memory_type(
-            buffer.require_memory_type_bits(),
+            buffer.requirement.memory_type_bits,
             required_memory_flag,
             if self.candidate_memories.is_empty() { None } else { Some(&self.candidate_memories) }
         ).map_err(|e| AllocatorError::Memory(e))?;
@@ -62,8 +62,9 @@ impl<'re> HaBufferAllocator<'re> {
             let buffer_index = self.buffers.len();
 
             self.mem_flag = self.mem_flag & required_memory_flag;
+            let aligment_space = bind_to_alignment(buffer.requirement.size, buffer.requirement.alignment);
+            self.spaces.push(aligment_space);
             self.buffers.push(buffer);
-            self.spaces.push(required_size);
 
             let mut items = vec![];
             let mut offset: vk::DeviceSize = 0;
@@ -117,6 +118,16 @@ impl<'re> HaBufferAllocator<'re> {
         repository_buffer.append(&mut self.buffers);
 
         let repository = HaBufferRepository::store(repository_buffer, memory, self.spaces.clone());
+
+        self.reset();
         Ok(repository)
+    }
+
+    pub fn reset(&mut self) {
+
+        self.buffers.clear();
+        self.spaces.clear();
+        self.candidate_memories.clear();
+        self.mem_flag = vk::MemoryPropertyFlags::all();
     }
 }

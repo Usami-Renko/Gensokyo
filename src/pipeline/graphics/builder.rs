@@ -25,6 +25,8 @@ use pipeline::{
     error::PipelineError,
 };
 
+use resources::descriptor::HaDescriptorSetLayout;
+
 use utility::marker::VulkanFlags;
 
 use std::ptr;
@@ -239,6 +241,10 @@ impl GraphicsPipelineConfig {
     }
     pub fn setup_dynamic(mut self, dynamic_state: HaDynamicState) -> GraphicsPipelineConfig {
         self.states.dynamic = Some(dynamic_state);
+        self
+    }
+    pub fn add_descriptor_set(mut self, set_layout: &HaDescriptorSetLayout) -> GraphicsPipelineConfig {
+        self.layout_builder.add_descriptor_layout(set_layout.handle);
         self
     }
 }

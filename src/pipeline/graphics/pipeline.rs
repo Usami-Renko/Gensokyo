@@ -11,7 +11,7 @@ pub struct HaGraphicsPipeline {
 
     pub(crate) handle: vk::Pipeline,
     pub pass: HaRenderPass,
-    layout: HaPipelineLayout,
+    pub(crate) layout: HaPipelineLayout,
 
     pub(crate) bind_point: vk::PipelineBindPoint,
 }

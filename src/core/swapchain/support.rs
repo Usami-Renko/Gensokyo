@@ -7,7 +7,8 @@ use num::clamp;
 use core::surface::HaSurface;
 use core::error::SurfaceError;
 
-use constant::swapchain::{ PREFER_SURFACE_FORMAT, PREFER_SURFACE_COLOR_SPACE, PREFER_PRESENT_MODE };
+use constant::swapchain::{ PREFER_SURFACE_FORMAT, PREFER_SURFACE_COLOR_SPACE };
+use constant::swapchain::{ PREFER_FIRSTLY_PRESENT_MODE, PREFER_SECONDARY_PRESENT_MODE };
 
 pub struct SwapchainSupport {
 
@@ -76,17 +77,13 @@ impl SwapchainSupport {
     // TODO: Make present mode preference configurable.
     pub fn optimal_present_mode(&self) -> vk::PresentModeKHR {
 
-        let mut best_mode = PREFER_PRESENT_MODE;
-
-        for &available_mode in self.present_modes.iter() {
-            match available_mode {
-                | vk::PresentModeKHR::Mailbox => return available_mode,
-                | vk::PresentModeKHR::Immediate => best_mode = available_mode,
-                | _ => ()
-            }
+        if self.present_modes.iter().find(|&mode| *mode == PREFER_FIRSTLY_PRESENT_MODE).is_some() {
+            PREFER_FIRSTLY_PRESENT_MODE
+        } else if self.present_modes.iter().find(|&mode| *mode == PREFER_SECONDARY_PRESENT_MODE).is_some() {
+            PREFER_SECONDARY_PRESENT_MODE
+        } else {
+            self.present_modes[0]
         }
-
-        best_mode
     }
 
     pub fn current_transform(&self) -> vk::SurfaceTransformFlagsKHR {

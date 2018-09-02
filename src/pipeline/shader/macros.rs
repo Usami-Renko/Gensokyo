@@ -49,7 +49,10 @@ macro_rules! define_input {
 macro_rules! data_size {
     ($data:expr, $d_type:ty) => (
         (::std::mem::size_of::<$d_type>() * $data.len()) as DeviceSize
-    )
+    );
+    ($data:expr) => (
+        (::std::mem::size_of_value($data)) as DeviceSize
+    );
 }
 
 #[macro_export]

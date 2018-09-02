@@ -25,8 +25,10 @@ use utility::time::TimePeriod;
 pub trait ProgramProc {
 
     // TODO: Redesign the API to support multi-pipeline
+    fn configure_storage(&mut self, device: &HaLogicalDevice, generator: &ResourceGenerator) -> Result<(), ProcedureError>;
     fn configure_pipeline(&mut self, device: &HaLogicalDevice, swapchain: &HaSwapchain) -> Result<(), ProcedureError>;
-    fn configure_resources(&mut self, device: &HaLogicalDevice, generator: &ResourceGenerator) -> Result<(), ProcedureError>;
+    fn configure_resources(&mut self, device: &HaLogicalDevice) -> Result<(), ProcedureError>;
+    fn configure_commands(&mut self, device: &HaLogicalDevice) -> Result<(), ProcedureError>;
     fn draw(&mut self, device: &HaLogicalDevice, device_available: &HaFence, image_available: &HaSemaphore, image_index: usize) -> Result<&HaSemaphore, ProcedureError>;
     fn cleanup(&self, device: &HaLogicalDevice);
 }
@@ -79,14 +81,15 @@ impl<'win, T> ProgramEnv<T> where T: ProgramProc {
 
     pub(super) fn load_resources(&mut self, core: &CoreInfrastructure) -> Result<HaResources, ProcedureError> {
 
-        self.procedure.configure_pipeline(&core.device, &core.swapchain)?;
-
         let resource_generator = ResourceGenerator::init(&core.physical, &core.device);
-        self.procedure.configure_resources(&core.device, &resource_generator)?;
+        self.procedure.configure_storage(&core.device, &resource_generator)?;
+        self.procedure.configure_pipeline(&core.device, &core.swapchain)?;
+        self.procedure.configure_resources(&core.device)?;
+        self.procedure.configure_commands(&core.device,)?;
 
         // sync
-        let mut image_awaits  = vec![];
-        let mut sync_fences   = vec![];
+        let mut image_awaits = vec![];
+        let mut sync_fences = vec![];
         for _ in 0..SYNCHRONOUT_FRAME {
             let image_await = HaSemaphore::setup(&core.device)?;
             let sync_fence = HaFence::setup(&core.device, true)?;

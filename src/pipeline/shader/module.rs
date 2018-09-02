@@ -6,7 +6,7 @@ use core::device::HaLogicalDevice;
 
 use pipeline::error::ShaderError;
 
-use utility::marker::VulkanEnum;
+use utility::marker::{ VulkanFlags, VulkanEnum };
 
 use std::path::{ Path, PathBuf };
 use std::ffi::CString;
@@ -16,14 +16,14 @@ use std::ptr;
 
 pub struct HaShaderInfo {
 
-    stage: ShaderStageType,
+    stage: ShaderStageFlag,
     path  : PathBuf,
     main  : CString,
 }
 
 impl HaShaderInfo {
 
-    pub fn setup(stage: ShaderStageType, source_path: &Path, main_func: Option<&str>) -> HaShaderInfo {
+    pub fn setup(stage: ShaderStageFlag, source_path: &Path, main_func: Option<&str>) -> HaShaderInfo {
         let main = main_func.and_then(|s| Some(CString::new(s).unwrap()))
             .unwrap_or(CString::new("main").unwrap());
         let path = PathBuf::from(source_path);
@@ -73,7 +73,7 @@ impl HaShaderInfo {
 }
 
 #[derive(Debug, Clone, Copy, Eq, PartialEq)]
-pub enum ShaderStageType {
+pub enum ShaderStageFlag {
 
     /// VertexStage specifies the vertex stage.
     VertexStage,
@@ -94,19 +94,38 @@ pub enum ShaderStageType {
     AllStage,
 }
 
-impl VulkanEnum for ShaderStageType {
+impl VulkanFlags for [ShaderStageFlag] {
+    type FlagType = vk::ShaderStageFlags;
+
+    fn flags(&self) -> Self::FlagType {
+        self.iter().fold(vk::ShaderStageFlags::empty(), |acc, flag| {
+            match *flag {
+                | ShaderStageFlag::VertexStage                 => acc | vk::SHADER_STAGE_VERTEX_BIT,
+                | ShaderStageFlag::GeometryStage               => acc | vk::SHADER_STAGE_GEOMETRY_BIT,
+                | ShaderStageFlag::TessellationControlStage    => acc | vk::SHADER_STAGE_TESSELLATION_CONTROL_BIT,
+                | ShaderStageFlag::TessellationEvaluationStage => acc | vk::SHADER_STAGE_TESSELLATION_EVALUATION_BIT,
+                | ShaderStageFlag::FragmentStage               => acc | vk::SHADER_STAGE_FRAGMENT_BIT,
+                | ShaderStageFlag::ComputeStage                => acc | vk::SHADER_STAGE_COMPUTE_BIT,
+                | ShaderStageFlag::AllGraphicsStage            => acc | vk::SHADER_STAGE_ALL_GRAPHICS,
+                | ShaderStageFlag::AllStage                    => acc | vk::SHADER_STAGE_ALL,
+            }
+        })
+    }
+}
+
+impl VulkanEnum for ShaderStageFlag {
     type EnumType = vk::ShaderStageFlags;
 
     fn value(&self) -> Self::EnumType {
         match *self {
-            | ShaderStageType::VertexStage                 => vk::SHADER_STAGE_VERTEX_BIT,
-            | ShaderStageType::GeometryStage               => vk::SHADER_STAGE_GEOMETRY_BIT,
-            | ShaderStageType::TessellationControlStage    => vk::SHADER_STAGE_TESSELLATION_CONTROL_BIT,
-            | ShaderStageType::TessellationEvaluationStage => vk::SHADER_STAGE_TESSELLATION_EVALUATION_BIT,
-            | ShaderStageType::FragmentStage               => vk::SHADER_STAGE_FRAGMENT_BIT,
-            | ShaderStageType::ComputeStage                => vk::SHADER_STAGE_COMPUTE_BIT,
-            | ShaderStageType::AllGraphicsStage            => vk::SHADER_STAGE_ALL_GRAPHICS,
-            | ShaderStageType::AllStage                    => vk::SHADER_STAGE_ALL,
+            | ShaderStageFlag::VertexStage                 => vk::SHADER_STAGE_VERTEX_BIT,
+            | ShaderStageFlag::GeometryStage               => vk::SHADER_STAGE_GEOMETRY_BIT,
+            | ShaderStageFlag::TessellationControlStage    => vk::SHADER_STAGE_TESSELLATION_CONTROL_BIT,
+            | ShaderStageFlag::TessellationEvaluationStage => vk::SHADER_STAGE_TESSELLATION_EVALUATION_BIT,
+            | ShaderStageFlag::FragmentStage               => vk::SHADER_STAGE_FRAGMENT_BIT,
+            | ShaderStageFlag::ComputeStage                => vk::SHADER_STAGE_COMPUTE_BIT,
+            | ShaderStageFlag::AllGraphicsStage            => vk::SHADER_STAGE_ALL_GRAPHICS,
+            | ShaderStageFlag::AllStage                    => vk::SHADER_STAGE_ALL,
         }
     }
 }
@@ -115,7 +134,7 @@ impl VulkanEnum for ShaderStageType {
 pub struct HaShaderModule {
 
     pub(super) main   : CString,
-    pub(super) stage  : ShaderStageType,
+    pub(super) stage  : ShaderStageFlag,
     pub(super) handle : vk::ShaderModule,
 }
 

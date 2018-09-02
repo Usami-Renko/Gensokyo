@@ -4,24 +4,26 @@ use ash::vk;
 use resources::buffer::{ BufferUsageFlag, BufferCreateFlag };
 use resources::memory::MemoryPropertyFlag;
 
-pub struct BufferConfig<'flag> {
+use utility::marker::VulkanFlags;
 
-    pub(crate) usages       : &'flag [BufferUsageFlag],
+pub struct BufferConfig {
+
+    pub(crate) usages       : vk::BufferUsageFlags,
     // TODO: Turn the flags into bool options.
-    pub(crate) buffer_flags : &'flag [BufferCreateFlag],
-    pub(crate) memory_flags : &'flag [MemoryPropertyFlag],
+    pub(crate) buffer_flags : vk::BufferCreateFlags,
+    pub(crate) memory_flags : vk::MemoryPropertyFlags,
 
     pub(crate) total_size   : vk::DeviceSize,
     pub(crate) items_size   : Vec<vk::DeviceSize>,
 }
 
-impl<'flag> BufferConfig<'flag> {
+impl BufferConfig {
 
-    pub fn init(usages: &'flag [BufferUsageFlag], memory_flags: &'flag [MemoryPropertyFlag]) -> BufferConfig<'flag> {
+    pub fn init(usages: &[BufferUsageFlag], memory_flags: &[MemoryPropertyFlag], buffer_flags: &[BufferCreateFlag]) -> BufferConfig {
         BufferConfig {
-            usages,
-            buffer_flags: &[],
-            memory_flags,
+            usages: usages.flags(),
+            buffer_flags: buffer_flags.flags(),
+            memory_flags: memory_flags.flags(),
 
             total_size: 0,
             items_size: vec![],
@@ -36,14 +38,23 @@ impl<'flag> BufferConfig<'flag> {
 
         item_index
     }
-    pub fn with_buffer_flags(&mut self, buffer_flags: &'flag [BufferCreateFlag]) {
-        self.buffer_flags = buffer_flags;
-    }
 }
 
 
+#[derive(Debug, Clone)]
 pub struct BufferItem {
     pub(crate) buffer_index: usize,
     pub(crate) offset: vk::DeviceSize,
     pub(crate) size  : vk::DeviceSize,
+}
+
+impl BufferItem {
+
+    pub fn unset() -> BufferItem {
+        BufferItem {
+            buffer_index: 0,
+            offset      : 0,
+            size        : 0,
+        }
+    }
 }

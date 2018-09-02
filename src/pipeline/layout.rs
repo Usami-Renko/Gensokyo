@@ -61,7 +61,7 @@ impl Default for PipelineLayoutBuilder {
 
 pub struct HaPipelineLayout {
 
-    handle: vk::PipelineLayout,
+    pub(crate) handle: vk::PipelineLayout,
 }
 
 impl HaPipelineLayout {

@@ -9,15 +9,13 @@ use core::device::HaLogicalDevice;
 use resources::buffer::BufferConfig;
 use resources::error::BufferError;
 
-use utility::marker::VulkanFlags;
-
 use std::ptr;
 use std::mem;
 
 pub(crate) struct HaBuffer {
 
     pub(crate) handle : vk::Buffer,
-    requirement       : vk::MemoryRequirements,
+    pub(crate) requirement : vk::MemoryRequirements,
 }
 
 impl HaBuffer {
@@ -37,9 +35,9 @@ impl HaBuffer {
         let create_info = vk::BufferCreateInfo {
             s_type: vk::StructureType::BufferCreateInfo,
             p_next: ptr::null(),
-            flags : config.buffer_flags.flags(),
+            flags : config.buffer_flags,
             size  : config.total_size,
-            usage : config.usages.flags(),
+            usage : config.usages,
             sharing_mode,
             queue_family_index_count: indices.len() as uint32_t,
             p_queue_family_indices  : indices.as_ptr(),
@@ -70,13 +68,6 @@ impl HaBuffer {
         };
 
         vert_algn.copy_from_slice(data);
-    }
-
-    pub fn require_memory_size(&self) -> vk::DeviceSize {
-        self.requirement.size
-    }
-    pub fn require_memory_type_bits(&self) -> uint32_t {
-        self.requirement.memory_type_bits
     }
 
     pub fn cleanup(&self, device: &HaLogicalDevice) {

@@ -18,12 +18,12 @@ pub struct HaBufferRepository {
     offsets: Vec<vk::DeviceSize>,
 }
 
-pub struct VertexBindingInfos {
+pub struct CmdVertexBindingInfos {
 
     pub(crate) handles: Vec<vk::Buffer>,
     pub(crate) offsets: Vec<vk::DeviceSize>,
 }
-pub struct IndexBindingInfo {
+pub struct CmdIndexBindingInfo {
 
     pub(crate) handle: vk::Buffer,
     pub(crate) offset: vk::DeviceSize,
@@ -79,7 +79,7 @@ impl HaBufferRepository {
 
     pub fn copy_data(&self, device: &HaLogicalDevice, from_repository: &HaBufferRepository, from_item: &BufferItem, to_item: &BufferItem) -> Result<(), AllocatorError> {
 
-        let mut command_buffers = device.transfer_command_pool.allocate(device, CommandBufferUsage::UnitaryCommand, 1)?;
+        let mut command_buffers = device.transfer_command_pool.allocate (device, CommandBufferUsage::UnitaryCommand, 1)?;
         let command_buffer = command_buffers.pop().unwrap();
 
         let copy_regions = [
@@ -116,27 +116,27 @@ impl HaBufferRepository {
         Ok(())
     }
 
-    fn buffer_at(&self, index: usize) -> &HaBuffer {
+    pub(crate) fn buffer_at(&self, index: usize) -> &HaBuffer {
         &self.buffers[index]
     }
 
-    pub fn vertex_binding_infos(&self, items: &[&BufferItem]) -> VertexBindingInfos {
+    pub fn vertex_binding_infos(&self, items: &[&BufferItem]) -> CmdVertexBindingInfos {
 
         let mut handles = vec![];
-        let mut offsets = vec![];
+        let mut offsets  = vec![];
         for item in items.iter() {
             handles.push(self.buffers[item.buffer_index].handle);
             offsets.push(item.offset);
         }
 
-        VertexBindingInfos {
+        CmdVertexBindingInfos {
             handles,
             offsets,
         }
     }
-    pub fn index_binding_info(&self, item: &BufferItem) -> IndexBindingInfo {
+    pub fn index_binding_info(&self, item: &BufferItem) -> CmdIndexBindingInfo {
 
-        IndexBindingInfo {
+        CmdIndexBindingInfo {
             handle: self.buffers[item.buffer_index].handle,
             offset: item.offset,
         }

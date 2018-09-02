@@ -2,6 +2,9 @@
 #[macro_use]
 extern crate hakurei;
 
+extern crate cgmath;
+use cgmath::{ Matrix4, Vector3, Deg };
+
 use hakurei::prelude::*;
 use hakurei::pipeline::shader::prelude::*;
 use hakurei::pipeline::graphics::prelude::*;
@@ -12,11 +15,12 @@ use hakurei::resources::allocator::*;
 use hakurei::resources::buffer::*;
 use hakurei::resources::memory::*;
 use hakurei::resources::repository::*;
+use hakurei::resources::descriptor::*;
 use hakurei::sync::prelude::*;
 
 use std::path::Path;
 
-const WINDOW_TITLE: &'static str = "Trangle Example";
+const WINDOW_TITLE: &'static str = "Unifrom Buffer Example";
 const WINDOW_WIDTH:  u32 = 800;
 const WINDOW_HEIGHT: u32 = 600;
 
@@ -30,17 +34,20 @@ define_input! {
     }
 }
 
-const VERTEX_DATA: [Vertex; 3] = [
-    Vertex { pos: [ 0.0, -0.5], color: [1.0, 0.0, 0.0, 1.0], },
-    Vertex { pos: [ 0.5,  0.5], color: [0.0, 1.0, 0.0, 1.0], },
-    Vertex { pos: [-0.5,  0.5], color: [0.0, 0.0, 1.0, 1.0], },
-];
+#[derive(Debug, Clone, Copy)]
+struct UboObject {
+    rotate: Matrix4<f32>,
+}
 
-struct TriangleProcedure {
+struct UniformBufferProcedure {
 
-    vertex_data  : Vec<Vertex>,
-    vertex_buffer: HaBufferRepository,
-    vertex_item  : BufferItem,
+    vertex_data   : Vec<Vertex>,
+    vertex_storage: HaBufferRepository,
+    vertex_item   : BufferItem,
+
+    ubo_data      : Vec<UboObject>,
+    ubo_storage   : HaDescriptorRepository,
+    ubo_set       : DescriptorSetItem,
 
     graphics_pipeline: HaGraphicsPipeline,
 
@@ -50,13 +57,25 @@ struct TriangleProcedure {
     present_availables: Vec<HaSemaphore>,
 }
 
-impl TriangleProcedure {
+impl UniformBufferProcedure {
 
-    fn new() -> TriangleProcedure {
-        TriangleProcedure {
-            vertex_data  : VERTEX_DATA.to_vec(),
-            vertex_buffer: HaBufferRepository::empty(),
-            vertex_item  : BufferItem::unset(),
+    fn new() -> UniformBufferProcedure {
+        UniformBufferProcedure {
+            vertex_data: vec![
+                Vertex { pos: [ 0.0, -0.5], color: [1.0, 0.0, 0.0, 1.0], },
+                Vertex { pos: [ 0.5,  0.5], color: [0.0, 1.0, 0.0, 1.0], },
+                Vertex { pos: [-0.5,  0.5], color: [0.0, 0.0, 1.0, 1.0], },
+            ],
+            vertex_storage: HaBufferRepository::empty(),
+            vertex_item: BufferItem::unset(),
+
+            ubo_data: vec![
+                UboObject {
+                    rotate: Matrix4::from_axis_angle(Vector3::new(0.0, 0.0, 1.0), Deg(90.0))
+                },
+            ],
+            ubo_storage: HaDescriptorRepository::empty(),
+            ubo_set: DescriptorSetItem::unset(),
 
             graphics_pipeline: HaGraphicsPipeline::uninitialize(),
 
@@ -68,46 +87,59 @@ impl TriangleProcedure {
     }
 }
 
-impl ProgramProc for TriangleProcedure {
+impl ProgramProc for UniformBufferProcedure {
 
     fn configure_storage(&mut self, device: &HaLogicalDevice, generator: &ResourceGenerator) -> Result<(), ProcedureError> {
 
-        // vertex buffer
-        let mut staging_buffer_config = BufferConfig::init(
-            &[BufferUsageFlag::TransferSrcBit],
+        // vertex and uniform buffer
+        let mut vertex_buffer_config = BufferConfig::init(
+            &[BufferUsageFlag::VertexBufferBit],
             &[
                 MemoryPropertyFlag::HostVisibleBit,
                 MemoryPropertyFlag::HostCoherentBit,
             ],
             &[]
         );
-        let _ = staging_buffer_config.add_item(data_size!(self.vertex_data, Vertex));
-
-        let mut vertex_buffer_config = BufferConfig::init(
-            &[
-                BufferUsageFlag::TransferDstBit,
-                BufferUsageFlag::VertexBufferBit,
-            ],
-            &[MemoryPropertyFlag::DeviceLocalBit],
-            &[]
-        );
         let _ = vertex_buffer_config.add_item(data_size!(self.vertex_data, Vertex));
 
-        let mut staging_allocator = generator.buffer_allocator();
-        let stage_buffer_item = staging_allocator.attach_buffer(staging_buffer_config)?.pop().unwrap();
-
-        let staging_repository = staging_allocator.allocate()?;
-        staging_repository.tranfer_data(device, &self.vertex_data, &stage_buffer_item)?;
+        let mut uniform_buffer_config = BufferConfig::init(
+            &[BufferUsageFlag::UniformBufferBit],
+            &[
+                MemoryPropertyFlag::HostVisibleBit,
+                MemoryPropertyFlag::HostCoherentBit,
+            ],
+            &[],
+        );
+        let _ = uniform_buffer_config.add_item(data_size!(self.ubo_data, UboObject));
 
         let mut vertex_allocator = generator.buffer_allocator();
         self.vertex_item = vertex_allocator.attach_buffer(vertex_buffer_config)?.pop().unwrap();
-        self.vertex_buffer = vertex_allocator.allocate()?;
-        self.vertex_buffer.copy_data(
-            device,
-            &staging_repository,
-            &stage_buffer_item,
-            &self.vertex_item)?;
-        staging_repository.cleanup(device);
+        let ubo_buffer_item = vertex_allocator.attach_buffer(uniform_buffer_config)?.pop().unwrap();
+
+        self.vertex_storage = vertex_allocator.allocate()?;
+        self.vertex_storage.tranfer_data(device, &self.vertex_data, &self.vertex_item)?;
+        self.vertex_storage.tranfer_data(device, &self.ubo_data, &ubo_buffer_item)?;
+
+        // descriptor
+        let ubo_info = DescriptorBindingInfo {
+            binding: 0,
+            type_: DescriptorType::UniformBuffer,
+            count: 1,
+            element_size: data_size!(self.ubo_data, UboObject),
+            buffer: ubo_buffer_item.clone(),
+        };
+        let mut descriptor_set_config = DescriptorSetConfig::init(&[]);
+        let ubo_binding_index = descriptor_set_config.add_binding(ubo_info, &[
+            ShaderStageFlag::VertexStage,
+        ]);
+
+        let mut descriptor_allocator = generator.descriptor_allocator(&[]);
+        let (descriptor_set_item, descriptor_binding_items) = descriptor_allocator.attach_descriptor_set(descriptor_set_config);
+        let ubo_descriptor_item = descriptor_binding_items[ubo_binding_index].clone();
+
+        self.ubo_storage = descriptor_allocator.allocate()?;
+        self.ubo_storage.update_descriptors(device, &self.vertex_storage, &[ubo_descriptor_item]);
+        self.ubo_set = descriptor_set_item;
 
         Ok(())
     }
@@ -116,11 +148,11 @@ impl ProgramProc for TriangleProcedure {
         // shaders
         let vertex_shader = HaShaderInfo::setup(
             ShaderStageFlag::VertexStage,
-            Path::new("shaders/triangle.vert.spv"),
+            Path::new("shaders/uniform.vert.spv"),
             None);
         let fragment_shader = HaShaderInfo::setup(
             ShaderStageFlag::FragmentStage,
-            Path::new("shaders/triangle.frag.spv"),
+            Path::new("shaders/uniform.frag.spv"),
             None);
         let shader_infos = vec![
             vertex_shader,
@@ -145,8 +177,10 @@ impl ProgramProc for TriangleProcedure {
 
         let render_pass = render_pass_builder.build(device, swapchain)?;
         let viewport = HaViewport::setup(swapchain.extent);
+
         let pipeline_config = GraphicsPipelineConfig::init(shader_infos, vertex_input_desc, render_pass)
             .setup_viewport(viewport)
+            .add_descriptor_set(self.ubo_storage.set_layout_at(&self.ubo_set))
             .finish_config();
 
         let mut pipeline_builder = GraphicsPipelineBuilder::init();
@@ -168,6 +202,7 @@ impl ProgramProc for TriangleProcedure {
     }
 
     fn configure_commands(&mut self, device: &HaLogicalDevice) -> Result<(), ProcedureError> {
+
         // command buffer
         let command_pool = HaCommandPool::setup(&device, &[])?;
 
@@ -181,7 +216,8 @@ impl ProgramProc for TriangleProcedure {
             recorder.begin_record(&[CommandBufferUsageFlag::SimultaneousUseBit])?
                 .begin_render_pass(&self.graphics_pipeline, frame_index)
                 .bind_pipeline(&self.graphics_pipeline)
-                .bind_vertex_buffers(0, &self.vertex_buffer.vertex_binding_infos(&[&self.vertex_item]))
+                .bind_vertex_buffers(0, &self.vertex_storage.vertex_binding_infos(&[&self.vertex_item]))
+                .bind_descriptor_sets(&self.graphics_pipeline, 0, &self.ubo_storage.descriptor_binding_infos(&[&self.ubo_set]))
                 .draw(self.vertex_data.len() as uint32_t, 1, 0, 0)
                 .end_render_pass()
                 .finish()?;
@@ -193,7 +229,7 @@ impl ProgramProc for TriangleProcedure {
     }
 
     fn draw(&mut self, device: &HaLogicalDevice, device_available: &HaFence, image_available: &HaSemaphore, image_index: usize)
-        -> Result<&HaSemaphore, ProcedureError> {
+            -> Result<&HaSemaphore, ProcedureError> {
 
         let submit_infos = [
             QueueSubmitBundle {
@@ -217,13 +253,14 @@ impl ProgramProc for TriangleProcedure {
 
         self.graphics_pipeline.cleanup(device);
         self.command_pool.cleanup(device);
-        self.vertex_buffer.cleanup(device);
+        self.ubo_storage.clean(device);
+        self.vertex_storage.cleanup(device);
     }
 }
 
 fn main() {
 
-    let procecure = TriangleProcedure::new();
+    let procecure = UniformBufferProcedure::new();
     let mut program = ProgramBuilder::new(procecure)
         .title(WINDOW_TITLE)
         .size(WINDOW_WIDTH, WINDOW_HEIGHT)

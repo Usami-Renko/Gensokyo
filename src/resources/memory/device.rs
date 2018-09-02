@@ -48,10 +48,10 @@ impl HaMemoryAbstract for HaDeviceMemory {
         Ok(memory)
     }
 
-    fn bind(&self, device: &HaLogicalDevice, buffer_handle: vk::Buffer, offset: vk::DeviceSize) -> Result<(), MemoryError> {
+    fn bind(&self, device: &HaLogicalDevice, buffer_handle: vk::Buffer, memory_offset: vk::DeviceSize) -> Result<(), MemoryError> {
 
         unsafe {
-            device.handle.bind_buffer_memory(buffer_handle, self.handle, offset)
+            device.handle.bind_buffer_memory(buffer_handle, self.handle, memory_offset)
                 .or(Err(MemoryError::BindMemoryError))?;
         }
 
