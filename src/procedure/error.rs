@@ -40,7 +40,6 @@ impl fmt::Display for RuntimeError {
 }
 
 
-
 #[derive(Debug, Clone, Eq, PartialEq)]
 pub enum ProcedureError {
 
@@ -55,6 +54,8 @@ pub enum ProcedureError {
     Sync(SyncError),
     Descriptor(DescriptorError),
     Allocator(AllocatorError),
+
+    SwapchainRecreate,
 }
 
 impl Error for ProcedureError {
@@ -71,6 +72,8 @@ impl Error for ProcedureError {
             | ProcedureError::Sync(ref e)           => Some(e),
             | ProcedureError::Descriptor(ref e)     => Some(e),
             | ProcedureError::Allocator(ref e)      => Some(e),
+
+            | ProcedureError::SwapchainRecreate     => None,
         }
     }
 }
@@ -86,6 +89,7 @@ macro_rules! impl_from_err {
     )
 }
 
+impl_from_err!(RuntimeError, Procedure, ProcedureError);
 impl_from_err!(ProcedureError, Instance, InstanceError);
 impl_from_err!(ProcedureError, Validation, ValidationError);
 impl_from_err!(ProcedureError, Surface, SurfaceError);

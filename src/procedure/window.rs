@@ -86,15 +86,30 @@ impl<T> ProgramEnv<T> where T: ProgramProc {
 
         let window = self.window_info.build(&self.event_loop)
             .map_err(|e| RuntimeError::Window(e))?;
-        let mut core = self.initialize_core(&window, requirement)
-            .map_err(|e| RuntimeError::Procedure(e))?;
-        let mut resources = self.load_resources(&core)
-            .map_err(|e| RuntimeError::Procedure(e))?;
+        let mut core = self.initialize_core(&window, requirement)?;
+        let mut resources = self.load_resources(&core)?;
 
-        self.main_loop(&mut core, &mut resources)
-            .map_err(|e| RuntimeError::Procedure(e))?;
-        self.wait_idle(&core.device)
-            .map_err(|e| RuntimeError::Procedure(e))?;
+
+        'outer_loop: loop {
+            match self.main_loop(&mut core, &mut resources) {
+                | Ok(_) => break,
+                | Err(error) => match error {
+                    | ProcedureError::SwapchainRecreate => {
+                        self.wait_idle(&core.device)?;
+                        resources.cleanup(&core.device);
+                        resources.clear();
+                        self.procedure.clean_resources(&core.device)?;
+                        resources = self.reload_resources(&core)?;
+
+                        continue
+                    },
+                    | _ => return Err(RuntimeError::Procedure(error))
+                }
+            }
+        }
+
+
+        self.wait_idle(&core.device)?;
 
         self.procedure.cleanup(&core.device);
         resources.cleanup(&core.device);
@@ -105,8 +120,9 @@ impl<T> ProgramEnv<T> where T: ProgramProc {
 
     fn main_loop(&mut self, core: &mut CoreInfrastructure, resources: &mut HaResources) -> Result<(), ProcedureError> {
 
-        let mut is_running       = true;
-        let mut is_first_resized = true;
+        let mut is_running        = true;
+        let mut is_first_resized  = true;
+        let mut is_resized_tiggle = false;
         let mut current_fame = 0_usize;
 
         'mainloop: loop {
@@ -118,16 +134,15 @@ impl<T> ProgramEnv<T> where T: ProgramProc {
                             if let Some(VirtualKeyCode::Escape) = input.virtual_keycode {
                                 is_running = false;
                             }
-                        }
+                        },
                         | WindowEvent::Resized(_) => {
 
                             if is_first_resized {
                                 is_first_resized = false;
                             } else {
-                                // TODO: Implement resized handling.
-                                unimplemented!("Resized is not implemented yet")
+                                is_running        = false;
+                                is_resized_tiggle = true;
                             }
-
                         },
                         | WindowEvent::CloseRequested => {
                             is_running = false;
@@ -138,11 +153,23 @@ impl<T> ProgramEnv<T> where T: ProgramProc {
                 }
             });
 
-
-            self.draw_frame(current_fame, core, resources)?;
+            match self.draw_frame(current_fame, core, resources) {
+                | Ok(_) => (),
+                | Err(error) => match error {
+                    | ProcedureError::SwapchainRecreate => {
+                        is_running        = false;
+                        is_resized_tiggle = true;
+                    },
+                    | _ => return Err(error)
+                }
+            }
 
             if is_running == false {
-                break 'mainloop
+                if is_resized_tiggle {
+                    return Err(ProcedureError::SwapchainRecreate)
+                } else {
+                    break 'mainloop
+                }
             }
 
             current_fame = (current_fame + 1) % SYNCHRONOUT_FRAME;

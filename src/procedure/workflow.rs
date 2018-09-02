@@ -24,11 +24,12 @@ use utility::time::TimePeriod;
 
 pub trait ProgramProc {
 
-    fn configure_storage(&mut self, device: &HaLogicalDevice, generator: &ResourceGenerator) -> Result<(), ProcedureError>;
-    fn configure_pipeline(&mut self, device: &HaLogicalDevice, swapchain: &HaSwapchain) -> Result<(), ProcedureError>;
-    fn configure_resources(&mut self, device: &HaLogicalDevice) -> Result<(), ProcedureError>;
-    fn configure_commands(&mut self, device: &HaLogicalDevice) -> Result<(), ProcedureError>;
+    fn assets(&mut self, device: &HaLogicalDevice, generator: &ResourceGenerator) -> Result<(), ProcedureError>;
+    fn pipelines(&mut self, device: &HaLogicalDevice, swapchain: &HaSwapchain) -> Result<(), ProcedureError>;
+    fn subresources(&mut self, device: &HaLogicalDevice) -> Result<(), ProcedureError>;
+    fn commands(&mut self, device: &HaLogicalDevice) -> Result<(), ProcedureError>;
     fn draw(&mut self, device: &HaLogicalDevice, device_available: &HaFence, image_available: &HaSemaphore, image_index: usize) -> Result<&HaSemaphore, ProcedureError>;
+    fn clean_resources(&mut self, device: &HaLogicalDevice) -> Result<(), ProcedureError>;
     fn cleanup(&self, device: &HaLogicalDevice);
 }
 
@@ -39,10 +40,11 @@ pub struct CoreInfrastructure<'win> {
     surface   : HaSurface<'win>,
     pub(crate) physical: HaPhysicalDevice,
     pub(crate) device  : HaLogicalDevice,
-    swapchain : HaSwapchain,
 }
 
 pub struct HaResources {
+
+    swapchain : HaSwapchain,
 
     // sync
     image_awaits:  Vec<HaSemaphore>,
@@ -68,23 +70,91 @@ impl<'win, T> ProgramEnv<T> where T: ProgramProc {
         // Initialize the device with default queues. (one graphics queue, one present queue, one transfer queue)
         let device = LogicalDeviceBuilder::init(&instance, &physical)
             .build()?;
-        let swapchain = SwapchainBuilder::init(&physical, &device, &surface)?
-            .set_image_count(SWAPCHAIN_IMAGE_COUNT)
-            .build(&instance)?;
 
         let core = CoreInfrastructure {
-            instance, debugger, surface, physical, device, swapchain,
+            instance, debugger, surface, physical, device,
         };
         Ok(core)
     }
 
     pub(super) fn load_resources(&mut self, core: &CoreInfrastructure) -> Result<HaResources, ProcedureError> {
 
+        let inner_resource = self.create_inner_resources(core)?;
+
         let resource_generator = ResourceGenerator::init(&core.physical, &core.device);
-        self.procedure.configure_storage(&core.device, &resource_generator)?;
-        self.procedure.configure_pipeline(&core.device, &core.swapchain)?;
-        self.procedure.configure_resources(&core.device)?;
-        self.procedure.configure_commands(&core.device,)?;
+        self.procedure.assets(&core.device, &resource_generator)?;
+        self.procedure.pipelines(&core.device, &inner_resource.swapchain)?;
+        self.procedure.subresources(&core.device)?;
+        self.procedure.commands(&core.device,)?;
+
+        Ok(inner_resource)
+    }
+
+    pub(super) fn reload_resources(&mut self, core: &CoreInfrastructure) -> Result<HaResources, ProcedureError> {
+
+        let inner_resource = self.create_inner_resources(core)?;
+
+        self.procedure.pipelines(&core.device, &inner_resource.swapchain)?;
+        self.procedure.subresources(&core.device)?;
+        self.procedure.commands(&core.device,)?;
+
+        Ok(inner_resource)
+    }
+
+    pub(super) fn draw_frame(&mut self, current_frame: usize, core: &mut CoreInfrastructure, resources: &mut HaResources)
+        -> Result<(), ProcedureError> {
+
+        let fence_to_wait = &resources.sync_fences[current_frame];
+        fence_to_wait.wait(&core.device, TimePeriod::Infinte)?;
+
+        let image_result = resources.swapchain.next_image(Some(&resources.image_awaits[current_frame]), None);
+        let image_index = match image_result {
+            | Ok(result) => result,
+            | Err(e) =>
+                match e {
+                    | SwapchainRuntimeError::SurfaceOutOfDateError
+                    | SwapchainRuntimeError::SurfaceSubOptimalError => {
+                        return Err(ProcedureError::SwapchainRecreate)
+                    }
+                    | _ => return Err(ProcedureError::Swapchain(SwapchainError::Runtime(e)))
+                }
+        };
+
+        fence_to_wait.reset(&core.device)?;
+
+        let present_available = self.procedure.draw(&core.device, fence_to_wait, &resources.image_awaits[current_frame], current_frame)?;
+
+        // FIXME: Use present queue will cause crash. Image ownership transfer is necessary,
+        // see https://github.com/KhronosGroup/Vulkan-Docs/wiki/Synchronization-Examples.
+        // or see https://software.intel.com/en-us/articles/api-without-secrets-introduction-to-vulkan-part-3
+        let present_result = resources.swapchain.present(
+            &[present_available],
+            image_index,
+            &core.device.graphics_queue
+        );
+        if let Err(e) = present_result {
+            match e {
+                | SwapchainRuntimeError::SurfaceOutOfDateError
+                | SwapchainRuntimeError::SurfaceSubOptimalError => {
+                    return Err(ProcedureError::SwapchainRecreate)
+                }
+                | _ => return Err(ProcedureError::Swapchain(SwapchainError::Runtime(e)))
+            }
+        }
+
+        Ok(())
+    }
+
+    pub fn wait_idle(&self, device: &HaLogicalDevice) -> Result<(), ProcedureError> {
+        device.wait_idle()
+            .map_err(|e| ProcedureError::LogicalDevice(e))
+    }
+
+    fn create_inner_resources(&self, core: &CoreInfrastructure) -> Result<HaResources, ProcedureError> {
+
+        let swapchain = SwapchainBuilder::init(&core.physical, &core.device, &core.surface)?
+            .set_image_count(SWAPCHAIN_IMAGE_COUNT)
+            .build(&core.instance)?;
 
         // sync
         let mut image_awaits = vec![];
@@ -98,62 +168,12 @@ impl<'win, T> ProgramEnv<T> where T: ProgramProc {
         }
 
         let resources = HaResources {
+            swapchain,
 
             image_awaits,
             sync_fences,
         };
         Ok(resources)
-    }
-
-    pub(super) fn draw_frame(&mut self, current_frame: usize, core: &mut CoreInfrastructure, resources: &mut HaResources)
-        -> Result<(), ProcedureError> {
-
-        let fence_to_wait = &resources.sync_fences[current_frame];
-        fence_to_wait.wait(&core.device, TimePeriod::Infinte)?;
-
-        let image_result = core.swapchain.next_image(Some(&resources.image_awaits[current_frame]), None);
-        let image_index = match image_result {
-            | Ok(result) => result,
-            | Err(e) =>
-                match e {
-                    | SwapchainRuntimeError::SurfaceOutOfDateError
-                    | SwapchainRuntimeError::SurfaceSubOptimalError => {
-                        core.swapchain.recreate();
-                        return Ok(())
-                    }
-                    | _ => return Err(ProcedureError::Swapchain(SwapchainError::Runtime(e)))
-                }
-        };
-
-        fence_to_wait.reset(&core.device)?;
-
-        let present_available = self.procedure.draw(&core.device, fence_to_wait, &resources.image_awaits[current_frame], current_frame)?;
-
-        // FIXME: Use present queue will cause crash. Image ownership transfer is necessary,
-        // see https://github.com/KhronosGroup/Vulkan-Docs/wiki/Synchronization-Examples.
-        // or see https://software.intel.com/en-us/articles/api-without-secrets-introduction-to-vulkan-part-3
-        let present_result = core.swapchain.present(
-            &[present_available],
-            image_index,
-            &core.device.graphics_queue
-        );
-        if let Err(e) = present_result {
-            match e {
-                | SwapchainRuntimeError::SurfaceOutOfDateError
-                | SwapchainRuntimeError::SurfaceSubOptimalError => {
-                    core.swapchain.recreate();
-                    return Ok(())
-                }
-                | _ => return Err(ProcedureError::Swapchain(SwapchainError::Runtime(e)))
-            }
-        }
-
-        Ok(())
-    }
-
-    pub fn wait_idle(&self, device: &HaLogicalDevice) -> Result<(), ProcedureError> {
-        device.wait_idle()
-            .map_err(|e| ProcedureError::LogicalDevice(e))
     }
 }
 
@@ -162,7 +182,6 @@ impl<'win> CoreInfrastructure<'win> {
     /// use cleanup function, so that the order of deinitialization can be customizable.
     pub fn cleanup(&self) {
 
-        self.swapchain.cleanup(&self.device);
         self.device.cleanup();
         self.physical.cleanup();
         self.surface.cleanup();
@@ -179,8 +198,14 @@ impl HaResources {
 
     pub fn cleanup(&self, device: &HaLogicalDevice) {
 
+        self.swapchain.cleanup(device);
         self.image_awaits.iter().for_each(|i| i.cleanup(device));
         self.sync_fences.iter().for_each(|f| f.cleanup(device));
+    }
 
+    pub fn clear(&mut self) {
+
+        self.image_awaits.clear();
+        self.sync_fences.clear();
     }
 }

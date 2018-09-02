@@ -89,7 +89,7 @@ impl UniformBufferProcedure {
 
 impl ProgramProc for UniformBufferProcedure {
 
-    fn configure_storage(&mut self, device: &HaLogicalDevice, generator: &ResourceGenerator) -> Result<(), ProcedureError> {
+    fn assets(&mut self, device: &HaLogicalDevice, generator: &ResourceGenerator) -> Result<(), ProcedureError> {
 
         // vertex and uniform buffer
         let mut vertex_buffer_config = BufferConfig::init(
@@ -144,7 +144,7 @@ impl ProgramProc for UniformBufferProcedure {
         Ok(())
     }
 
-    fn configure_pipeline(&mut self, device: &HaLogicalDevice, swapchain: &HaSwapchain) -> Result<(), ProcedureError> {
+    fn pipelines(&mut self, device: &HaLogicalDevice, swapchain: &HaSwapchain) -> Result<(), ProcedureError> {
         // shaders
         let vertex_shader = HaShaderInfo::setup(
             ShaderStageFlag::VertexStage,
@@ -192,7 +192,7 @@ impl ProgramProc for UniformBufferProcedure {
         Ok(())
     }
 
-    fn configure_resources(&mut self, device: &HaLogicalDevice) -> Result<(), ProcedureError> {
+    fn subresources(&mut self, device: &HaLogicalDevice) -> Result<(), ProcedureError> {
         // sync
         for _ in 0..self.graphics_pipeline.frame_count() {
             let present_available = HaSemaphore::setup(device)?;
@@ -201,7 +201,7 @@ impl ProgramProc for UniformBufferProcedure {
         Ok(())
     }
 
-    fn configure_commands(&mut self, device: &HaLogicalDevice) -> Result<(), ProcedureError> {
+    fn commands(&mut self, device: &HaLogicalDevice) -> Result<(), ProcedureError> {
 
         // command buffer
         let command_pool = HaCommandPool::setup(&device, &[])?;
@@ -243,6 +243,20 @@ impl ProgramProc for UniformBufferProcedure {
         device.submit(&submit_infos, Some(device_available), DeviceQueueIdentifier::Graphics)?;
 
         return Ok(&self.present_availables[image_index])
+    }
+
+    fn clean_resources(&mut self, device: &HaLogicalDevice) -> Result<(), ProcedureError> {
+
+        for semaphore in self.present_availables.iter() {
+            semaphore.cleanup(device);
+        }
+        self.present_availables.clear();
+        self.command_buffers.clear();
+
+        self.graphics_pipeline.cleanup(device);
+        self.command_pool.cleanup(device);
+
+        Ok(())
     }
 
     fn cleanup(&self, device: &HaLogicalDevice) {
