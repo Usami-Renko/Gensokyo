@@ -110,12 +110,7 @@ pub enum AllocatorError {
     MemoryNotYetAllocated,
 }
 
-impl From<CommandError> for AllocatorError {
-
-    fn from(error: CommandError) -> Self {
-        AllocatorError::Command(error)
-    }
-}
+impl_from_err!(AllocatorError, Command, CommandError);
 
 impl Error for AllocatorError {}
 impl fmt::Display for AllocatorError {

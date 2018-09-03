@@ -1,5 +1,6 @@
 
 #[macro_use]
+extern crate hakurei_macros;
 extern crate hakurei;
 
 extern crate cgmath;

@@ -5,4 +5,5 @@ authors = ["usami-renko <usami-ssc@protonmail.com>"]
 description = "Basic triangle sample of hakurei."
 
 [dependencies]
-hakurei = { path = "../.." }
+hakurei = { path = "../../hakurei" }
+hakurei-macros = { path = "../../hakurei-macros" }

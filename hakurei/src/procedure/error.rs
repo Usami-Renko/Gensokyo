@@ -78,17 +78,6 @@ impl Error for ProcedureError {
     }
 }
 
-macro_rules! impl_from_err {
-    ($impl_err:ident, $sub_err:ident, $from_err:ty) => (
-
-        impl From<$from_err> for $impl_err {
-            fn from(error: $from_err) -> Self {
-                $impl_err::$sub_err(error)
-            }
-        }
-    )
-}
-
 impl_from_err!(RuntimeError, Procedure, ProcedureError);
 impl_from_err!(ProcedureError, Instance, InstanceError);
 impl_from_err!(ProcedureError, Validation, ValidationError);

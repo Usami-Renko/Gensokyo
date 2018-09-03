@@ -5,4 +5,5 @@ authors = ["usami-renko <usami-ssc@protonmail.com>"]
 description = "Use index buffer to draw an rectangle."
 
 [dependencies]
-hakurei = { path = "../.." }
+hakurei = { path = "../../hakurei" }
+hakurei-macros = { path = "../../hakurei-macros" }
