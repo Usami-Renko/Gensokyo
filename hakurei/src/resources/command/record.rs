@@ -5,20 +5,21 @@ use ash::version::DeviceV1_0;
 
 use core::device::HaLogicalDevice;
 
-use resources::buffer::HaBuffer;
 use resources::command::buffer::HaCommandBuffer;
 use resources::error::CommandError;
 
 use pipeline::graphics::pipeline::HaGraphicsPipeline;
+use pipeline::stages::PipelineStageFlag;
+use pipeline::pass::dependency::DependencyFlag;
 use resources::repository::{ CmdVertexBindingInfos, CmdIndexBindingInfo, CmdDescriptorBindingInfos };
-use utility::marker::VulkanFlags;
+use utility::marker::{ VulkanFlags, VulkanEnum };
 
 use std::ptr;
 
 pub struct HaCommandRecorder<'buffer, 're> {
 
-    pub(super) buffer:    &'buffer HaCommandBuffer,
-    pub(super) device:    &'re HaLogicalDevice,
+    pub(super) buffer: &'buffer HaCommandBuffer,
+    pub(super) device: &'re HaLogicalDevice,
 }
 
 impl<'buffer, 're> HaCommandRecorder<'buffer, 're> {
@@ -97,9 +98,16 @@ impl<'buffer, 're> HaCommandRecorder<'buffer, 're> {
         self
     }
 
-    pub(crate) fn copy_buffer(&self, src_buffer: &HaBuffer, dst_buffer: &HaBuffer, region: &[vk::BufferCopy]) -> &HaCommandRecorder<'buffer, 're> {
+    pub(crate) fn copy_buffer(&self, src_buffer_handle: vk::Buffer, dst_buffer_handle: vk::Buffer, regions: &[vk::BufferCopy]) -> &HaCommandRecorder<'buffer, 're> {
         unsafe {
-            self.device.handle.cmd_copy_buffer(self.buffer.handle, src_buffer.handle, dst_buffer.handle, region)
+            self.device.handle.cmd_copy_buffer(self.buffer.handle, src_buffer_handle, dst_buffer_handle, regions)
+        };
+        self
+    }
+    pub(crate) fn copy_buffer_to_image(&self, src_handle: vk::Buffer, dst_handle: vk::Image, dst_layout: vk::ImageLayout, regions: &[vk::BufferImageCopy])
+        -> &HaCommandRecorder<'buffer, 're> {
+        unsafe {
+            self.device.handle.cmd_copy_buffer_to_image(self.buffer.handle, src_handle, dst_handle, dst_layout, regions)
         };
         self
     }
@@ -130,6 +138,13 @@ impl<'buffer, 're> HaCommandRecorder<'buffer, 're> {
 //        self
 //    }
 
+    pub(crate) fn pipeline_barrrier(&self, src_stage: PipelineStageFlag, dst_stage: PipelineStageFlag, dependencies: &[DependencyFlag], memory_barries: &[vk::MemoryBarrier], buffer_memory_barries: &[vk::BufferMemoryBarrier], image_memory_barries: &[vk::ImageMemoryBarrier], ) -> &HaCommandRecorder<'buffer, 're> {
+        unsafe {
+            self.device.handle.cmd_pipeline_barrier(self.buffer.handle, src_stage.value(), dst_stage.value(), dependencies.flags(), memory_barries, buffer_memory_barries, image_memory_barries)
+        };
+        self
+    }
+
     pub fn end_render_pass(&self) -> &HaCommandRecorder<'buffer, 're> {
         unsafe { self.device.handle.cmd_end_render_pass(self.buffer.handle) };
         self
@@ -142,24 +157,6 @@ impl<'buffer, 're> HaCommandRecorder<'buffer, 're> {
         };
         Ok(())
     }
-
-//    pub fn pipeline_barrrier(&self) -> Result<&HaCommandRecorder<'buffer, 're>, CommandError> {
-//
-//        let image_barrier = vk::ImageMemoryBarrier {
-//            s_type: vk::StructureType::ImageMemoryBarrier,
-//            p_next: ptr::null(),
-//            src_access_mask: vk::ACCESS_MEMORY_READ_BIT,
-//            dst_access_mask: vk::ACCESS_MEMORY_READ_BIT,
-//            old_layout: vk::ImageLayout::Undefined,
-//            new_layout: vk::ImageLayout::PresentSrcKhr,
-//            src_queue_family_index: self.device.present_queue_index.unwrap() as uint32_t,
-//            dst_queue_family_index: self.device.graphics_queue_index.unwrap() as uint32_t,
-//            image: Image
-//            subresource_range: ImageSubresourceRange
-//        };
-//
-//        unimplemented!()
-//    }
 }
 
 

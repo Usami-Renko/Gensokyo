@@ -84,7 +84,8 @@ impl ProgramProc for TriangleProcedure {
         );
         let _ = vertex_buffer_config.add_item(data_size!(self.vertex_data, Vertex));
 
-        let mut vertex_allocator = generator.buffer_allocator();
+        let mut vertex_allocator = generator.buffer();
+        // TODO: Add handing for no matching memory type.
         self.vertex_item = vertex_allocator.attach_buffer(vertex_buffer_config)?.pop().unwrap();
         self.vertex_buffer = vertex_allocator.allocate()?;
         self.vertex_buffer.tranfer_data(device, &self.vertex_data, &self.vertex_item)?;
@@ -203,7 +204,7 @@ impl ProgramProc for TriangleProcedure {
         Ok(())
     }
 
-    fn cleanup(&self, device: &HaLogicalDevice) {
+    fn cleanup(&mut self, device: &HaLogicalDevice) {
 
         for semaphore in self.present_availables.iter() {
             semaphore.cleanup(device);

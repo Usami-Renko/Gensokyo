@@ -2,7 +2,6 @@
 use ash;
 use ash::vk;
 use ash::vk::uint32_t;
-use ash::version::DeviceV1_0;
 
 use core::instance::HaInstance;
 use core::physical::HaPhysicalDevice;
@@ -13,7 +12,7 @@ use core::swapchain::chain::HaSwapchain;
 use core::swapchain::support::SwapchainSupport;
 use core::swapchain::error::SwapchainInitError;
 
-use resources::image::{ HaImage, HaImageView };
+use resources::image::{ HaImage, HaImageView, ImageViewDescInfo, ImageAspectFlag, ImageViewType };
 
 use constant::swapchain::SWAPCHAIN_IMAGE_COUNT;
 use utility::marker::VulkanFlags;
@@ -129,18 +128,25 @@ impl<'vk, 'win: 'vk> SwapchainBuilder<'vk, 'win> {
                 .or(Err(SwapchainInitError::SwapchianCreationError))?
         };
 
-        let images = loader.get_swapchain_images_khr(handle)
+        let images: Vec<_> = loader.get_swapchain_images_khr(handle)
             .or(Err(SwapchainInitError::SwapchainImageGetError))?
-            .iter().map(|&v| HaImage { handle: v }).collect();
+            .iter().map(|&img_handle| HaImage::from_swapchain(img_handle)).collect();
 
-        let views = generate_imageviews(self.device, prefer_format.format, &images)?;
+        let mut view_desc = ImageViewDescInfo::init(
+            ImageViewType::Type2d,
+        );
+        view_desc.set_subrange(&[ImageAspectFlag::ColorBit], 0, 1, 0, 1);
+
+        let mut views = vec![];
+        for image in images.iter() {
+            let view = HaImageView::config(self.device, image, &view_desc, prefer_format.format)
+                .or(Err(SwapchainInitError::ImageViewCreationError))?;
+            views.push(view);
+        }
 
         let swapchain = HaSwapchain {
-            handle,
-            loader,
+            handle, loader, views,
             _images: images,
-            views,
-
             format: prefer_format.format,
             extent: prefer_extent,
         };
@@ -170,51 +176,4 @@ fn sharing_mode(device: &HaLogicalDevice) -> SwapchainImageShaingInfo {
         }
     }
 
-}
-
-fn generate_imageviews(device: &HaLogicalDevice, format: vk::Format, images: &Vec<HaImage>)
-    -> Result<Vec<HaImageView>, SwapchainInitError> {
-
-    let mut imageviews = vec![];
-
-    // TODO: Wrap this logical in future image section.
-    for image in images.iter() {
-
-        let imageview_create_info = vk::ImageViewCreateInfo {
-            s_type: vk::StructureType::ImageViewCreateInfo,
-            p_next: ptr::null(),
-            // flags is reserved for future use in API version 1.0.82
-            flags: vk::ImageViewCreateFlags::empty(),
-            image: image.handle,
-            view_type: vk::ImageViewType::Type2d,
-            format,
-            // specifies a remapping of color components
-            components: vk::ComponentMapping {
-                r: vk::ComponentSwizzle::Identity,
-                g: vk::ComponentSwizzle::Identity,
-                b: vk::ComponentSwizzle::Identity,
-                a: vk::ComponentSwizzle::Identity,
-            },
-            // selecting the set of mipmap levels and array layers to be accessible to the view
-            subresource_range: vk::ImageSubresourceRange {
-                aspect_mask      : vk::IMAGE_ASPECT_COLOR_BIT,
-                base_mip_level   : 0,
-                level_count      : 1,
-                base_array_layer : 0,
-                layer_count      : 1,
-            }
-        };
-
-        let handle = unsafe {
-            device.handle.create_image_view(&imageview_create_info, None)
-                .or(Err(SwapchainInitError::ImageViewCreationError))?
-        };
-
-        let image_view = HaImageView {
-            handle,
-        };
-        imageviews.push(image_view);
-    }
-
-    Ok(imageviews)
 }

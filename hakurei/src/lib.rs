@@ -3,6 +3,7 @@
 extern crate ash;
 extern crate winit;
 extern crate num;
+extern crate image;
 
 #[macro_use]
 extern crate hakurei_macros;

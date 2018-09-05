@@ -22,7 +22,7 @@ impl HaInputAssembly {
         vk::PipelineInputAssemblyStateCreateInfo {
             s_type   : vk::StructureType::PipelineInputAssemblyStateCreateInfo,
             p_next   : ptr::null(),
-            // flags is reserved for future use in API version 1.0.82.
+            // flags is reserved for future use in API version 1.1.82.
             flags    : vk::PipelineInputAssemblyStateCreateFlags::empty(),
             topology : self.topology,
             primitive_restart_enable: if self.primitive_restart_enable { vk::VK_TRUE } else { vk::VK_FALSE },

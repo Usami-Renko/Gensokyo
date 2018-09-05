@@ -31,7 +31,7 @@ macro_rules! offset_of {
 
 #[macro_export]
 macro_rules! impl_from_err {
-    ($impl_err:ident, $sub_err:ident, $from_err:ty) => (
+    ($sub_err:ident($from_err:ty) -> $impl_err:ident) => (
 
         impl From<$from_err> for $impl_err {
             fn from(error: $from_err) -> Self {

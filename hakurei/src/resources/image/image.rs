@@ -1,111 +1,144 @@
 
 use ash::vk;
+use ash::vk::uint32_t;
+use ash::version::DeviceV1_0;
 
-use utility::marker::VulkanEnum;
+use core::device::HaLogicalDevice;
+use resources::image::flag::{ ImageCreateFlag, ImageUsageFlag };
+use resources::error::ImageError;
 
-pub struct HaImage {
+use pipeline::state::multisample::SampleCountType;
+
+use utility::dimension::Dimension3D;
+use utility::marker::{ VulkanFlags, VulkanEnum };
+
+use std::ptr;
+
+pub(crate) struct HaImage {
 
     pub(crate) handle: vk::Image,
+    pub(crate) requirement: vk::MemoryRequirements,
 }
 
-// TODO: Map to raw value
-// TODO: Some enum is not available in ash crate yet.
-#[derive(Debug, Clone, Copy, Eq, PartialEq)]
-pub enum ImageLayout {
-    /// Undefine does not support device access.
-    ///
-    /// This layout must only be used as the initialLayout member of VkImageCreateInfo or VkAttachmentDescription, or as the oldLayout in an image transition.
-    ///
-    /// When transitioning out of this layout, the contents of the memory are not guaranteed to be preserved.
-    Undefined,
-    /// General supports all types of device access.
-    General,
-    /// ColorAttachmentOptimal must only be used as a color or resolve attachment in a VkFramebuffer.
-    /// This layout is valid only for image subresources of images created with the VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT usage bit enabled.
-    ColorAttachmentOptimal,
-    /// DepthStencilAttachmentOptimal must only be used as a depth/stencil attachment in a VkFramebuffer.
-    ///
-    /// This layout is valid only for image subresources of images created with the VK_IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT usage bit enabled.
-    DepthStencilAttachmentOptimal,
-    /// DepthStencilReadOnlyOptimal must only be used as a read-only depth/stencil attachment in a VkFramebuffer and/or as a read-only image in a shader (which can be read as a sampled image, combined image/sampler and/or input attachment).
-    ///
-    /// This layout is valid only for image subresources of images created with the VK_IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT usage bit enabled.
-    ///
-    /// Only image subresources of images created with VK_IMAGE_USAGE_SAMPLED_BIT can be used as a sampled image or combined image/sampler in a shader.
-    ///
-    /// Similarly, only image subresources of images created with VK_IMAGE_USAGE_INPUT_ATTACHMENT_BIT can be used as input attachments.
-    DepthStencilReadOnlyOptimal,
-    /// ShaderReadOnlyOptimal must only be used as a read-only image in a shader (which can be read as a sampled image, combined image/sampler and/or input attachment).
-    ///
-    /// This layout is valid only for image subresources of images created with the VK_IMAGE_USAGE_SAMPLED_BIT or VK_IMAGE_USAGE_INPUT_ATTACHMENT_BIT usage bit enabled.
-    ShaderReadOnlyOptimal,
-    /// TransferSrcOptimal must only be used as a source image of a transfer command (see the definition of VK_PIPELINE_STAGE_TRANSFER_BIT).
-    ///
-    /// This layout is valid only for image subresources of images created with the VK_IMAGE_USAGE_TRANSFER_SRC_BIT usage bit enabled.
-    TransferSrcOptimal,
-    /// must only be used as a destination image of a transfer command.
-    ///
-    /// This layout is valid only for image subresources of images created with the VK_IMAGE_USAGE_TRANSFER_DST_BIT usage bit enabled.
-    TransferDstOptimal,
-    /// Preinitialized does not support device access.
-    ///
-    /// This layout must only be used as the initialLayout member of VkImageCreateInfo or VkAttachmentDescription, or as the oldLayout in an image transition.
-    ///
-    /// When transitioning out of this layout, the contents of the memory are preserved.
-    ///
-    /// This layout is intended to be used as the initial layout for an image whose contents are written by the host, and hence the data can be written to memory immediately, without first executing a layout transition.
-    ///
-    /// Currently, VK_IMAGE_LAYOUT_PREINITIALIZED is only useful with VK_IMAGE_TILING_LINEAR images because there is not a standard layout defined for VK_IMAGE_TILING_OPTIMAL images.
-    Preinitialized,
-//    /// DepthReadOnlyStencilAttachmentOptimal must only be used as a depth/stencil attachment in a VkFramebuffer, where the depth aspect is read-only, and/or as a read-only image in a shader (which can be read as a sampled image, combined image/sampler and/or input attachment) where only the depth aspect is accessed.
-//    ///
-//    /// This layout is valid only for image subresources of images created with the VK_IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT usage bit enabled.
-//    ///
-//    /// Only image subresources of images created with VK_IMAGE_USAGE_SAMPLED_BIT can be used as a sampled image or combined image/sampler in a shader.
-//    ///
-//    /// Similarly, only image subresources of images created with VK_IMAGE_USAGE_INPUT_ATTACHMENT_BIT can be used as input attachments.
-//    DepthReadOnlyStencilAttachmentOptimal,
-//    /// DepthAttachmentStencilReadOnlyOptimal must only be used as a depth/stencil attachment in a VkFramebuffer, where the stencil aspect is read-only,
-//    /// and/or as a read-only image in a shader (which can be read as a sampled image, combined image/sampler and/or input attachment) where only the stencil aspect is accessed.
-//    ///
-//    /// This layout is valid only for image subresources of images created with the VK_IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT usage bit enabled.
-//    ///
-//    /// Only image subresources of images created with VK_IMAGE_USAGE_SAMPLED_BIT can be used as a sampled image or combined image/sampler in a shader.
-//    ///
-//    /// Similarly, only image subresources of images created with VK_IMAGE_USAGE_INPUT_ATTACHMENT_BIT can be used as input attachments.
-//    DepthAttachmentStencilReadOnlyOptimal,
-    /// PresentSrcKHR must only be used for presenting a presentable image for display.
-    ///
-    /// A swapchain’s image must be transitioned to this layout before calling vkQueuePresentKHR, and must be transitioned away from this layout after calling vkAcquireNextImageKHR.
-    PresentSrcKHR,
-//    /// ShaderPresentKHR is valid only for shared presentable images, and must be used for any usage the image supports.
-//    ShaderPresentKHR,
-//    /// DepthReadOnlyStencilAttachmentOptimalKHR is same as DepthReadOnlyStencilAttachmentOptimal.
-//    DepthReadOnlyStencilAttachmentOptimalKHR,
-//    /// DepthAttachmentStencilReadOnlyOptimalKHR is same as DepthAttachmentStencilReadOnlyOptimal.
-//    DepthAttachmentStencilReadOnlyOptimalKHR,
+impl HaImage {
+
+    pub fn from_swapchain(handle: vk::Image) -> HaImage {
+        HaImage {
+            handle,
+            requirement: vk::MemoryRequirements {
+                size: 0, alignment: 0, memory_type_bits: 0
+            }
+        }
+    }
+
+    pub fn config(device: &HaLogicalDevice, desc: &ImageDescInfo, dimension: Dimension3D, format: vk::Format)
+        -> Result<HaImage, ImageError> {
+
+        let info = vk::ImageCreateInfo {
+            s_type: vk::StructureType::ImageCreateInfo,
+            p_next: ptr::null(),
+            flags : desc.flags,
+            format,
+            extent: dimension,
+            tiling: desc.tiling,
+            usage : desc.usage,
+            samples       : desc.sample_count,
+            image_type    : desc.image_type,
+            mip_levels    : desc.mip_levels,
+            array_layers  : desc.array_layers,
+            initial_layout: desc.initial_layout,
+            sharing_mode  : desc.sharing,
+            queue_family_index_count: desc.queue_family_indices.len() as uint32_t,
+            p_queue_family_indices  : desc.queue_family_indices.as_ptr(),
+        };
+
+        let handle = unsafe {
+            device.handle.create_image(&info, None)
+                .or(Err(ImageError::ImageCreationError))?
+        };
+
+        let requirement = device.handle.get_image_memory_requirements(handle);
+
+        let image = HaImage {
+            handle,
+            requirement,
+        };
+        Ok(image)
+    }
+
+    pub fn cleanup(&self, device: &HaLogicalDevice) {
+        unsafe {
+            device.handle.destroy_image(self.handle, None);
+        }
+    }
 }
 
-impl VulkanEnum for ImageLayout {
-    type EnumType = vk::ImageLayout;
+pub struct ImageDescInfo {
 
-    fn value(&self) -> Self::EnumType {
-        match *self {
-            | ImageLayout::Undefined                                => vk::ImageLayout::Undefined,
-            | ImageLayout::General                                  => vk::ImageLayout::General,
-            | ImageLayout::ColorAttachmentOptimal                   => vk::ImageLayout::ColorAttachmentOptimal,
-            | ImageLayout::DepthStencilAttachmentOptimal            => vk::ImageLayout::DepthStencilAttachmentOptimal,
-            | ImageLayout::DepthStencilReadOnlyOptimal              => vk::ImageLayout::DepthStencilReadOnlyOptimal,
-            | ImageLayout::ShaderReadOnlyOptimal                    => vk::ImageLayout::ShaderReadOnlyOptimal,
-            | ImageLayout::TransferSrcOptimal                       => vk::ImageLayout::TransferSrcOptimal,
-            | ImageLayout::TransferDstOptimal                       => vk::ImageLayout::TransferDstOptimal,
-            | ImageLayout::Preinitialized                           => vk::ImageLayout::Preinitialized,
-//            | ImageLayout::DepthReadOnlyStencilAttachmentOptimal    => vk::ImageLayout::DepthReadOnlyStencilAttachmentOptimal,
-//            | ImageLayout::DepthAttachmentStencilReadOnlyOptimal    => vk::ImageLayout::DepthAttachmentStencilReadOnlyOptimal,
-            | ImageLayout::PresentSrcKHR                            => vk::ImageLayout::PresentSrcKhr,
-//            | ImageLayout::ShaderPresentKHR                         => vk::ImageLayout::ShaderPresentKHR,
-//            | ImageLayout::DepthReadOnlyStencilAttachmentOptimalKHR => vk::ImageLayout::DepthReadOnlyStencilAttachmentOptimalKHR,
-//            | ImageLayout::DepthAttachmentStencilReadOnlyOptimalKHR => vk::ImageLayout::DepthAttachmentStencilReadOnlyOptimalKHR,
+    flags     : vk::ImageCreateFlags,
+    /// tiling specifies the tiling arrangement of the data elements in memory.
+    tiling    : vk::ImageTiling,
+    /// usage describes the intended usage of the image.
+    usage     : vk::ImageUsageFlags,
+    /// sample_count is the number of sub-data element samples in the image used in multisampling.
+    sample_count: vk::SampleCountFlags,
+    /// image_type specifies the basic dimensionality of the image.
+    ///
+    /// Layers in array textures do not count as a dimension for the purposes of the image type.
+    image_type: vk::ImageType,
+    /// mip_levels describes the number of levels of detail available for minified sampling of the image.
+    mip_levels: uint32_t,
+    /// array_layers is the number of layers in the image.
+    array_layers: uint32_t,
+    /// initial_layout specifies the initial vk::ImageLayout of all image subresources of the image.
+    initial_layout: vk::ImageLayout,
+
+    /// sharing specifies the sharing mode of the image when it will be accessed by multiple queue families.
+    sharing   : vk::SharingMode,
+    /// queue_family_indices is a list of queue families that will access this image.
+    ///
+    /// ignored if sharingMode is not vk::SharingMode::Concurrent.
+    queue_family_indices: Vec<uint32_t>,
+}
+
+impl ImageDescInfo {
+
+    pub fn init(img_type: super::ImageType, tiling: super::ImageTiling, usages: &[ImageUsageFlag], initial_layout: super::ImageLayout) -> ImageDescInfo {
+        ImageDescInfo {
+            tiling: tiling.value(), usage: usages.flags(), image_type: img_type.value(), initial_layout: initial_layout.value(),
+            ..Default::default()
+        }
+    }
+
+    pub fn set_flags(&mut self, flags: &[ImageCreateFlag]) {
+        self.flags = flags.flags();
+    }
+    pub fn set_samples(&mut self, count: SampleCountType, mip_levels: uint32_t, array_layers: uint32_t) {
+        self.sample_count = count.value();
+        self.mip_levels   = mip_levels;
+        self.array_layers = array_layers;
+    }
+    pub fn set_share_queues(&mut self, queue_family_indices: Vec<uint32_t>) {
+        self.sharing = vk::SharingMode::Concurrent;
+        self.queue_family_indices = queue_family_indices;
+    }
+}
+
+impl Default for ImageDescInfo {
+
+    fn default() -> ImageDescInfo {
+        ImageDescInfo {
+            flags: vk::ImageCreateFlags::empty(),
+            tiling: vk::ImageTiling::Optimal,
+            usage : vk::IMAGE_USAGE_COLOR_ATTACHMENT_BIT,
+            sample_count: vk::SAMPLE_COUNT_1_BIT,
+            image_type  : vk::ImageType::Type2d,
+            mip_levels  : 1,
+            array_layers: 1,
+            initial_layout: vk::ImageLayout::Undefined,
+
+            sharing: vk::SharingMode::Exclusive,
+            queue_family_indices: vec![],
         }
     }
 }

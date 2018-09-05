@@ -32,7 +32,7 @@ impl PipelineLayoutBuilder {
         vk::PipelineLayoutCreateInfo {
             s_type : vk::StructureType::PipelineLayoutCreateInfo,
             p_next : ptr::null(),
-            // flags is reserved for future use in API version 1.0.82.
+            // flags is reserved for future use in API version 1.1.82.
             flags  : vk::PipelineLayoutCreateFlags::empty(),
             set_layout_count : self.descriptor_layouts.len() as uint32_t,
             p_set_layouts    : self.descriptor_layouts.as_ptr(),

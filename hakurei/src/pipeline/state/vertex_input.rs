@@ -24,7 +24,7 @@ impl HaVertexInput {
         vk::PipelineVertexInputStateCreateInfo {
             s_type : vk::StructureType::PipelineVertexInputStateCreateInfo,
             p_next : ptr::null(),
-            // flags is reserved for future use in API version 1.0.82.
+            // flags is reserved for future use in API version 1.1.82.
             flags  : vk::PipelineVertexInputStateCreateFlags::empty(),
             vertex_binding_description_count   : self.bindings.len() as uint32_t,
             p_vertex_binding_descriptions      : self.bindings.as_ptr(),

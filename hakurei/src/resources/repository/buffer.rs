@@ -9,6 +9,8 @@ use resources::memory::device::HaDeviceMemory;
 use resources::memory::traits::HaMemoryAbstract;
 use resources::error::AllocatorError;
 
+use utility::memory::spaces_to_offsets;
+
 pub struct HaBufferRepository {
 
     buffers: Vec<HaBuffer>,
@@ -43,19 +45,9 @@ impl HaBufferRepository {
 
     pub(crate) fn store(buffers: Vec<HaBuffer>, memory: HaDeviceMemory, spaces: Vec<vk::DeviceSize>) -> HaBufferRepository {
 
-        let mut current: vk::DeviceSize = 0;
-        let mut offsets = vec![];
-        for space in spaces.iter() {
-            offsets.push(current);
-            current += space;
-        }
+        let offsets = spaces_to_offsets(&spaces);
 
-        HaBufferRepository {
-            buffers,
-            memory: Some(memory),
-
-            offsets,
-        }
+        HaBufferRepository { buffers, memory: Some(memory), offsets, }
     }
 
     pub fn tranfer_data<D: Copy>(&self, device: &HaLogicalDevice, data: &Vec<D>, item: &BufferItem) -> Result<(), AllocatorError> {
@@ -77,24 +69,25 @@ impl HaBufferRepository {
         Ok(())
     }
 
-    pub fn copy_data(&self, device: &HaLogicalDevice, from_repository: &HaBufferRepository, from_item: &BufferItem, to_item: &BufferItem) -> Result<(), AllocatorError> {
+    pub fn copy_buffer_to_buffer(&self, device: &HaLogicalDevice, from_item: &BufferItem, to_item: &BufferItem) -> Result<(), AllocatorError> {
 
         let mut command_buffers = device.transfer_command_pool.allocate (device, CommandBufferUsage::UnitaryCommand, 1)?;
         let command_buffer = command_buffers.pop().unwrap();
 
+        // TODO: Only support one region.
         let copy_regions = [
             vk::BufferCopy {
-                src_offset : from_repository.offsets[from_item.buffer_index] + from_item.offset,
-                dst_offset : self.offsets[to_item.buffer_index] + to_item.offset,
-                size       : to_item.size,
+                src_offset: from_item.offset,
+                dst_offset: to_item.offset,
+                size      : to_item.size,
             },
         ];
 
         let recorder = command_buffer.setup_record(device);
         recorder.begin_record(&[CommandBufferUsageFlag::OneTimeSubmitBit])?
             .copy_buffer(
-                from_repository.buffer_at(from_item.buffer_index),
-                self.buffer_at(to_item.buffer_index),
+                from_item.handle,
+                to_item.handle,
                 &copy_regions)
             .finish()?;
 
@@ -114,10 +107,6 @@ impl HaBufferRepository {
         device.transfer_command_pool.free(device, &[&command_buffer]);
 
         Ok(())
-    }
-
-    pub(crate) fn buffer_at(&self, index: usize) -> &HaBuffer {
-        &self.buffers[index]
     }
 
     pub fn vertex_binding_infos(&self, items: &[&BufferItem]) -> CmdVertexBindingInfos {
@@ -142,13 +131,17 @@ impl HaBufferRepository {
         }
     }
 
-    pub fn cleanup(&self, device: &HaLogicalDevice) {
+    pub fn cleanup(&mut self, device: &HaLogicalDevice) {
         for buffer in self.buffers.iter() {
             buffer.cleanup(device);
         }
+        self.buffers.clear();
 
         if let Some(ref memory) = self.memory {
             memory.cleanup(device);
         }
+        self.memory = None;
+
+        self.offsets.clear();
     }
 }

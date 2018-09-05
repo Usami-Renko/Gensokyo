@@ -94,18 +94,17 @@ impl ProgramProc for StagingBufferProcedure {
         );
         let _ = vertex_buffer_config.add_item(data_size!(self.vertex_data, Vertex));
 
-        let mut staging_allocator = generator.buffer_allocator();
+        let mut staging_allocator = generator.buffer();
         let stage_buffer_item = staging_allocator.attach_buffer(staging_buffer_config)?.pop().unwrap();
 
-        let staging_repository = staging_allocator.allocate()?;
+        let mut staging_repository = staging_allocator.allocate()?;
         staging_repository.tranfer_data(device, &self.vertex_data, &stage_buffer_item)?;
 
-        let mut vertex_allocator = generator.buffer_allocator();
+        let mut vertex_allocator = generator.buffer();
         self.vertex_item = vertex_allocator.attach_buffer(vertex_buffer_config)?.pop().unwrap();
         self.vertex_buffer = vertex_allocator.allocate()?;
-        self.vertex_buffer.copy_data(
+        self.vertex_buffer.copy_buffer_to_buffer(
             device,
-            &staging_repository,
             &stage_buffer_item,
             &self.vertex_item)?;
         staging_repository.cleanup(device);
@@ -224,7 +223,7 @@ impl ProgramProc for StagingBufferProcedure {
         Ok(())
     }
 
-    fn cleanup(&self, device: &HaLogicalDevice) {
+    fn cleanup(&mut self, device: &HaLogicalDevice) {
 
         for semaphore in self.present_availables.iter() {
             semaphore.cleanup(device);

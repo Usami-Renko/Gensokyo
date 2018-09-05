@@ -27,7 +27,7 @@ impl HaSemaphore {
         let create_info = vk::SemaphoreCreateInfo {
             s_type: vk::StructureType::SemaphoreCreateInfo,
             p_next: ptr::null(),
-            // flags is reserved for future use in API version 1.0.82.
+            // flags is reserved for future use in API version 1.1.82.
             flags: vk::SemaphoreCreateFlags::empty(),
         };
 

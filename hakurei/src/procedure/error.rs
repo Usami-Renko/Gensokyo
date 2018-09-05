@@ -78,18 +78,18 @@ impl Error for ProcedureError {
     }
 }
 
-impl_from_err!(RuntimeError, Procedure, ProcedureError);
-impl_from_err!(ProcedureError, Instance, InstanceError);
-impl_from_err!(ProcedureError, Validation, ValidationError);
-impl_from_err!(ProcedureError, Surface, SurfaceError);
-impl_from_err!(ProcedureError, PhysicalDevice, PhysicalDeviceError);
-impl_from_err!(ProcedureError, LogicalDevice, LogicalDeviceError);
-impl_from_err!(ProcedureError, Swapchain, SwapchainError);
-impl_from_err!(ProcedureError, Pipeline, PipelineError);
-impl_from_err!(ProcedureError, Command, CommandError);
-impl_from_err!(ProcedureError, Sync, SyncError);
-impl_from_err!(ProcedureError, Descriptor, DescriptorError);
-impl_from_err!(ProcedureError, Allocator, AllocatorError);
+impl_from_err!(Procedure(ProcedureError)           -> RuntimeError);
+impl_from_err!(Instance(InstanceError)             -> ProcedureError);
+impl_from_err!(Validation(ValidationError)         -> ProcedureError);
+impl_from_err!(Surface(SurfaceError)               -> ProcedureError);
+impl_from_err!(PhysicalDevice(PhysicalDeviceError) -> ProcedureError);
+impl_from_err!(LogicalDevice(LogicalDeviceError)   -> ProcedureError);
+impl_from_err!(Swapchain(SwapchainError)           -> ProcedureError);
+impl_from_err!(Pipeline(PipelineError)             -> ProcedureError);
+impl_from_err!(Command(CommandError)               -> ProcedureError);
+impl_from_err!(Sync(SyncError)                     -> ProcedureError);
+impl_from_err!(Descriptor(DescriptorError)         -> ProcedureError);
+impl_from_err!(Allocator(AllocatorError)           -> ProcedureError);
 
 impl fmt::Display for ProcedureError {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {

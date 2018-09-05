@@ -106,7 +106,7 @@ impl HaDescriptorPool {
         Ok(sets)
     }
 
-    pub fn clean(&self, device: &HaLogicalDevice) {
+    pub fn cleanup(&self, device: &HaLogicalDevice) {
         unsafe {
             device.handle.destroy_descriptor_pool(self.handle, None);
         }

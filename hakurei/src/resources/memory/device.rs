@@ -6,6 +6,8 @@ use ash::version::DeviceV1_0;
 use core::device::HaLogicalDevice;
 use core::physical::HaPhysicalDevice;
 
+use resources::buffer::HaBuffer;
+use resources::image::HaImage;
 use resources::memory::traits::HaMemoryAbstract;
 use resources::error::MemoryError;
 
@@ -48,10 +50,21 @@ impl HaMemoryAbstract for HaDeviceMemory {
         Ok(memory)
     }
 
-    fn bind(&self, device: &HaLogicalDevice, buffer_handle: vk::Buffer, memory_offset: vk::DeviceSize) -> Result<(), MemoryError> {
+    fn bind_to_buffer(&self, device: &HaLogicalDevice, buffer: &HaBuffer, memory_offset: vk::DeviceSize)
+        -> Result<(), MemoryError> {
 
         unsafe {
-            device.handle.bind_buffer_memory(buffer_handle, self.handle, memory_offset)
+            device.handle.bind_buffer_memory(buffer.handle, self.handle, memory_offset)
+                .or(Err(MemoryError::BindMemoryError))?;
+        }
+
+        Ok(())
+    }
+    fn bind_to_image(&self, device: &HaLogicalDevice, image: &HaImage, memory_offset: vk::DeviceSize)
+        -> Result<(), MemoryError> {
+
+        unsafe {
+            device.handle.bind_image_memory(image.handle, self.handle, memory_offset)
                 .or(Err(MemoryError::BindMemoryError))?;
         }
 
@@ -67,7 +80,7 @@ impl HaMemoryAbstract for HaDeviceMemory {
                 offset,
                 // the size of the memory range to map, or VK_WHOLE_SIZE to map from offset to the end of the allocation.
                 size,
-                // flags is reserved for future use in API version 1.0.82.
+                // flags is reserved for future use in API version 1.1.82.
                 vk::MemoryMapFlags::empty(),
             ).or(Err(MemoryError::MapMemoryError))?
         };

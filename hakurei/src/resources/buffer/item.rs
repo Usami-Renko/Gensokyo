@@ -43,8 +43,13 @@ impl BufferConfig {
 
 #[derive(Debug, Clone)]
 pub struct BufferItem {
+    /// the handle of the vk::Buffer object.
+    pub(crate) handle: vk::Buffer,
+    /// the index of buffer in HaBufferRepository/
     pub(crate) buffer_index: usize,
+    /// the data offset in the buffer.
     pub(crate) offset: vk::DeviceSize,
+    /// the size of this BufferItem represent.
     pub(crate) size  : vk::DeviceSize,
 }
 
@@ -52,6 +57,7 @@ impl BufferItem {
 
     pub fn unset() -> BufferItem {
         BufferItem {
+            handle      : vk::Buffer::null(),
             buffer_index: 0,
             offset      : 0,
             size        : 0,

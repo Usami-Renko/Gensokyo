@@ -30,7 +30,7 @@ pub trait ProgramProc {
     fn commands(&mut self, device: &HaLogicalDevice) -> Result<(), ProcedureError>;
     fn draw(&mut self, device: &HaLogicalDevice, device_available: &HaFence, image_available: &HaSemaphore, image_index: usize) -> Result<&HaSemaphore, ProcedureError>;
     fn clean_resources(&mut self, device: &HaLogicalDevice) -> Result<(), ProcedureError>;
-    fn cleanup(&self, device: &HaLogicalDevice);
+    fn cleanup(&mut self, device: &HaLogicalDevice);
 }
 
 pub struct CoreInfrastructure<'win> {
