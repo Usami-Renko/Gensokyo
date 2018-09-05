@@ -25,6 +25,7 @@ use self::extension::PhysicalExtension;
 pub use ash::vk::PhysicalDeviceType as PhysicalDeviceType;
 pub use self::requirement::PhysicalRequirement;
 pub use self::extension::DeviceExtensionType;
+pub use self::memory::MemorySelector;
 
 pub struct HaPhysicalDevice {
 

@@ -60,7 +60,7 @@ impl HaBlend {
         vk::PipelineColorBlendStateCreateInfo {
             s_type : vk::StructureType::PipelineColorBlendStateCreateInfo,
             p_next : ptr::null(),
-            // flags is reserved for future use in API version 1.0.82.
+            // flags is reserved for future use in API version 1.1.82.
             flags  : vk::PipelineColorBlendStateCreateFlags::empty(),
             logic_op_enable  : self.logic_op.enable,
             logic_op         : self.logic_op.op,

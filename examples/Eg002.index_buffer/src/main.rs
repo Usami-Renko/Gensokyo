@@ -104,16 +104,16 @@ impl ProgramProc for DrawIndexProcedure {
         );
         let _ = vertex_buffer_config.add_item(data_size!(self.vertex_data, Vertex));
 
-        let mut staging_allocator = generator.buffer_allocator();
+        let mut staging_allocator = generator.buffer();
         let staging_buffer_item = staging_allocator.attach_buffer(staging_buffer_config)?.pop().unwrap();
 
-        let staging_repository = staging_allocator.allocate()?;
+        let mut staging_repository = staging_allocator.allocate()?;
         staging_repository.tranfer_data(device, &self.vertex_data, &staging_buffer_item)?;
 
-        let mut vertex_allocator = generator.buffer_allocator();
+        let mut vertex_allocator = generator.buffer();
         self.vertex_item = vertex_allocator.attach_buffer(vertex_buffer_config)?.pop().unwrap();
         self.vertex_buffer = vertex_allocator.allocate()?;
-        self.vertex_buffer.copy_data(device, &staging_repository, &staging_buffer_item, &self.vertex_item)?;
+        self.vertex_buffer.copy_buffer_to_buffer(device, &staging_buffer_item, &self.vertex_item)?;
         staging_repository.cleanup(device);
 
         // index buffer
@@ -140,13 +140,13 @@ impl ProgramProc for DrawIndexProcedure {
         staging_allocator.reset();
         let staging_buffer_item = staging_allocator.attach_buffer(staging_buffer_config)?.pop().unwrap();
 
-        let staging_repository = staging_allocator.allocate()?;
+        let mut staging_repository = staging_allocator.allocate()?;
         staging_repository.tranfer_data(device, &self.index_data, &staging_buffer_item)?;
 
-        let mut index_allocator = generator.buffer_allocator();
+        let mut index_allocator = generator.buffer();
         self.index_item = index_allocator.attach_buffer(index_buffer_config)?.pop().unwrap();
         self.index_buffer = index_allocator.allocate()?;
-        self.index_buffer.copy_data(device, &staging_repository, &staging_buffer_item, &self.index_item)?;
+        self.index_buffer.copy_buffer_to_buffer(device, &staging_buffer_item, &self.index_item)?;
         staging_repository.cleanup(device);
 
         Ok(())
@@ -266,7 +266,7 @@ impl ProgramProc for DrawIndexProcedure {
         Ok(())
     }
 
-    fn cleanup(&self, device: &HaLogicalDevice) {
+    fn cleanup(&mut self, device: &HaLogicalDevice) {
 
         for semaphore in self.present_availables.iter() {
             semaphore.cleanup(device);

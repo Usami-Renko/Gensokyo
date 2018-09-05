@@ -1,0 +1,9 @@
+[package]
+name = "texture_mapping"
+version = "0.1.0"
+authors = ["usami-renko <usami-ssc@protonmail.com>"]
+description = "Use texture mapping in rendering."
+
+[dependencies]
+hakurei = { path = "../../hakurei" }
+hakurei-macros = { path = "../../hakurei-macros" }

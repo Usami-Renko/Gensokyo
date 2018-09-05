@@ -56,7 +56,7 @@ impl HaInstance {
         let instance_create_info = vk::InstanceCreateInfo {
             s_type                     : vk::StructureType::InstanceCreateInfo,
             p_next                     : ptr::null(),
-            // flags is reserved for future use in API version 1.0.82.
+            // flags is reserved for future use in API version 1.1.82.
             flags                      : vk::InstanceCreateFlags::empty(),
             p_application_info         : &app_info,
             enabled_layer_count        : enable_layer_names_ptr.len() as u32,

@@ -113,7 +113,7 @@ impl ProgramProc for UniformBufferProcedure {
         );
         let _ = uniform_buffer_config.add_item(data_size!(self.ubo_data, UboObject));
 
-        let mut vertex_allocator = generator.buffer_allocator();
+        let mut vertex_allocator = generator.buffer();
         self.vertex_item = vertex_allocator.attach_buffer(vertex_buffer_config)?.pop().unwrap();
         let ubo_buffer_item = vertex_allocator.attach_buffer(uniform_buffer_config)?.pop().unwrap();
 
@@ -122,7 +122,7 @@ impl ProgramProc for UniformBufferProcedure {
         self.vertex_storage.tranfer_data(device, &self.ubo_data, &ubo_buffer_item)?;
 
         // descriptor
-        let ubo_info = DescriptorBindingInfo {
+        let ubo_info = DescriptorBufferBindingInfo {
             binding: 0,
             type_: DescriptorType::UniformBuffer,
             count: 1,
@@ -130,16 +130,16 @@ impl ProgramProc for UniformBufferProcedure {
             buffer: ubo_buffer_item.clone(),
         };
         let mut descriptor_set_config = DescriptorSetConfig::init(&[]);
-        let ubo_binding_index = descriptor_set_config.add_binding(ubo_info, &[
+        let ubo_binding_index = descriptor_set_config.add_buffer_binding(ubo_info, &[
             ShaderStageFlag::VertexStage,
         ]);
 
-        let mut descriptor_allocator = generator.descriptor_allocator(&[]);
+        let mut descriptor_allocator = generator.descriptor(&[]);
         let (descriptor_set_item, descriptor_binding_items) = descriptor_allocator.attach_descriptor_set(descriptor_set_config);
         let ubo_descriptor_item = descriptor_binding_items[ubo_binding_index].clone();
 
         self.ubo_storage = descriptor_allocator.allocate()?;
-        self.ubo_storage.update_descriptors(device, &self.vertex_storage, &[ubo_descriptor_item]);
+        self.ubo_storage.update_descriptors(device, &[ubo_descriptor_item]);
         self.ubo_set = descriptor_set_item;
 
         Ok(())
@@ -260,7 +260,7 @@ impl ProgramProc for UniformBufferProcedure {
         Ok(())
     }
 
-    fn cleanup(&self, device: &HaLogicalDevice) {
+    fn cleanup(&mut self, device: &HaLogicalDevice) {
 
         for semaphore in self.present_availables.iter() {
             semaphore.cleanup(device);
@@ -268,7 +268,7 @@ impl ProgramProc for UniformBufferProcedure {
 
         self.graphics_pipeline.cleanup(device);
         self.command_pool.cleanup(device);
-        self.ubo_storage.clean(device);
+        self.ubo_storage.cleanup(device);
         self.vertex_storage.cleanup(device);
     }
 }

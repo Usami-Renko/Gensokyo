@@ -6,7 +6,8 @@ use ash::version::DeviceV1_0;
 use core::device::HaLogicalDevice;
 
 use resources::framebuffer::HaFramebuffer;
-use resources::image::HaImageView;
+use resources::image::{ HaImageView, ImageViewItem };
+use resources::repository::HaImageRepository;
 use resources::error::FramebufferError;
 
 use utility::dimension::BufferDimension;
@@ -16,7 +17,7 @@ use std::ptr;
 pub struct FramebufferBuilder<'i> {
 
     attachments: Vec<&'i HaImageView>,
-    dimension: BufferDimension,
+    dimension  : BufferDimension,
 }
 
 impl<'i> FramebufferBuilder<'i> {
@@ -35,7 +36,7 @@ impl<'i> FramebufferBuilder<'i> {
         let info = vk::FramebufferCreateInfo {
             s_type: vk::StructureType::FramebufferCreateInfo,
             p_next: ptr::null(),
-            // flags is reserved for future use in API version 1.0.82
+            // flags is reserved for future use in API version 1.1.82.
             flags: vk::FramebufferCreateFlags::empty(),
             render_pass,
             attachment_count: attachments.len() as uint32_t,
@@ -60,10 +61,14 @@ impl<'i> FramebufferBuilder<'i> {
         self.dimension = dimension;
         self
     }
-    pub fn add_attachment(&mut self, attachment: &'i HaImageView) -> &mut FramebufferBuilder<'i> {
+    pub(crate) fn add_attachment_inner(&mut self, attachment: &'i HaImageView) -> &mut FramebufferBuilder<'i> {
         self.attachments.push(attachment);
         self
     }
+    pub fn add_attachment(&mut self, repository: &'i HaImageRepository, item: &ImageViewItem) -> &mut FramebufferBuilder<'i> {
+        let view = repository.view_at(item);
+        self.attachments.push(view);
+        self
+    }
 }
-
 

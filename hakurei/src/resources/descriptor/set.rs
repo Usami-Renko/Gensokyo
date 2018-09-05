@@ -17,4 +17,3 @@ impl HaDescriptorSet {
         self.layout.cleanup(device);
     }
 }
-

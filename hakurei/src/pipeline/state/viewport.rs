@@ -46,7 +46,7 @@ impl HaViewport {
         vk::PipelineViewportStateCreateInfo {
             s_type : vk::StructureType::PipelineViewportStateCreateInfo,
             p_next : ptr::null(),
-            // flags is reserved for future use in API version 1.0.82.
+            // flags is reserved for future use in API version 1.1.82.
             flags  : vk::PipelineViewportStateCreateFlags::empty(),
             viewport_count : self.handles.len()  as uint32_t,
             p_viewports    : self.handles.as_ptr(),

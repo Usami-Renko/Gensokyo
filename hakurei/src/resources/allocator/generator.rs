@@ -4,6 +4,7 @@ use core::device::HaLogicalDevice;
 
 use resources::allocator::buffer::HaBufferAllocator;
 use resources::allocator::descriptor::HaDescriptorAllocator;
+use resources::allocator::image::HaImageAllocator;
 use resources::descriptor::DescriptorPoolFlag;
 
 pub struct ResourceGenerator<'re> {
@@ -21,11 +22,15 @@ impl<'re> ResourceGenerator<'re> {
         }
     }
 
-    pub fn buffer_allocator(&self) -> HaBufferAllocator {
+    pub fn buffer(&self) -> HaBufferAllocator {
         HaBufferAllocator::new(self.physical, self.device)
     }
 
-    pub fn descriptor_allocator(&self, flags: &[DescriptorPoolFlag]) -> HaDescriptorAllocator {
+    pub fn descriptor(&self, flags: &[DescriptorPoolFlag]) -> HaDescriptorAllocator {
         HaDescriptorAllocator::new(self.device, flags)
+    }
+
+    pub fn image(&self) -> HaImageAllocator {
+        HaImageAllocator::new(self.physical, self.device)
     }
 }

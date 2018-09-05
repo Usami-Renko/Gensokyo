@@ -67,7 +67,7 @@ impl HaDepthStencil {
         vk::PipelineDepthStencilStateCreateInfo {
             s_type : vk::StructureType::PipelineDepthStencilStateCreateInfo,
             p_next : ptr::null(),
-            // flags is reserved for future use in API version 1.0.82.
+            // flags is reserved for future use in API version 1.1.82.
             flags  : vk::PipelineDepthStencilStateCreateFlags::empty(),
             depth_test_enable  : self.depth.test_enable,
             depth_write_enable : self.depth.write_enable,

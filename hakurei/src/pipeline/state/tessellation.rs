@@ -24,7 +24,7 @@ impl HaTessellation {
         vk::PipelineTessellationStateCreateInfo {
             s_type : vk::StructureType::PipelineTessellationStateCreateInfo,
             p_next : ptr::null(),
-            // flags is reserved for future use in API version 1.0.82.
+            // flags is reserved for future use in API version 1.1.82.
             flags  : vk::PipelineTessellationStateCreateFlags::empty(),
             patch_control_points: self.points_count,
         }

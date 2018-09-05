@@ -60,7 +60,7 @@ impl HaRasterizer {
         vk::PipelineRasterizationStateCreateInfo {
             s_type: vk::StructureType::PipelineRasterizationStateCreateInfo,
             p_next: ptr::null(),
-            // flags is reserved for future use in API version 1.0.82.
+            // flags is reserved for future use in API version 1.1.82.
             flags: vk::PipelineRasterizationStateCreateFlags::empty(),
 
             polygon_mode : self.polygon_mode,

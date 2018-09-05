@@ -59,7 +59,7 @@ impl HaShaderInfo {
         let module_create_info = vk::ShaderModuleCreateInfo {
             s_type    : vk::StructureType::ShaderModuleCreateInfo,
             p_next    : ptr::null(),
-            // flags is reserved for future use in API version 1.0.82.
+            // flags is reserved for future use in API version 1.1.82.
             flags     : vk::ShaderModuleCreateFlags::empty(),
             code_size : codes.len(),
             p_code    : codes.as_ptr() as *const u32,
@@ -144,7 +144,7 @@ impl HaShaderModule {
         vk::PipelineShaderStageCreateInfo {
             s_type : vk::StructureType::PipelineShaderStageCreateInfo,
             p_next : ptr::null(),
-            // flags is reserved for future use in API version 1.0.82.
+            // flags is reserved for future use in API version 1.1.82.
             flags  : vk::PipelineShaderStageCreateFlags::empty(),
             stage  : self.stage.value(),
             module : self.handle,

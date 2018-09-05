@@ -2,7 +2,7 @@
 pub(crate) mod render;
 mod attachment;
 mod subpass;
-mod dependency;
+pub(crate) mod dependency;
 mod builder;
 
 pub mod prelude;

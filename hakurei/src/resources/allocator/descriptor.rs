@@ -88,10 +88,11 @@ impl<'re> HaDescriptorAllocator<'re> {
         for config in self.set_configs.iter() {
             for info in config.bindings.iter() {
 
-                let count = map.entry(info.type_).or_insert(0 as uint32_t);
+                let count = map.entry(info.descriptor_type()).or_insert(0 as uint32_t);
                 *count += 1;
             }
         }
+
 
         let result = map.drain().collect();
         result

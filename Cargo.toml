@@ -8,4 +8,5 @@ members = [
     "examples/Eg002.index_buffer",
     "examples/Eg003.staging_buffer",
     "examples/Eg004.uniform_buffer",
+    "examples/Eg005.texture_mapping",
 ]

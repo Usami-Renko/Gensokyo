@@ -24,7 +24,7 @@ impl HaDynamicState {
         vk::PipelineDynamicStateCreateInfo {
             s_type : vk::StructureType::PipelineDynamicStateCreateInfo,
             p_next : ptr::null(),
-            // flags is reserved for future use in API version 1.0.82.
+            // flags is reserved for future use in API version 1.1.82.
             flags  : vk::PipelineDynamicStateCreateFlags::empty(),
 
             dynamic_state_count : self.states.len() as uint32_t,

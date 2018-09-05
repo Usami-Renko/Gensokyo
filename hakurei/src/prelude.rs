@@ -9,3 +9,5 @@ pub use core::device::DeviceQueueIdentifier;
 pub use procedure::window::{ ProgramEnv, ProgramBuilder };
 pub use procedure::workflow::ProgramProc;
 pub use procedure::error::ProcedureError;
+
+pub use utility::dimension::*;

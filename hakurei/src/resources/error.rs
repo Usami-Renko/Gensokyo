@@ -56,6 +56,7 @@ impl fmt::Display for CommandError {
 pub enum BufferError {
 
     BufferCreationError,
+    NoBufferAttachError,
 }
 
 impl Error for BufferError {}
@@ -64,8 +65,8 @@ impl fmt::Display for BufferError {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
 
         let description = match self {
-            | BufferError::BufferCreationError       => "Failed to create Buffer object",
-
+            | BufferError::BufferCreationError => "Failed to create Buffer object",
+            | BufferError::NoBufferAttachError => "There must be buffer attached to allocator before allocate memory.",
         };
         write!(f, "{}", description)
     }
@@ -106,11 +107,14 @@ pub enum AllocatorError {
     Buffer(BufferError),
     Memory(MemoryError),
     Command(CommandError),
-    NoAvailableBufferAttach,
+    Image(ImageError),
     MemoryNotYetAllocated,
 }
 
-impl_from_err!(AllocatorError, Command, CommandError);
+impl_from_err!(Buffer(BufferError)   -> AllocatorError);
+impl_from_err!(Memory(MemoryError)   -> AllocatorError);
+impl_from_err!(Command(CommandError) -> AllocatorError);
+impl_from_err!(Image(ImageError)     -> AllocatorError);
 
 impl Error for AllocatorError {}
 impl fmt::Display for AllocatorError {
@@ -121,9 +125,7 @@ impl fmt::Display for AllocatorError {
             | AllocatorError::Buffer(ref e)  => e.to_string(),
             | AllocatorError::Memory(ref e)  => e.to_string(),
             | AllocatorError::Command(ref e) => e.to_string(),
-            | AllocatorError::NoAvailableBufferAttach => {
-                String::from("There must be buffer attached to allocator before allocate memory.")
-            },
+            | AllocatorError::Image(ref e)   => e.to_string(),
             | AllocatorError::MemoryNotYetAllocated   => {
                 String::from("The memory is not allocated yet. Memory must be allocated first before using it.")
             },
@@ -133,7 +135,7 @@ impl fmt::Display for AllocatorError {
 }
 
 
-#[derive(Debug, Clone, Eq, PartialEq)]
+#[derive(Debug, Clone, Copy, Eq, PartialEq)]
 pub enum DescriptorError {
 
     PoolCreationError,
@@ -154,3 +156,33 @@ impl fmt::Display for DescriptorError {
         write!(f, "{}", description)
     }
 }
+
+
+#[derive(Debug, Clone, Eq, PartialEq)]
+pub enum ImageError {
+    SourceLoadError,
+    ImageCreationError,
+    ViewCreationError,
+    Memory(MemoryError),
+    NoImageAttachError,
+    SamplerCreationError,
+}
+
+impl_from_err!(Memory(MemoryError) -> ImageError);
+
+impl Error for ImageError {}
+impl fmt::Display for ImageError {
+
+    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+
+        match self {
+            | ImageError::SourceLoadError      => write!(f, "Failed to load image from source."),
+            | ImageError::ImageCreationError   => write!(f, "Failed to create Image Object."),
+            | ImageError::ViewCreationError    => write!(f, "Failed to create ImageView Object."),
+            | ImageError::Memory(ref e)        => write!(f, "{}", e.to_string()),
+            | ImageError::NoImageAttachError   => write!(f, "There must be images attached to allocator before allocate memory."),
+            | ImageError::SamplerCreationError => write!(f, "Failed to create Sampler Object."),
+        }
+    }
+}
+

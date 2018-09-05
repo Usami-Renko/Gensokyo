@@ -91,7 +91,7 @@ impl RenderPassBuilder {
         let create_info = vk::RenderPassCreateInfo {
             s_type: vk::StructureType::RenderPassCreateInfo,
             p_next: ptr::null(),
-            // flags is reserved for future use in API version 1.0.82.
+            // flags is reserved for future use in API version 1.1.82.
             flags: vk::RenderPassCreateFlags::empty(),
             attachment_count: attachments.len() as uint32_t,
             p_attachments   : attachments.as_ptr(),
@@ -123,12 +123,12 @@ impl RenderPassBuilder {
 fn generate_framebuffers(device: &HaLogicalDevice, swapchain: &HaSwapchain, render_pass: vk::RenderPass)
     -> Result<Vec<HaFramebuffer>, RenderPassError> {
 
-    let dimension = BufferDimension::init(swapchain.extent, FRAMEBUFFER_LAYERS);
+    let dimension = BufferDimension::new(swapchain.extent, FRAMEBUFFER_LAYERS);
 
     let mut framebuffers = vec![];
     for view in swapchain.views.iter() {
         let mut builder = FramebufferBuilder::init(&dimension);
-        builder.add_attachment(view);
+        builder.add_attachment_inner(view);
         let framebuffer = builder.build(device, render_pass)
             .map_err(|e| RenderPassError::Framebuffer(e))?;
         framebuffers.push(framebuffer);

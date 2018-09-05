@@ -47,7 +47,7 @@ impl HaMultisample {
         vk::PipelineMultisampleStateCreateInfo {
             s_type : vk::StructureType::PipelineMultisampleStateCreateInfo,
             p_next : ptr::null(),
-            // flags is reserved for future use in API version 1.0.82.
+            // flags is reserved for future use in API version 1.1.82.
             flags  : vk::PipelineMultisampleStateCreateFlags::empty(),
 
             rasterization_samples : self.sample_count.value(),

@@ -13,35 +13,38 @@ use hakurei::resources::allocator::*;
 use hakurei::resources::buffer::*;
 use hakurei::resources::memory::*;
 use hakurei::resources::repository::*;
+use hakurei::resources::descriptor::*;
+use hakurei::resources::image::*;
 use hakurei::sync::prelude::*;
 
 use std::path::Path;
 
-const WINDOW_TITLE: &'static str = "Staging Buffer Example";
+const WINDOW_TITLE: &'static str = "Texture Mapping Example";
 const WINDOW_WIDTH:  u32 = 800;
-const WINDOW_HEIGHT: u32 = 600;
+const WINDOW_HEIGHT: u32 = 800;
+const VERTEX_SHADER_PATH  : &'static str = "shaders/texture.vert.spv";
+const FRAGMENT_SHADER_PATH: &'static str = "shaders/texture.frag.spv";
+const TEXTURE_PATH: &'static str = "texture/texture.jpg";
 
 define_input! {
     #[binding = 0, rate = vertex]
     struct Vertex {
         #[location = 0, format = vec2]
-        pos:   [f32; 2],
-        #[location = 1, format = vec4]
-        color: [f32; 4],
+        pos: [f32; 2],
+        #[location = 1, format = vec2]
+        tex_coord: [f32; 2],
     }
 }
 
-const VERTEX_DATA: [Vertex; 3] = [
-    Vertex { pos: [ 0.0, -0.5], color: [1.0, 0.0, 0.0, 1.0], },
-    Vertex { pos: [ 0.5,  0.5], color: [0.0, 1.0, 0.0, 1.0], },
-    Vertex { pos: [-0.5,  0.5], color: [0.0, 0.0, 1.0, 1.0], },
-];
+struct TextureMappingProcedure {
 
-struct StagingBufferProcedure {
+    vertex_data   : Vec<Vertex>,
+    vertex_storage: HaBufferRepository,
+    vertex_item   : BufferItem,
 
-    vertex_data  : Vec<Vertex>,
-    vertex_buffer: HaBufferRepository,
-    vertex_item  : BufferItem,
+    sampler_repository: HaDescriptorRepository,
+    sampler_set       : DescriptorSetItem,
+    image_repository  : HaImageRepository,
 
     graphics_pipeline: HaGraphicsPipeline,
 
@@ -51,13 +54,25 @@ struct StagingBufferProcedure {
     present_availables: Vec<HaSemaphore>,
 }
 
-impl StagingBufferProcedure {
+impl TextureMappingProcedure {
 
-    fn new() -> StagingBufferProcedure {
-        StagingBufferProcedure {
-            vertex_data  : VERTEX_DATA.to_vec(),
-            vertex_buffer: HaBufferRepository::empty(),
-            vertex_item  : BufferItem::unset(),
+    fn new() -> TextureMappingProcedure {
+        TextureMappingProcedure {
+            vertex_data: vec![
+                Vertex { pos: [-0.75, -0.75], tex_coord: [1.0, 0.0], },
+                Vertex { pos: [ 0.75, -0.75], tex_coord: [0.0, 0.0], },
+                Vertex { pos: [ 0.75,  0.75], tex_coord: [0.0, 1.0], },
+                Vertex { pos: [ 0.75,  0.75], tex_coord: [0.0, 1.0], },
+                Vertex { pos: [-0.75,  0.75], tex_coord: [1.0, 1.0], },
+                Vertex { pos: [-0.75, -0.75], tex_coord: [1.0, 0.0], },
+            ],
+            vertex_storage: HaBufferRepository::empty(),
+            vertex_item: BufferItem::unset(),
+
+            sampler_repository: HaDescriptorRepository::empty(),
+            sampler_set       : DescriptorSetItem::unset(),
+            image_repository  : HaImageRepository::empty(),
+
 
             graphics_pipeline: HaGraphicsPipeline::uninitialize(),
 
@@ -69,45 +84,69 @@ impl StagingBufferProcedure {
     }
 }
 
-impl ProgramProc for StagingBufferProcedure {
+impl ProgramProc for TextureMappingProcedure {
 
     fn assets(&mut self, device: &HaLogicalDevice, generator: &ResourceGenerator) -> Result<(), ProcedureError> {
 
-        // vertex buffer
-        let mut staging_buffer_config = BufferConfig::init(
-            &[BufferUsageFlag::TransferSrcBit],
+        // vertex and uniform buffer
+        let mut vertex_buffer_config = BufferConfig::init(
+            &[BufferUsageFlag::VertexBufferBit],
             &[
                 MemoryPropertyFlag::HostVisibleBit,
                 MemoryPropertyFlag::HostCoherentBit,
             ],
             &[]
         );
-        let _ = staging_buffer_config.add_item(data_size!(self.vertex_data, Vertex));
-
-        let mut vertex_buffer_config = BufferConfig::init(
-            &[
-                BufferUsageFlag::TransferDstBit,
-                BufferUsageFlag::VertexBufferBit,
-            ],
-            &[MemoryPropertyFlag::DeviceLocalBit],
-            &[]
-        );
         let _ = vertex_buffer_config.add_item(data_size!(self.vertex_data, Vertex));
-
-        let mut staging_allocator = generator.buffer();
-        let stage_buffer_item = staging_allocator.attach_buffer(staging_buffer_config)?.pop().unwrap();
-
-        let mut staging_repository = staging_allocator.allocate()?;
-        staging_repository.tranfer_data(device, &self.vertex_data, &stage_buffer_item)?;
 
         let mut vertex_allocator = generator.buffer();
         self.vertex_item = vertex_allocator.attach_buffer(vertex_buffer_config)?.pop().unwrap();
-        self.vertex_buffer = vertex_allocator.allocate()?;
-        self.vertex_buffer.copy_buffer_to_buffer(
-            device,
-            &stage_buffer_item,
-            &self.vertex_item)?;
-        staging_repository.cleanup(device);
+
+        self.vertex_storage = vertex_allocator.allocate()?;
+        self.vertex_storage.tranfer_data(device, &self.vertex_data, &self.vertex_item)?;
+
+        // image
+        let image_desc = ImageDescInfo::init(
+            ImageType::Type2d,
+            ImageTiling::Optimal,
+            &[
+                ImageUsageFlag::TransferDstBit,
+                ImageUsageFlag::SampledBit,
+            ],
+            ImageLayout::Undefined
+        );
+        let view_desc = ImageViewDescInfo::init(ImageViewType::Type2d);
+
+        let mut image_allocator = generator.image();
+        let image_view_index = image_allocator.attach_image(Path::new(TEXTURE_PATH), image_desc, view_desc)?;
+        self.image_repository = image_allocator.allocate()?;
+        let image_view_item = self.image_repository.view_item(image_view_index);
+
+        // descriptor
+        let sampler_info = SamplerDescInfo::init();
+        let sampler = HaSampler::init(device, sampler_info).unwrap();
+
+        let sampler_descriptor_info = DescriptorImageBindingInfo {
+            binding: 0,
+            type_  : DescriptorType::CombinedImageSampler,
+            count  : 1,
+            sampler,
+            layout: ImageLayout::ShaderReadOnlyOptimal,
+            view_item: image_view_item,
+        };
+
+        let mut descriptor_set_config = DescriptorSetConfig::init(&[]);
+        let _ = descriptor_set_config.add_image_binding(sampler_descriptor_info, &[
+            ShaderStageFlag::FragmentStage,
+        ]);
+
+        let mut descriptor_allocator = generator.descriptor(&[]);
+        let (set_item, mut descriptor_binding_items) = descriptor_allocator.attach_descriptor_set(descriptor_set_config);
+        let sampler_item = descriptor_binding_items.pop().unwrap();
+
+        self.sampler_repository = descriptor_allocator.allocate()?;
+        self.sampler_repository.update_descriptors(device, &[sampler_item]);
+        self.sampler_set = set_item;
 
         Ok(())
     }
@@ -116,11 +155,11 @@ impl ProgramProc for StagingBufferProcedure {
         // shaders
         let vertex_shader = HaShaderInfo::setup(
             ShaderStageFlag::VertexStage,
-            Path::new("shaders/staging.vert.spv"),
+            Path::new(VERTEX_SHADER_PATH),
             None);
         let fragment_shader = HaShaderInfo::setup(
             ShaderStageFlag::FragmentStage,
-            Path::new("shaders/staging.frag.spv"),
+            Path::new(FRAGMENT_SHADER_PATH),
             None);
         let shader_infos = vec![
             vertex_shader,
@@ -145,8 +184,10 @@ impl ProgramProc for StagingBufferProcedure {
 
         let render_pass = render_pass_builder.build(device, swapchain)?;
         let viewport = HaViewport::setup(swapchain.extent);
+
         let pipeline_config = GraphicsPipelineConfig::init(shader_infos, vertex_input_desc, render_pass)
             .setup_viewport(viewport)
+            .add_descriptor_set(self.sampler_repository.set_layout_at(&self.sampler_set))
             .finish_config();
 
         let mut pipeline_builder = GraphicsPipelineBuilder::init();
@@ -168,6 +209,7 @@ impl ProgramProc for StagingBufferProcedure {
     }
 
     fn commands(&mut self, device: &HaLogicalDevice) -> Result<(), ProcedureError> {
+
         // command buffer
         let command_pool = HaCommandPool::setup(&device, &[])?;
 
@@ -181,7 +223,8 @@ impl ProgramProc for StagingBufferProcedure {
             recorder.begin_record(&[CommandBufferUsageFlag::SimultaneousUseBit])?
                 .begin_render_pass(&self.graphics_pipeline, frame_index)
                 .bind_pipeline(&self.graphics_pipeline)
-                .bind_vertex_buffers(0, &self.vertex_buffer.vertex_binding_infos(&[&self.vertex_item]))
+                .bind_vertex_buffers(0, &self.vertex_storage.vertex_binding_infos(&[&self.vertex_item]))
+                .bind_descriptor_sets(&self.graphics_pipeline, 0, &self.sampler_repository.descriptor_binding_infos(&[&self.sampler_set]))
                 .draw(self.vertex_data.len() as uint32_t, 1, 0, 0)
                 .end_render_pass()
                 .finish()?;
@@ -231,13 +274,16 @@ impl ProgramProc for StagingBufferProcedure {
 
         self.graphics_pipeline.cleanup(device);
         self.command_pool.cleanup(device);
-        self.vertex_buffer.cleanup(device);
+
+        self.sampler_repository.cleanup(device);
+        self.image_repository.cleanup(device);
+        self.vertex_storage.cleanup(device);
     }
 }
 
 fn main() {
 
-    let procecure = StagingBufferProcedure::new();
+    let procecure = TextureMappingProcedure::new();
     let mut program = ProgramBuilder::new(procecure)
         .title(WINDOW_TITLE)
         .size(WINDOW_WIDTH, WINDOW_HEIGHT)
