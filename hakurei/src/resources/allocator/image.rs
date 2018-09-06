@@ -8,7 +8,7 @@ use core::physical::{ HaPhysicalDevice, MemorySelector };
 use resources::repository::HaImageRepository;
 use resources::image::{ ImageViewItem, ImageDescInfo, ImageViewDescInfo };
 use resources::image::{ HaImage, HaImageView };
-use resources::buffer::{ BufferConfig, BufferUsageFlag, BufferItem };
+use resources::buffer::{BufferConfig, BufferUsageFlag, BufferSubItem};
 use resources::memory::MemoryPropertyFlag;
 use resources::image::{ ImageLayout, ImageStorageInfo, load_texture };
 use resources::allocator::buffer::HaBufferAllocator;
@@ -228,7 +228,7 @@ impl<'re> HaImageAllocator<'re> {
         Ok(repository)
     }
 
-    fn copy_buffer_to_image(&self, recorder: &HaCommandRecorder, from_item: &BufferItem, to_item: &ImageViewItem) -> Result<(), AllocatorError> {
+    fn copy_buffer_to_image(&self, recorder: &HaCommandRecorder, from_item: &BufferSubItem, to_item: &ImageViewItem) -> Result<(), AllocatorError> {
 
         let subsource = &self.view_descs[to_item.view_index].subrange;
         let dimension = self.storages[to_item.view_index].dimension;

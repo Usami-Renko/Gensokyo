@@ -44,7 +44,7 @@ struct UniformBufferProcedure {
 
     vertex_data   : Vec<Vertex>,
     vertex_storage: HaBufferRepository,
-    vertex_item   : BufferItem,
+    vertex_item   : BufferSubItem,
 
     ubo_data      : Vec<UboObject>,
     ubo_storage   : HaDescriptorRepository,
@@ -68,7 +68,7 @@ impl UniformBufferProcedure {
                 Vertex { pos: [-0.5,  0.5], color: [0.0, 0.0, 1.0, 1.0], },
             ],
             vertex_storage: HaBufferRepository::empty(),
-            vertex_item: BufferItem::unset(),
+            vertex_item: BufferSubItem::unset(),
 
             ubo_data: vec![
                 UboObject {
@@ -124,7 +124,7 @@ impl ProgramProc for UniformBufferProcedure {
         // descriptor
         let ubo_info = DescriptorBufferBindingInfo {
             binding: 0,
-            type_: DescriptorType::UniformBuffer,
+            type_: BufferDescriptorType::UniformBuffer,
             count: 1,
             element_size: data_size!(self.ubo_data, UboObject),
             buffer: ubo_buffer_item.clone(),
@@ -276,10 +276,14 @@ impl ProgramProc for UniformBufferProcedure {
 fn main() {
 
     let procecure = UniformBufferProcedure::new();
-    let mut program = ProgramBuilder::new(procecure)
-        .title(WINDOW_TITLE)
-        .size(WINDOW_WIDTH, WINDOW_HEIGHT)
-        .build();
+    let mut config = EngineConfig::default();
+    config.window.dimension = Dimension2D {
+        width : WINDOW_WIDTH,
+        height: WINDOW_HEIGHT,
+    };
+    config.window.title = String::from(WINDOW_TITLE);
+
+    let mut program = ProgramEnv::new(config, procecure);
 
     match program.launch() {
         | Ok(_) => (),

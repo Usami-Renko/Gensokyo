@@ -6,7 +6,7 @@ use core::device::HaLogicalDevice;
 use core::physical::{ HaPhysicalDevice, MemorySelector };
 
 use resources::buffer::HaBuffer;
-use resources::buffer::{ BufferConfig, BufferItem };
+use resources::buffer::{BufferConfig, BufferSubItem};
 use resources::memory::device::HaDeviceMemory;
 use resources::memory::traits::HaMemoryAbstract;
 use resources::repository::HaBufferRepository;
@@ -46,7 +46,7 @@ impl<'re> HaBufferAllocator<'re> {
         }
     }
 
-    pub fn attach_buffer(&mut self, config: BufferConfig) -> Result<Vec<BufferItem>, AllocatorError> {
+    pub fn attach_buffer(&mut self, config: BufferConfig) -> Result<Vec<BufferSubItem>, AllocatorError> {
 
         let buffer = HaBuffer::generate(self.device, &config, None)?;
         let required_memory_flag = config.memory_flags;
@@ -61,7 +61,7 @@ impl<'re> HaBufferAllocator<'re> {
         let mut offset: vk::DeviceSize = 0;
 
         for &item_size in config.items_size.iter() {
-            let item = BufferItem {
+            let item = BufferSubItem {
                 handle: buffer.handle,
                 buffer_index,
                 offset,

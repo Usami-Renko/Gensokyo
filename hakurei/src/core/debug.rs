@@ -8,8 +8,8 @@ use core::error::InstanceError;
 use core::instance::HaInstance;
 use core::error::ValidationError;
 
-use constant::VERBOSE;
-use constant::core::VALIDATION_FLAGS;
+use config::VERBOSE;
+use config::core::VALIDATION_FLAGS;
 use utility::cast;
 use utility::marker::VulkanFlags;
 

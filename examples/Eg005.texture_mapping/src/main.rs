@@ -40,7 +40,7 @@ struct TextureMappingProcedure {
 
     vertex_data   : Vec<Vertex>,
     vertex_storage: HaBufferRepository,
-    vertex_item   : BufferItem,
+    vertex_item   : BufferSubItem,
 
     sampler_repository: HaDescriptorRepository,
     sampler_set       : DescriptorSetItem,
@@ -67,7 +67,7 @@ impl TextureMappingProcedure {
                 Vertex { pos: [-0.75, -0.75], tex_coord: [1.0, 0.0], },
             ],
             vertex_storage: HaBufferRepository::empty(),
-            vertex_item: BufferItem::unset(),
+            vertex_item: BufferSubItem::unset(),
 
             sampler_repository: HaDescriptorRepository::empty(),
             sampler_set       : DescriptorSetItem::unset(),
@@ -128,7 +128,7 @@ impl ProgramProc for TextureMappingProcedure {
 
         let sampler_descriptor_info = DescriptorImageBindingInfo {
             binding: 0,
-            type_  : DescriptorType::CombinedImageSampler,
+            type_  : ImageDescriptorType::CombinedImageSampler,
             count  : 1,
             sampler,
             layout: ImageLayout::ShaderReadOnlyOptimal,
@@ -284,11 +284,15 @@ impl ProgramProc for TextureMappingProcedure {
 fn main() {
 
     let procecure = TextureMappingProcedure::new();
-    let mut program = ProgramBuilder::new(procecure)
-        .title(WINDOW_TITLE)
-        .size(WINDOW_WIDTH, WINDOW_HEIGHT)
-        .build();
 
+    let mut config = EngineConfig::default();
+    config.window.dimension = Dimension2D {
+        width : WINDOW_WIDTH,
+        height: WINDOW_HEIGHT,
+    };
+    config.window.title = String::from(WINDOW_TITLE);
+
+    let mut program = ProgramEnv::new(config, procecure);
     match program.launch() {
         | Ok(_) => (),
         | Err(err) => {

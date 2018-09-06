@@ -6,10 +6,10 @@ use ash::version::DeviceV1_0;
 use core::device::HaLogicalDevice;
 
 use resources::descriptor::set::HaDescriptorSet;
-use resources::descriptor::layout::{ HaDescriptorSetLayout, DescriptorType };
+use resources::descriptor::layout::HaDescriptorSetLayout;
 use resources::error::DescriptorError;
 
-use utility::marker::{ VulkanFlags, VulkanEnum, Handles };
+use utility::marker::{ VulkanFlags, Handles };
 
 use std::ptr;
 
@@ -33,9 +33,9 @@ impl DescriptorPoolInfo {
     pub fn _set_pool_size_max(&mut self, max_size: uint32_t) {
         self.max_sets = max_size;
     }
-    pub fn add_pool_size(&mut self, desc_type: DescriptorType, count: uint32_t) {
+    pub fn add_pool_size(&mut self, desc_type: vk::DescriptorType, count: uint32_t) {
         self.pool_sizes.push(vk::DescriptorPoolSize {
-            typ: desc_type.value(),
+            typ: desc_type,
             descriptor_count: count,
         });
     }

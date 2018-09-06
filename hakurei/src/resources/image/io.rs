@@ -6,7 +6,7 @@ use image::GenericImage;
 
 use utility::dimension::Dimension3D;
 
-use constant::image::{ IMAGE_FLIP_VERTICAL, IMAGE_FLIP_HORIZONTAL, BYTE_PER_PIXEL, FORCE_RGBA };
+use config::image::{ IMAGE_FLIP_VERTICAL, IMAGE_FLIP_HORIZONTAL, BYTE_PER_PIXEL, FORCE_RGBA };
 use resources::error::ImageError;
 
 use std::path::Path;

@@ -47,8 +47,8 @@ struct DrawIndexProcedure {
     index_data   : Vec<uint32_t>,
     vertex_buffer: HaBufferRepository,
     index_buffer : HaBufferRepository,
-    vertex_item  : BufferItem,
-    index_item   : BufferItem,
+    vertex_item  : BufferSubItem,
+    index_item   : BufferSubItem,
 
     graphics_pipeline: HaGraphicsPipeline,
 
@@ -66,8 +66,8 @@ impl DrawIndexProcedure {
             index_data   : INDEX_DATA.to_vec(),
             vertex_buffer: HaBufferRepository::empty(),
             index_buffer : HaBufferRepository::empty(),
-            vertex_item  : BufferItem::unset(),
-            index_item   : BufferItem::unset(),
+            vertex_item  : BufferSubItem::unset(),
+            index_item   : BufferSubItem::unset(),
 
             graphics_pipeline: HaGraphicsPipeline::uninitialize(),
 
@@ -282,10 +282,14 @@ impl ProgramProc for DrawIndexProcedure {
 fn main() {
 
     let procecure = DrawIndexProcedure::new();
-    let mut program = ProgramBuilder::new(procecure)
-        .title(WINDOW_TITLE)
-        .size(WINDOW_WIDTH, WINDOW_HEIGHT)
-        .build();
+    let mut config = EngineConfig::default();
+    config.window.dimension = Dimension2D {
+        width : WINDOW_WIDTH,
+        height: WINDOW_HEIGHT,
+    };
+    config.window.title = String::from(WINDOW_TITLE);
+
+    let mut program = ProgramEnv::new(config, procecure);
 
     match program.launch() {
         | Ok(_) => (),

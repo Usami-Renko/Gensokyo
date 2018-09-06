@@ -16,7 +16,6 @@ use resources::framebuffer::{ HaFramebuffer, FramebufferBuilder };
 
 use utility::dimension::BufferDimension;
 use utility::marker::VulkanEnum;
-use constant::swapchain::FRAMEBUFFER_LAYERS;
 
 use std::ptr;
 
@@ -123,7 +122,8 @@ impl RenderPassBuilder {
 fn generate_framebuffers(device: &HaLogicalDevice, swapchain: &HaSwapchain, render_pass: vk::RenderPass)
     -> Result<Vec<HaFramebuffer>, RenderPassError> {
 
-    let dimension = BufferDimension::new(swapchain.extent, FRAMEBUFFER_LAYERS);
+    // TODO: Make layers property configurate
+    let dimension = BufferDimension::new(swapchain.extent, 1);
 
     let mut framebuffers = vec![];
     for view in swapchain.views.iter() {

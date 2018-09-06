@@ -16,9 +16,7 @@ use sync::semaphore::HaSemaphore;
 use procedure::window::ProgramEnv;
 use procedure::error::ProcedureError;
 
-use constant::core::VALIDATION;
-use constant::swapchain::SWAPCHAIN_IMAGE_COUNT;
-use constant::sync::SYNCHRONOUT_FRAME;
+use config::core::VALIDATION;
 
 use utility::time::TimePeriod;
 
@@ -38,6 +36,7 @@ pub struct CoreInfrastructure<'win> {
     instance  : HaInstance,
     debugger  : Option<HaDebugger>,
     surface   : HaSurface<'win>,
+
     pub(crate) physical: HaPhysicalDevice,
     pub(crate) device  : HaLogicalDevice,
 }
@@ -152,14 +151,13 @@ impl<'win, T> ProgramEnv<T> where T: ProgramProc {
 
     fn create_inner_resources(&self, core: &CoreInfrastructure) -> Result<HaResources, ProcedureError> {
 
-        let swapchain = SwapchainBuilder::init(&core.physical, &core.device, &core.surface)?
-            .set_image_count(SWAPCHAIN_IMAGE_COUNT)
+        let swapchain = SwapchainBuilder::init(&self.config, &core.physical, &core.device, &core.surface)?
             .build(&core.instance)?;
 
         // sync
         let mut image_awaits = vec![];
         let mut sync_fences = vec![];
-        for _ in 0..SYNCHRONOUT_FRAME {
+        for _ in 0..self.config.swapchain.image_count {
             let image_await = HaSemaphore::setup(&core.device)?;
             let sync_fence = HaFence::setup(&core.device, true)?;
 

@@ -5,7 +5,7 @@ use ash::vk::uint32_t;
 use core::device::HaLogicalDevice;
 
 use resources::descriptor::{ DescriptorSetConfig, DescriptorItem, DescriptorSetItem };
-use resources::descriptor::{ DescriptorType, DescriptorSetLayoutInfo };
+use resources::descriptor::{ DescriptorSetLayoutInfo };
 use resources::descriptor::{ DescriptorPoolInfo, DescriptorPoolFlag };
 use resources::repository::HaDescriptorRepository;
 use resources::error::DescriptorError;
@@ -82,7 +82,7 @@ impl<'re> HaDescriptorAllocator<'re> {
         Ok(repository)
     }
 
-    fn pool_sizes(&self) -> Vec<(DescriptorType, uint32_t)> {
+    fn pool_sizes(&self) -> Vec<(vk::DescriptorType, uint32_t)> {
 
         let mut map = HashMap::new();
         for config in self.set_configs.iter() {

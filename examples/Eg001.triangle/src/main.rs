@@ -41,7 +41,7 @@ struct TriangleProcedure {
 
     vertex_data  : Vec<Vertex>,
     vertex_buffer: HaBufferRepository,
-    vertex_item  : BufferItem,
+    vertex_item  : BufferSubItem,
 
     graphics_pipeline: HaGraphicsPipeline,
 
@@ -57,7 +57,7 @@ impl TriangleProcedure {
         TriangleProcedure {
             vertex_data  : VERTEX_DATA.to_vec(),
             vertex_buffer: HaBufferRepository::empty(),
-            vertex_item  : BufferItem::unset(),
+            vertex_item  : BufferSubItem::unset(),
 
             graphics_pipeline: HaGraphicsPipeline::uninitialize(),
 
@@ -219,10 +219,15 @@ impl ProgramProc for TriangleProcedure {
 fn main() {
 
     let procecure = TriangleProcedure::new();
-    let mut program = ProgramBuilder::new(procecure)
-        .title(WINDOW_TITLE)
-        .size(WINDOW_WIDTH, WINDOW_HEIGHT)
-        .build();
+
+    let mut config = EngineConfig::default();
+    config.window.dimension = Dimension2D {
+        width : WINDOW_WIDTH,
+        height: WINDOW_HEIGHT,
+    };
+    config.window.title = String::from(WINDOW_TITLE);
+
+    let mut program = ProgramEnv::new(config, procecure);
 
     match program.launch() {
         | Ok(_) => (),

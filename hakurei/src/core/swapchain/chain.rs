@@ -10,8 +10,6 @@ use core::swapchain::error::SwapchainRuntimeError;
 use resources::image::{ HaImage, HaImageView };
 use utility::marker::Handles;
 
-use constant::swapchain::ACQUIRE_IMAGE_TIME_OUT;
-
 use sync::fence::HaFence;
 use sync::semaphore::HaSemaphore;
 
@@ -27,6 +25,8 @@ pub struct HaSwapchain {
 
     pub format: vk::Format,
     pub extent: vk::Extent2D,
+
+    pub(crate) image_acquire_time: vk::uint64_t,
 }
 
 impl HaSwapchain {
@@ -44,7 +44,7 @@ impl HaSwapchain {
         let result = unsafe {
             self.loader.acquire_next_image_khr(
                 self.handle,
-                ACQUIRE_IMAGE_TIME_OUT.vulkan_time(),
+                self.image_acquire_time,
                 semaphore, fence)
         };
 

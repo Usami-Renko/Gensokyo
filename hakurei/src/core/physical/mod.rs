@@ -14,7 +14,7 @@ use core::instance::HaInstance;
 use core::surface::HaSurface;
 use core::error::PhysicalDeviceError;
 
-use constant::VERBOSE;
+use config::VERBOSE;
 
 use self::property::PhysicalProperties;
 use self::features::PhyscialFeatures;

@@ -3,9 +3,9 @@ use ash::vk;
 use ash::vk::uint32_t;
 
 use core::device::HaLogicalDevice;
-use resources::descriptor::layout::{ DescriptorType, DescriptorSetLayoutFlag };
+use resources::descriptor::layout::{ BufferDescriptorType, ImageDescriptorType, DescriptorSetLayoutFlag };
 use resources::descriptor::HaDescriptorSet;
-use resources::buffer::BufferItem;
+use resources::buffer::BufferSubItem;
 use resources::image::{ ImageViewItem, ImageLayout, HaSampler };
 
 use pipeline::shader::module::ShaderStageFlag;
@@ -18,7 +18,7 @@ pub(crate) trait DescriptorBindingInfo {
 
     // TODO: remove the following three functions
     fn binding_value(&self)    -> uint32_t;
-    fn descriptor_type(&self)  -> DescriptorType;
+    fn descriptor_type(&self)  -> vk::DescriptorType;
     fn descritpor_count(&self) -> uint32_t;
 
     fn write_set(&self, set: &HaDescriptorSet) -> vk::WriteDescriptorSet;
@@ -31,19 +31,19 @@ pub struct DescriptorBufferBindingInfo {
     pub binding: uint32_t,
     // TODO: Limit to specific buffer type
     /// the type of descriptor.
-    pub type_  : DescriptorType,
+    pub type_  : BufferDescriptorType,
     /// the element count of each descriptor.
     pub count  : uint32_t,
     /// the size of each element of descriptor.
     pub element_size: vk::DeviceSize,
     /// the reference to buffer where the descriptor data stores.
-    pub buffer : BufferItem,
+    pub buffer : BufferSubItem,
 }
 
 impl DescriptorBindingInfo for DescriptorBufferBindingInfo {
 
     fn binding_value(&self)    -> uint32_t { self.binding }
-    fn descriptor_type(&self)  -> DescriptorType { self.type_ }
+    fn descriptor_type(&self)  -> vk::DescriptorType { self.type_.value() }
     fn descritpor_count(&self) -> uint32_t { self.count }
 
     fn write_set(&self, set: &HaDescriptorSet) -> vk::WriteDescriptorSet {
@@ -91,7 +91,7 @@ pub struct DescriptorImageBindingInfo {
     pub binding: uint32_t,
     // TODO: Limit to specific buffer type
     /// the type of descritpor.
-    pub type_  : DescriptorType,
+    pub type_  : ImageDescriptorType,
     /// the element count of each descriptor.
     pub count  : uint32_t,
     /// sampler information.
@@ -105,7 +105,7 @@ pub struct DescriptorImageBindingInfo {
 impl DescriptorBindingInfo for DescriptorImageBindingInfo {
 
     fn binding_value(&self)    -> uint32_t { self.binding }
-    fn descriptor_type(&self)  -> DescriptorType { self.type_ }
+    fn descriptor_type(&self)  -> vk::DescriptorType { self.type_.value() }
     fn descritpor_count(&self) -> uint32_t { self.count }
 
     fn write_set(&self, set: &HaDescriptorSet) -> vk::WriteDescriptorSet {
@@ -162,17 +162,16 @@ impl DescriptorSetConfig {
     }
 
     pub fn add_buffer_binding(&mut self, item: DescriptorBufferBindingInfo, stages: &[ShaderStageFlag]) -> usize {
-
-        let descriptor_index = self.bindings.len();
-        self.bindings.push(Box::new(item));
-        self.stage_flags.push(stages.flags());
-        descriptor_index
+        self.add_binding(Box::new(item), stages)
     }
 
     pub fn add_image_binding(&mut self, item: DescriptorImageBindingInfo, stages: &[ShaderStageFlag]) -> usize {
+        self.add_binding(Box::new(item), stages)
+    }
 
+    fn add_binding(&mut self, binding: Box<DescriptorBindingInfo>, stages: &[ShaderStageFlag]) -> usize {
         let descriptor_index = self.bindings.len();
-        self.bindings.push(Box::new(item));
+        self.bindings.push(binding);
         self.stage_flags.push(stages.flags());
         descriptor_index
     }

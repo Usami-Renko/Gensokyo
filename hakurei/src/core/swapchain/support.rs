@@ -4,27 +4,31 @@ use ash::vk::uint32_t;
 
 use num::clamp;
 
+use config::engine::EngineConfig;
+use config::swapchain::SwapchainConfig;
 use core::surface::HaSurface;
 use core::error::SurfaceError;
-
-use constant::swapchain::{ PREFER_SURFACE_FORMAT, PREFER_SURFACE_COLOR_SPACE };
-use constant::swapchain::{ PREFER_FIRSTLY_PRESENT_MODE, PREFER_SECONDARY_PRESENT_MODE };
 
 pub struct SwapchainSupport {
 
     capabilities:  vk::SurfaceCapabilitiesKHR,
     formats:       Vec<vk::SurfaceFormatKHR>,
     present_modes: Vec<vk::PresentModeKHR>,
+
+    config: SwapchainConfig,
 }
 
 impl SwapchainSupport {
 
-    pub fn query_support(surface: &HaSurface, physical: vk::PhysicalDevice) -> Result<SwapchainSupport, SurfaceError> {
-        Ok(SwapchainSupport {
+    pub fn query_support(surface: &HaSurface, physical: vk::PhysicalDevice, config: &EngineConfig) -> Result<SwapchainSupport, SurfaceError> {
+
+        let support = SwapchainSupport {
             capabilities  : surface.capabilities(physical)?,
             formats       : surface.formats(physical)?,
             present_modes : surface.present_modes(physical)?,
-        })
+            config        : config.swapchain.clone(),
+        };
+        Ok(support)
     }
 
     pub fn optimal_extent(&self, surface: &HaSurface) -> vk::Extent2D {
@@ -58,14 +62,14 @@ impl SwapchainSupport {
 
         if self.formats.len() == 1 && self.formats[0].format == vk::Format::Undefined {
             return vk::SurfaceFormatKHR {
-                format      : PREFER_SURFACE_FORMAT,
-                color_space : PREFER_SURFACE_COLOR_SPACE,
+                format      : self.config.prefer_surface_format,
+                color_space : self.config.prefer_surface_color_space,
             }
         }
 
         for available_format in self.formats.iter() {
-            if available_format.format == PREFER_SURFACE_FORMAT &&
-                available_format.color_space == PREFER_SURFACE_COLOR_SPACE {
+            if available_format.format == self.config.prefer_surface_format &&
+                available_format.color_space == self.config.prefer_surface_color_space {
 
                 return available_format.clone()
             }
@@ -77,10 +81,10 @@ impl SwapchainSupport {
     // TODO: Make present mode preference configurable.
     pub fn optimal_present_mode(&self) -> vk::PresentModeKHR {
 
-        if self.present_modes.iter().find(|&mode| *mode == PREFER_FIRSTLY_PRESENT_MODE).is_some() {
-            PREFER_FIRSTLY_PRESENT_MODE
-        } else if self.present_modes.iter().find(|&mode| *mode == PREFER_SECONDARY_PRESENT_MODE).is_some() {
-            PREFER_SECONDARY_PRESENT_MODE
+        if self.present_modes.iter().find(|&mode| *mode == self.config.prefer_primary_present_mode).is_some() {
+            self.config.prefer_primary_present_mode
+        } else if self.present_modes.iter().find(|&mode| *mode == self.config.prefer_secondary_present_mode).is_some() {
+            self.config.prefer_secondary_present_mode
         } else {
             self.present_modes[0]
         }
