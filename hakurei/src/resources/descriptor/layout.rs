@@ -33,12 +33,13 @@ impl DescriptorSetLayoutInfo {
             // binding is the binding number of this entry and corresponds to a resource of the same binding number in the shader stages.
             binding: info.binding_value(),
             // desc_type specifyies which type of resource descriptors are used for this binding.
-            descriptor_type : info.descriptor_type().value(),
+            descriptor_type : info.descriptor_type(),
             // descriptor_count is the number of descriptors contained in the binding, accessed in a shader as an array.
             // If descriptor_count is zero, this binding entry is reserved and the resource must not be accessed from any stage via this binding within any pipeline using the set layout.
             descriptor_count: info.descritpor_count(),
             // stage_flags specifying which pipeline shader stages can access a resource for this binding.
-            // ShaderStageType::AllStage is a shorthand specifying that all defined shader stages, including any additional stages defined by extensions, can access the resource.
+            // ShaderStageType::AllStage is a shorthand specifying that all defined shader stages,
+            // including any additional stages defined by extensions, can access the resource.
             stage_flags: stages,
             // TODO: Add configuration for this field.
             p_immutable_samplers: ptr::null(),
@@ -117,8 +118,8 @@ impl VulkanFlags for [DescriptorSetLayoutFlag] {
 
 
 // TODO: Map to raw value
-#[derive(Debug, Clone, Copy, Eq, PartialEq, PartialOrd, Ord, Hash)]
-pub enum DescriptorType {
+#[derive(Debug, Clone, Copy, Eq, PartialEq)]
+pub enum ImageDescriptorType {
     /// Sampler specifies a sampler descriptor.
     Sampler,
     /// CombinedImageSampler specifies a combined image sampler descriptor.
@@ -127,6 +128,24 @@ pub enum DescriptorType {
     SampledImage,
     /// StorageImage specifies a storage image descriptor.
     StorageImage,
+}
+
+impl VulkanEnum for ImageDescriptorType {
+    type EnumType = vk::DescriptorType;
+
+    fn value(&self) -> Self::EnumType {
+        match self {
+            | ImageDescriptorType::Sampler              => vk::DescriptorType::Sampler,
+            | ImageDescriptorType::CombinedImageSampler => vk::DescriptorType::CombinedImageSampler,
+            | ImageDescriptorType::SampledImage         => vk::DescriptorType::SampledImage,
+            | ImageDescriptorType::StorageImage         => vk::DescriptorType::StorageImage,
+        }
+    }
+}
+
+// TODO: Map to raw value
+#[derive(Debug, Clone, Copy, Eq, PartialEq)]
+pub enum BufferDescriptorType {
     /// UniformTexelBuffer specifies a uniform texel buffer descriptor.
     UniformTexelBuffer,
     /// StorageTexelBuffer specifies a storage texel buffer descriptor.
@@ -143,22 +162,18 @@ pub enum DescriptorType {
     InputAttachment,
 }
 
-impl VulkanEnum for DescriptorType {
+impl VulkanEnum for BufferDescriptorType {
     type EnumType = vk::DescriptorType;
 
     fn value(&self) -> Self::EnumType {
         match self {
-            | DescriptorType::Sampler              => vk::DescriptorType::Sampler,
-            | DescriptorType::CombinedImageSampler => vk::DescriptorType::CombinedImageSampler,
-            | DescriptorType::SampledImage         => vk::DescriptorType::SampledImage,
-            | DescriptorType::StorageImage         => vk::DescriptorType::StorageImage,
-            | DescriptorType::UniformTexelBuffer   => vk::DescriptorType::UniformTexelBuffer,
-            | DescriptorType::StorageTexelBuffer   => vk::DescriptorType::StorageTexelBuffer,
-            | DescriptorType::UniformBuffer        => vk::DescriptorType::UniformBuffer,
-            | DescriptorType::StorageBuffer        => vk::DescriptorType::StorageBuffer,
-            | DescriptorType::UniformBufferDynamic => vk::DescriptorType::UniformBufferDynamic,
-            | DescriptorType::StorageBufferDynamic => vk::DescriptorType::StorageBufferDynamic,
-            | DescriptorType::InputAttachment      => vk::DescriptorType::InputAttachment,
+            | BufferDescriptorType::UniformTexelBuffer   => vk::DescriptorType::UniformTexelBuffer,
+            | BufferDescriptorType::StorageTexelBuffer   => vk::DescriptorType::StorageTexelBuffer,
+            | BufferDescriptorType::UniformBuffer        => vk::DescriptorType::UniformBuffer,
+            | BufferDescriptorType::StorageBuffer        => vk::DescriptorType::StorageBuffer,
+            | BufferDescriptorType::UniformBufferDynamic => vk::DescriptorType::UniformBufferDynamic,
+            | BufferDescriptorType::StorageBufferDynamic => vk::DescriptorType::StorageBufferDynamic,
+            | BufferDescriptorType::InputAttachment      => vk::DescriptorType::InputAttachment,
         }
     }
 }

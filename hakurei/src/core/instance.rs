@@ -8,7 +8,7 @@ use core::error::InstanceError;
 use core::platforms;
 use core::debug;
 
-use constant::core::*;
+use config::core::*;
 
 use utility::cast;
 

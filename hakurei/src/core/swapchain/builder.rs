@@ -1,8 +1,9 @@
 
 use ash;
 use ash::vk;
-use ash::vk::uint32_t;
+use ash::vk::{ uint32_t, uint64_t };
 
+use config::engine::EngineConfig;
 use core::instance::HaInstance;
 use core::physical::HaPhysicalDevice;
 use core::device::HaLogicalDevice;
@@ -14,7 +15,6 @@ use core::swapchain::error::SwapchainInitError;
 
 use resources::image::{ HaImage, HaImageView, ImageViewDescInfo, ImageAspectFlag, ImageViewType };
 
-use constant::swapchain::SWAPCHAIN_IMAGE_COUNT;
 use utility::marker::VulkanFlags;
 
 use std::ptr;
@@ -49,33 +49,30 @@ pub struct SwapchainBuilder<'vk, 'win: 'vk> {
     support: SwapchainSupport,
     image_share_info: SwapchainImageShaingInfo,
     image_count: uint32_t,
+    acquire_image_time: uint64_t,
 }
 
 impl<'vk, 'win: 'vk> SwapchainBuilder<'vk, 'win> {
 
-    pub fn init(physical: &HaPhysicalDevice, device: &'vk HaLogicalDevice, surface: &'vk HaSurface<'win>)
+    pub fn init(config: &EngineConfig, physical: &HaPhysicalDevice, device: &'vk HaLogicalDevice, surface: &'vk HaSurface<'win>)
         -> Result<SwapchainBuilder<'vk, 'win>, SwapchainInitError> {
 
-        let support = SwapchainSupport::query_support(surface, physical.handle)
+        let support = SwapchainSupport::query_support(surface, physical.handle, config)
             .map_err(|e| SwapchainInitError::SurfacePropertiesQuery(e))?;
 
         let image_share_info = sharing_mode(device);
 
-        let swapchain = SwapchainBuilder {
+        let builder = SwapchainBuilder {
             device,
             surface,
 
             support,
             image_share_info,
-            image_count: SWAPCHAIN_IMAGE_COUNT,
+            image_count       : config.swapchain.image_count,
+            acquire_image_time: config.swapchain.acquire_image_time_out.vulkan_time(),
         };
 
-        Ok(swapchain)
-    }
-
-    pub fn set_image_count(&mut self, image_count: uint32_t) -> &mut SwapchainBuilder<'vk, 'win> {
-        self.image_count = image_count;
-        self
+        Ok(builder)
     }
 
     pub fn build(&self, instance: &HaInstance)
@@ -149,6 +146,8 @@ impl<'vk, 'win: 'vk> SwapchainBuilder<'vk, 'win> {
             _images: images,
             format: prefer_format.format,
             extent: prefer_extent,
+
+            image_acquire_time: self.acquire_image_time
         };
         Ok(swapchain)
     }

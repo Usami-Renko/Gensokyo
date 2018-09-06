@@ -18,7 +18,7 @@ extern crate objc;
 #[cfg(target_os = "windows")]
 extern crate winapi;
 
-mod constant;
+mod config;
 mod core;
 mod procedure;
 mod utility;

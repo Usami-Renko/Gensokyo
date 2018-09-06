@@ -14,7 +14,7 @@ use core::error::LogicalDeviceError;
 use resources::command::{ HaCommandPool, CommandPoolFlag };
 
 use utility::cast;
-use constant::VERBOSE;
+use config::VERBOSE;
 
 use std::ptr;
 use std::os::raw::c_char;

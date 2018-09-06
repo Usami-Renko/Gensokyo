@@ -3,7 +3,7 @@ use ash::vk;
 
 use core::device::{ HaLogicalDevice, QueueSubmitBundle, DeviceQueueIdentifier };
 
-use resources::buffer::{ HaBuffer, BufferItem };
+use resources::buffer::{HaBuffer, BufferSubItem};
 use resources::command::{ CommandBufferUsageFlag, CommandBufferUsage };
 use resources::memory::device::HaDeviceMemory;
 use resources::memory::traits::HaMemoryAbstract;
@@ -50,7 +50,7 @@ impl HaBufferRepository {
         HaBufferRepository { buffers, memory: Some(memory), offsets, }
     }
 
-    pub fn tranfer_data<D: Copy>(&self, device: &HaLogicalDevice, data: &Vec<D>, item: &BufferItem) -> Result<(), AllocatorError> {
+    pub fn tranfer_data<D: Copy>(&self, device: &HaLogicalDevice, data: &Vec<D>, item: &BufferSubItem) -> Result<(), AllocatorError> {
 
         let memory = self.memory.as_ref()
             .ok_or(AllocatorError::MemoryNotYetAllocated)?;
@@ -69,7 +69,7 @@ impl HaBufferRepository {
         Ok(())
     }
 
-    pub fn copy_buffer_to_buffer(&self, device: &HaLogicalDevice, from_item: &BufferItem, to_item: &BufferItem) -> Result<(), AllocatorError> {
+    pub fn copy_buffer_to_buffer(&self, device: &HaLogicalDevice, from_item: &BufferSubItem, to_item: &BufferSubItem) -> Result<(), AllocatorError> {
 
         let mut command_buffers = device.transfer_command_pool.allocate (device, CommandBufferUsage::UnitaryCommand, 1)?;
         let command_buffer = command_buffers.pop().unwrap();
@@ -109,12 +109,12 @@ impl HaBufferRepository {
         Ok(())
     }
 
-    pub fn vertex_binding_infos(&self, items: &[&BufferItem]) -> CmdVertexBindingInfos {
+    pub fn vertex_binding_infos(&self, items: &[&BufferSubItem]) -> CmdVertexBindingInfos {
 
         let mut handles = vec![];
         let mut offsets  = vec![];
         for item in items.iter() {
-            handles.push(self.buffers[item.buffer_index].handle);
+            handles.push(item.handle);
             offsets.push(item.offset);
         }
 
@@ -123,10 +123,10 @@ impl HaBufferRepository {
             offsets,
         }
     }
-    pub fn index_binding_info(&self, item: &BufferItem) -> CmdIndexBindingInfo {
+    pub fn index_binding_info(&self, item: &BufferSubItem) -> CmdIndexBindingInfo {
 
         CmdIndexBindingInfo {
-            handle: self.buffers[item.buffer_index].handle,
+            handle: item.handle,
             offset: item.offset,
         }
     }

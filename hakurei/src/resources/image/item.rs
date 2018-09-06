@@ -7,4 +7,3 @@ pub struct ImageViewItem {
     pub(crate) view_handle: vk::ImageView,
     pub(crate) view_index: usize,
 }
-

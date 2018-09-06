@@ -3,8 +3,7 @@ use winit;
 use winit::{ VirtualKeyCode, Event, WindowEvent };
 
 use utility::dimension::Dimension2D;
-use constant::window;
-use constant::sync::SYNCHRONOUT_FRAME;
+use config::engine::EngineConfig;
 
 use procedure::workflow::{ CoreInfrastructure, HaResources, ProgramProc };
 use procedure::error::RuntimeError;
@@ -24,64 +23,36 @@ impl WindowInfo {
     }
 }
 
-pub struct ProgramBuilder<T> {
-
-    window_info: WindowInfo,
-    procedure: T,
-}
-
-impl <T> ProgramBuilder<T> where T: ProgramProc {
-
-    pub fn new(procedure: T) -> ProgramBuilder<T> {
-        ProgramBuilder {
-            window_info: WindowInfo {
-                window_size:  window::WINDOW_SIZE,
-                window_title: window::WINDOW_TITLE.to_owned(),
-            },
-
-            procedure,
-        }
-    }
-
-    pub fn title(mut self, title: &str) -> ProgramBuilder<T> {
-        self.window_info.window_title = title.to_owned();
-        self
-    }
-
-    pub fn size(mut self, window_width: u32, window_height: u32) -> ProgramBuilder<T> {
-        self.window_info.window_size = Dimension2D {
-            width:  window_width,
-            height: window_height,
-        };
-
-        self
-    }
-
-    pub fn build(self) -> ProgramEnv<T> {
-        ProgramEnv {
-            event_loop  : winit::EventsLoop::new(),
-            window_info : self.window_info,
-            procedure   : self.procedure,
-        }
-    }
-}
-
 pub struct ProgramEnv<T: ProgramProc> {
 
     event_loop: winit::EventsLoop,
     window_info: WindowInfo,
+    frame_in_flights: usize,
 
+    pub(super) config: EngineConfig,
     pub(super) procedure: T,
 }
 
 impl<T> ProgramEnv<T> where T: ProgramProc {
 
+    pub fn new(config: EngineConfig, procedure: T) -> ProgramEnv<T> {
+
+        let window_info = WindowInfo {
+            window_size:  config.window.dimension,
+            window_title: config.window.title.to_owned(),
+        };
+        let event_loop = winit::EventsLoop::new();
+        let frame_in_flights = config.swapchain.image_count as usize;
+
+        ProgramEnv { config, event_loop, window_info, procedure, frame_in_flights, }
+    }
+
     pub fn launch(&mut self) -> Result<(), RuntimeError> {
 
         // TODO: Refactor the following two lines
         use core::physical::PhysicalRequirement;
-        use constant::core::DEVICE_EXTENSION;
-        let requirement = PhysicalRequirement::init()
+        use config::core::DEVICE_EXTENSION;
+        let requirement = PhysicalRequirement::init(&self.config)
             .require_queue_extensions(DEVICE_EXTENSION.to_vec());
 
         let window = self.window_info.build(&self.event_loop)
@@ -172,7 +143,7 @@ impl<T> ProgramEnv<T> where T: ProgramProc {
                 }
             }
 
-            current_fame = (current_fame + 1) % SYNCHRONOUT_FRAME;
+            current_fame = (current_fame + 1) % self.frame_in_flights;
         }
 
         Ok(())
