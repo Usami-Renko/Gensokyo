@@ -4,7 +4,9 @@ use ash::version::{ EntryV1_0, InstanceV1_0 };
 
 use core::{ EntryV1, InstanceV1 };
 
+use config::engine::EngineConfig;
 use core::error::InstanceError;
+use core::ValidationInfo;
 use core::platforms;
 use core::debug;
 
@@ -29,7 +31,7 @@ pub struct HaInstance {
 impl HaInstance {
 
     /// initialize vk::Instance object
-    pub fn new() -> Result<HaInstance, InstanceError> {
+    pub fn new(config: &EngineConfig) -> Result<HaInstance, InstanceError> {
 
         let entry = EntryV1::new()
             .or(Err(InstanceError::EntryCreationError))?;
@@ -48,7 +50,7 @@ impl HaInstance {
         };
 
         // get the names of required vulkan layers.
-        let enable_layer_names = required_layers(&entry)?;
+        let enable_layer_names = required_layers(&entry, &config.core.validation)?;
         let enable_layer_names_ptr = cast::to_array_ptr(&enable_layer_names);
         // get the names of required vulkan extensions.
         let enable_extension_names = platforms::required_extension_names();
@@ -94,15 +96,15 @@ impl HaInstance {
 /// Convenient function to get the names of required vulkan layers.
 ///
 /// Return an vector of CString if succeeds, or an error explan the detail.
-fn required_layers(entry: &EntryV1) -> Result<Vec<CString>, InstanceError> {
+fn required_layers(entry: &EntryV1, validation: &ValidationInfo) -> Result<Vec<CString>, InstanceError> {
 
     // required validation layer name if need  ---------------------------
     let mut enable_layer_names = vec![];
 
-    if VALIDATION.is_enable {
-        if debug::is_support_validation_layer(entry, &VALIDATION.required_validation_layers)? {
-            enable_layer_names = VALIDATION.required_validation_layers.iter()
-                .map(|layer_name| CString::new(*layer_name).unwrap())
+    if validation.is_enable {
+        if debug::is_support_validation_layer(entry, &validation.required_validation_layers)? {
+            enable_layer_names = validation.required_validation_layers.iter()
+                .map(|layer_name| CString::new(layer_name.as_str()).unwrap())
                 .collect();
         } else {
             return Err(InstanceError::ValidationLayerNotSupportError)

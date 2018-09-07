@@ -2,7 +2,8 @@
 pub use ash::vk::uint32_t;
 pub use ash::vk::DeviceSize;
 
-pub use config::engine::EngineConfig;
+pub use config::prelude::*;
+
 pub use core::swapchain::chain::HaSwapchain;
 pub use core::device::HaLogicalDevice;
 pub use core::device::QueueSubmitBundle;

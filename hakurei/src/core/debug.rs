@@ -9,7 +9,6 @@ use core::instance::HaInstance;
 use core::error::ValidationError;
 
 use config::VERBOSE;
-use config::core::VALIDATION_FLAGS;
 use utility::cast;
 use utility::marker::VulkanFlags;
 
@@ -18,10 +17,12 @@ use std::ffi::CStr;
 
 /// a struct stores all need information during the initialization of Validation Layer.
 pub struct ValidationInfo {
-    // tell if validation layer should be enabled.
+    /// tell if validation layer should be enabled.
     pub is_enable: bool,
-    // the layer names required for validation layer support.
-    pub required_validation_layers: [&'static str; 1],
+    /// the layer names required for validation layer support.
+    pub required_validation_layers: Vec<String>,
+    /// the message type that Validation Layer would report for.
+    pub flags: Vec<DebugReportFlag>,
 }
 
 /// Wrapper class for vk::DebugReport object.
@@ -36,7 +37,7 @@ pub struct HaDebugger {
 impl HaDebugger {
 
     /// initialize debug extension loader and vk::DebugReport object.
-    pub fn setup(instance: &HaInstance) -> Result<HaDebugger, ValidationError> {
+    pub fn setup(instance: &HaInstance, flags: &[DebugReportFlag]) -> Result<HaDebugger, ValidationError> {
 
         // load the debug extension
         let loader = DebugReport::new(&instance.entry, &instance.handle)
@@ -47,7 +48,7 @@ impl HaDebugger {
             s_type       : vk::StructureType::DebugReportCallbackCreateInfoExt,
             p_next       : ptr::null(),
             // Enum DebugReportFlags enumerate all available flags.
-            flags        : VALIDATION_FLAGS.flags(),
+            flags        : flags.flags(),
             pfn_callback : vulkan_debug_report_callback,
             p_user_data  : ptr::null_mut(),
         };
@@ -120,7 +121,7 @@ unsafe extern "system" fn vulkan_debug_report_callback(
 }
 
 /// helper function to check if all required layers of validation layer are satisfied.
-pub fn is_support_validation_layer(entry: &EntryV1, required_validation_layers: &[&str]) -> Result<bool, InstanceError> {
+pub fn is_support_validation_layer(entry: &EntryV1, required_validation_layers: &[String]) -> Result<bool, InstanceError> {
 
     let layer_properties = entry.enumerate_instance_layer_properties()
         .or(Err(InstanceError::LayerPropertiesEnumerateError))?;
@@ -139,13 +140,13 @@ pub fn is_support_validation_layer(entry: &EntryV1, required_validation_layers: 
         }
     }
 
-    for &required_layer_name in required_validation_layers.iter() {
+    for required_layer_name in required_validation_layers.iter() {
         let mut is_required_layer_found = false;
 
         for layer_property in layer_properties.iter() {
 
             let test_layer_name = cast::vk_to_string(&layer_property.layer_name);
-            if required_layer_name == test_layer_name {
+            if (*required_layer_name) == test_layer_name {
                 is_required_layer_found = true;
                 break
             }
