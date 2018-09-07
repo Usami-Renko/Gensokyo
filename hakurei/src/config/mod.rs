@@ -5,9 +5,7 @@ pub(crate) mod window;
 pub(crate) mod swapchain;
 pub(crate) mod image;
 
+pub mod prelude;
+
 // TODO: Remove this setting.
-/// Set this true to enable verbose log information.
-#[cfg(not(feature = "verbose"))]
 pub(crate) const VERBOSE: bool = false;
-#[cfg(feature = "verbose")]
-pub(crate) const VERBOSE: bool = true;

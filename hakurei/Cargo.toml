@@ -22,6 +22,3 @@ objc     = "0.2.5"
 
 [target.'cfg(target_os = "windows")'.dependencies]
 winapi = { version = "0.3.5", features = ["windef", "libloaderapi"] }
-
-[features]
-verbose = []

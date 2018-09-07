@@ -16,8 +16,6 @@ use sync::semaphore::HaSemaphore;
 use procedure::window::ProgramEnv;
 use procedure::error::ProcedureError;
 
-use config::core::VALIDATION;
-
 use utility::time::TimePeriod;
 
 pub trait ProgramProc {
@@ -55,10 +53,10 @@ impl<'win, T> ProgramEnv<T> where T: ProgramProc {
     pub(super) fn initialize_core(&self, window: &'win winit::Window, requirement: PhysicalRequirement)
         -> Result<CoreInfrastructure<'win>, ProcedureError> {
 
-        let instance = HaInstance::new()?;
+        let instance = HaInstance::new(&self.config)?;
 
-        let debugger = if VALIDATION.is_enable {
-            let debugger = HaDebugger::setup(&instance)?;
+        let debugger = if self.config.core.validation.is_enable {
+            let debugger = HaDebugger::setup(&instance, &self.config.core.validation.flags)?;
             Some(debugger)
         } else {
             None
