@@ -1,0 +1,9 @@
+[package]
+name = "triangle"
+version = "0.1.0"
+authors = ["usami-renko <usami-ssc@protonmail.com>"]
+description = "Basic triangle sample of hakurei."
+
+[dependencies]
+hakurei = { path = "../../hakurei" }
+hakurei-macros = { path = "../../hakurei-macros" }
