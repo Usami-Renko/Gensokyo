@@ -2,6 +2,8 @@
 use std::fmt;
 use std::error::Error;
 
+use sync::error::SyncError;
+
 /// possible error may occur during the creation of vk::Framebuffer.
 #[derive(Debug, Clone, Copy, Eq, PartialEq)]
 pub enum FramebufferError {
@@ -27,6 +29,7 @@ pub enum CommandError {
 
     QueueFamilyUnavailable,
     QueueSubmitError,
+    NoCommandAvailable,
     PoolCreationError,
     BufferAllocateError,
     RecordBeginError,
@@ -41,6 +44,7 @@ impl fmt::Display for CommandError {
         let description = match self {
             | CommandError::QueueFamilyUnavailable => "Graphics Queue Family is not available.",
             | CommandError::QueueSubmitError       => "Failed to submit command to device.",
+            | CommandError::NoCommandAvailable     => "There must be command buffer to execute",
             | CommandError::PoolCreationError      => "Failed to create Command Pool.",
             | CommandError::BufferAllocateError    => "Failed to allocate Command Buffer.",
             | CommandError::RecordBeginError       => "Failed to begin Command Buffer recording.",
@@ -108,6 +112,7 @@ pub enum AllocatorError {
     Memory(MemoryError),
     Command(CommandError),
     Image(ImageError),
+    Sync(SyncError),
     MemoryNotYetAllocated,
 }
 
@@ -115,6 +120,7 @@ impl_from_err!(Buffer(BufferError)   -> AllocatorError);
 impl_from_err!(Memory(MemoryError)   -> AllocatorError);
 impl_from_err!(Command(CommandError) -> AllocatorError);
 impl_from_err!(Image(ImageError)     -> AllocatorError);
+impl_from_err!(Sync(SyncError)       -> AllocatorError);
 
 impl Error for AllocatorError {}
 impl fmt::Display for AllocatorError {
@@ -126,6 +132,7 @@ impl fmt::Display for AllocatorError {
             | AllocatorError::Memory(ref e)  => e.to_string(),
             | AllocatorError::Command(ref e) => e.to_string(),
             | AllocatorError::Image(ref e)   => e.to_string(),
+            | AllocatorError::Sync(ref e)    => e.to_string(),
             | AllocatorError::MemoryNotYetAllocated   => {
                 String::from("The memory is not allocated yet. Memory must be allocated first before using it.")
             },

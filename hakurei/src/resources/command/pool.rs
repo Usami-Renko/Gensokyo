@@ -3,7 +3,8 @@ use ash::vk;
 use ash::vk::uint32_t;
 use ash::version::DeviceV1_0;
 
-use core::device::HaLogicalDevice;
+use core::DeviceV1;
+use core::device::{ HaLogicalDevice, HaQueue, DeviceQueueIdentifier };
 
 use resources::command::buffer::{ HaCommandBuffer, CommandBufferUsage };
 use resources::error::CommandError;
@@ -26,14 +27,37 @@ impl HaCommandPool {
         }
     }
 
-    pub fn setup(device: &HaLogicalDevice, flags: &[CommandPoolFlag])
+    pub(crate) fn setup_from_handle(device_handle: &DeviceV1, queue: &HaQueue, flags: &[CommandPoolFlag])
         -> Result<HaCommandPool, CommandError> {
 
         let info = vk::CommandPoolCreateInfo {
             s_type: vk::StructureType::CommandPoolCreateInfo,
             p_next: ptr::null(),
             flags: flags.flags(),
-            queue_family_index: device.graphics_queue.family_index,
+            queue_family_index: queue.family_index,
+        };
+
+        let handle = unsafe {
+            device_handle.create_command_pool(&info, None)
+                .or(Err(CommandError::PoolCreationError))?
+        };
+
+        let pool = HaCommandPool {
+            handle,
+        };
+        Ok(pool)
+    }
+
+    pub fn setup(device: &HaLogicalDevice, queue: DeviceQueueIdentifier, flags: &[CommandPoolFlag])
+        -> Result<HaCommandPool, CommandError> {
+
+        let queue = device.queue_by_identifier(queue);
+
+        let info = vk::CommandPoolCreateInfo {
+            s_type: vk::StructureType::CommandPoolCreateInfo,
+            p_next: ptr::null(),
+            flags: flags.flags(),
+            queue_family_index: queue.family_index,
         };
 
         let handle = unsafe {
@@ -71,7 +95,7 @@ impl HaCommandPool {
         Ok(buffers)
     }
 
-    pub fn free(&self, device: &HaLogicalDevice, buffers_to_free: &[&HaCommandBuffer]) {
+    pub fn free(&self, device: &HaLogicalDevice, buffers_to_free: &[HaCommandBuffer]) {
         let buffer_handles = buffers_to_free.handles();
 
         unsafe {
@@ -88,7 +112,8 @@ impl HaCommandPool {
 
 #[derive(Debug, Clone, Copy, Eq, PartialEq)]
 pub enum CommandPoolFlag {
-    /// TransientBit specifies that command buffers allocated from the pool will be short-lived, meaning that they will be reset or freed in a relatively short timeframe.
+    /// TransientBit specifies that command buffers allocated from the pool will be short-lived,
+    /// meaning that they will be reset or freed in a relatively short timeframe.
     ///
     /// This flag may be used by the implementation to control memory allocation behavior within the pool.
     TransientBit,

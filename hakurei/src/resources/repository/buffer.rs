@@ -1,10 +1,10 @@
 
 use ash::vk;
 
-use core::device::{ HaLogicalDevice, QueueSubmitBundle, DeviceQueueIdentifier };
+use core::device::HaLogicalDevice;
 
 use resources::buffer::{HaBuffer, BufferSubItem};
-use resources::command::{ CommandBufferUsageFlag, CommandBufferUsage };
+use resources::command::CommandBufferUsageFlag;
 use resources::memory::device::HaDeviceMemory;
 use resources::memory::traits::HaMemoryAbstract;
 use resources::error::AllocatorError;
@@ -71,40 +71,29 @@ impl HaBufferRepository {
 
     pub fn copy_buffer_to_buffer(&self, device: &HaLogicalDevice, from_item: &BufferSubItem, to_item: &BufferSubItem) -> Result<(), AllocatorError> {
 
-        let mut command_buffers = device.transfer_command_pool.allocate (device, CommandBufferUsage::UnitaryCommand, 1)?;
-        let command_buffer = command_buffers.pop().unwrap();
+        let mut transfer = device.transfer();
+        {
+            let command_buffer = transfer.command()?;
 
-        // TODO: Only support one region.
-        let copy_regions = [
-            vk::BufferCopy {
-                src_offset: from_item.offset,
-                dst_offset: to_item.offset,
-                size      : to_item.size,
-            },
-        ];
+            // TODO: Only support one region.
+            let copy_regions = [
+                vk::BufferCopy {
+                    src_offset: from_item.offset,
+                    dst_offset: to_item.offset,
+                    size      : to_item.size,
+                },
+            ];
 
-        let recorder = command_buffer.setup_record(device);
-        recorder.begin_record(&[CommandBufferUsageFlag::OneTimeSubmitBit])?
-            .copy_buffer(
-                from_item.handle,
-                to_item.handle,
-                &copy_regions)
-            .finish()?;
+            let recorder = command_buffer.setup_record(device);
+            recorder.begin_record(&[CommandBufferUsageFlag::OneTimeSubmitBit])?
+                .copy_buffer(
+                    from_item.handle,
+                    to_item.handle,
+                    &copy_regions)
+                .finish()?;
+        }
 
-        let submit_infos = [
-            QueueSubmitBundle {
-                wait_semaphores: &[],
-                sign_semaphores: &[],
-                wait_stages    : &[],
-                commands       : &[&command_buffer],
-            },
-        ];
-
-        device.submit(&submit_infos, None, DeviceQueueIdentifier::Transfer)?;
-        // FIXME: Use fence would allow you to schedule multiple transfers simultaneously and wait for all of them complete, instead of executing one at a time.
-        let _ = device.wait_idle();
-
-        device.transfer_command_pool.free(device, &[&command_buffer]);
+        transfer.excute()?;
 
         Ok(())
     }

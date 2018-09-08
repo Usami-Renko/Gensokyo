@@ -2,8 +2,8 @@
 pub use self::flag::{ BufferCreateFlag, BufferUsageFlag };
 pub use self::item::{ BufferConfig, BufferItem, BufferSubItem };
 
-pub(crate) use self::handle::HaBuffer;
+pub(crate) use self::object::HaBuffer;
 
 mod flag;
-mod handle;
+mod object;
 mod item;
