@@ -160,7 +160,7 @@ struct SwapchainImageShaingInfo {
 }
 fn sharing_mode(device: &HaLogicalDevice) -> SwapchainImageShaingInfo {
 
-    if device.graphics_queue.family_index == device.present_queue.family_index {
+    if device.graphics_queue.queue.family_index == device.present_queue.queue.family_index {
         SwapchainImageShaingInfo {
             mode: vk::SharingMode::Exclusive,
             queue_family_indices: vec![],
@@ -169,8 +169,8 @@ fn sharing_mode(device: &HaLogicalDevice) -> SwapchainImageShaingInfo {
         SwapchainImageShaingInfo {
             mode: vk::SharingMode::Concurrent,
             queue_family_indices: vec![
-                device.graphics_queue.family_index,
-                device.present_queue.family_index,
+                device.graphics_queue.queue.family_index,
+                device.present_queue.queue.family_index,
             ],
         }
     }

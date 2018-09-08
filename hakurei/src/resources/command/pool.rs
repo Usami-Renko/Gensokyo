@@ -51,7 +51,7 @@ impl HaCommandPool {
     pub fn setup(device: &HaLogicalDevice, queue: DeviceQueueIdentifier, flags: &[CommandPoolFlag])
         -> Result<HaCommandPool, CommandError> {
 
-        let queue = device.queue_by_identifier(queue);
+        let queue = device.queue_handle_by_identifier(queue);
 
         let info = vk::CommandPoolCreateInfo {
             s_type: vk::StructureType::CommandPoolCreateInfo,

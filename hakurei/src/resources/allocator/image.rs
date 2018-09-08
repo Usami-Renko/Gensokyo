@@ -141,7 +141,6 @@ impl<'re> HaImageAllocator<'re> {
         }
 
         // 5.create command buffer
-        // TODO: Reduce duplicate code same in resources::repository::buffer.
         let mut transfer = self.device.transfer();
         {
             let command_buffer = transfer.command()?;

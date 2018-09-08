@@ -6,6 +6,7 @@ use ash::version::DeviceV1_0;
 use config::core::CoreConfig;
 use core::DeviceV1;
 use core::device::{ HaLogicalDevice, HaQueue };
+use core::device::queue::HaQueueAbstract;
 use core::error::LogicalDeviceError;
 
 use resources::command::{ HaCommandPool, CommandPoolFlag };
@@ -19,17 +20,17 @@ use utility::time::TimePeriod;
 
 use std::ptr;
 
-pub struct TransferQueue {
+pub struct HaTransferQueue {
 
-    queue: HaQueue,
+    pub queue: HaQueue,
     pool : HaCommandPool,
 
     transfer_wait_time: TimePeriod,
 }
 
-impl<'re> TransferQueue {
+impl HaQueueAbstract for HaTransferQueue {
 
-    pub fn new(device: &DeviceV1, queue: HaQueue, config: &CoreConfig) -> Result<TransferQueue, LogicalDeviceError> {
+    fn new(device: &DeviceV1, queue: HaQueue, config: &CoreConfig) -> Result<Self, LogicalDeviceError> {
 
         let pool = HaCommandPool::setup_from_handle(device, &queue, &[
             // the command buffer will be short-live, so use TransientBit.
@@ -37,9 +38,20 @@ impl<'re> TransferQueue {
             // TODO: Consider CommandPoolFlag::ResetCommandBufferBit.
         ])?;
 
-        let transfer_queue = TransferQueue { queue, pool, transfer_wait_time: config.transfer_wait_time, };
+        let transfer_queue = HaTransferQueue { queue, pool, transfer_wait_time: config.transfer_wait_time, };
         Ok(transfer_queue)
     }
+
+    fn handle(&self) -> vk::Queue {
+        self.queue.handle
+    }
+
+    fn clean(&self, device: &HaLogicalDevice) {
+        self.pool.cleanup(device);
+    }
+}
+
+impl<'re> HaTransferQueue {
 
     pub fn transfer(&'re self, device: &'re HaLogicalDevice) -> HaTransfer<'re> {
 
@@ -56,9 +68,6 @@ impl<'re> TransferQueue {
         }
     }
 
-    pub fn clean(&self, device: &HaLogicalDevice) {
-        self.pool.cleanup(device);
-    }
 }
 
 pub struct HaTransfer<'re> {
