@@ -3,15 +3,14 @@ use ash::vk;
 use ash::version::{ InstanceV1_0, DeviceV1_0 };
 use ash::vk::uint32_t;
 
+use config::core::CoreConfig;
 use core::instance::HaInstance;
 use core::physical::HaPhysicalDevice;
 use core::device::HaLogicalDevice;
 use core::device::DeviceQueueIdentifier;
 use core::device::queue::QueueUsage;
-use core::device::queue::{ HaQueue, QueueInfoTmp };
+use core::device::queue::{ HaQueue, QueueInfoTmp, TransferQueue };
 use core::error::LogicalDeviceError;
-
-use resources::command::{ HaCommandPool, CommandPoolFlag };
 
 use utility::cast;
 use config::VERBOSE;
@@ -157,7 +156,7 @@ impl<'a, 'b> LogicalDeviceBuilder<'a, 'b> {
         (queue_create_infos, queue_info_tmps)
     }
 
-    pub fn build(&mut self) -> Result<HaLogicalDevice, LogicalDeviceError> {
+    pub fn build(&mut self, config: &CoreConfig) -> Result<HaLogicalDevice, LogicalDeviceError> {
 
         // TODO: Add configuration for priorities.
         let _ = self.setup_queue(QueueUsage::Graphics, PrefabQueuePriority::Highest);
@@ -200,27 +199,21 @@ impl<'a, 'b> LogicalDeviceBuilder<'a, 'b> {
             all_queues.push(queue);
         }
 
+        // Default queues
         let transfer_queue = all_queues.pop().unwrap();
         let present_queue  = all_queues.pop().unwrap();
         let graphics_queue = all_queues.pop().unwrap();
 
-        // Default queues
+        let transfer_queue = TransferQueue::new(&handle, transfer_queue, config)?;
 
-        let mut device = HaLogicalDevice {
+        let device = HaLogicalDevice {
             handle,
             queues: all_queues,
 
             graphics_queue,
             present_queue,
             transfer_queue,
-
-            transfer_command_pool: HaCommandPool::uninitialize(),
         };
-
-        let transfer_command_pool = HaCommandPool::setup(&device, &[
-            CommandPoolFlag::TransientBit,
-        ]).map_err(|e| LogicalDeviceError::Command(e))?;
-        device.transfer_command_pool = transfer_command_pool;
 
         Ok(device)
     }

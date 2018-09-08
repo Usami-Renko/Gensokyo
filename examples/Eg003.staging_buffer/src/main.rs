@@ -169,7 +169,7 @@ impl ProgramProc for StagingBufferProcedure {
 
     fn commands(&mut self, device: &HaLogicalDevice) -> Result<(), ProcedureError> {
         // command buffer
-        let command_pool = HaCommandPool::setup(&device, &[])?;
+        let command_pool = HaCommandPool::setup(&device, DeviceQueueIdentifier::Graphics, &[])?;
 
         let command_buffer_count = self.graphics_pipeline.frame_count();
         let mut command_buffers = command_pool

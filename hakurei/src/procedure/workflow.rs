@@ -66,7 +66,7 @@ impl<'win, T> ProgramEnv<T> where T: ProgramProc {
         let physical = HaPhysicalDevice::new(&instance, &surface, requirement)?;
         // Initialize the device with default queues. (one graphics queue, one present queue, one transfer queue)
         let device = LogicalDeviceBuilder::init(&instance, &physical)
-            .build()?;
+            .build(&self.config.core)?;
 
         let core = CoreInfrastructure {
             instance, debugger, surface, physical, device,

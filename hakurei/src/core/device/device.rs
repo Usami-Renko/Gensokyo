@@ -5,11 +5,9 @@ use ash::vk::uint32_t;
 use ash::version::V1_0;
 use ash::version::DeviceV1_0;
 
-use core::device::queue::HaQueue;
-use core::device::queue::QueueSubmitBundle;
+use core::device::queue::{ HaQueue, QueueSubmitBundle, TransferQueue, HaTransfer };
 use core::error::LogicalDeviceError;
 
-use resources::command::{ HaCommandPool };
 use resources::error::CommandError;
 
 use sync::fence::HaFence;
@@ -26,9 +24,8 @@ pub struct HaLogicalDevice {
 
     pub(crate) graphics_queue: HaQueue,
     pub(crate) present_queue : HaQueue,
-    pub(crate) transfer_queue: HaQueue,
 
-    pub(crate) transfer_command_pool: HaCommandPool,
+    pub(super) transfer_queue: TransferQueue,
 }
 
 pub enum DeviceQueueIdentifier {
@@ -60,6 +57,11 @@ impl<'resource> HaLogicalDevice {
         }
 
         Ok(())
+    }
+
+    pub fn transfer(&self) -> HaTransfer {
+
+        self.transfer_queue.transfer(&self)
     }
 
     pub fn submit(&self, bundles: &[QueueSubmitBundle], fence: Option<&HaFence>, queue: DeviceQueueIdentifier)
@@ -114,16 +116,17 @@ impl<'resource> HaLogicalDevice {
     pub(crate) fn cleanup(&self) {
 
         unsafe {
-            self.transfer_command_pool.cleanup(self);
+            self.transfer_queue.clean(self);
             self.handle.destroy_device(None);
         }
     }
 
-    fn queue_by_identifier(&self, identifier: DeviceQueueIdentifier) -> &HaQueue {
+    // TODO: Redesign this function
+    pub(crate) fn queue_by_identifier(&self, identifier: DeviceQueueIdentifier) -> &HaQueue {
         match identifier {
             | DeviceQueueIdentifier::Graphics => &self.graphics_queue,
             | DeviceQueueIdentifier::Present  => &self.present_queue,
-            | DeviceQueueIdentifier::Transfer => &self.transfer_queue,
+            | DeviceQueueIdentifier::Transfer => unimplemented!(),
             | DeviceQueueIdentifier::Custom(queue_index) => &self.queues[queue_index],
         }
     }

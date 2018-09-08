@@ -2,7 +2,7 @@
 use ash::vk;
 use ash::version::DeviceV1_0;
 
-use core::device::{ HaLogicalDevice, QueueSubmitBundle, DeviceQueueIdentifier };
+use core::device::HaLogicalDevice;
 use core::physical::{ HaPhysicalDevice, MemorySelector };
 
 use resources::repository::HaImageRepository;
@@ -14,7 +14,7 @@ use resources::image::{ ImageLayout, ImageStorageInfo, load_texture };
 use resources::allocator::buffer::HaBufferAllocator;
 use resources::memory::traits::HaMemoryAbstract;
 use resources::memory::device::HaDeviceMemory;
-use resources::command::{ HaCommandRecorder, CommandBufferUsage, CommandBufferUsageFlag };
+use resources::command::{ HaCommandRecorder, CommandBufferUsageFlag };
 use resources::error::{ ImageError, AllocatorError };
 use pipeline::stages::PipelineStageFlag;
 use pipeline::pass::dependency::AccessFlag;
@@ -142,85 +142,80 @@ impl<'re> HaImageAllocator<'re> {
 
         // 5.create command buffer
         // TODO: Reduce duplicate code same in resources::repository::buffer.
-        let mut command_buffers = self.device.transfer_command_pool.allocate(self.device, CommandBufferUsage::UnitaryCommand, 1)?;
-        let command_buffer = command_buffers.pop().unwrap();
-        let recorder = command_buffer.setup_record(self.device);
-        let _ = recorder.begin_record(&[CommandBufferUsageFlag::OneTimeSubmitBit])?;
+        let mut transfer = self.device.transfer();
+        {
+            let command_buffer = transfer.command()?;
 
-        // 6.transition image layout (from undefine to transferDst)
+            let recorder = command_buffer.setup_record(self.device);
+            let _ = recorder.begin_record(&[CommandBufferUsageFlag::OneTimeSubmitBit])?;
 
-        let mut image_barriers = vec![];
-        for (image, view_desc) in self.images.iter().zip(&self.view_descs) {
-            let barrier = vk::ImageMemoryBarrier {
-                s_type: vk::StructureType::ImageMemoryBarrier,
-                p_next: ptr::null(),
-                src_access_mask: vk::AccessFlags::empty(),
-                dst_access_mask: [AccessFlag::TransferWriteBit].flags(),
-                old_layout: ImageLayout::Undefined.value(),
-                new_layout: ImageLayout::TransferDstOptimal.value(),
-                // TODO: Current ignore queue family ownership transfer.
-                // srcQueueFamilyIndex is the source queue family for a queue family ownership transfer.
-                src_queue_family_index : vk::VK_QUEUE_FAMILY_IGNORED,
-                // dstQueueFamilyIndex is the destination queue family for a queue family ownership transfer.
-                dst_queue_family_index : vk::VK_QUEUE_FAMILY_IGNORED,
-                image: image.handle,
-                subresource_range: view_desc.subrange.clone(),
-            };
-            image_barriers.push(barrier);
+            // 6.transition image layout (from undefine to transferDst)
+
+            let mut image_barriers = vec![];
+            for (image, view_desc) in self.images.iter().zip(&self.view_descs) {
+                let barrier = vk::ImageMemoryBarrier {
+                    s_type: vk::StructureType::ImageMemoryBarrier,
+                    p_next: ptr::null(),
+                    src_access_mask: vk::AccessFlags::empty(),
+                    dst_access_mask: [AccessFlag::TransferWriteBit].flags(),
+                    old_layout: ImageLayout::Undefined.value(),
+                    new_layout: ImageLayout::TransferDstOptimal.value(),
+                    // TODO: Current ignore queue family ownership transfer.
+                    // srcQueueFamilyIndex is the source queue family for a queue family ownership transfer.
+                    src_queue_family_index : vk::VK_QUEUE_FAMILY_IGNORED,
+                    // dstQueueFamilyIndex is the destination queue family for a queue family ownership transfer.
+                    dst_queue_family_index : vk::VK_QUEUE_FAMILY_IGNORED,
+                    image: image.handle,
+                    subresource_range: view_desc.subrange.clone(),
+                };
+                image_barriers.push(barrier);
+            }
+            let _ = recorder.pipeline_barrrier(
+                PipelineStageFlag::TopOfPipeBit,
+                PipelineStageFlag::TransferBit,
+                // dependencies specifying how execution and memory dependencies are formed
+                &[],
+                &[],
+                &[],
+                &image_barriers
+            );
+
+            // 7.copy textures from buffer to image
+            // do image barrier transition and copy buffer to image.
+            for (i, buffer_item) in staging_buffer_items.iter().enumerate() {
+                let image_item = ImageViewItem {
+                    image_handle: self.images[i].handle,
+                    view_handle : views[i].handle,
+                    view_index  : i,
+                };
+                self.copy_buffer_to_image(&recorder, buffer_item, &image_item)?;
+            }
+
+            // 8.transition image layout (from transferDst to shader read only optimal)
+            for barrier in image_barriers.iter_mut() {
+                barrier.src_access_mask = [AccessFlag::TransferWriteBit].flags();
+                barrier.dst_access_mask = [AccessFlag::ShaderReadBit].flags();
+                barrier.old_layout = ImageLayout::TransferDstOptimal.value();
+                barrier.new_layout = ImageLayout::ShaderReadOnlyOptimal.value();
+            }
+            let _ = recorder.pipeline_barrrier(
+                PipelineStageFlag::TransferBit,
+                PipelineStageFlag::FragmentShaderBit,
+                &[],
+                &[],
+                &[],
+                &image_barriers
+            );
+
+
+            // 9.submit command buffer
+            recorder.finish()?;
         }
-        let _ = recorder.pipeline_barrrier(
-            PipelineStageFlag::TopOfPipeBit,
-            PipelineStageFlag::TransferBit,
-            // dependencies specifying how execution and memory dependencies are formed
-            &[],
-            &[],
-            &[],
-            &image_barriers
-        );
 
-        // 7.copy textures from buffer to image
-        // do image barrier transition and copy buffer to image.
-        for (i, buffer_item) in staging_buffer_items.iter().enumerate() {
-            let image_item = ImageViewItem {
-                image_handle: self.images[i].handle,
-                view_handle : views[i].handle,
-                view_index  : i,
-            };
-            self.copy_buffer_to_image(&recorder, buffer_item, &image_item)?;
-        }
-
-        // 8.transition image layout (from transferDst to shader read only optimal)
-        for barrier in image_barriers.iter_mut() {
-            barrier.src_access_mask = [AccessFlag::TransferWriteBit].flags();
-            barrier.dst_access_mask = [AccessFlag::ShaderReadBit].flags();
-            barrier.old_layout = ImageLayout::TransferDstOptimal.value();
-            barrier.new_layout = ImageLayout::ShaderReadOnlyOptimal.value();
-        }
-        let _ = recorder.pipeline_barrrier(
-            PipelineStageFlag::TransferBit,
-            PipelineStageFlag::FragmentShaderBit,
-            &[],
-            &[],
-            &[],
-            &image_barriers
-        );
-
-        // 9.submit command buffer
-        recorder.finish()?;
-        let submit_infos = [
-            QueueSubmitBundle {
-                wait_semaphores: &[],
-                sign_semaphores: &[],
-                wait_stages    : &[],
-                commands       : &[&command_buffer],
-            },
-        ];
-        self.device.submit(&submit_infos, None, DeviceQueueIdentifier::Transfer)?;
-        let _ = self.device.wait_idle();
+        transfer.excute()?;
 
         // 10.clean resources.
         staging_repository.cleanup(self.device);
-        self.device.transfer_command_pool.free(self.device, &[&command_buffer]);
 
         // finial done.
         let image_ownership_transfer = self.images.drain(..).collect();
