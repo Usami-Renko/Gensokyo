@@ -17,7 +17,7 @@ pub enum QueueUsage {
 pub struct HaQueue {
     pub(crate) handle: vk::Queue,
 
-    pub(crate) _usage       : QueueUsage,
+    pub(crate) usage        : QueueUsage,
     pub(crate) _priority    : f32, // value between [0.0, 1.0]
     pub(crate) family_index : uint32_t,
     pub(crate) _queue_index : uint32_t,
@@ -29,7 +29,7 @@ impl HaQueue {
     pub fn new(handle: vk::Queue, info: &QueueInfoTmp) -> HaQueue {
         HaQueue {
             handle,
-            _usage       : info.usage,
+            usage: info.usage,
             _priority    : info.priority,
             family_index : info.family_index,
             _queue_index : info.queue_index,

@@ -8,8 +8,8 @@ use core::instance::HaInstance;
 use core::physical::HaPhysicalDevice;
 use core::device::HaLogicalDevice;
 use core::device::DeviceQueueIdentifier;
-use core::device::queue::QueueUsage;
-use core::device::queue::{ HaQueue, QueueInfoTmp, TransferQueue };
+use core::device::queue::{ HaQueue, QueueInfoTmp, QueueUsage };
+use core::device::queue::{HaQueueAbstract, HaGraphicsQueue, HaPresentQueue, HaTransferQueue, QueueContainer};
 use core::error::LogicalDeviceError;
 
 use utility::cast;
@@ -61,6 +61,10 @@ pub struct LogicalDeviceBuilder<'a, 'b> {
 
     instance            : &'a HaInstance,
     physical_device     : &'b HaPhysicalDevice,
+
+    graphics_count      : usize,
+    present_count       : usize,
+    transfer_count      : usize,
 }
 
 impl<'a, 'b> LogicalDeviceBuilder<'a, 'b> {
@@ -79,22 +83,43 @@ impl<'a, 'b> LogicalDeviceBuilder<'a, 'b> {
 
             instance,
             physical_device     : physical,
+
+            graphics_count      : 0,
+            present_count       : 0,
+            transfer_count      : 0,
         }
     }
 
     #[allow(dead_code)]
     pub fn add_queue(&mut self, usage: QueueUsage, priority: PrefabQueuePriority) -> DeviceQueueIdentifier {
         let queue_index = self.setup_queue(usage, priority);
-        DeviceQueueIdentifier::Custom(queue_index)
+
+        match usage {
+            | QueueUsage::Graphics => DeviceQueueIdentifier::Custom(Box::new(DeviceQueueIdentifier::Graphics), queue_index),
+            | QueueUsage::Present  => DeviceQueueIdentifier::Custom(Box::new(DeviceQueueIdentifier::Present), queue_index),
+            | QueueUsage::Transfer => DeviceQueueIdentifier::Custom(Box::new(DeviceQueueIdentifier::Transfer), queue_index),
+        }
     }
 
     fn setup_queue(&mut self, usage: QueueUsage, priority: PrefabQueuePriority) -> usize {
 
         // TODO: Add more usage configuration
-        let family_index = match usage {
-            | QueueUsage::Graphics => self.physical_device.families.family_indices.graphics_index,
-            | QueueUsage::Present  => self.physical_device.families.family_indices.present_index,
-            | QueueUsage::Transfer => self.physical_device.families.family_indices.transfer_index,
+        let (family_index, queue_index) = match usage {
+            | QueueUsage::Graphics => {
+                let result = (self.physical_device.families.family_indices.graphics_index, self.graphics_count);
+                self.graphics_count += 1;
+                result
+            },
+            | QueueUsage::Present  => {
+                let result = (self.physical_device.families.family_indices.present_index, self.present_count);
+                self.present_count += 1;
+                result
+            },
+            | QueueUsage::Transfer => {
+                let result = (self.physical_device.families.family_indices.transfer_index, self.transfer_count);
+                self.transfer_count += 1;
+                result
+            },
         };
 
         self.family_indices.push(family_index);
@@ -104,7 +129,7 @@ impl<'a, 'b> LogicalDeviceBuilder<'a, 'b> {
         self.family_queue_counts[family_index as usize] += 1;
         self.total_queue_count += 1;
 
-        self.queue_indices.len() - 1
+        queue_index
     }
 
     fn generate_queue_create_info(&self) -> (Vec<vk::DeviceQueueCreateInfo>, Vec<QueueInfoTmp>) {
@@ -190,7 +215,7 @@ impl<'a, 'b> LogicalDeviceBuilder<'a, 'b> {
         };
 
         // Custom queues
-        let mut all_queues: Vec<HaQueue> = vec![];
+        let mut all_queues = vec![];
         for queue_info_tmp in queue_info_tmps.iter() {
             let queue_handle = unsafe {
                 handle.get_device_queue(queue_info_tmp.family_index, queue_info_tmp.queue_index)
@@ -204,11 +229,18 @@ impl<'a, 'b> LogicalDeviceBuilder<'a, 'b> {
         let present_queue  = all_queues.pop().unwrap();
         let graphics_queue = all_queues.pop().unwrap();
 
-        let transfer_queue = TransferQueue::new(&handle, transfer_queue, config)?;
+        let graphics_queue = HaGraphicsQueue::new(&handle, graphics_queue, config)?;
+        let present_queue = HaPresentQueue::new(&handle, present_queue, config)?;
+        let transfer_queue = HaTransferQueue::new(&handle, transfer_queue, config)?;
+
+        let mut queue_container = QueueContainer::empty();
+        for queue_data in all_queues.into_iter() {
+            queue_container.add_queue(&handle, queue_data, config)?;
+        }
 
         let device = HaLogicalDevice {
             handle,
-            queues: all_queues,
+            queue_container,
 
             graphics_queue,
             present_queue,
