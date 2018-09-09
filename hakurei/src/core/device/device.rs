@@ -7,7 +7,7 @@ use ash::version::DeviceV1_0;
 
 use core::device::queue::QueueSubmitBundle;
 use core::device::queue::{ HaQueueAbstract, HaGraphicsQueue, HaPresentQueue, HaTransferQueue, HaTransfer };
-use core::device::queue::{HaQueue, QueueContainer};
+use core::device::queue::{ HaQueue, QueueContainer };
 use core::error::LogicalDeviceError;
 
 use resources::error::CommandError;

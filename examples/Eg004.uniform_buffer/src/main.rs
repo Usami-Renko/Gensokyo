@@ -165,7 +165,8 @@ impl ProgramProc for UniformBufferProcedure {
         let mut render_pass_builder = RenderPassBuilder::new();
         let first_subpass = render_pass_builder.new_subpass(SubpassType::Graphics);
 
-        let color_attachment = RenderAttachement::setup(RenderAttachementPrefab::Common, swapchain.format);
+        let mut color_attachment = RenderAttachement::setup(RenderAttachementPrefab::Present, swapchain.format);
+        color_attachment.set_format(swapchain.format);
         let _attachment_index = render_pass_builder.add_attachemnt(color_attachment, first_subpass, AttachmentType::Color);
 
         let mut dependency = RenderDependency::setup(RenderDependencyPrefab::Common, SUBPASS_EXTERAL, first_subpass);

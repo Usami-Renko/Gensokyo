@@ -75,7 +75,7 @@ impl<'vk, 'win: 'vk> SwapchainBuilder<'vk, 'win> {
         Ok(builder)
     }
 
-    pub fn build(&self, instance: &HaInstance)
+    pub fn build(&self, instance: &HaInstance, old_chain: Option<&HaSwapchain>)
         -> Result<HaSwapchain, SwapchainInitError> {
 
         let prefer_format = self.support.optimal_format();
@@ -97,7 +97,6 @@ impl<'vk, 'win: 'vk> SwapchainBuilder<'vk, 'win> {
             // this value must be greater than 0.
             // for non-stereoscopic-3D applications, this value is 1
             image_array_layers: 1,
-
             // what kind of operations we'll use the images in the swap chain for.
             image_usage: vk::IMAGE_USAGE_COLOR_ATTACHMENT_BIT,
             // for range or image subresources accessing,
@@ -113,8 +112,8 @@ impl<'vk, 'win: 'vk> SwapchainBuilder<'vk, 'win> {
             present_mode             : prefer_present_mode,
             // set this true to discard the pixels out of surface
             clipped                  : vk::VK_TRUE,
-            // because this is the first creation of swapchain, no need to set this field
-            old_swapchain            : vk::SwapchainKHR::null(),
+            // pass the old swapchain may help vulkan to reuse some resources.
+            old_swapchain            : if let Some(chain) = old_chain { chain.handle } else { vk::SwapchainKHR::null() },
         };
 
         let loader = ash::extensions::Swapchain::new(&instance.handle, &self.device.handle)
