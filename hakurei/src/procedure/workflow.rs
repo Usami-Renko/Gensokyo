@@ -76,7 +76,7 @@ impl<'win, T> ProgramEnv<T> where T: ProgramProc {
 
     pub(super) fn load_resources(&mut self, core: &CoreInfrastructure) -> Result<HaResources, ProcedureError> {
 
-        let inner_resource = self.create_inner_resources(core)?;
+        let inner_resource = self.create_inner_resources(core, None)?;
 
         let resource_generator = ResourceGenerator::init(&core.physical, &core.device);
         self.procedure.assets(&core.device, &resource_generator)?;
@@ -87,9 +87,9 @@ impl<'win, T> ProgramEnv<T> where T: ProgramProc {
         Ok(inner_resource)
     }
 
-    pub(super) fn reload_resources(&mut self, core: &CoreInfrastructure) -> Result<HaResources, ProcedureError> {
+    pub(super) fn reload_resources(&mut self, core: &CoreInfrastructure, old_resource: &HaResources) -> Result<HaResources, ProcedureError> {
 
-        let inner_resource = self.create_inner_resources(core)?;
+        let inner_resource = self.create_inner_resources(core, Some(&old_resource))?;
 
         self.procedure.pipelines(&core.device, &inner_resource.swapchain)?;
         self.procedure.subresources(&core.device)?;
@@ -123,7 +123,7 @@ impl<'win, T> ProgramEnv<T> where T: ProgramProc {
 
         // FIXME: Use present queue will cause crash. Image ownership transfer is necessary,
         // see https://github.com/KhronosGroup/Vulkan-Docs/wiki/Synchronization-Examples.
-        // or see https://software.intel.com/en-us/articles/api-without-secrets-introduction-to-vulkan-part-3
+        // or see https://software.intel.com/en-us/articles/api-without-secrets-introduction-to-vulkan-part-3#inpage-nav-6-3
         let present_result = resources.swapchain.present(
             &[present_available],
             image_index,
@@ -147,10 +147,10 @@ impl<'win, T> ProgramEnv<T> where T: ProgramProc {
             .map_err(|e| ProcedureError::LogicalDevice(e))
     }
 
-    fn create_inner_resources(&self, core: &CoreInfrastructure) -> Result<HaResources, ProcedureError> {
+    fn create_inner_resources(&self, core: &CoreInfrastructure, old_resource: Option<&HaResources>) -> Result<HaResources, ProcedureError> {
 
         let swapchain = SwapchainBuilder::init(&self.config, &core.physical, &core.device, &core.surface)?
-            .build(&core.instance)?;
+            .build(&core.instance, old_resource.and_then(|re| Some(&re.swapchain)))?;
 
         // sync
         let mut image_awaits = vec![];
