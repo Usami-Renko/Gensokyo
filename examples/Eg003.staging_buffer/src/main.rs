@@ -234,6 +234,15 @@ impl ProgramProc for StagingBufferProcedure {
         self.command_pool.cleanup(device);
         self.vertex_buffer.cleanup(device);
     }
+
+    fn react_input(&mut self, inputer: &ActionNerve) -> SceneAction {
+
+        if inputer.is_key_pressed(HaKeycode::Escape) {
+            return SceneAction::Terminal
+        }
+
+        SceneAction::Rendering
+    }
 }
 
 fn main() {

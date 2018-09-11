@@ -4,6 +4,7 @@ pub(crate) mod core;
 pub(crate) mod window;
 pub(crate) mod swapchain;
 pub(crate) mod image;
+pub(crate) mod input;
 
 pub mod prelude;
 

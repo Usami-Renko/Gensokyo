@@ -280,6 +280,15 @@ impl ProgramProc for TextureMappingProcedure {
         self.image_repository.cleanup(device);
         self.vertex_storage.cleanup(device);
     }
+
+    fn react_input(&mut self, inputer: &ActionNerve) -> SceneAction {
+
+        if inputer.is_key_pressed(HaKeycode::Escape) {
+            return SceneAction::Terminal
+        }
+
+        SceneAction::Rendering
+    }
 }
 
 fn main() {

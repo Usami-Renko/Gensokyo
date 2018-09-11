@@ -14,6 +14,7 @@ use sync::fence::HaFence;
 use sync::semaphore::HaSemaphore;
 
 use procedure::window::ProgramEnv;
+use procedure::input::{ ActionNerve, SceneAction };
 use procedure::error::ProcedureError;
 
 use utility::time::TimePeriod;
@@ -27,6 +28,8 @@ pub trait ProgramProc {
     fn draw(&mut self, device: &HaLogicalDevice, device_available: &HaFence, image_available: &HaSemaphore, image_index: usize) -> Result<&HaSemaphore, ProcedureError>;
     fn clean_resources(&mut self, device: &HaLogicalDevice) -> Result<(), ProcedureError>;
     fn cleanup(&mut self, device: &HaLogicalDevice);
+
+    fn react_input(&mut self, inputer: &ActionNerve) -> SceneAction;
 }
 
 pub struct CoreInfrastructure<'win> {
