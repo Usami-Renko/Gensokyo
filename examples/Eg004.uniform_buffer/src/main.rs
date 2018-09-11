@@ -272,6 +272,15 @@ impl ProgramProc for UniformBufferProcedure {
         self.ubo_storage.cleanup(device);
         self.vertex_storage.cleanup(device);
     }
+
+    fn react_input(&mut self, inputer: &ActionNerve) -> SceneAction {
+
+        if inputer.is_key_pressed(HaKeycode::Escape) {
+            return SceneAction::Terminal
+        }
+
+        SceneAction::Rendering
+    }
 }
 
 fn main() {
