@@ -113,8 +113,7 @@ impl ProgramProc for TriangleProcedure {
         let mut render_pass_builder = RenderPassBuilder::new();
         let first_subpass = render_pass_builder.new_subpass(SubpassType::Graphics);
 
-        let mut color_attachment = RenderAttachement::setup(RenderAttachementPrefab::Present, swapchain.format);
-        color_attachment.set_format(swapchain.format);
+        let color_attachment = RenderAttachement::setup(RenderAttachementPrefab::Present, swapchain.format);
         let _attachment_index = render_pass_builder.add_attachemnt(color_attachment, first_subpass, AttachmentType::Color);
 
         let mut dependency = RenderDependency::setup(RenderDependencyPrefab::Common, SUBPASS_EXTERAL, first_subpass);
@@ -154,10 +153,10 @@ impl ProgramProc for TriangleProcedure {
         let command_pool = HaCommandPool::setup(&device, DeviceQueueIdentifier::Graphics, &[])?;
 
         let command_buffer_count = self.graphics_pipeline.frame_count();
-        let mut command_buffers = command_pool
+        let command_buffers = command_pool
             .allocate(device, CommandBufferUsage::UnitaryCommand, command_buffer_count)?;
 
-        for (frame_index, command_buffer) in command_buffers.iter_mut().enumerate() {
+        for (frame_index, command_buffer) in command_buffers.iter().enumerate() {
             let recorder = command_buffer.setup_record(device);
 
             recorder.begin_record(&[CommandBufferUsageFlag::SimultaneousUseBit])?

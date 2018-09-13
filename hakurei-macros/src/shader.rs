@@ -12,7 +12,7 @@ macro_rules! define_input {
     ) => (
 
         #[derive(Debug, Clone, Copy)]
-        struct $struct_name {
+        pub struct $struct_name {
             $(
                 $filed_name: [$field_type; $element_count],
             )*
@@ -20,7 +20,7 @@ macro_rules! define_input {
 
         impl $struct_name {
 
-            fn desc() -> VertexInputDescription {
+            pub fn desc() -> VertexInputDescription {
                 use std::mem;
                 VertexInputDescription {
                     bindings: vec![

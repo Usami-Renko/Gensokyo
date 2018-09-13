@@ -6,6 +6,7 @@ use resources::memory::MemoryPropertyFlag;
 
 use utility::marker::VulkanFlags;
 
+#[derive(Debug, Clone)]
 pub struct BufferConfig {
 
     pub(crate) usages       : vk::BufferUsageFlags,
