@@ -1,0 +1,10 @@
+[package]
+name = "box"
+version = "0.1.0"
+authors = ["usami-renko <usami-ssc@protonmail.com>"]
+description = "Render a box object."
+
+[dependencies]
+hakurei = { path = "../../hakurei" }
+hakurei-macros = { path = "../../hakurei-macros" }
+cgmath = "0.16.1"

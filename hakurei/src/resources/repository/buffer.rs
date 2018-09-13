@@ -69,6 +69,7 @@ impl HaBufferRepository {
         Ok(())
     }
 
+    // TODO: Make this function to support multiple buffer copy operation.
     pub fn copy_buffer_to_buffer(&self, device: &HaLogicalDevice, from_item: &BufferSubItem, to_item: &BufferSubItem) -> Result<(), AllocatorError> {
 
         let mut transfer = device.transfer();

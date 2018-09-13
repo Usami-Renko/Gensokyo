@@ -1,7 +1,12 @@
 
+mod data;
+
+pub use self::data::{ Vertex, UboObject };
+
 #[macro_use]
 extern crate hakurei_macros;
 extern crate hakurei;
+extern crate cgmath;
 
 use hakurei::prelude::*;
 use hakurei::pipeline::shader::prelude::*;
@@ -14,39 +19,31 @@ use hakurei::resources::buffer::*;
 use hakurei::resources::memory::*;
 use hakurei::resources::repository::*;
 use hakurei::resources::descriptor::*;
-use hakurei::resources::image::*;
 use hakurei::sync::prelude::*;
+
+use cgmath::{ Matrix4, Vector3, Deg, SquareMatrix };
 
 use std::path::Path;
 
-const WINDOW_TITLE: &'static str = "Texture Mapping Example";
+const WINDOW_TITLE: &'static str = "Box Example";
 const WINDOW_WIDTH:  u32 = 800;
-const WINDOW_HEIGHT: u32 = 800;
-const VERTEX_SHADER_PATH  : &'static str = "shaders/texture.vert.spv";
-const FRAGMENT_SHADER_PATH: &'static str = "shaders/texture.frag.spv";
-const TEXTURE_PATH: &'static str = "texture/texture.jpg";
+const WINDOW_HEIGHT: u32 = 600;
 
-define_input! {
-    #[binding = 0, rate = vertex]
-    struct Vertex {
-        #[location = 0, format = vec2]
-        pos: [f32; 2],
-        #[location = 1, format = vec2]
-        tex_coord: [f32; 2],
-    }
-}
+struct BoxProcedure {
 
-struct TextureMappingProcedure {
-
-    vertex_data   : Vec<Vertex>,
-    vertex_storage: HaBufferRepository,
-    vertex_item   : BufferSubItem,
-
-    sampler_repository: HaDescriptorRepository,
-    sampler_set       : DescriptorSetItem,
-    image_repository  : HaImageRepository,
+    vertex_data  : Vec<Vertex>,
+    index_data   : Vec<uint32_t>,
+    vertex_buffer: HaBufferRepository,
+    index_buffer : HaBufferRepository,
+    vertex_item  : BufferSubItem,
+    index_item   : BufferSubItem,
 
     graphics_pipeline: HaGraphicsPipeline,
+
+    ubo_data      : Vec<UboObject>,
+    ubo_buffer    : HaBufferRepository,
+    ubo_storage   : HaDescriptorRepository,
+    ubo_set       : DescriptorSetItem,
 
     command_pool   : HaCommandPool,
     command_buffers: Vec<HaCommandBuffer>,
@@ -54,27 +51,29 @@ struct TextureMappingProcedure {
     present_availables: Vec<HaSemaphore>,
 }
 
-impl TextureMappingProcedure {
+impl BoxProcedure {
 
-    fn new() -> TextureMappingProcedure {
-        TextureMappingProcedure {
-            vertex_data: vec![
-                Vertex { pos: [-0.75, -0.75], tex_coord: [1.0, 0.0], },
-                Vertex { pos: [ 0.75, -0.75], tex_coord: [0.0, 0.0], },
-                Vertex { pos: [ 0.75,  0.75], tex_coord: [0.0, 1.0], },
-                Vertex { pos: [ 0.75,  0.75], tex_coord: [0.0, 1.0], },
-                Vertex { pos: [-0.75,  0.75], tex_coord: [1.0, 1.0], },
-                Vertex { pos: [-0.75, -0.75], tex_coord: [1.0, 0.0], },
-            ],
-            vertex_storage: HaBufferRepository::empty(),
-            vertex_item: BufferSubItem::unset(),
-
-            sampler_repository: HaDescriptorRepository::empty(),
-            sampler_set       : DescriptorSetItem::unset(),
-            image_repository  : HaImageRepository::empty(),
-
+    fn new() -> BoxProcedure {
+        BoxProcedure {
+            vertex_data  : data::VERTEX_DATA.to_vec(),
+            index_data   : data::INDEX_DATA.to_vec(),
+            vertex_buffer: HaBufferRepository::empty(),
+            index_buffer : HaBufferRepository::empty(),
+            vertex_item  : BufferSubItem::unset(),
+            index_item   : BufferSubItem::unset(),
 
             graphics_pipeline: HaGraphicsPipeline::uninitialize(),
+
+            ubo_data: vec![
+                UboObject {
+                    translate: Matrix4::identity(),
+                    scale    : Matrix4::from_scale(0.5),
+                    rotate   : Matrix4::from_angle_x(Deg(45.0)) * Matrix4::from_angle_y(Deg(45.0)),
+                },
+            ],
+            ubo_buffer: HaBufferRepository::empty(),
+            ubo_storage: HaDescriptorRepository::empty(),
+            ubo_set: DescriptorSetItem::unset(),
 
             command_pool: HaCommandPool::uninitialize(),
             command_buffers: vec![],
@@ -84,69 +83,112 @@ impl TextureMappingProcedure {
     }
 }
 
-impl ProgramProc for TextureMappingProcedure {
+impl ProgramProc for BoxProcedure {
 
     fn assets(&mut self, device: &HaLogicalDevice, generator: &ResourceGenerator) -> Result<(), ProcedureError> {
 
-        // vertex and uniform buffer
-        let mut vertex_buffer_config = BufferConfig::init(
-            &[BufferUsageFlag::VertexBufferBit],
+        // vertex buffer
+        let mut staging_buffer_config = BufferConfig::init(
+            &[BufferUsageFlag::TransferSrcBit],
             &[
                 MemoryPropertyFlag::HostVisibleBit,
                 MemoryPropertyFlag::HostCoherentBit,
             ],
             &[]
         );
+        let _ =  staging_buffer_config.add_item(data_size!(self.vertex_data, Vertex));
+
+        let mut vertex_buffer_config = BufferConfig::init(
+            &[
+                BufferUsageFlag::TransferDstBit,
+                BufferUsageFlag::VertexBufferBit,
+            ],
+            &[MemoryPropertyFlag::DeviceLocalBit],
+            &[]
+        );
         let _ = vertex_buffer_config.add_item(data_size!(self.vertex_data, Vertex));
+
+        let mut staging_allocator = generator.buffer();
+        let staging_buffer_item = staging_allocator.attach_buffer(staging_buffer_config)?.pop().unwrap();
+
+        let mut staging_repository = staging_allocator.allocate()?;
+        staging_repository.tranfer_data(device, &self.vertex_data, &staging_buffer_item)?;
 
         let mut vertex_allocator = generator.buffer();
         self.vertex_item = vertex_allocator.attach_buffer(vertex_buffer_config)?.pop().unwrap();
+        self.vertex_buffer = vertex_allocator.allocate()?;
+        self.vertex_buffer.copy_buffer_to_buffer(device, &staging_buffer_item, &self.vertex_item)?;
+        staging_repository.cleanup(device);
 
-        self.vertex_storage = vertex_allocator.allocate()?;
-        self.vertex_storage.tranfer_data(device, &self.vertex_data, &self.vertex_item)?;
-
-        // image
-        let image_desc = ImageDescInfo::init(
-            ImageType::Type2d,
-            ImageTiling::Optimal,
+        // index buffer
+        let mut staging_buffer_config = BufferConfig::init(
+            &[BufferUsageFlag::TransferSrcBit],
             &[
-                ImageUsageFlag::TransferDstBit,
-                ImageUsageFlag::SampledBit,
+                MemoryPropertyFlag::HostVisibleBit,
+                MemoryPropertyFlag::HostCoherentBit,
             ],
-            ImageLayout::Undefined
+            &[]
         );
-        let view_desc = ImageViewDescInfo::init(ImageViewType::Type2d);
+        let _ = staging_buffer_config.add_item(data_size!(self.index_data, uint32_t));
 
-        let mut image_allocator = generator.image();
-        let image_view_index = image_allocator.attach_image(Path::new(TEXTURE_PATH), image_desc, view_desc)?;
-        self.image_repository = image_allocator.allocate()?;
-        let image_view_item = self.image_repository.view_item(image_view_index);
+        let mut index_buffer_config = BufferConfig::init(
+            &[
+                BufferUsageFlag::TransferDstBit,
+                BufferUsageFlag::IndexBufferBit,
+            ],
+            &[MemoryPropertyFlag::DeviceLocalBit],
+            &[]
+        );
+        let _ = index_buffer_config.add_item(data_size!(self.index_data, uint32_t));
+
+        staging_allocator.reset();
+        let staging_buffer_item = staging_allocator.attach_buffer(staging_buffer_config)?.pop().unwrap();
+
+        let mut staging_repository = staging_allocator.allocate()?;
+        staging_repository.tranfer_data(device, &self.index_data, &staging_buffer_item)?;
+
+        let mut index_allocator = generator.buffer();
+        self.index_item = index_allocator.attach_buffer(index_buffer_config)?.pop().unwrap();
+        self.index_buffer = index_allocator.allocate()?;
+        self.index_buffer.copy_buffer_to_buffer(device, &staging_buffer_item, &self.index_item)?;
+        staging_repository.cleanup(device);
+
+        // uniform buffer
+        let mut uniform_buffer_config = BufferConfig::init(
+            &[BufferUsageFlag::UniformBufferBit],
+            &[
+                MemoryPropertyFlag::HostVisibleBit,
+                MemoryPropertyFlag::HostCoherentBit,
+            ],
+            &[],
+        );
+        let _ = uniform_buffer_config.add_item(data_size!(self.ubo_data, UboObject));
+
+        let mut uniform_allocator = generator.buffer();
+        let ubo_buffer_item = uniform_allocator.attach_buffer(uniform_buffer_config)?.pop().unwrap();
+        self.ubo_buffer = uniform_allocator.allocate()?;
+        self.ubo_buffer.tranfer_data(device, &self.ubo_data, &ubo_buffer_item)?;
 
         // descriptor
-        let sampler_info = SamplerDescInfo::init();
-        let sampler = HaSampler::init(device, sampler_info).unwrap();
-
-        let sampler_descriptor_info = DescriptorImageBindingInfo {
+        let ubo_info = DescriptorBufferBindingInfo {
             binding: 0,
-            type_  : ImageDescriptorType::CombinedImageSampler,
-            count  : 1,
-            sampler,
-            layout: ImageLayout::ShaderReadOnlyOptimal,
-            view_item: image_view_item,
+            type_: BufferDescriptorType::UniformBuffer,
+            count: 1,
+            element_size: data_size!(self.ubo_data, UboObject),
+            buffer: ubo_buffer_item.clone(),
         };
-
         let mut descriptor_set_config = DescriptorSetConfig::init(&[]);
-        let _ = descriptor_set_config.add_image_binding(sampler_descriptor_info, &[
-            ShaderStageFlag::FragmentStage,
+        let ubo_binding_index = descriptor_set_config.add_buffer_binding(ubo_info, &[
+            ShaderStageFlag::VertexStage,
         ]);
 
         let mut descriptor_allocator = generator.descriptor(&[]);
-        let (set_item, mut descriptor_binding_items) = descriptor_allocator.attach_descriptor_set(descriptor_set_config);
-        let sampler_item = descriptor_binding_items.pop().unwrap();
+        let (descriptor_set_item, descriptor_binding_items) = descriptor_allocator.attach_descriptor_set(descriptor_set_config);
+        let ubo_descriptor_item = descriptor_binding_items[ubo_binding_index].clone();
 
-        self.sampler_repository = descriptor_allocator.allocate()?;
-        self.sampler_repository.update_descriptors(device, &[sampler_item]);
-        self.sampler_set = set_item;
+        self.ubo_storage = descriptor_allocator.allocate()?;
+        self.ubo_storage.update_descriptors(device, &[ubo_descriptor_item]);
+        self.ubo_set = descriptor_set_item;
 
         Ok(())
     }
@@ -155,11 +197,11 @@ impl ProgramProc for TextureMappingProcedure {
         // shaders
         let vertex_shader = HaShaderInfo::setup(
             ShaderStageFlag::VertexStage,
-            Path::new(VERTEX_SHADER_PATH),
+            Path::new("shaders/box.vert.spv"),
             None);
         let fragment_shader = HaShaderInfo::setup(
             ShaderStageFlag::FragmentStage,
-            Path::new(FRAGMENT_SHADER_PATH),
+            Path::new("shaders/box.frag.spv"),
             None);
         let shader_infos = vec![
             vertex_shader,
@@ -184,10 +226,12 @@ impl ProgramProc for TextureMappingProcedure {
 
         let render_pass = render_pass_builder.build(device, swapchain)?;
         let viewport = HaViewport::setup(swapchain.extent);
+        let depthstencil = HaDepthStencil::setup(HaDepthStencilPrefab::Disable);
 
         let pipeline_config = GraphicsPipelineConfig::init(shader_infos, vertex_input_desc, render_pass)
             .setup_viewport(viewport)
-            .add_descriptor_set(self.sampler_repository.set_layout_at(&self.sampler_set))
+            .setup_depth_stencil(depthstencil)
+            .add_descriptor_set(self.ubo_storage.set_layout_at(&self.ubo_set))
             .finish_config();
 
         let mut pipeline_builder = GraphicsPipelineBuilder::init();
@@ -200,16 +244,17 @@ impl ProgramProc for TextureMappingProcedure {
     }
 
     fn subresources(&mut self, device: &HaLogicalDevice) -> Result<(), ProcedureError> {
+
         // sync
         for _ in 0..self.graphics_pipeline.frame_count() {
             let present_available = HaSemaphore::setup(device)?;
             self.present_availables.push(present_available);
         }
+
         Ok(())
     }
 
     fn commands(&mut self, device: &HaLogicalDevice) -> Result<(), ProcedureError> {
-
         // command buffer
         let command_pool = HaCommandPool::setup(&device, DeviceQueueIdentifier::Graphics, &[])?;
 
@@ -223,9 +268,10 @@ impl ProgramProc for TextureMappingProcedure {
             recorder.begin_record(&[CommandBufferUsageFlag::SimultaneousUseBit])?
                 .begin_render_pass(&self.graphics_pipeline, frame_index)
                 .bind_pipeline(&self.graphics_pipeline)
-                .bind_vertex_buffers(0, &self.vertex_storage.vertex_binding_infos(&[&self.vertex_item]))
-                .bind_descriptor_sets(&self.graphics_pipeline, 0, &self.sampler_repository.descriptor_binding_infos(&[&self.sampler_set]))
-                .draw(self.vertex_data.len() as uint32_t, 1, 0, 0)
+                .bind_vertex_buffers(0, &self.vertex_buffer.vertex_binding_infos(&[&self.vertex_item]))
+                .bind_index_buffers(&self.index_buffer.index_binding_info(&self.index_item))
+                .bind_descriptor_sets(&self.graphics_pipeline, 0, &self.ubo_storage.descriptor_binding_infos(&[&self.ubo_set]))
+                .draw_indexed(self.index_data.len() as uint32_t, 1, 0, 0, 0)
                 .end_render_pass()
                 .finish()?;
         }
@@ -274,10 +320,10 @@ impl ProgramProc for TextureMappingProcedure {
 
         self.graphics_pipeline.cleanup(device);
         self.command_pool.cleanup(device);
-
-        self.sampler_repository.cleanup(device);
-        self.image_repository.cleanup(device);
-        self.vertex_storage.cleanup(device);
+        self.ubo_storage.cleanup(device);
+        self.ubo_buffer.cleanup(device);
+        self.index_buffer.cleanup(device);
+        self.vertex_buffer.cleanup(device);
     }
 
     fn react_input(&mut self, inputer: &ActionNerve) -> SceneAction {
@@ -292,8 +338,7 @@ impl ProgramProc for TextureMappingProcedure {
 
 fn main() {
 
-    let procecure = TextureMappingProcedure::new();
-
+    let procecure = BoxProcedure::new();
     let mut config = EngineConfig::default();
     config.window.dimension = Dimension2D {
         width : WINDOW_WIDTH,
@@ -302,6 +347,7 @@ fn main() {
     config.window.title = String::from(WINDOW_TITLE);
 
     let mut program = ProgramEnv::new(config, procecure);
+
     match program.launch() {
         | Ok(_) => (),
         | Err(err) => {

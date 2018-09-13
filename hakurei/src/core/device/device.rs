@@ -2,8 +2,7 @@
 use ash;
 use ash::vk;
 use ash::vk::uint32_t;
-use ash::version::V1_0;
-use ash::version::DeviceV1_0;
+use ash::version::{ V1_0, DeviceV1_0 };
 
 use core::device::queue::QueueSubmitBundle;
 use core::device::queue::{ HaQueueAbstract, HaGraphicsQueue, HaPresentQueue, HaTransferQueue, HaTransfer };
