@@ -1,8 +1,8 @@
 
 use ash;
-pub type PrimitiveTopology = ash::vk::PrimitiveTopology;
+
+// TODO: Map this enums
 pub type FrontFaceType     = ash::vk::FrontFace;
-pub type PolygonMode       = ash::vk::PolygonMode;
 pub type LogicOp           = ash::vk::LogicOp;
 pub type CompareOp         = ash::vk::CompareOp;
 pub type BlendFactor       = ash::vk::BlendFactor;
@@ -17,3 +17,5 @@ pub use pipeline::state::depth_stencil::{ HaDepthStencil, HaDepthStencilPrefab, 
 pub use pipeline::state::blend::{ HaBlend, BlendAttachemnt, BlendAttachmentPrefab, ColorComponentFlag };
 pub use pipeline::state::tessellation::HaTessellation;
 pub use pipeline::state::dynamic::HaDynamicState;
+
+pub use pipeline::enums::{ PolygonMode, PrimitiveTopology };

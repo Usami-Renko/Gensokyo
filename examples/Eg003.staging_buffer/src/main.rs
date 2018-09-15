@@ -14,6 +14,7 @@ use hakurei::resources::buffer::*;
 use hakurei::resources::memory::*;
 use hakurei::resources::repository::*;
 use hakurei::sync::prelude::*;
+use hakurei::input::prelude::*;
 
 use std::path::Path;
 
@@ -192,8 +193,7 @@ impl ProgramProc for StagingBufferProcedure {
         Ok(())
     }
 
-    fn draw(&mut self, device: &HaLogicalDevice, device_available: &HaFence, image_available: &HaSemaphore, image_index: usize)
-            -> Result<&HaSemaphore, ProcedureError> {
+    fn draw(&mut self, device: &HaLogicalDevice, device_available: &HaFence, image_available: &HaSemaphore, image_index: usize, _: f32) -> Result<&HaSemaphore, ProcedureError> {
 
         let submit_infos = [
             QueueSubmitBundle {
@@ -234,7 +234,7 @@ impl ProgramProc for StagingBufferProcedure {
         self.vertex_buffer.cleanup(device);
     }
 
-    fn react_input(&mut self, inputer: &ActionNerve) -> SceneAction {
+    fn react_input(&mut self, inputer: &ActionNerve, _: f32) -> SceneAction {
 
         if inputer.is_key_pressed(HaKeycode::Escape) {
             return SceneAction::Terminal

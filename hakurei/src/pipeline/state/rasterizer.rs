@@ -4,6 +4,8 @@ use ash::vk;
 use std::os::raw::c_float;
 use std::ptr;
 
+use pipeline::enums::{ PolygonMode };
+
 use utility::marker::VulkanEnum;
 use utility::marker::Prefab;
 
@@ -79,8 +81,8 @@ impl HaRasterizer {
     }
 
 
-    pub fn set_polygon_mode(&mut self, mode: vk::PolygonMode) {
-        self.polygon_mode = mode;
+    pub fn set_polygon_mode(&mut self, mode: PolygonMode) {
+        self.polygon_mode = mode.value();
     }
     pub fn set_cull_mode(&mut self, mode: CullModeType) {
         self.cull_mode = mode.value();

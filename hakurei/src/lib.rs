@@ -5,6 +5,7 @@ extern crate winit;
 extern crate num;
 extern crate image;
 extern crate smallvec;
+extern crate cgmath;
 
 #[macro_use]
 extern crate hakurei_macros;
@@ -28,3 +29,4 @@ pub mod pipeline;
 pub mod resources;
 pub mod prelude;
 pub mod sync;
+pub mod input;

@@ -2,12 +2,14 @@
 use winit;
 
 use utility::dimension::Dimension2D;
+use utility::fps::HaFpsTimer;
 use config::engine::EngineConfig;
 
 use procedure::workflow::{ CoreInfrastructure, HaResources, ProgramProc };
-use procedure::input::{ ActionNerve, SceneReaction };
 use procedure::error::RuntimeError;
 use procedure::error::ProcedureError;
+
+use input::action::{ ActionNerve, SceneReaction };
 
 struct WindowInfo {
     window_size : Dimension2D,
@@ -95,8 +97,11 @@ impl<T> ProgramEnv<T> where T: ProgramProc {
 
         let mut actioner = ActionNerve::new();
         let mut current_fame = 0_usize;
+        let mut fps_timer = HaFpsTimer::new();
 
         'mainloop: loop {
+
+            let delta_time = fps_timer.delta_time();
 
             self.event_loop.poll_events(|event| {
                 match event {
@@ -107,10 +112,10 @@ impl<T> ProgramEnv<T> where T: ProgramProc {
                 }
             });
 
-            let app_action = self.procedure.react_input(&actioner);
+            let app_action = self.procedure.react_input(&actioner, delta_time);
             actioner.cover_reaction(app_action);
 
-            match self.draw_frame(current_fame, core, resources) {
+            match self.draw_frame(current_fame, core, resources, delta_time) {
                 | Ok(_) => (),
                 | Err(error) => match error {
                     | ProcedureError::SwapchainRecreate => {
@@ -132,6 +137,7 @@ impl<T> ProgramEnv<T> where T: ProgramProc {
             }
 
             current_fame = (current_fame + 1) % self.frame_in_flights;
+            fps_timer.tick_frame();
         }
 
         Ok(())

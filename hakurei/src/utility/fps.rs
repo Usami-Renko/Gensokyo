@@ -1,6 +1,5 @@
 
 use std::time::Instant;
-use std::time::Duration;
 
 use config::time::{ SAMPLE_COUNT, SAMPLE_COUNT_FLOAT, DEFAULT_PREFER_FPS };
 
@@ -25,6 +24,7 @@ impl HaFpsTimer {
         }
     }
 
+    #[allow(dead_code)]
     pub fn set_prefer_fps(&mut self, prefer_fps: f32) {
         self.frame_time_prefer = (1000_000.0_f32 / prefer_fps) as u32;
     }
@@ -43,6 +43,7 @@ impl HaFpsTimer {
 //    pub fn keep_fps(&self) {
 //
 //        use std::thread;
+//        use std::Duration;
 //        if self.frame_time_prefer > self.delta_frame {
 //            let delay = Duration::from_micros((self.frame_time_prefer - self.delta_frame) as u64);
 //
@@ -51,6 +52,7 @@ impl HaFpsTimer {
 //    }
 
     /// Calculate the current FPS.
+    #[allow(dead_code)]
     pub fn fps(&self) -> f32 {
         let mut sum = 0_u32;
         self.samples.iter().for_each(|val| {
