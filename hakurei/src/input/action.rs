@@ -1,8 +1,8 @@
 
 use winit::{ WindowEvent, ElementState, VirtualKeyCode };
 
-use procedure::input::key::KeyHeap;
-use procedure::input::keycode::HaKeycode;
+use input::key::KeyHeap;
+use input::keycode::HaKeycode;
 
 pub struct ActionNerve {
 
@@ -55,6 +55,10 @@ impl ActionNerve {
 
     pub fn is_key_pressed(&self, key_code: HaKeycode) -> bool {
         self.key.is_key_pressed(VirtualKeyCode::from(key_code))
+    }
+
+    pub(crate) fn is_key_pressed_raw(&self, key_code: VirtualKeyCode) -> bool {
+        self.key.is_key_pressed(key_code)
     }
 
     pub fn get_reaction(&self) -> SceneReaction {

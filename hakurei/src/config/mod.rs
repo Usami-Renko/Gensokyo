@@ -6,6 +6,7 @@ pub(crate) mod swapchain;
 pub(crate) mod image;
 pub(crate) mod input;
 pub(crate) mod time;
+pub(crate) mod camera;
 
 pub mod prelude;
 

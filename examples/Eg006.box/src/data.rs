@@ -14,6 +14,17 @@ define_input! {
     }
 }
 
+//       ^ y axis
+//       |
+//       |  /
+//       | /
+//       |/
+//  -----.-----------> x axis
+//      /|
+//     / |
+//    /  |
+//   /
+//  < z axis
 //
 //    v6----- v5
 //   /|      /|
@@ -26,14 +37,14 @@ define_input! {
 //  vertex of box
 
 pub const VERTEX_DATA: [Vertex; 8] = [
-    Vertex { pos: [ 0.75,  0.75,  0.75, 1.0], color: [1.0, 0.0, 0.0, 1.0], }, // v0
-    Vertex { pos: [-0.75,  0.75,  0.75, 1.0], color: [0.0, 1.0, 0.0, 1.0], }, // v1
-    Vertex { pos: [-0.75, -0.75,  0.75, 1.0], color: [0.0, 0.0, 1.0, 1.0], }, // v2
-    Vertex { pos: [ 0.75, -0.75,  0.75, 1.0], color: [1.0, 1.0, 0.0, 1.0], }, // v3
-    Vertex { pos: [ 0.75, -0.75, -0.75, 1.0], color: [0.0, 1.0, 1.0, 1.0], }, // v4
-    Vertex { pos: [ 0.75,  0.75, -0.75, 1.0], color: [1.0, 0.0, 1.0, 1.0], }, // v5
-    Vertex { pos: [-0.75,  0.75, -0.75, 1.0], color: [0.0, 0.0, 0.0, 1.0], }, // v6
-    Vertex { pos: [-0.75, -0.75, -0.75, 1.0], color: [1.0, 1.0, 1.0, 1.0], }, // v7
+    Vertex { pos: [ 0.6,  0.6,  0.6, 1.0], color: [1.0, 0.0, 0.0, 1.0], }, // v0
+    Vertex { pos: [-0.6,  0.6,  0.6, 1.0], color: [0.0, 1.0, 0.0, 1.0], }, // v1
+    Vertex { pos: [-0.6, -0.6,  0.6, 1.0], color: [0.0, 0.0, 1.0, 1.0], }, // v2
+    Vertex { pos: [ 0.6, -0.6,  0.6, 1.0], color: [1.0, 1.0, 0.0, 1.0], }, // v3
+    Vertex { pos: [ 0.6, -0.6, -0.6, 1.0], color: [0.0, 1.0, 1.0, 1.0], }, // v4
+    Vertex { pos: [ 0.6,  0.6, -0.6, 1.0], color: [1.0, 0.0, 1.0, 1.0], }, // v5
+    Vertex { pos: [-0.6,  0.6, -0.6, 1.0], color: [0.0, 0.0, 0.0, 1.0], }, // v6
+    Vertex { pos: [-0.6, -0.6, -0.6, 1.0], color: [1.0, 1.0, 1.0, 1.0], }, // v7
 ];
 pub const INDEX_DATA: [uint32_t; 36] = [
     0, 1, 2,
@@ -52,8 +63,7 @@ pub const INDEX_DATA: [uint32_t; 36] = [
 
 #[derive(Debug, Clone, Copy)]
 pub struct UboObject {
-    pub translate: Matrix4<f32>,
-    pub scale    : Matrix4<f32>,
-    pub rotate   : Matrix4<f32>,
+    pub projection: Matrix4<f32>,
+    pub view      : Matrix4<f32>,
+    pub model     : Matrix4<f32>,
 }
-

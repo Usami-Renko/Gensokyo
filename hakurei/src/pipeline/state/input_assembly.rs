@@ -1,6 +1,9 @@
 
 use ash::vk;
 
+use pipeline::enums::PrimitiveTopology;
+use utility::marker::VulkanEnum;
+
 use std::ptr;
 
 pub struct HaInputAssembly {
@@ -11,9 +14,9 @@ pub struct HaInputAssembly {
 
 impl HaInputAssembly {
 
-    pub fn setup(topology: vk::PrimitiveTopology, primitive_restart_enable: bool) -> HaInputAssembly {
+    pub fn setup(topology: PrimitiveTopology, primitive_restart_enable: bool) -> HaInputAssembly {
         HaInputAssembly {
-            topology,
+            topology: topology.value(),
             primitive_restart_enable,
         }
     }

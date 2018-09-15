@@ -19,6 +19,12 @@ impl KeyHeap {
 
     pub fn key_press(&mut self, code: winit::VirtualKeyCode) {
 
+        // if input key has been existed, just ignore it.
+        if self.keys.iter().any(|&key_code| key_code == code) {
+            return
+        }
+
+        // and the key pool has been full, just ignore the input key.
         if self.keys.len() < SIMULTANEOUS_KEY_COUNT {
             self.keys.push(code);
         }

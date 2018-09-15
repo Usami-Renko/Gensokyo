@@ -7,3 +7,4 @@ pub(crate) mod fps;
 pub mod dimension;
 pub mod logic_op;
 pub mod time;
+pub mod camera;

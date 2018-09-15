@@ -9,3 +9,6 @@ cd ../Eg004.uniform_buffer
 cargo run
 cd ../Eg005.texture_mapping
 cargo run
+cd ../Eg006.box
+cargo run
+

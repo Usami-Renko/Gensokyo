@@ -14,9 +14,9 @@ use sync::fence::HaFence;
 use sync::semaphore::HaSemaphore;
 
 use procedure::window::ProgramEnv;
-use procedure::input::{ ActionNerve, SceneAction };
 use procedure::error::ProcedureError;
 
+use input::action::{ ActionNerve, SceneAction };
 use utility::time::TimePeriod;
 
 pub trait ProgramProc {
@@ -25,11 +25,11 @@ pub trait ProgramProc {
     fn pipelines(&mut self, device: &HaLogicalDevice, swapchain: &HaSwapchain) -> Result<(), ProcedureError>;
     fn subresources(&mut self, device: &HaLogicalDevice) -> Result<(), ProcedureError>;
     fn commands(&mut self, device: &HaLogicalDevice) -> Result<(), ProcedureError>;
-    fn draw(&mut self, device: &HaLogicalDevice, device_available: &HaFence, image_available: &HaSemaphore, image_index: usize) -> Result<&HaSemaphore, ProcedureError>;
+    fn draw(&mut self, device: &HaLogicalDevice, device_available: &HaFence, image_available: &HaSemaphore, image_index: usize, delta_time: f32) -> Result<&HaSemaphore, ProcedureError>;
     fn clean_resources(&mut self, device: &HaLogicalDevice) -> Result<(), ProcedureError>;
     fn cleanup(&mut self, device: &HaLogicalDevice);
 
-    fn react_input(&mut self, inputer: &ActionNerve) -> SceneAction;
+    fn react_input(&mut self, inputer: &ActionNerve, delta_time: f32) -> SceneAction;
 }
 
 pub struct CoreInfrastructure<'win> {
@@ -101,7 +101,7 @@ impl<'win, T> ProgramEnv<T> where T: ProgramProc {
         Ok(inner_resource)
     }
 
-    pub(super) fn draw_frame(&mut self, current_frame: usize, core: &mut CoreInfrastructure, resources: &mut HaResources)
+    pub(super) fn draw_frame(&mut self, current_frame: usize, core: &mut CoreInfrastructure, resources: &mut HaResources, delta_time: f32)
         -> Result<(), ProcedureError> {
 
         let fence_to_wait = &resources.sync_fences[current_frame];
@@ -122,7 +122,7 @@ impl<'win, T> ProgramEnv<T> where T: ProgramProc {
 
         fence_to_wait.reset(&core.device)?;
 
-        let present_available = self.procedure.draw(&core.device, fence_to_wait, &resources.image_awaits[current_frame], current_frame)?;
+        let present_available = self.procedure.draw(&core.device, fence_to_wait, &resources.image_awaits[current_frame], current_frame, delta_time)?;
 
         // FIXME: Use present queue will cause crash. Image ownership transfer is necessary,
         // see https://github.com/KhronosGroup/Vulkan-Docs/wiki/Synchronization-Examples.

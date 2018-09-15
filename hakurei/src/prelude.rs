@@ -12,6 +12,6 @@ pub use core::device::DeviceQueueIdentifier;
 pub use procedure::window::ProgramEnv;
 pub use procedure::workflow::ProgramProc;
 pub use procedure::error::ProcedureError;
-pub use procedure::input::{ ActionNerve, SceneAction, HaKeycode };
 
 pub use utility::dimension::*;
+pub use utility::camera;
