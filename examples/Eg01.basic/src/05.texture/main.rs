@@ -13,7 +13,7 @@ use hakurei::prelude::input::*;
 
 use std::path::Path;
 
-const WINDOW_TITLE: &'static str = "Texture Mapping Example";
+const WINDOW_TITLE: &'static str = "05.Texture";
 const WINDOW_WIDTH:  u32 = 800;
 const WINDOW_HEIGHT: u32 = 800;
 const VERTEX_SHADER_PATH  : &'static str = "shaders/texture.vert.spv";
