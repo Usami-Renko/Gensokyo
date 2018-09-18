@@ -13,9 +13,11 @@ use hakurei::prelude::input::*;
 
 use std::path::Path;
 
-const WINDOW_TITLE: &'static str = "Staging Buffer Example";
+const WINDOW_TITLE: &'static str = "Index Buffer Example";
 const WINDOW_WIDTH:  u32 = 800;
 const WINDOW_HEIGHT: u32 = 600;
+const VERTEX_SHADER_PATH  : &'static str = "shaders/index.vert.spv";
+const FRAGMENT_SHADER_PATH: &'static str = "shaders/index.frag.spv";
 
 define_input! {
     #[binding = 0, rate = vertex]
@@ -27,17 +29,24 @@ define_input! {
     }
 }
 
-const VERTEX_DATA: [Vertex; 3] = [
-    Vertex { pos: [ 0.0, -0.5], color: [1.0, 0.0, 0.0, 1.0], },
-    Vertex { pos: [ 0.5,  0.5], color: [0.0, 1.0, 0.0, 1.0], },
-    Vertex { pos: [-0.5,  0.5], color: [0.0, 0.0, 1.0, 1.0], },
+const VERTEX_DATA: [Vertex; 4] = [
+    Vertex { pos: [-0.5, -0.5], color: [1.0, 0.0, 0.0, 1.0], },
+    Vertex { pos: [ 0.5, -0.5], color: [0.0, 1.0, 0.0, 1.0], },
+    Vertex { pos: [ 0.5,  0.5], color: [0.0, 0.0, 1.0, 1.0], },
+    Vertex { pos: [-0.5,  0.5], color: [1.0, 1.0, 1.0, 1.0], },
+];
+const INDEX_DATA: [uint32_t; 6] = [
+    0, 1, 2, 2, 3, 0,
 ];
 
-struct StagingBufferProcedure {
+struct DrawIndexProcedure {
 
-    vertex_data  : Vec<Vertex>,
-    vertex_buffer: HaBufferRepository,
-    vertex_item  : BufferSubItem,
+    vertex_data   : Vec<Vertex>,
+    index_data    : Vec<uint32_t>,
+
+    buffer_storage: HaBufferRepository,
+    vertex_item   : BufferSubItem,
+    index_item    : BufferSubItem,
 
     graphics_pipeline: HaGraphicsPipeline,
 
@@ -47,13 +56,16 @@ struct StagingBufferProcedure {
     present_availables: Vec<HaSemaphore>,
 }
 
-impl StagingBufferProcedure {
+impl DrawIndexProcedure {
 
-    fn new() -> StagingBufferProcedure {
-        StagingBufferProcedure {
-            vertex_data  : VERTEX_DATA.to_vec(),
-            vertex_buffer: HaBufferRepository::empty(),
-            vertex_item  : BufferSubItem::unset(),
+    fn new() -> DrawIndexProcedure {
+        DrawIndexProcedure {
+            vertex_data   : VERTEX_DATA.to_vec(),
+            index_data    : INDEX_DATA.to_vec(),
+
+            buffer_storage: HaBufferRepository::empty(),
+            vertex_item   : BufferSubItem::unset(),
+            index_item    : BufferSubItem::unset(),
 
             graphics_pipeline: HaGraphicsPipeline::uninitialize(),
 
@@ -65,45 +77,40 @@ impl StagingBufferProcedure {
     }
 }
 
-impl ProgramProc for StagingBufferProcedure {
+impl ProgramProc for DrawIndexProcedure {
 
     fn assets(&mut self, device: &HaLogicalDevice, generator: &ResourceGenerator) -> Result<(), ProcedureError> {
 
         // vertex buffer
-        let mut staging_buffer_config = BufferConfig::init(
-            &[BufferUsageFlag::TransferSrcBit],
+        let mut vertex_buffer_config = BufferConfig::init(
+            &[BufferUsageFlag::VertexBufferBit],
             &[
                 MemoryPropertyFlag::HostVisibleBit,
                 MemoryPropertyFlag::HostCoherentBit,
             ],
             &[]
         );
-        let _ = staging_buffer_config.add_item(data_size!(self.vertex_data, Vertex));
-
-        let mut vertex_buffer_config = BufferConfig::init(
-            &[
-                BufferUsageFlag::TransferDstBit,
-                BufferUsageFlag::VertexBufferBit,
-            ],
-            &[MemoryPropertyFlag::DeviceLocalBit],
-            &[]
-        );
         let _ = vertex_buffer_config.add_item(data_size!(self.vertex_data, Vertex));
 
-        let mut staging_allocator = generator.buffer();
-        let stage_buffer_item = staging_allocator.attach_buffer(staging_buffer_config)?.pop().unwrap();
+        // index buffer
+        let mut index_buffer_config = BufferConfig::init(
+            &[BufferUsageFlag::IndexBufferBit],
+            &[
+                MemoryPropertyFlag::HostVisibleBit,
+                MemoryPropertyFlag::HostCoherentBit,
+            ],
+            &[]
+        );
+        let _ = index_buffer_config.add_item(data_size!(self.index_data, uint32_t));
 
-        let mut staging_repository = staging_allocator.allocate()?;
-        staging_repository.tranfer_data(device, &self.vertex_data, &stage_buffer_item)?;
+        // allocate memory and transfer data.
+        let mut buffer_allocator = generator.buffer();
+        self.vertex_item = buffer_allocator.attach_buffer(vertex_buffer_config)?.pop().unwrap();
+        self.index_item  = buffer_allocator.attach_buffer(index_buffer_config )?.pop().unwrap();
 
-        let mut vertex_allocator = generator.buffer();
-        self.vertex_item = vertex_allocator.attach_buffer(vertex_buffer_config)?.pop().unwrap();
-        self.vertex_buffer = vertex_allocator.allocate()?;
-        self.vertex_buffer.copy_buffer_to_buffer(
-            device,
-            &stage_buffer_item,
-            &self.vertex_item)?;
-        staging_repository.cleanup(device);
+        self.buffer_storage = buffer_allocator.allocate()?;
+        self.buffer_storage.tranfer_data(device, &self.vertex_data, &self.vertex_item)?;
+        self.buffer_storage.tranfer_data(device, &self.index_data , &self.index_item)?;
 
         Ok(())
     }
@@ -112,11 +119,11 @@ impl ProgramProc for StagingBufferProcedure {
         // shaders
         let vertex_shader = HaShaderInfo::setup(
             ShaderStageFlag::VertexStage,
-            Path::new("shaders/staging.vert.spv"),
+            Path::new(VERTEX_SHADER_PATH),
             None);
         let fragment_shader = HaShaderInfo::setup(
             ShaderStageFlag::FragmentStage,
-            Path::new("shaders/staging.frag.spv"),
+            Path::new(FRAGMENT_SHADER_PATH),
             None);
         let shader_infos = vec![
             vertex_shader,
@@ -155,11 +162,13 @@ impl ProgramProc for StagingBufferProcedure {
     }
 
     fn subresources(&mut self, device: &HaLogicalDevice) -> Result<(), ProcedureError> {
+
         // sync
         for _ in 0..self.graphics_pipeline.frame_count() {
             let present_available = HaSemaphore::setup(device)?;
             self.present_availables.push(present_available);
         }
+
         Ok(())
     }
 
@@ -177,8 +186,9 @@ impl ProgramProc for StagingBufferProcedure {
             recorder.begin_record(&[CommandBufferUsageFlag::SimultaneousUseBit])?
                 .begin_render_pass(&self.graphics_pipeline, frame_index)
                 .bind_pipeline(&self.graphics_pipeline)
-                .bind_vertex_buffers(0, &self.vertex_buffer.vertex_binding_infos(&[&self.vertex_item]))
-                .draw(self.vertex_data.len() as uint32_t, 1, 0, 0)
+                .bind_vertex_buffers(0, &self.buffer_storage.vertex_binding_infos(&[&self.vertex_item]))
+                .bind_index_buffers(&self.buffer_storage.index_binding_info(&self.index_item))
+                .draw_indexed(self.index_data.len() as uint32_t, 1, 0, 0, 0)
                 .end_render_pass()
                 .finish()?;
         }
@@ -188,7 +198,8 @@ impl ProgramProc for StagingBufferProcedure {
         Ok(())
     }
 
-    fn draw(&mut self, device: &HaLogicalDevice, device_available: &HaFence, image_available: &HaSemaphore, image_index: usize, _: f32) -> Result<&HaSemaphore, ProcedureError> {
+    fn draw(&mut self, device: &HaLogicalDevice, device_available: &HaFence, image_available: &HaSemaphore, image_index: usize, _: f32)
+            -> Result<&HaSemaphore, ProcedureError> {
 
         let submit_infos = [
             QueueSubmitBundle {
@@ -226,7 +237,7 @@ impl ProgramProc for StagingBufferProcedure {
 
         self.graphics_pipeline.cleanup(device);
         self.command_pool.cleanup(device);
-        self.vertex_buffer.cleanup(device);
+        self.buffer_storage.cleanup(device);
     }
 
     fn react_input(&mut self, inputer: &ActionNerve, _: f32) -> SceneAction {
@@ -241,7 +252,7 @@ impl ProgramProc for StagingBufferProcedure {
 
 fn main() {
 
-    let procecure = StagingBufferProcedure::new();
+    let procecure = DrawIndexProcedure::new();
     let mut config = EngineConfig::default();
     config.window.dimension = Dimension2D {
         width : WINDOW_WIDTH,

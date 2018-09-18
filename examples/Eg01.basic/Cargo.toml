@@ -1,0 +1,34 @@
+[package]
+name = "hakurei-basic"
+version = "0.1.0"
+authors = ["usami-renko <usami-ssc@protonmail.com>"]
+description = "Basic examples of hakurei Engine."
+
+[dependencies]
+hakurei = { path = "../../hakurei" }
+hakurei-macros = { path = "../../hakurei-macros" }
+cgmath = "0.16.1"
+
+[[bin]]
+name = "01"
+path = "src/01.triangle/main.rs"
+
+[[bin]]
+name = "02"
+path = "src/02.index/main.rs"
+
+[[bin]]
+name = "03"
+path = "src/03.staging/main.rs"
+
+[[bin]]
+name = "04"
+path = "src/04.uniform/main.rs"
+
+[[bin]]
+name = "05"
+path = "src/05.texture/main.rs"
+
+[[bin]]
+name = "06"
+path = "src/06.box/main.rs"

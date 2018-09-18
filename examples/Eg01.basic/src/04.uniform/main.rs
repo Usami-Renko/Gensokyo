@@ -3,6 +3,9 @@
 extern crate hakurei_macros;
 extern crate hakurei;
 
+extern crate cgmath;
+use cgmath::{ Matrix4, Vector3, Deg };
+
 use hakurei::prelude::*;
 use hakurei::prelude::config::*;
 use hakurei::prelude::queue::*;
@@ -13,32 +16,36 @@ use hakurei::prelude::input::*;
 
 use std::path::Path;
 
-const WINDOW_TITLE: &'static str = "Texture Mapping Example";
+const WINDOW_TITLE: &'static str = "Unifrom Buffer Example";
 const WINDOW_WIDTH:  u32 = 800;
-const WINDOW_HEIGHT: u32 = 800;
-const VERTEX_SHADER_PATH  : &'static str = "shaders/texture.vert.spv";
-const FRAGMENT_SHADER_PATH: &'static str = "shaders/texture.frag.spv";
-const TEXTURE_PATH: &'static str = "texture/texture.jpg";
+const WINDOW_HEIGHT: u32 = 600;
+const VERTEX_SHADER_PATH  : &'static str = "shaders/uniform.vert.spv";
+const FRAGMENT_SHADER_PATH: &'static str = "shaders/uniform.frag.spv";
 
 define_input! {
     #[binding = 0, rate = vertex]
     struct Vertex {
         #[location = 0, format = vec2]
-        pos: [f32; 2],
-        #[location = 1, format = vec2]
-        tex_coord: [f32; 2],
+        pos:   [f32; 2],
+        #[location = 1, format = vec4]
+        color: [f32; 4],
     }
 }
 
-struct TextureMappingProcedure {
+#[derive(Debug, Clone, Copy)]
+struct UboObject {
+    rotate: Matrix4<f32>,
+}
+
+struct UniformBufferProcedure {
 
     vertex_data   : Vec<Vertex>,
     vertex_storage: HaBufferRepository,
     vertex_item   : BufferSubItem,
 
-    sampler_repository: HaDescriptorRepository,
-    sampler_set       : DescriptorSetItem,
-    image_repository  : HaImageRepository,
+    ubo_data      : Vec<UboObject>,
+    ubo_storage   : HaDescriptorRepository,
+    ubo_set       : DescriptorSetItem,
 
     graphics_pipeline: HaGraphicsPipeline,
 
@@ -48,25 +55,25 @@ struct TextureMappingProcedure {
     present_availables: Vec<HaSemaphore>,
 }
 
-impl TextureMappingProcedure {
+impl UniformBufferProcedure {
 
-    fn new() -> TextureMappingProcedure {
-        TextureMappingProcedure {
+    fn new() -> UniformBufferProcedure {
+        UniformBufferProcedure {
             vertex_data: vec![
-                Vertex { pos: [-0.75, -0.75], tex_coord: [1.0, 0.0], },
-                Vertex { pos: [ 0.75, -0.75], tex_coord: [0.0, 0.0], },
-                Vertex { pos: [ 0.75,  0.75], tex_coord: [0.0, 1.0], },
-                Vertex { pos: [ 0.75,  0.75], tex_coord: [0.0, 1.0], },
-                Vertex { pos: [-0.75,  0.75], tex_coord: [1.0, 1.0], },
-                Vertex { pos: [-0.75, -0.75], tex_coord: [1.0, 0.0], },
+                Vertex { pos: [ 0.0, -0.5], color: [1.0, 0.0, 0.0, 1.0], },
+                Vertex { pos: [ 0.5,  0.5], color: [0.0, 1.0, 0.0, 1.0], },
+                Vertex { pos: [-0.5,  0.5], color: [0.0, 0.0, 1.0, 1.0], },
             ],
             vertex_storage: HaBufferRepository::empty(),
             vertex_item: BufferSubItem::unset(),
 
-            sampler_repository: HaDescriptorRepository::empty(),
-            sampler_set       : DescriptorSetItem::unset(),
-            image_repository  : HaImageRepository::empty(),
-
+            ubo_data: vec![
+                UboObject {
+                    rotate: Matrix4::from_axis_angle(Vector3::new(0.0, 0.0, 1.0), Deg(90.0))
+                },
+            ],
+            ubo_storage: HaDescriptorRepository::empty(),
+            ubo_set: DescriptorSetItem::unset(),
 
             graphics_pipeline: HaGraphicsPipeline::uninitialize(),
 
@@ -78,7 +85,7 @@ impl TextureMappingProcedure {
     }
 }
 
-impl ProgramProc for TextureMappingProcedure {
+impl ProgramProc for UniformBufferProcedure {
 
     fn assets(&mut self, device: &HaLogicalDevice, generator: &ResourceGenerator) -> Result<(), ProcedureError> {
 
@@ -93,54 +100,44 @@ impl ProgramProc for TextureMappingProcedure {
         );
         let _ = vertex_buffer_config.add_item(data_size!(self.vertex_data, Vertex));
 
+        let mut uniform_buffer_config = BufferConfig::init(
+            &[BufferUsageFlag::UniformBufferBit],
+            &[
+                MemoryPropertyFlag::HostVisibleBit,
+                MemoryPropertyFlag::HostCoherentBit,
+            ],
+            &[],
+        );
+        let _ = uniform_buffer_config.add_item(data_size!(self.ubo_data, UboObject));
+
         let mut vertex_allocator = generator.buffer();
         self.vertex_item = vertex_allocator.attach_buffer(vertex_buffer_config)?.pop().unwrap();
+        let ubo_buffer_item = vertex_allocator.attach_buffer(uniform_buffer_config)?.pop().unwrap();
 
         self.vertex_storage = vertex_allocator.allocate()?;
         self.vertex_storage.tranfer_data(device, &self.vertex_data, &self.vertex_item)?;
-
-        // image
-        let image_desc = ImageDescInfo::init(
-            ImageType::Type2d,
-            ImageTiling::Optimal,
-            &[
-                ImageUsageFlag::TransferDstBit,
-                ImageUsageFlag::SampledBit,
-            ],
-            ImageLayout::Undefined
-        );
-        let view_desc = ImageViewDescInfo::init(ImageViewType::Type2d);
-
-        let mut image_allocator = generator.image();
-        let image_view_index = image_allocator.attach_image(Path::new(TEXTURE_PATH), image_desc, view_desc)?;
-        self.image_repository = image_allocator.allocate()?;
-        let image_view_item = self.image_repository.view_item(image_view_index);
+        self.vertex_storage.tranfer_data(device, &self.ubo_data, &ubo_buffer_item)?;
 
         // descriptor
-        let sampler_info = SamplerDescInfo::init();
-        let sampler = HaSampler::init(device, sampler_info).unwrap();
-
-        let sampler_descriptor_info = DescriptorImageBindingInfo {
+        let ubo_info = DescriptorBufferBindingInfo {
             binding: 0,
-            type_  : ImageDescriptorType::CombinedImageSampler,
-            count  : 1,
-            sampler,
-            layout: ImageLayout::ShaderReadOnlyOptimal,
-            view_item: image_view_item,
+            type_: BufferDescriptorType::UniformBuffer,
+            count: 1,
+            element_size: data_size!(self.ubo_data, UboObject),
+            buffer: ubo_buffer_item.clone(),
         };
-
         let mut descriptor_set_config = DescriptorSetConfig::init(&[]);
-        let _ = descriptor_set_config.add_image_binding(sampler_descriptor_info, &[
-            ShaderStageFlag::FragmentStage,
+        let ubo_binding_index = descriptor_set_config.add_buffer_binding(ubo_info, &[
+            ShaderStageFlag::VertexStage,
         ]);
 
         let mut descriptor_allocator = generator.descriptor(&[]);
-        let (set_item, mut descriptor_binding_items) = descriptor_allocator.attach_descriptor_set(descriptor_set_config);
-        let sampler_item = descriptor_binding_items.pop().unwrap();
+        let (descriptor_set_item, descriptor_binding_items) = descriptor_allocator.attach_descriptor_set(descriptor_set_config);
+        let ubo_descriptor_item = descriptor_binding_items[ubo_binding_index].clone();
 
-        self.sampler_repository = descriptor_allocator.allocate()?;
-        self.sampler_repository.update_descriptors(device, &[sampler_item]);
-        self.sampler_set = set_item;
+        self.ubo_storage = descriptor_allocator.allocate()?;
+        self.ubo_storage.update_descriptors(device, &[ubo_descriptor_item]);
+        self.ubo_set = descriptor_set_item;
 
         Ok(())
     }
@@ -181,7 +178,7 @@ impl ProgramProc for TextureMappingProcedure {
 
         let pipeline_config = GraphicsPipelineConfig::new(shader_infos, vertex_input_desc, render_pass)
             .setup_viewport(viewport)
-            .add_descriptor_set(self.sampler_repository.set_layout_at(&self.sampler_set))
+            .add_descriptor_set(self.ubo_storage.set_layout_at(&self.ubo_set))
             .finish_config();
 
         let mut pipeline_builder = GraphicsPipelineBuilder::init();
@@ -218,7 +215,7 @@ impl ProgramProc for TextureMappingProcedure {
                 .begin_render_pass(&self.graphics_pipeline, frame_index)
                 .bind_pipeline(&self.graphics_pipeline)
                 .bind_vertex_buffers(0, &self.vertex_storage.vertex_binding_infos(&[&self.vertex_item]))
-                .bind_descriptor_sets(&self.graphics_pipeline, 0, &self.sampler_repository.descriptor_binding_infos(&[&self.sampler_set]))
+                .bind_descriptor_sets(&self.graphics_pipeline, 0, &self.ubo_storage.descriptor_binding_infos(&[&self.ubo_set]))
                 .draw(self.vertex_data.len() as uint32_t, 1, 0, 0)
                 .end_render_pass()
                 .finish()?;
@@ -267,9 +264,7 @@ impl ProgramProc for TextureMappingProcedure {
 
         self.graphics_pipeline.cleanup(device);
         self.command_pool.cleanup(device);
-
-        self.sampler_repository.cleanup(device);
-        self.image_repository.cleanup(device);
+        self.ubo_storage.cleanup(device);
         self.vertex_storage.cleanup(device);
     }
 
@@ -285,8 +280,7 @@ impl ProgramProc for TextureMappingProcedure {
 
 fn main() {
 
-    let procecure = TextureMappingProcedure::new();
-
+    let procecure = UniformBufferProcedure::new();
     let mut config = EngineConfig::default();
     config.window.dimension = Dimension2D {
         width : WINDOW_WIDTH,
@@ -295,6 +289,7 @@ fn main() {
     config.window.title = String::from(WINDOW_TITLE);
 
     let mut program = ProgramEnv::new(config, procecure);
+
     match program.launch() {
         | Ok(_) => (),
         | Err(err) => {

@@ -16,6 +16,8 @@ use std::path::Path;
 const WINDOW_TITLE: &'static str = "Trangle Example";
 const WINDOW_WIDTH:  u32 = 800;
 const WINDOW_HEIGHT: u32 = 600;
+const VERTEX_SHADER_PATH  : &'static str = "shaders/triangle.vert.spv";
+const FRAGMENT_SHADER_PATH: &'static str = "shaders/triangle.frag.spv";
 
 define_input! {
     #[binding = 0, rate = vertex]
@@ -93,11 +95,11 @@ impl ProgramProc for TriangleProcedure {
         // shaders
         let vertex_shader = HaShaderInfo::setup(
             ShaderStageFlag::VertexStage,
-            Path::new("shaders/triangle.vert.spv"),
+            Path::new(VERTEX_SHADER_PATH),
             None);
         let fragment_shader = HaShaderInfo::setup(
             ShaderStageFlag::FragmentStage,
-            Path::new("shaders/triangle.frag.spv"),
+            Path::new(FRAGMENT_SHADER_PATH),
             None);
         let shader_infos = vec![
             vertex_shader,
@@ -170,7 +172,7 @@ impl ProgramProc for TriangleProcedure {
     }
 
     fn draw(&mut self, device: &HaLogicalDevice, device_available: &HaFence, image_available: &HaSemaphore, image_index: usize, _: f32)
-        -> Result<&HaSemaphore, ProcedureError> {
+            -> Result<&HaSemaphore, ProcedureError> {
 
         let submit_infos = [
             QueueSubmitBundle {
