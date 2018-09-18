@@ -22,7 +22,7 @@ impl PhysicalProperties {
         let handle = instance.handle.get_physical_device_properties(physical_device);
         let device_name = cast::vk_to_string(&handle.device_name);
         let api_version = handle.api_version;
-        let device_type = handle.device_type;
+        let device_type = handle.device_type.into();
 
         PhysicalProperties {
             handle,
@@ -45,18 +45,12 @@ impl PhysicalProperties {
             vk_version_patch!(self.api_version),
         );
 
-        let device_type_description = match self.handle.device_type {
-            | PhysicalDeviceType::Cpu           => "CPU",
-            | PhysicalDeviceType::IntegratedGpu => "Integrated GPU",
-            | PhysicalDeviceType::DiscreteGpu   => "Discrate GPU",
-            | PhysicalDeviceType::VirtualGpu    => "Virtual GPU",
-            | PhysicalDeviceType::Other         => "Unknown",
-        };
+        let device_type: PhysicalDeviceType =  self.handle.device_type.into();
 
         println!("[info] Physical Device Details:");
         println!("\tDevice Name: {}", self.device_name);
         println!("\tDevice API version: ({}, {}, {})", major, minor, patch);
-        println!("\tDevice Type: {}", device_type_description);
+        println!("\tDevice Type: {}", device_type);
     }
 }
 

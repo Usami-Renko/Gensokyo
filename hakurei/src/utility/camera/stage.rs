@@ -4,7 +4,7 @@ use cgmath::{ Matrix4, Vector3, Point3, InnerSpace, Zero, Deg, Rad };
 use winit::VirtualKeyCode;
 
 use config::camera as CameraConfig;
-use input::action::ActionNerve;
+use input::ActionNerve;
 
 use utility::camera::traits::HaCameraAbstract;
 
@@ -19,13 +19,7 @@ pub struct HaStageCamera {
     /// right direction.
     right: Vector3<f32>,
 
-    world_up: Vector3<f32>,
-
-    yaw  : f32,
-    pitch: f32,
-
     // camera options
-    _mouse_sentivity: f32,
     _wheel_sentivity: f32,
 
     zoom: f32,
@@ -41,7 +35,6 @@ pub struct HaStageCamera {
 
 impl HaCameraAbstract for HaStageCamera {
 
-    /// Return the view matrix base on the properties of camera.
     fn view_matrix(&self) -> Matrix4<f32> {
 
         Matrix4::look_at(self.pos, self.pos + self.front, self.up)
@@ -76,10 +69,12 @@ impl HaStageCamera {
 
     pub(super) fn new(pos: Point3<f32>, world_up: Vector3<f32>, yaw: f32, pitch: f32, near: f32, far: f32, screen_aspect: f32) -> HaStageCamera {
         let mut camera = HaStageCamera {
-            pos, world_up, yaw, pitch, near, far, screen_aspect,
+            pos, near, far, screen_aspect,
             ..Default::default()
         };
-        camera.update_vectors();
+
+        // calculate the new front vector
+        camera.update_vectors(world_up, yaw, pitch);
         camera
     }
 
@@ -95,17 +90,17 @@ impl HaStageCamera {
         Matrix4::from_angle_y(Rad(self.horizontal_rotate)) * Matrix4::from_angle_x(Rad(self.vertical_rotate))
     }
 
-    fn update_vectors(&mut self) {
+    fn update_vectors(&mut self, world_up: Vector3<f32>, yaw: f32, pitch: f32) {
         // calculate the new front vector
-        let front_x = self.yaw.to_radians().cos() * self.pitch.to_radians().cos();
-        let front_y = self.pitch.to_radians().sin();
-        let front_z = self.yaw.to_radians().sin() * self.pitch.to_radians().cos();
+        let front_x = yaw.to_radians().cos() * pitch.to_radians().cos();
+        let front_y = pitch.to_radians().sin();
+        let front_z = yaw.to_radians().sin() * pitch.to_radians().cos();
 
         self.front = Vector3::new(front_x, front_y, front_z).normalize();
 
         // also calculte the right and up vector.
         // Normalize the vectors, because their length gets closer to 0 the move you look up or down which results in slower movement.
-        self.right = self.front.cross(self.world_up);
+        self.right = self.front.cross(world_up);
         self.up    = self.right.cross(self.front);
     }
 }
@@ -118,12 +113,7 @@ impl Default for HaStageCamera {
             front: Vector3::new(0.0, 0.0, -1.0),
             up   : Vector3::zero(),
             right: Vector3::zero(),
-            world_up: Vector3::unit_y(),
 
-            yaw  : CameraConfig::CAMERA_YAW,
-            pitch: CameraConfig::CAMERA_PITCH,
-
-            _mouse_sentivity: CameraConfig::CAMERA_MOUSE_SENTIVITY,
             _wheel_sentivity: CameraConfig::CAMERA_WHEEL_SENTIVITY,
 
             zoom: CameraConfig::CAMERA_ZOOM,

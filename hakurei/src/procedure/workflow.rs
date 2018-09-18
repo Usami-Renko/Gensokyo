@@ -6,9 +6,9 @@ use core::debug::HaDebugger;
 use core::physical::{ HaPhysicalDevice, PhysicalRequirement };
 use core::surface::HaSurface;
 use core::device::{ HaLogicalDevice, LogicalDeviceBuilder };
-use core::swapchain::chain::HaSwapchain;
-use core::swapchain::builder::SwapchainBuilder;
-use core::swapchain::error::{ SwapchainError, SwapchainRuntimeError };
+use core::swapchain::HaSwapchain;
+use core::swapchain::SwapchainBuilder;
+use core::swapchain::{ SwapchainError, SwapchainRuntimeError };
 use resources::allocator::ResourceGenerator;
 use sync::fence::HaFence;
 use sync::semaphore::HaSemaphore;
@@ -16,7 +16,7 @@ use sync::semaphore::HaSemaphore;
 use procedure::window::ProgramEnv;
 use procedure::error::ProcedureError;
 
-use input::action::{ ActionNerve, SceneAction };
+use input::{ ActionNerve, SceneAction };
 use utility::time::TimePeriod;
 
 pub trait ProgramProc {

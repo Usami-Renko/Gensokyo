@@ -12,12 +12,11 @@ use resources::buffer::{BufferConfig, BufferUsageFlag, BufferSubItem};
 use resources::memory::MemoryPropertyFlag;
 use resources::image::{ ImageLayout, ImageStorageInfo, load_texture };
 use resources::allocator::buffer::HaBufferAllocator;
-use resources::memory::traits::HaMemoryAbstract;
-use resources::memory::device::HaDeviceMemory;
+use resources::memory::{ HaMemoryAbstract, HaDeviceMemory };
 use resources::command::{ HaCommandRecorder, CommandBufferUsageFlag };
 use resources::error::{ ImageError, AllocatorError };
 use pipeline::stages::PipelineStageFlag;
-use pipeline::pass::dependency::AccessFlag;
+use pipeline::pass::AccessFlag;
 
 use utility::memory::bind_to_alignment;
 use utility::marker::{ VulkanFlags, VulkanEnum };

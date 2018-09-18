@@ -9,7 +9,7 @@ use core::physical::HaPhysicalDevice;
 use core::device::HaLogicalDevice;
 use core::device::DeviceQueueIdentifier;
 use core::device::queue::{ HaQueue, QueueInfoTmp, QueueUsage };
-use core::device::queue::{HaQueueAbstract, HaGraphicsQueue, HaPresentQueue, HaTransferQueue, QueueContainer};
+use core::device::queue::{ HaQueueAbstract, HaGraphicsQueue, HaPresentQueue, HaTransferQueue, QueueContainer };
 use core::error::LogicalDeviceError;
 
 use utility::cast;

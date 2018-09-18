@@ -7,7 +7,7 @@ use core::device::HaLogicalDevice;
 use resources::image::flag::{ ImageCreateFlag, ImageUsageFlag };
 use resources::error::ImageError;
 
-use pipeline::state::multisample::SampleCountType;
+use pipeline::state::SampleCountType;
 
 use utility::dimension::Dimension3D;
 use utility::marker::{ VulkanFlags, VulkanEnum };

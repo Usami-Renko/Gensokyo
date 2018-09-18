@@ -1,7 +1,7 @@
 
 use ash::vk;
 
-use pipeline::state::multisample::SampleCountType;
+use pipeline::state::SampleCountType;
 use resources::image::ImageLayout;
 use utility::marker::{ VulkanFlags, VulkanEnum };
 

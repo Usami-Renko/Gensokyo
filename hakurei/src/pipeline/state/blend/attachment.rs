@@ -2,8 +2,7 @@
 use ash::vk;
 use ash::vk::Bool32;
 
-use utility::marker::VulkanFlags;
-use utility::marker::Prefab;
+use utility::marker::{ VulkanFlags, VulkanEnum, Prefab };
 
 #[derive(Debug, Clone, Copy, Eq, PartialEq)]
 pub enum BlendAttachmentPrefab {
@@ -118,3 +117,86 @@ impl VulkanFlags for [ColorComponentFlag] {
         })
     }
 }
+
+
+// TODO: Add description for BlendFactor.
+/// The source and destination color and alpha blending factors are selected from this enum.
+#[derive(Debug, Clone, Copy, Eq, PartialEq)]
+pub enum BlendFactor {
+    Zero,
+    One,
+    SrcColor,
+    OneMinusSrcColor,
+    DstColor,
+    OneMinusDstColor,
+    SrcAlpha,
+    OneMinusSrcAlpha,
+    DstAlpha,
+    OneMinusDstAlpha,
+    ConstantColor,
+    OneMinusConstantColor,
+    ConstantAlpha,
+    OneMinusConstantAlpha,
+    SrcAlphaSaturate,
+    Src1Color,
+    OneMinusSrc1Color,
+    Src1Alpha,
+    OneMinusSrc1Alpha,
+}
+
+impl VulkanEnum for BlendFactor {
+    type EnumType = vk::BlendFactor;
+
+    fn value(&self) -> Self::EnumType {
+        match *self {
+            | BlendFactor::Zero                  => vk::BlendFactor::Zero,
+            | BlendFactor::One                   => vk::BlendFactor::One,
+            | BlendFactor::SrcColor              => vk::BlendFactor::SrcColor,
+            | BlendFactor::OneMinusSrcColor      => vk::BlendFactor::OneMinusSrcColor,
+            | BlendFactor::DstColor              => vk::BlendFactor::DstColor,
+            | BlendFactor::OneMinusDstColor      => vk::BlendFactor::OneMinusDstColor,
+            | BlendFactor::SrcAlpha              => vk::BlendFactor::SrcAlpha,
+            | BlendFactor::OneMinusSrcAlpha      => vk::BlendFactor::OneMinusSrcAlpha,
+            | BlendFactor::DstAlpha              => vk::BlendFactor::DstAlpha,
+            | BlendFactor::OneMinusDstAlpha      => vk::BlendFactor::OneMinusDstAlpha,
+            | BlendFactor::ConstantColor         => vk::BlendFactor::ConstantColor,
+            | BlendFactor::OneMinusConstantColor => vk::BlendFactor::OneMinusConstantColor,
+            | BlendFactor::ConstantAlpha         => vk::BlendFactor::ConstantAlpha,
+            | BlendFactor::OneMinusConstantAlpha => vk::BlendFactor::OneMinusConstantAlpha,
+            | BlendFactor::SrcAlphaSaturate      => vk::BlendFactor::SrcAlphaSaturate,
+            | BlendFactor::Src1Color             => vk::BlendFactor::Src1Color,
+            | BlendFactor::OneMinusSrc1Color     => vk::BlendFactor::OneMinusSrc1Color,
+            | BlendFactor::Src1Alpha             => vk::BlendFactor::Src1Alpha,
+            | BlendFactor::OneMinusSrc1Alpha     => vk::BlendFactor::OneMinusSrc1Alpha,
+        }
+    }
+}
+
+
+// TODO: Add description for BlendFactor.
+/// BlendOp define the operation in blending operation.
+///
+/// RGB and alpha components can use different operations in blending.
+#[derive(Debug, Clone, Copy, Eq, PartialEq)]
+pub enum BlendOp {
+    Add,
+    Subtract,
+    ReverseSubtract,
+    Min,
+    Max,
+}
+
+impl VulkanEnum for BlendOp {
+    type EnumType = vk::BlendOp;
+
+    fn value(&self) -> Self::EnumType {
+        match *self {
+            | BlendOp::Add             => vk::BlendOp::Add,
+            | BlendOp::Subtract        => vk::BlendOp::Subtract,
+            | BlendOp::ReverseSubtract => vk::BlendOp::ReverseSubtract,
+            | BlendOp::Min             => vk::BlendOp::Min,
+            | BlendOp::Max             => vk::BlendOp::Max,
+        }
+    }
+}
+

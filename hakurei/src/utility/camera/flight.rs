@@ -4,7 +4,7 @@ use cgmath::{ Matrix4, Vector3, Point3, InnerSpace, Zero, Deg };
 use winit::VirtualKeyCode;
 
 use config::camera as CameraConfig;
-use input::action::ActionNerve;
+use input::ActionNerve;
 
 use utility::camera::traits::HaCameraAbstract;
 
@@ -37,7 +37,6 @@ pub struct HaFlightCamera {
 
 impl HaCameraAbstract for HaFlightCamera {
 
-    /// Return the view matrix base on the properties of camera.
     fn view_matrix(&self) -> Matrix4<f32> {
 
         Matrix4::look_at(self.pos, self.pos + self.front, self.up)
@@ -88,7 +87,7 @@ impl HaFlightCamera {
         self.move_speed = speed;
     }
 
-    pub(super) fn update_vectors(&mut self) {
+    fn update_vectors(&mut self) {
         // calculate the new front vector
         let front_x = self.yaw.to_radians().cos() * self.pitch.to_radians().cos();
         let front_y = self.pitch.to_radians().sin();

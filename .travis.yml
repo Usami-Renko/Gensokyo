@@ -11,3 +11,4 @@ script:
 - cargo build --manifest-path ./examples/Eg003.staging_buffer/Cargo.toml
 - cargo build --manifest-path ./examples/Eg004.uniform_buffer/Cargo.toml
 - cargo build --manifest-path ./examples/Eg005.texture_mapping/Cargo.toml
+- cargo build --manifest-path ./examples/Eg006.box/Cargo.toml
