@@ -23,10 +23,10 @@ extern crate winapi;
 mod config;
 mod core;
 mod procedure;
-mod utility;
+mod pipeline;
+mod resources;
+mod sync;
+mod input;
 
-pub mod pipeline;
-pub mod resources;
+mod utility;
 pub mod prelude;
-pub mod sync;
-pub mod input;

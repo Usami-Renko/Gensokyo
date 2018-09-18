@@ -8,9 +8,9 @@ use core::device::HaLogicalDevice;
 use resources::command::buffer::HaCommandBuffer;
 use resources::error::CommandError;
 
-use pipeline::graphics::pipeline::HaGraphicsPipeline;
+use pipeline::graphics::HaGraphicsPipeline;
 use pipeline::stages::PipelineStageFlag;
-use pipeline::pass::dependency::DependencyFlag;
+use pipeline::pass::DependencyFlag;
 use resources::repository::{ CmdVertexBindingInfos, CmdIndexBindingInfo, CmdDescriptorBindingInfos };
 use utility::marker::{ VulkanFlags, VulkanEnum };
 

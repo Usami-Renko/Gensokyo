@@ -8,7 +8,7 @@ use resources::descriptor::HaDescriptorSet;
 use resources::buffer::BufferSubItem;
 use resources::image::{ ImageViewItem, ImageLayout, HaSampler };
 
-use pipeline::shader::module::ShaderStageFlag;
+use pipeline::shader::ShaderStageFlag;
 
 use utility::marker::{ VulkanFlags, VulkanEnum };
 

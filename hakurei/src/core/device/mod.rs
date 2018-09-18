@@ -1,7 +1,10 @@
 
 pub use self::device::HaLogicalDevice;
 pub use self::device::DeviceQueueIdentifier;
-pub use self::builder::{ LogicalDeviceBuilder, PrefabQueuePriority };
+pub use self::builder::PrefabQueuePriority;
+
+pub(crate) use self::builder::LogicalDeviceBuilder;
+
 pub use self::queue::*;
 
 mod builder;

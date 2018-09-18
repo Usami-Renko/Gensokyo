@@ -6,7 +6,7 @@ use core::{ EntryV1, InstanceV1 };
 
 use config::engine::EngineConfig;
 use core::error::InstanceError;
-use core::ValidationInfo;
+use core::debug::ValidationInfo;
 use core::platforms;
 use core::debug;
 

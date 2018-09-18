@@ -3,10 +3,9 @@ use ash::vk;
 
 use core::device::HaLogicalDevice;
 
-use resources::buffer::{HaBuffer, BufferSubItem};
+use resources::buffer::{ HaBuffer, BufferSubItem };
 use resources::command::CommandBufferUsageFlag;
-use resources::memory::device::HaDeviceMemory;
-use resources::memory::traits::HaMemoryAbstract;
+use resources::memory::{ HaDeviceMemory, HaMemoryAbstract };
 use resources::error::AllocatorError;
 
 use utility::memory::spaces_to_offsets;

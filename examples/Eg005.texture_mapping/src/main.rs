@@ -4,19 +4,12 @@ extern crate hakurei_macros;
 extern crate hakurei;
 
 use hakurei::prelude::*;
-use hakurei::pipeline::shader::prelude::*;
-use hakurei::pipeline::graphics::prelude::*;
-use hakurei::pipeline::pass::prelude::*;
-use hakurei::pipeline::state::prelude::*;
-use hakurei::resources::command::*;
-use hakurei::resources::allocator::*;
-use hakurei::resources::buffer::*;
-use hakurei::resources::memory::*;
-use hakurei::resources::repository::*;
-use hakurei::resources::descriptor::*;
-use hakurei::resources::image::*;
-use hakurei::sync::prelude::*;
-use hakurei::input::prelude::*;
+use hakurei::prelude::config::*;
+use hakurei::prelude::queue::*;
+use hakurei::prelude::pipeline::*;
+use hakurei::prelude::resources::*;
+use hakurei::prelude::sync::*;
+use hakurei::prelude::input::*;
 
 use std::path::Path;
 
@@ -186,7 +179,7 @@ impl ProgramProc for TextureMappingProcedure {
         let render_pass = render_pass_builder.build(device, swapchain)?;
         let viewport = HaViewport::setup(swapchain.extent);
 
-        let pipeline_config = GraphicsPipelineConfig::init(shader_infos, vertex_input_desc, render_pass)
+        let pipeline_config = GraphicsPipelineConfig::new(shader_infos, vertex_input_desc, render_pass)
             .setup_viewport(viewport)
             .add_descriptor_set(self.sampler_repository.set_layout_at(&self.sampler_set))
             .finish_config();

@@ -57,6 +57,7 @@ impl<'i> FramebufferBuilder<'i> {
         Ok(framebuffer)
     }
 
+    #[allow(dead_code)]
     pub fn set_dimension(&mut self, dimension: BufferDimension) -> &mut FramebufferBuilder<'i> {
         self.dimension = dimension;
         self
@@ -65,6 +66,7 @@ impl<'i> FramebufferBuilder<'i> {
         self.attachments.push(attachment);
         self
     }
+    #[allow(dead_code)]
     pub fn add_attachment(&mut self, repository: &'i HaImageRepository, item: &ImageViewItem) -> &mut FramebufferBuilder<'i> {
         let view = repository.view_at(item);
         self.attachments.push(view);

@@ -28,5 +28,3 @@ impl fmt::Display for BufferDimension {
         write!(f, "width: {}, height: {}, layers: {}", self.extent.width, self.extent.height, self.layers)
     }
 }
-
-

@@ -6,10 +6,9 @@ use utility::fps::HaFpsTimer;
 use config::engine::EngineConfig;
 
 use procedure::workflow::{ CoreInfrastructure, HaResources, ProgramProc };
-use procedure::error::RuntimeError;
-use procedure::error::ProcedureError;
+use procedure::error::{ RuntimeError, ProcedureError };
 
-use input::action::{ ActionNerve, SceneReaction };
+use input::{ ActionNerve, SceneReaction };
 
 struct WindowInfo {
     window_size : Dimension2D,

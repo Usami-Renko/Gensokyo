@@ -1,6 +1,9 @@
 
-pub(crate) mod action;
-pub(crate) mod key;
-mod keycode;
+pub use input::action::{ ActionNerve, SceneAction };
+pub use input::keycode::HaKeycode;
 
-pub mod prelude;
+pub(crate) use self::action::SceneReaction;
+
+mod action;
+mod key;
+mod keycode;

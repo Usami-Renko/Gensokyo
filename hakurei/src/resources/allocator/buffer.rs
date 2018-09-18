@@ -6,9 +6,8 @@ use core::device::HaLogicalDevice;
 use core::physical::{ HaPhysicalDevice, MemorySelector };
 
 use resources::buffer::HaBuffer;
-use resources::buffer::{BufferConfig, BufferSubItem};
-use resources::memory::device::HaDeviceMemory;
-use resources::memory::traits::HaMemoryAbstract;
+use resources::buffer::{ BufferConfig, BufferSubItem };
+use resources::memory::{ HaDeviceMemory, HaMemoryAbstract };
 use resources::repository::HaBufferRepository;
 use resources::error::{ BufferError, AllocatorError };
 

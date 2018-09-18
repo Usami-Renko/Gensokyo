@@ -2,7 +2,7 @@
 use ash::vk;
 use ash::vk::uint32_t;
 
-use pipeline::state::vertex_input::HaVertexInput;
+use pipeline::state::HaVertexInput;
 
 #[derive(Debug)]
 pub struct HaVertexInputBinding {

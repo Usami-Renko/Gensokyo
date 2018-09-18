@@ -8,7 +8,5 @@ pub(crate) mod input;
 pub(crate) mod time;
 pub(crate) mod camera;
 
-pub mod prelude;
-
 // TODO: Remove this setting.
 pub(crate) const VERBOSE: bool = false;

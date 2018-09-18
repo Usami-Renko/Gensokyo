@@ -2,13 +2,12 @@
 use winit;
 
 use core::error::{ InstanceError, ValidationError, PhysicalDeviceError, SurfaceError, LogicalDeviceError };
-use core::swapchain::error::SwapchainError;
+use core::swapchain::SwapchainError;
 use pipeline::error::PipelineError;
 use resources::error::CommandError;
 use resources::error::AllocatorError;
 use resources::error::DescriptorError;
 use sync::error::SyncError;
-
 
 use std::fmt;
 use std::error::Error;

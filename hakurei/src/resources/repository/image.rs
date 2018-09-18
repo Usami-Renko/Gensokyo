@@ -1,7 +1,7 @@
 
 use core::device::HaLogicalDevice;
 
-use resources::memory::device::HaDeviceMemory;
+use resources::memory::HaDeviceMemory;
 use resources::image::{ HaImage, HaImageView, ImageViewItem };
 
 pub struct HaImageRepository {

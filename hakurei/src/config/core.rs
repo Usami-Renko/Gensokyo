@@ -1,9 +1,7 @@
 
 use ash::vk::uint32_t;
 
-use core::ValidationInfo;
-use core::debug::DebugReportFlag;
-
+use core::debug::{ ValidationInfo, DebugReportFlag };
 use core::physical::DeviceExtensionType;
 
 use utility::time::TimePeriod;

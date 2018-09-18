@@ -3,8 +3,6 @@ pub(crate) mod cast;
 pub(crate) mod marker;
 pub(crate) mod memory;
 pub(crate) mod fps;
-
-pub mod dimension;
-pub mod logic_op;
-pub mod time;
-pub mod camera;
+pub(crate) mod dimension;
+pub(crate) mod time;
+pub(crate) mod camera;

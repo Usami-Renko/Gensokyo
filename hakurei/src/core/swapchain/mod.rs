@@ -1,7 +1,11 @@
 
-pub(crate) mod chain;
-pub(crate) mod builder;
-pub(crate) mod error;
+pub use self::chain::HaSwapchain;
 
+pub(crate) use self::error::SwapchainError;
+pub(crate) use self::error::SwapchainRuntimeError;
+pub(crate) use self::builder::SwapchainBuilder;
+
+mod chain;
+mod builder;
+mod error;
 mod support;
-

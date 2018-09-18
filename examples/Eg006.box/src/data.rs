@@ -1,6 +1,6 @@
 
 use hakurei::prelude::*;
-use hakurei::pipeline::shader::prelude::*;
+use hakurei::prelude::pipeline::*;
 
 use cgmath::Matrix4;
 

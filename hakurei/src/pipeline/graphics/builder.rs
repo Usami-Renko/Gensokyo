@@ -8,19 +8,19 @@ use core::device::HaLogicalDevice;
 use pipeline::{
     graphics::pipeline::HaGraphicsPipeline,
 
-    shader::module::{ HaShaderModule, HaShaderInfo },
-    shader::input::VertexInputDescription,
+    shader::{ HaShaderModule, HaShaderInfo },
+    shader::VertexInputDescription,
     state::PipelineStates,
-    state::vertex_input::HaVertexInput,
-    state::input_assembly::HaInputAssembly,
-    state::viewport::HaViewport,
-    state::rasterizer::HaRasterizer,
-    state::multisample::HaMultisample,
-    state::depth_stencil::HaDepthStencil,
-    state::blend::HaBlend,
-    state::tessellation::HaTessellation,
-    state::dynamic::HaDynamicState,
-    pass::render::HaRenderPass,
+    state::HaVertexInput,
+    state::HaInputAssembly,
+    state::HaViewport,
+    state::HaRasterizer,
+    state::HaMultisample,
+    state::HaDepthStencil,
+    state::HaBlend,
+    state::HaTessellation,
+    state::HaDynamicState,
+    pass::HaRenderPass,
     layout::PipelineLayoutBuilder,
     error::PipelineError,
 };
@@ -76,6 +76,7 @@ pub struct GraphicsPipelineConfig {
     shaders        : Vec<HaShaderInfo>,
     states         : PipelineStates,
     render_pass    : Option<HaRenderPass>,
+    flags          : vk::PipelineCreateFlags,
 
     shader_modules : Vec<HaShaderModule>,
     layout_builder : PipelineLayoutBuilder,
@@ -83,16 +84,21 @@ pub struct GraphicsPipelineConfig {
 
 impl GraphicsPipelineConfig {
 
-    pub fn init(shaders: Vec<HaShaderInfo>, input: VertexInputDescription, pass: HaRenderPass) -> GraphicsPipelineConfig {
+    pub fn new(shaders: Vec<HaShaderInfo>, input: VertexInputDescription, pass: HaRenderPass) -> GraphicsPipelineConfig {
 
         GraphicsPipelineConfig {
             shaders,
             states         : PipelineStates::setup(input),
             render_pass    : Some(pass),
+            flags          : vk::PipelineCreateFlags::empty(),
 
             shader_modules : vec![],
             layout_builder : PipelineLayoutBuilder::default(),
         }
+    }
+
+    pub fn set_flags(&mut self, flags: &[PipelineCreateFlag]) {
+        self.flags = flags.flags();
     }
 
     pub fn finish_config(self) -> GraphicsPipelineConfig {

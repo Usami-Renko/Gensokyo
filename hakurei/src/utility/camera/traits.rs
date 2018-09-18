@@ -1,6 +1,6 @@
 
 use cgmath::{ Matrix4, Point3, Vector3, SquareMatrix, InnerSpace };
-use input::action::ActionNerve;
+use input::ActionNerve;
 
 pub trait HaCameraAbstract {
 
