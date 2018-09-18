@@ -21,7 +21,7 @@ use cgmath::{ Matrix4, SquareMatrix, Point3 };
 
 use std::path::Path;
 
-const WINDOW_TITLE: &'static str = "Box Example";
+const WINDOW_TITLE: &'static str = "06.Box";
 const WINDOW_WIDTH:  u32 = 800;
 const WINDOW_HEIGHT: u32 = 600;
 const VERTEX_SHADER_PATH  : &'static str = "shaders/box.vert.spv";

@@ -13,7 +13,7 @@ use hakurei::prelude::input::*;
 
 use std::path::Path;
 
-const WINDOW_TITLE: &'static str = "Trangle Example";
+const WINDOW_TITLE: &'static str = "01.Trangle";
 const WINDOW_WIDTH:  u32 = 800;
 const WINDOW_HEIGHT: u32 = 600;
 const VERTEX_SHADER_PATH  : &'static str = "shaders/triangle.vert.spv";

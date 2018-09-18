@@ -2,7 +2,8 @@
 # Examples-basic
 
 These examples show the basic usage of hakurei.
-For a snapshot of each examples.
+
+`snapshots` directory contains snapshot of each example.
 
 ## Running the examples:
 
@@ -24,6 +25,6 @@ All available examples and corresponding `example_number` are listed in the foll
 ### Example usage:
 
 ```sh
-$ caro run --bin 01
+$ cargo run --bin 01
 ```
 
