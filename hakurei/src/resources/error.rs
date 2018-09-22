@@ -86,6 +86,7 @@ pub enum MemoryError {
     BindMemoryError,
     MapMemoryError,
     FlushMemoryError,
+    BufferToBufferCopyError,
 }
 
 impl Error for MemoryError {}
@@ -100,6 +101,7 @@ impl fmt::Display for MemoryError {
             | MemoryError::BindMemoryError           => "Failed to bind memory to buffer object.",
             | MemoryError::MapMemoryError            => "Failed to map memory for buffer object.",
             | MemoryError::FlushMemoryError          => "Failed to flush certain range of memory.",
+            | MemoryError::BufferToBufferCopyError   => "Failed to copy buffer from another buffer",
         };
         write!(f, "{}", description)
     }
@@ -114,6 +116,7 @@ pub enum AllocatorError {
     Image(ImageError),
     Sync(SyncError),
     MemoryNotYetAllocated,
+    DataTransferNotActivate,
 }
 
 impl_from_err!(Buffer(BufferError)   -> AllocatorError);
@@ -135,6 +138,9 @@ impl fmt::Display for AllocatorError {
             | AllocatorError::Sync(ref e)    => e.to_string(),
             | AllocatorError::MemoryNotYetAllocated   => {
                 String::from("The memory is not allocated yet. Memory must be allocated first before using it.")
+            },
+            | AllocatorError::DataTransferNotActivate => {
+                String::from("The repository must be activated before making data transfer operations.")
             },
         };
         write!(f, "{}", description)

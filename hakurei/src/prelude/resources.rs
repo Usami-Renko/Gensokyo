@@ -1,14 +1,16 @@
 
 pub use resources::allocator::{
     ResourceGenerator,     // generator
-    HaBufferAllocator,     // buffer
+    HaDeviceBufferAllocator, HaHostBufferAllocator, HaBufferAllocatorAbstract, // buffer
     HaDescriptorAllocator, // descriptor
     HaImageAllocator,      // image
 };
 
 pub use resources::buffer::{
-    BufferCreateFlag, BufferUsageFlag,       // flag
-    BufferConfig, BufferItem, BufferSubItem, // item
+    BufferCreateFlag, DeviceBufferUsage, HostBufferUsage, // flag
+    BufferItem, BufferSubItem, // item
+    DeviceBufferConfig, HostBufferConfig, // config
+    BufferConfigModifiable, // traits
 };
 
 pub use resources::command::{
@@ -24,7 +26,7 @@ pub use resources::descriptor::{
     HaDescriptorSetLayout, DescriptorSetLayoutFlag, BufferDescriptorType, ImageDescriptorType, // layout
 };
 
-// currently no framebuffer API is public
+// currently no framebuffer API is public.
 pub use resources::framebuffer::{};
 
 pub use resources::image::{
@@ -36,9 +38,8 @@ pub use resources::image::{
     ImageType, ImageViewType, ImageTiling, Filter, MipmapMode, CompareOp, BorderColor, // enums
 };
 
-pub use resources::memory::{
-    MemoryPropertyFlag
-};
+// currently no memory API is public,
+pub use resources::memory::{};
 
 pub use resources::repository::{
     HaBufferRepository, CmdVertexBindingInfos, CmdIndexBindingInfo, // buffer

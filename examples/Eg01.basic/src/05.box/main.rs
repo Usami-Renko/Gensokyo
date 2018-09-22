@@ -1,10 +1,12 @@
 
+mod data;
+
+pub use self::data::{ Vertex, UboObject };
+
 #[macro_use]
 extern crate hakurei_macros;
 extern crate hakurei;
-
 extern crate cgmath;
-use cgmath::{ Matrix4, Vector3, Deg };
 
 use hakurei::prelude::*;
 use hakurei::prelude::config::*;
@@ -13,110 +15,128 @@ use hakurei::prelude::pipeline::*;
 use hakurei::prelude::resources::*;
 use hakurei::prelude::sync::*;
 use hakurei::prelude::input::*;
+use hakurei::prelude::utility::*;
+
+use cgmath::{ Matrix4, SquareMatrix, Point3 };
 
 use std::path::Path;
 
-const WINDOW_TITLE: &'static str = "04.Unifrom";
+const WINDOW_TITLE: &'static str = "05.Box";
 const WINDOW_WIDTH:  u32 = 800;
 const WINDOW_HEIGHT: u32 = 600;
-const VERTEX_SHADER_PATH  : &'static str = "shaders/uniform.vert.spv";
-const FRAGMENT_SHADER_PATH: &'static str = "shaders/uniform.frag.spv";
+const VERTEX_SHADER_PATH  : &'static str = "shaders/box.vert.spv";
+const FRAGMENT_SHADER_PATH: &'static str = "shaders/box.frag.spv";
 
-define_input! {
-    #[binding = 0, rate = vertex]
-    struct Vertex {
-        #[location = 0, format = vec2]
-        pos:   [f32; 2],
-        #[location = 1, format = vec4]
-        color: [f32; 4],
-    }
-}
+struct BoxProcedure {
 
-#[derive(Debug, Clone, Copy)]
-struct UboObject {
-    rotate: Matrix4<f32>,
-}
+    vertex_data: Vec<Vertex>,
+    index_data : Vec<uint32_t>,
 
-struct UniformBufferProcedure {
-
-    vertex_data   : Vec<Vertex>,
-    vertex_storage: HaBufferRepository,
+    buffer_storage: HaBufferRepository,
     vertex_item   : BufferSubItem,
-
-    ubo_data      : Vec<UboObject>,
-    ubo_storage   : HaDescriptorRepository,
-    ubo_set       : DescriptorSetItem,
+    index_item    : BufferSubItem,
 
     graphics_pipeline: HaGraphicsPipeline,
+
+    ubo_data   : Vec<UboObject>,
+    ubo_buffer : HaBufferRepository,
+    ubo_item   : BufferSubItem,
+    ubo_storage: HaDescriptorRepository,
+    ubo_set    : DescriptorSetItem,
 
     command_pool   : HaCommandPool,
     command_buffers: Vec<HaCommandBuffer>,
 
+    camera: HaStageCamera,
+
     present_availables: Vec<HaSemaphore>,
 }
 
-impl UniformBufferProcedure {
+impl BoxProcedure {
 
-    fn new() -> UniformBufferProcedure {
-        UniformBufferProcedure {
-            vertex_data: vec![
-                Vertex { pos: [ 0.0, -0.5], color: [1.0, 0.0, 0.0, 1.0], },
-                Vertex { pos: [ 0.5,  0.5], color: [0.0, 1.0, 0.0, 1.0], },
-                Vertex { pos: [-0.5,  0.5], color: [0.0, 0.0, 1.0, 1.0], },
-            ],
-            vertex_storage: HaBufferRepository::empty(),
-            vertex_item: BufferSubItem::unset(),
+    fn new() -> BoxProcedure {
+        let camera = CameraConfigurator::config()
+            .place_at(Point3::new(0.0, 0.0, 3.0))
+            .screen_dimension(WINDOW_WIDTH, WINDOW_HEIGHT)
+            .for_stage_camera();
+
+        BoxProcedure {
+            vertex_data: data::VERTEX_DATA.to_vec(),
+            index_data : data::INDEX_DATA.to_vec(),
+
+            buffer_storage: HaBufferRepository::empty(),
+            vertex_item   : BufferSubItem::unset(),
+            index_item    : BufferSubItem::unset(),
+
+            graphics_pipeline: HaGraphicsPipeline::uninitialize(),
 
             ubo_data: vec![
                 UboObject {
-                    rotate: Matrix4::from_axis_angle(Vector3::new(0.0, 0.0, 1.0), Deg(90.0))
+                    projection: camera.proj_matrix(),
+                    view      : camera.view_matrix(),
+                    model     : Matrix4::identity(),
                 },
             ],
+            ubo_buffer : HaBufferRepository::empty(),
+            ubo_item   : BufferSubItem::unset(),
             ubo_storage: HaDescriptorRepository::empty(),
             ubo_set: DescriptorSetItem::unset(),
-
-            graphics_pipeline: HaGraphicsPipeline::uninitialize(),
 
             command_pool: HaCommandPool::uninitialize(),
             command_buffers: vec![],
 
+            camera,
+
             present_availables: vec![],
         }
     }
+
+    fn update_uniforms(&mut self, device: &HaLogicalDevice) -> Result<(), ProcedureError> {
+
+        self.ubo_data[0].model = self.camera.object_model_transformation();
+        self.ubo_data[0].view  = self.camera.view_matrix();
+
+        // FIXME: Define Update data method
+//        self.ubo_buffer.tranfer_data(device, &self.ubo_data, &self.ubo_item)?;
+
+        Ok(())
+    }
 }
 
-impl ProgramProc for UniformBufferProcedure {
+impl ProgramProc for BoxProcedure {
 
     fn assets(&mut self, device: &HaLogicalDevice, generator: &ResourceGenerator) -> Result<(), ProcedureError> {
 
-        // vertex and uniform buffer
-        let mut vertex_buffer_config = BufferConfig::init(
-            &[BufferUsageFlag::VertexBufferBit],
-            &[
-                MemoryPropertyFlag::HostVisibleBit,
-                MemoryPropertyFlag::HostCoherentBit,
-            ],
-            &[]
-        );
-        let _ = vertex_buffer_config.add_item(data_size!(self.vertex_data, Vertex));
+        // vertex, index buffer
+        let mut device_buffer_allocator = generator.device_buffer();
 
-        let mut uniform_buffer_config = BufferConfig::init(
-            &[BufferUsageFlag::UniformBufferBit],
-            &[
-                MemoryPropertyFlag::HostVisibleBit,
-                MemoryPropertyFlag::HostCoherentBit,
-            ],
-            &[],
-        );
-        let _ = uniform_buffer_config.add_item(data_size!(self.ubo_data, UboObject));
+        let mut vertex_buffer_config = DeviceBufferConfig::new(DeviceBufferUsage::VertexBuffer);
+        vertex_buffer_config.add_item(data_size!(self.vertex_data, Vertex));
 
-        let mut vertex_allocator = generator.buffer();
-        self.vertex_item = vertex_allocator.attach_buffer(vertex_buffer_config)?.pop().unwrap();
-        let ubo_buffer_item = vertex_allocator.attach_buffer(uniform_buffer_config)?.pop().unwrap();
+        let mut index_buffer_config = DeviceBufferConfig::new(DeviceBufferUsage::IndexBuffer);
+        index_buffer_config.add_item(data_size!(self.index_data, uint32_t));
 
-        self.vertex_storage = vertex_allocator.allocate()?;
-        self.vertex_storage.tranfer_data(device, &self.vertex_data, &self.vertex_item)?;
-        self.vertex_storage.tranfer_data(device, &self.ubo_data, &ubo_buffer_item)?;
+        self.vertex_item = device_buffer_allocator.attach_buffer(vertex_buffer_config)?.pop().unwrap();
+        self.index_item  = device_buffer_allocator.attach_buffer(index_buffer_config)?.pop().unwrap();
+
+        self.buffer_storage = device_buffer_allocator.allocate()?;
+        self.buffer_storage.prepare_data_transfer(device)?;
+        self.buffer_storage.upload_data(device, &self.vertex_item, &self.vertex_data)?;
+        self.buffer_storage.upload_data(device, &self.index_item,  &self.index_data)?;
+        self.buffer_storage.execute_data_transfer(device)?;
+
+        // uniform buffer
+        let mut host_buffer_allocator = generator.host_buffer();
+
+        let mut uniform_buffer_config = HostBufferConfig::new(HostBufferUsage::UniformBuffer);
+        uniform_buffer_config.add_item(data_size!(self.ubo_data, UboObject));
+
+        self.ubo_item = host_buffer_allocator.attach_buffer(uniform_buffer_config)?.pop().unwrap();
+        self.ubo_buffer = host_buffer_allocator.allocate()?;
+
+        self.ubo_buffer.prepare_data_transfer(device)?;
+        self.ubo_buffer.upload_data(device, &self.ubo_item, &self.ubo_data)?;
+        self.ubo_buffer.execute_data_transfer(device)?;
 
         // descriptor
         let ubo_info = DescriptorBufferBindingInfo {
@@ -124,7 +144,7 @@ impl ProgramProc for UniformBufferProcedure {
             type_: BufferDescriptorType::UniformBuffer,
             count: 1,
             element_size: data_size!(self.ubo_data, UboObject),
-            buffer: ubo_buffer_item.clone(),
+            buffer: self.ubo_item.clone(),
         };
         let mut descriptor_set_config = DescriptorSetConfig::init(&[]);
         let ubo_binding_index = descriptor_set_config.add_buffer_binding(ubo_info, &[
@@ -191,16 +211,17 @@ impl ProgramProc for UniformBufferProcedure {
     }
 
     fn subresources(&mut self, device: &HaLogicalDevice) -> Result<(), ProcedureError> {
+
         // sync
         for _ in 0..self.graphics_pipeline.frame_count() {
             let present_available = HaSemaphore::setup(device)?;
             self.present_availables.push(present_available);
         }
+
         Ok(())
     }
 
     fn commands(&mut self, device: &HaLogicalDevice) -> Result<(), ProcedureError> {
-
         // command buffer
         let command_pool = HaCommandPool::setup(&device, DeviceQueueIdentifier::Graphics, &[])?;
 
@@ -214,9 +235,10 @@ impl ProgramProc for UniformBufferProcedure {
             recorder.begin_record(&[CommandBufferUsageFlag::SimultaneousUseBit])?
                 .begin_render_pass(&self.graphics_pipeline, frame_index)
                 .bind_pipeline(&self.graphics_pipeline)
-                .bind_vertex_buffers(0, &self.vertex_storage.vertex_binding_infos(&[&self.vertex_item]))
+                .bind_vertex_buffers(0, &self.buffer_storage.vertex_binding_infos(&[&self.vertex_item]))
+                .bind_index_buffers(&self.buffer_storage.index_binding_info(&self.index_item))
                 .bind_descriptor_sets(&self.graphics_pipeline, 0, &self.ubo_storage.descriptor_binding_infos(&[&self.ubo_set]))
-                .draw(self.vertex_data.len() as uint32_t, 1, 0, 0)
+                .draw_indexed(self.index_data.len() as uint32_t, 1, 0, 0, 0)
                 .end_render_pass()
                 .finish()?;
         }
@@ -227,6 +249,8 @@ impl ProgramProc for UniformBufferProcedure {
     }
 
     fn draw(&mut self, device: &HaLogicalDevice, device_available: &HaFence, image_available: &HaSemaphore, image_index: usize, _: f32) -> Result<&HaSemaphore, ProcedureError> {
+
+        self.update_uniforms(device)?;
 
         let submit_infos = [
             QueueSubmitBundle {
@@ -265,14 +289,17 @@ impl ProgramProc for UniformBufferProcedure {
         self.graphics_pipeline.cleanup(device);
         self.command_pool.cleanup(device);
         self.ubo_storage.cleanup(device);
-        self.vertex_storage.cleanup(device);
+        self.ubo_buffer.cleanup(device);
+        self.buffer_storage.cleanup(device);
     }
 
-    fn react_input(&mut self, inputer: &ActionNerve, _: f32) -> SceneAction {
+    fn react_input(&mut self, inputer: &ActionNerve, delta_time: f32) -> SceneAction {
 
         if inputer.is_key_pressed(HaKeycode::Escape) {
             return SceneAction::Terminal
         }
+
+        self.camera.react_input(inputer, delta_time);
 
         SceneAction::Rendering
     }
@@ -280,7 +307,7 @@ impl ProgramProc for UniformBufferProcedure {
 
 fn main() {
 
-    let procecure = UniformBufferProcedure::new();
+    let procecure = BoxProcedure::new();
     let mut config = EngineConfig::default();
     config.window.dimension = Dimension2D {
         width : WINDOW_WIDTH,

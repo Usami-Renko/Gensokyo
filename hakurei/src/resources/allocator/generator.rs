@@ -2,7 +2,7 @@
 use core::physical::HaPhysicalDevice;
 use core::device::HaLogicalDevice;
 
-use resources::allocator::buffer::HaBufferAllocator;
+use resources::allocator::buffer::{ HaHostBufferAllocator, HaDeviceBufferAllocator };
 use resources::allocator::descriptor::HaDescriptorAllocator;
 use resources::allocator::image::HaImageAllocator;
 use resources::descriptor::DescriptorPoolFlag;
@@ -22,8 +22,12 @@ impl<'re> ResourceGenerator<'re> {
         }
     }
 
-    pub fn buffer(&self) -> HaBufferAllocator {
-        HaBufferAllocator::new(self.physical, self.device)
+    pub fn host_buffer(&self) -> HaHostBufferAllocator {
+        HaHostBufferAllocator::new(self.physical, self.device)
+    }
+
+    pub fn device_buffer(&self) -> HaDeviceBufferAllocator {
+        HaDeviceBufferAllocator::new(self.physical, self.device)
     }
 
     pub fn descriptor(&self, flags: &[DescriptorPoolFlag]) -> HaDescriptorAllocator {

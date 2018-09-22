@@ -13,7 +13,7 @@ use hakurei::prelude::input::*;
 
 use std::path::Path;
 
-const WINDOW_TITLE: &'static str = "05.Texture";
+const WINDOW_TITLE: &'static str = "04.Texture";
 const WINDOW_WIDTH:  u32 = 800;
 const WINDOW_HEIGHT: u32 = 800;
 const VERTEX_SHADER_PATH  : &'static str = "shaders/texture.vert.spv";
@@ -82,22 +82,18 @@ impl ProgramProc for TextureMappingProcedure {
 
     fn assets(&mut self, device: &HaLogicalDevice, generator: &ResourceGenerator) -> Result<(), ProcedureError> {
 
-        // vertex and uniform buffer
-        let mut vertex_buffer_config = BufferConfig::init(
-            &[BufferUsageFlag::VertexBufferBit],
-            &[
-                MemoryPropertyFlag::HostVisibleBit,
-                MemoryPropertyFlag::HostCoherentBit,
-            ],
-            &[]
-        );
-        let _ = vertex_buffer_config.add_item(data_size!(self.vertex_data, Vertex));
+        // vertex buffer
+        let mut vertex_allocator = generator.host_buffer();
 
-        let mut vertex_allocator = generator.buffer();
+        let mut vertex_buffer_config = HostBufferConfig::new(HostBufferUsage::VertexBuffer);
+        vertex_buffer_config.add_item(data_size!(self.vertex_data, Vertex));
+
         self.vertex_item = vertex_allocator.attach_buffer(vertex_buffer_config)?.pop().unwrap();
-
         self.vertex_storage = vertex_allocator.allocate()?;
-        self.vertex_storage.tranfer_data(device, &self.vertex_data, &self.vertex_item)?;
+
+        self.vertex_storage.prepare_data_transfer(device)?;
+        self.vertex_storage.upload_data(device, &self.vertex_item, &self.vertex_data)?;
+        self.vertex_storage.execute_data_transfer(device)?;
 
         // image
         let image_desc = ImageDescInfo::init(

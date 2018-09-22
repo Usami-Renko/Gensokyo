@@ -1,7 +1,7 @@
 
 use ash::vk;
 
-use utility::marker::VulkanFlags;
+use utility::marker::{ VulkanFlags, VulkanEnum };
 
 #[derive(Debug, Clone, Copy, Eq, PartialEq)]
 pub enum BufferCreateFlag {
@@ -36,7 +36,7 @@ pub enum BufferUsageFlag {
     ///
     ///  (see the definition of VK_PIPELINE_STAGE_TRANSFER_BIT).
     TransferSrcBit,
-    /// TransferDstBit specifies that the buffer can be used as the destination of a transfer command,
+    /// TransferDstBit specifies that the buffer can be used as the destination of a transfer command.
     TransferDstBit,
     /// UniformTexelBufferBit specifies that the buffer can be used to create a VkBufferView suitable
     /// for occupying a VkDescriptorSet slot of type VK_DESCRIPTOR_TYPE_UNIFORM_TEXEL_BUFFER.
@@ -61,22 +61,58 @@ pub enum BufferUsageFlag {
     IndirectBufferBit,
 }
 
-impl VulkanFlags for [BufferUsageFlag] {
-    type FlagType = vk::BufferUsageFlags;
+impl VulkanEnum for BufferUsageFlag {
+    type EnumType = vk::BufferUsageFlags;
 
-    fn flags(&self) -> Self::FlagType {
-        self.iter().fold(vk::BufferUsageFlags::empty(), |acc, flag| {
-            match flag {
-                | BufferUsageFlag::TransferSrcBit        => acc | vk::BUFFER_USAGE_TRANSFER_SRC_BIT,
-                | BufferUsageFlag::TransferDstBit        => acc | vk::BUFFER_USAGE_TRANSFER_DST_BIT,
-                | BufferUsageFlag::UniformTexelBufferBit => acc | vk::BUFFER_USAGE_UNIFORM_TEXEL_BUFFER_BIT,
-                | BufferUsageFlag::StorageTexelBufferBit => acc | vk::BUFFER_USAGE_STORAGE_TEXEL_BUFFER_BIT,
-                | BufferUsageFlag::UniformBufferBit      => acc | vk::BUFFER_USAGE_UNIFORM_BUFFER_BIT,
-                | BufferUsageFlag::StorageBufferBit      => acc | vk::BUFFER_USAGE_STORAGE_BUFFER_BIT,
-                | BufferUsageFlag::IndexBufferBit        => acc | vk::BUFFER_USAGE_INDEX_BUFFER_BIT,
-                | BufferUsageFlag::VertexBufferBit       => acc | vk::BUFFER_USAGE_VERTEX_BUFFER_BIT,
-                | BufferUsageFlag::IndirectBufferBit     => acc | vk::BUFFER_USAGE_INDIRECT_BUFFER_BIT,
-            }
-        })
+    fn value(&self) -> Self::EnumType {
+        match self {
+            | BufferUsageFlag::TransferSrcBit        => vk::BUFFER_USAGE_TRANSFER_SRC_BIT,
+            | BufferUsageFlag::TransferDstBit        => vk::BUFFER_USAGE_TRANSFER_DST_BIT,
+            | BufferUsageFlag::UniformTexelBufferBit => vk::BUFFER_USAGE_UNIFORM_TEXEL_BUFFER_BIT,
+            | BufferUsageFlag::StorageTexelBufferBit => vk::BUFFER_USAGE_STORAGE_TEXEL_BUFFER_BIT,
+            | BufferUsageFlag::UniformBufferBit      => vk::BUFFER_USAGE_UNIFORM_BUFFER_BIT,
+            | BufferUsageFlag::StorageBufferBit      => vk::BUFFER_USAGE_STORAGE_BUFFER_BIT,
+            | BufferUsageFlag::IndexBufferBit        => vk::BUFFER_USAGE_INDEX_BUFFER_BIT,
+            | BufferUsageFlag::VertexBufferBit       => vk::BUFFER_USAGE_VERTEX_BUFFER_BIT,
+            | BufferUsageFlag::IndirectBufferBit     => vk::BUFFER_USAGE_INDIRECT_BUFFER_BIT,
+        }
+    }
+}
+
+
+// TODO: Currently not all usages is cover as shown in BufferUsageFlag.
+#[derive(Debug, Clone, Copy, Eq, PartialEq)]
+pub enum DeviceBufferUsage {
+    VertexBuffer,
+    IndexBuffer,
+}
+
+impl VulkanEnum for DeviceBufferUsage {
+    type EnumType = vk::BufferUsageFlags;
+
+    fn value(&self) -> Self::EnumType {
+        match self {
+            | DeviceBufferUsage::VertexBuffer => vk::BUFFER_USAGE_VERTEX_BUFFER_BIT,
+            | DeviceBufferUsage::IndexBuffer  => vk::BUFFER_USAGE_INDEX_BUFFER_BIT,
+        }
+    }
+}
+
+#[derive(Debug, Clone, Copy, Eq, PartialEq)]
+pub enum HostBufferUsage {
+    VertexBuffer,
+    IndexBuffer,
+    UniformBuffer,
+}
+
+impl VulkanEnum for HostBufferUsage {
+    type EnumType = vk::BufferUsageFlags;
+
+    fn value(&self) -> Self::EnumType {
+        match self {
+            | HostBufferUsage::VertexBuffer  => vk::BUFFER_USAGE_VERTEX_BUFFER_BIT,
+            | HostBufferUsage::IndexBuffer   => vk::BUFFER_USAGE_INDEX_BUFFER_BIT,
+            | HostBufferUsage::UniformBuffer => vk::BUFFER_USAGE_UNIFORM_BUFFER_BIT,
+        }
     }
 }

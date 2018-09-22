@@ -5,18 +5,20 @@ use core::device::HaLogicalDevice;
 
 use resources::buffer::{ HaBuffer, BufferSubItem };
 use resources::command::CommandBufferUsageFlag;
-use resources::memory::{ HaDeviceMemory, HaMemoryAbstract };
-use resources::error::AllocatorError;
+use resources::memory::{ HaMemoryAbstract, MemoryDataTransfer };
+use resources::error::{ AllocatorError, MemoryError };
 
 use utility::memory::spaces_to_offsets;
 
 pub struct HaBufferRepository {
 
     buffers: Vec<HaBuffer>,
-    memory : Option<HaDeviceMemory>,
+    memory : Option<Box<HaMemoryAbstract>>,
 
     /// The offset of each buffer in memory.
     offsets: Vec<vk::DeviceSize>,
+
+    is_data_transfering: bool,
 }
 
 pub struct CmdVertexBindingInfos {
@@ -30,7 +32,6 @@ pub struct CmdIndexBindingInfo {
     pub(crate) offset: vk::DeviceSize,
 }
 
-
 impl HaBufferRepository {
 
     pub fn empty() -> HaBufferRepository {
@@ -39,63 +40,70 @@ impl HaBufferRepository {
             memory : None,
 
             offsets: vec![],
+
+            is_data_transfering: false,
         }
     }
 
-    pub(crate) fn store(buffers: Vec<HaBuffer>, memory: HaDeviceMemory, spaces: Vec<vk::DeviceSize>) -> HaBufferRepository {
+    pub(crate) fn store(buffers: Vec<HaBuffer>, memory: Box<HaMemoryAbstract>, spaces: Vec<vk::DeviceSize>) -> HaBufferRepository {
 
         let offsets = spaces_to_offsets(&spaces);
 
-        HaBufferRepository { buffers, memory: Some(memory), offsets, }
+        HaBufferRepository { buffers, memory: Some(memory), offsets, is_data_transfering: false, }
     }
 
-    pub fn tranfer_data<D: Copy>(&self, device: &HaLogicalDevice, data: &Vec<D>, item: &BufferSubItem) -> Result<(), AllocatorError> {
+    pub fn prepare_data_transfer(&mut self, device: &HaLogicalDevice) -> Result<(), AllocatorError> {
+        self.is_data_transfering = true;
 
-        let memory = self.memory.as_ref()
-            .ok_or(AllocatorError::MemoryNotYetAllocated)?;
+        if let Some(ref mut memory) = self.memory {
 
-        let offset = self.offsets[item.buffer_index] + item.offset;
-
-        let data_ptr = memory.map(device, offset, item.size)
-            .map_err(|e| AllocatorError::Memory(e))?;
-
-        self.buffers[item.buffer_index].copy_data(data_ptr, item.size, data);
-
-        // FIXME: No need to unmap size every time.
-        memory.unmap(device, offset, item.size)
-            .map_err(|e| AllocatorError::Memory(e))?;
-
-        Ok(())
-    }
-
-    // TODO: Make this function to support multiple buffer copy operation.
-    pub fn copy_buffer_to_buffer(&self, device: &HaLogicalDevice, from_item: &BufferSubItem, to_item: &BufferSubItem) -> Result<(), AllocatorError> {
-
-        let mut transfer = device.transfer();
-        {
-            let command_buffer = transfer.command()?;
-
-            // TODO: Only support one region.
-            let copy_regions = [
-                vk::BufferCopy {
-                    src_offset: from_item.offset,
-                    dst_offset: to_item.offset,
-                    size      : to_item.size,
-                },
-            ];
-
-            let recorder = command_buffer.setup_record(device);
-            recorder.begin_record(&[CommandBufferUsageFlag::OneTimeSubmitBit])?
-                .copy_buffer(
-                    from_item.handle,
-                    to_item.handle,
-                    &copy_regions)
-                .finish()?;
+            memory.prepare_data_transfer(device)?;
+        } else {
+            return Err(AllocatorError::Memory(MemoryError::MemoryNotYetAllocateError))
         }
 
-        transfer.excute()?;
+        Ok(())
+    }
+
+    pub fn upload_data<D: Copy>(&mut self, device: &HaLogicalDevice, item: &BufferSubItem, data: &Vec<D>) -> Result<(), AllocatorError> {
+
+        if self.is_data_transfering == false {
+            return Err(AllocatorError::DataTransferNotActivate)
+        }
+
+        if let Some(ref mut memory) = self.memory {
+
+            let offset = self.offsets[item.buffer_index] + item.offset;
+            memory.add_transfer_data(device, item, data, offset)?;
+        } else {
+            return Err(AllocatorError::Memory(MemoryError::MemoryNotYetAllocateError))
+        }
 
         Ok(())
+    }
+
+    pub fn execute_data_transfer(&mut self, device: &HaLogicalDevice) -> Result<(), AllocatorError> {
+
+        if self.is_data_transfering == false {
+            return Err(AllocatorError::DataTransferNotActivate)
+        }
+
+        if let Some(ref mut memory) = self.memory {
+
+            memory.transfer_data(device)?;
+            self.is_data_transfering = false;
+        } else {
+            return Err(AllocatorError::Memory(MemoryError::MemoryNotYetAllocateError))
+        }
+
+        Ok(())
+    }
+
+    pub(crate) fn buffer_at(&self, index: usize) -> &HaBuffer {
+        &self.buffers[index]
+    }
+    pub(crate) fn borrow_mut_memory(&mut self) -> &mut Box<HaMemoryAbstract> {
+        self.memory.as_mut().unwrap()
     }
 
     pub fn vertex_binding_infos(&self, items: &[&BufferSubItem]) -> CmdVertexBindingInfos {
@@ -124,13 +132,47 @@ impl HaBufferRepository {
         for buffer in self.buffers.iter() {
             buffer.cleanup(device);
         }
-        self.buffers.clear();
 
         if let Some(ref memory) = self.memory {
             memory.cleanup(device);
         }
-        self.memory = None;
 
+        self.buffers.clear();
         self.offsets.clear();
+    }
+}
+
+impl HaBufferRepository {
+
+    // TODO: Make this function to support multiple buffer copy operation.
+    pub fn copy_buffers_to_buffers(device: &HaLogicalDevice, from_items: &[&BufferSubItem], to_items: &[&BufferSubItem])
+        -> Result<(), AllocatorError> {
+
+        let mut transfer = device.transfer();
+        {
+            let command_buffer = transfer.command()?;
+
+            let recorder = command_buffer.setup_record(device);
+            recorder.begin_record(&[CommandBufferUsageFlag::OneTimeSubmitBit])?;
+
+            for (&from, &to) in from_items.iter().zip(to_items.iter()) {
+                // TODO: Only support one region.
+                let copy_region = [
+                    vk::BufferCopy {
+                        src_offset: from.offset,
+                        dst_offset: to.offset,
+                        size      : to.size,
+                    },
+                ];
+
+                recorder.copy_buffer(from.handle, to.handle, &copy_region);
+            }
+
+            recorder.finish()?;
+        }
+
+        transfer.excute()?;
+
+        Ok(())
     }
 }
