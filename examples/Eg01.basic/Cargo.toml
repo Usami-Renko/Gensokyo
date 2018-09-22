@@ -19,16 +19,12 @@ path = "src/02.index/main.rs"
 
 [[bin]]
 name = "03"
-path = "src/03.staging/main.rs"
+path = "src/03.uniform/main.rs"
 
 [[bin]]
 name = "04"
-path = "src/04.uniform/main.rs"
+path = "src/04.texture/main.rs"
 
 [[bin]]
 name = "05"
-path = "src/05.texture/main.rs"
-
-[[bin]]
-name = "06"
-path = "src/06.box/main.rs"
+path = "src/05.box/main.rs"

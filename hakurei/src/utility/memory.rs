@@ -21,3 +21,32 @@ pub fn spaces_to_offsets(spaces: &Vec<vk::DeviceSize>) -> Vec<vk::DeviceSize> {
 
     offsets
 }
+
+pub(crate) struct MemoryWritePtr {
+
+    ptr: *mut vk::c_void,
+    size: vk::DeviceSize,
+}
+
+impl MemoryWritePtr {
+
+    pub fn new(ptr: *mut vk::c_void, size: vk::DeviceSize) -> MemoryWritePtr {
+        MemoryWritePtr { ptr, size }
+    }
+
+    pub fn write_data<D: Copy>(&self, data: &Vec<D>) {
+
+        use ash;
+        use std::mem;
+
+        let mut vert_algn = unsafe {
+            ash::util::Align::new(
+                self.ptr,
+                mem::align_of::<D>() as vk::DeviceSize,
+                self.size,
+            )
+        };
+
+        vert_algn.copy_from_slice(data);
+    }
+}

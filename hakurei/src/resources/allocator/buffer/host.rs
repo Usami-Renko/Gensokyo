@@ -5,17 +5,18 @@ use ash::version::DeviceV1_0;
 use core::device::HaLogicalDevice;
 use core::physical::{ HaPhysicalDevice, MemorySelector };
 
+use resources::allocator::HaBufferAllocatorAbstract;
 use resources::buffer::HaBuffer;
-use resources::buffer::{ BufferConfig, BufferSubItem };
-use resources::memory::{ HaDeviceMemory, HaMemoryAbstract };
+use resources::buffer::{ HostBufferConfig, BufferSubItem };
+use resources::buffer::BufferGenerator;
+use resources::memory::{ HaHostMemory, HaMemoryAbstract, MemoryPropertyFlag };
 use resources::repository::HaBufferRepository;
 use resources::error::{ BufferError, AllocatorError };
 
+use utility::marker::VulkanEnum;
 use utility::memory::bind_to_alignment;
 
-// TODO: Currently HaBufferAllocator only support operation in single queue family.
-
-pub struct HaBufferAllocator<'re> {
+pub struct HaHostBufferAllocator<'re> {
 
     physical: &'re HaPhysicalDevice,
     device  : &'re HaLogicalDevice,
@@ -24,36 +25,46 @@ pub struct HaBufferAllocator<'re> {
     /// The size of each buffer occupy.
     spaces  : Vec<vk::DeviceSize>,
 
+    require_mem_flag: vk::MemoryPropertyFlags,
+
     memory_selector: MemorySelector<'re>,
-    /// record the final memory property flags, use to make some judgements in latter operation
-    mem_flag: vk::MemoryPropertyFlags,
 }
 
-impl<'re> HaBufferAllocator<'re> {
+impl<'re> HaHostBufferAllocator<'re> {
 
-    pub(super) fn new(physical: &'re HaPhysicalDevice, device: &'re HaLogicalDevice)
-        -> HaBufferAllocator<'re> {
+    pub(crate) fn new(physical: &'re HaPhysicalDevice, device: &'re HaLogicalDevice) -> HaHostBufferAllocator<'re> {
 
-        HaBufferAllocator {
+        HaHostBufferAllocator {
             physical,
             device,
 
             buffers: vec![],
             spaces : vec![],
+            require_mem_flag: HaHostMemory::default_flag(),
             memory_selector: MemorySelector::init(physical),
-            mem_flag: vk::MemoryPropertyFlags::empty(),
         }
     }
 
-    pub fn attach_buffer(&mut self, config: BufferConfig) -> Result<Vec<BufferSubItem>, AllocatorError> {
+    pub fn set_cache(&mut self, is_enable: bool) {
 
-        let buffer = HaBuffer::generate(self.device, &config, None)?;
-        let required_memory_flag = config.memory_flags;
+        self.require_mem_flag = if is_enable {
+            HaHostMemory::default_flag() | MemoryPropertyFlag::HostCachedBit.value()
+        } else {
+            HaHostMemory::default_flag()
+        }
+    }
+}
 
-        self.memory_selector.try(buffer.requirement.memory_type_bits, required_memory_flag)?;
+impl<'re> HaBufferAllocatorAbstract for HaHostBufferAllocator<'re> {
+    type BufferConfigType = HostBufferConfig;
+
+    fn attach_buffer(&mut self, config: Self::BufferConfigType) -> Result<Vec<BufferSubItem>, AllocatorError> {
+
+        // TODO: Currently HaBuffer only support operation in single queue family.
+        let buffer = config.generate(self.device, None)?;
+        self.memory_selector.try(buffer.requirement.memory_type_bits, self.require_mem_flag)?;
 
         let buffer_index = self.buffers.len();
-        self.mem_flag = self.mem_flag | required_memory_flag;
         let aligment_space = bind_to_alignment(buffer.requirement.size, buffer.requirement.alignment);
 
         let mut items = vec![];
@@ -79,41 +90,33 @@ impl<'re> HaBufferAllocator<'re> {
     /// Allocate memory for buffers, and bind those buffer to the memory. All resource store in BufferRepository Object.
     ///
     /// Must not call attach_buffer method after calling this method.
-    pub fn allocate(&mut self) -> Result<HaBufferRepository, AllocatorError> {
+    fn allocate(&mut self) -> Result<HaBufferRepository, AllocatorError> {
 
         if self.buffers.is_empty() {
             return Err(AllocatorError::Buffer(BufferError::NoBufferAttachError))
         }
 
-        let optimal_memory_index = self.memory_selector.optimal_memory()?;
-        let allocate_size = self.spaces.iter().sum();
-
         // allocate memory
-        let memory = HaDeviceMemory::allocate(
-            self.physical, self.device,
-            allocate_size,
-            optimal_memory_index,
-            self.mem_flag
-        )?;
+        let optimal_memory_index = self.memory_selector.optimal_memory()?;
+        let mem_type = self.physical.memory.memory_type(optimal_memory_index);
+        let memory = HaHostMemory::allocate(self.device, self.spaces.iter().sum(), optimal_memory_index, Some(mem_type))?;
 
         // bind buffers to memory
         let mut offset = 0;
-        for (i, buffer) in self.buffers.iter().enumerate() {
-
-            memory.bind_to_buffer(self.device, buffer, offset)?;
+        let mut repository_buffer = vec![];
+        for (i, buffer) in self.buffers.drain(..).enumerate() {
+            memory.bind_to_buffer(self.device, &buffer, offset)?;
             offset += self.spaces[i];
+            repository_buffer.push(buffer);
         }
 
-        let mut repository_buffer = vec![];
-        repository_buffer.append(&mut self.buffers);
-
-        let repository = HaBufferRepository::store(repository_buffer, memory, self.spaces.clone());
+        let repository = HaBufferRepository::store(repository_buffer, Box::new(memory), self.spaces.clone());
 
         self.reset();
         Ok(repository)
     }
 
-    pub fn reset(&mut self) {
+    fn reset(&mut self) {
 
         for buffer in self.buffers.iter() {
             unsafe {
@@ -124,6 +127,5 @@ impl<'re> HaBufferAllocator<'re> {
 
         self.spaces.clear();
         self.memory_selector.reset();
-        self.mem_flag = vk::MemoryPropertyFlags::empty();
     }
 }

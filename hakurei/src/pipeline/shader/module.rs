@@ -33,7 +33,7 @@ impl HaShaderInfo {
 
     pub fn build(&self, device: &HaLogicalDevice) -> Result<HaShaderModule, ShaderError> {
 
-        let codes = self.load_source()?;
+        let codes = self.load_source_from_bytes()?;
         let handle = self.create_module(device, &codes)?;
 
         let shader_module = HaShaderModule {
@@ -44,7 +44,7 @@ impl HaShaderInfo {
         Ok(shader_module)
     }
 
-    fn load_source(&self) -> Result<Vec<u8>, ShaderError> {
+    fn load_source_from_bytes(&self) -> Result<Vec<u8>, ShaderError> {
 
         let spv = File::open(self.path.to_owned())
             .or(Err(ShaderError::SourceNotFoundError))?;
@@ -52,6 +52,10 @@ impl HaShaderInfo {
             .filter_map(|byte| byte.ok()).collect();
 
         Ok(bytes)
+    }
+
+    fn load_source_from_string(&self) -> Result<Vec<u8>, ShaderError> {
+        unimplemented!()
     }
 
     fn create_module(&self, device: &HaLogicalDevice, codes: &Vec<u8>) -> Result<vk::ShaderModule, ShaderError> {

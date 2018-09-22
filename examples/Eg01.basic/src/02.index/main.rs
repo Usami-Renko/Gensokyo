@@ -81,36 +81,23 @@ impl ProgramProc for DrawIndexProcedure {
 
     fn assets(&mut self, device: &HaLogicalDevice, generator: &ResourceGenerator) -> Result<(), ProcedureError> {
 
-        // vertex buffer
-        let mut vertex_buffer_config = BufferConfig::init(
-            &[BufferUsageFlag::VertexBufferBit],
-            &[
-                MemoryPropertyFlag::HostVisibleBit,
-                MemoryPropertyFlag::HostCoherentBit,
-            ],
-            &[]
-        );
-        let _ = vertex_buffer_config.add_item(data_size!(self.vertex_data, Vertex));
+        // vertex & index buffer
+        let mut buffer_allocator = generator.host_buffer();
 
-        // index buffer
-        let mut index_buffer_config = BufferConfig::init(
-            &[BufferUsageFlag::IndexBufferBit],
-            &[
-                MemoryPropertyFlag::HostVisibleBit,
-                MemoryPropertyFlag::HostCoherentBit,
-            ],
-            &[]
-        );
-        let _ = index_buffer_config.add_item(data_size!(self.index_data, uint32_t));
+        let mut vertex_buffer_config = HostBufferConfig::new(HostBufferUsage::VertexBuffer);
+        vertex_buffer_config.add_item(data_size!(self.vertex_data, Vertex));
 
-        // allocate memory and transfer data.
-        let mut buffer_allocator = generator.buffer();
+        let mut index_buffer_config  = HostBufferConfig::new(HostBufferUsage::IndexBuffer);
+        index_buffer_config.add_item(data_size!(self.index_data, uint32_t));
+
         self.vertex_item = buffer_allocator.attach_buffer(vertex_buffer_config)?.pop().unwrap();
-        self.index_item  = buffer_allocator.attach_buffer(index_buffer_config )?.pop().unwrap();
-
+        self.index_item  = buffer_allocator.attach_buffer(index_buffer_config)?.pop().unwrap();
         self.buffer_storage = buffer_allocator.allocate()?;
-        self.buffer_storage.tranfer_data(device, &self.vertex_data, &self.vertex_item)?;
-        self.buffer_storage.tranfer_data(device, &self.index_data , &self.index_item)?;
+
+        self.buffer_storage.prepare_data_transfer(device)?;
+        self.buffer_storage.upload_data(device, &self.vertex_item, &self.vertex_data)?;
+        self.buffer_storage.upload_data(device, &self.index_item,  &self.index_data)?;
+        self.buffer_storage.execute_data_transfer(device)?;
 
         Ok(())
     }

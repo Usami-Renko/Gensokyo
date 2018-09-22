@@ -17,10 +17,9 @@ All available examples and corresponding `example_number` are listed in the foll
 | -------------- | -------- | ------------------------------------------------------------ |
 | 01             | triangle | Draw the basic triangle.                                     |
 | 02             | index    | Draw the triangle with index buffer.                         |
-| 03             | staging  | Show the usage of staging buffer.                            |
-| 04             | uniform  | Show the usage of uniform buffer.                            |
-| 05             | texture  | Use sampler to render an image on screen.                    |
-| 06             | box      | Render an 3D box object and use arrow keys to control its angle. |
+| 03             | uniform  | Show the usage of uniform buffer.                            |
+| 04             | texture  | Use sampler to render an image on screen.                    |
+| 05             | box      | Render an 3D box object and use arrow keys to control its angle. |
 
 ### Example usage:
 

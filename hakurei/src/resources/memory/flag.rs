@@ -1,7 +1,7 @@
 
 use ash::vk;
 
-use utility::marker::VulkanFlags;
+use utility::marker::{ VulkanFlags, VulkanEnum };
 
 pub enum MemoryPropertyFlag {
     /// DeviceLocalBit specifies that memory allocated with this type is the most efficient for device access.
@@ -21,13 +21,12 @@ pub enum MemoryPropertyFlag {
     /// Memory types must not have both VK_MEMORY_PROPERTY_LAZILY_ALLOCATED_BIT and VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT set.
     ///
     /// Additionally, the object’s backing memory may be provided by the implementation lazily as specified in Lazily Allocated Memory.
-    LazilyAllocatedBit
+    LazilyAllocatedBit,
 }
 
 impl VulkanFlags for [MemoryPropertyFlag] {
     type FlagType = vk::MemoryPropertyFlags;
 
-    /// Convenient method to combine flags.
     fn flags(&self) -> Self::FlagType {
         self.iter().fold(vk::MemoryPropertyFlags::empty(), |acc, flag| {
             match *flag {
@@ -39,4 +38,19 @@ impl VulkanFlags for [MemoryPropertyFlag] {
             }
         })
     }
+}
+
+impl VulkanEnum for MemoryPropertyFlag {
+    type EnumType = vk::MemoryPropertyFlags;
+
+    fn value(&self) -> Self::EnumType {
+        match self {
+            | MemoryPropertyFlag::DeviceLocalBit     => vk::MEMORY_PROPERTY_DEVICE_LOCAL_BIT,
+            | MemoryPropertyFlag::HostVisibleBit     => vk::MEMORY_PROPERTY_HOST_VISIBLE_BIT,
+            | MemoryPropertyFlag::HostCoherentBit    => vk::MEMORY_PROPERTY_HOST_COHERENT_BIT,
+            | MemoryPropertyFlag::HostCachedBit      => vk::MEMORY_PROPERTY_HOST_CACHED_BIT,
+            | MemoryPropertyFlag::LazilyAllocatedBit => vk::MEMORY_PROPERTY_LAZILY_ALLOCATED_BIT,
+        }
+    }
+
 }
