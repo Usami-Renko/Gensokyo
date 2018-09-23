@@ -5,7 +5,8 @@ use core::device::HaLogicalDevice;
 
 use resources::buffer::{ HaBuffer, BufferSubItem };
 use resources::command::CommandBufferUsageFlag;
-use resources::memory::{ HaMemoryAbstract, MemoryDataTransfer };
+use resources::memory::{ HaMemoryAbstract, HaMemoryType };
+use resources::repository::{ BufferDataUploader, BufferDataUpdater };
 use resources::error::{ AllocatorError, MemoryError };
 
 use utility::memory::spaces_to_offsets;
@@ -17,8 +18,6 @@ pub struct HaBufferRepository {
 
     /// The offset of each buffer in memory.
     offsets: Vec<vk::DeviceSize>,
-
-    is_data_transfering: bool,
 }
 
 pub struct CmdVertexBindingInfos {
@@ -41,7 +40,6 @@ impl HaBufferRepository {
 
             offsets: vec![],
 
-            is_data_transfering: false,
         }
     }
 
@@ -49,15 +47,41 @@ impl HaBufferRepository {
 
         let offsets = spaces_to_offsets(&spaces);
 
-        HaBufferRepository { buffers, memory: Some(memory), offsets, is_data_transfering: false, }
+        HaBufferRepository { buffers, memory: Some(memory), offsets, }
     }
 
-    pub fn prepare_data_transfer(&mut self, device: &HaLogicalDevice) -> Result<(), AllocatorError> {
-        self.is_data_transfering = true;
+    pub fn data_uploader(&mut self, device: &HaLogicalDevice) -> Result<BufferDataUploader, AllocatorError> {
 
         if let Some(ref mut memory) = self.memory {
 
-            memory.prepare_data_transfer(device)?;
+            BufferDataUploader::new(device, memory, &self.offsets)
+        } else {
+            Err(AllocatorError::Memory(MemoryError::MemoryNotYetAllocateError))
+        }
+    }
+
+    pub fn data_updater(&mut self) -> Result<BufferDataUpdater, AllocatorError> {
+
+        if let Some(ref mut memory) = self.memory {
+
+            let updater = BufferDataUpdater::new(memory, &self.offsets);
+            Ok(updater)
+        } else {
+            Err(AllocatorError::Memory(MemoryError::MemoryNotYetAllocateError))
+        }
+    }
+
+    pub fn ready_update(&mut self, device: &HaLogicalDevice) -> Result<(), AllocatorError> {
+
+        if let Some(ref mut memory) = self.memory {
+            match memory.memory_type() {
+                | HaMemoryType::HostMemory => {
+                    memory.enable_map(device, true)?;
+                },
+                | HaMemoryType::DeviceMemory => {
+                    // currently nothing to do.
+                },
+            }
         } else {
             return Err(AllocatorError::Memory(MemoryError::MemoryNotYetAllocateError))
         }
@@ -65,16 +89,17 @@ impl HaBufferRepository {
         Ok(())
     }
 
-    pub fn upload_data<D: Copy>(&mut self, device: &HaLogicalDevice, item: &BufferSubItem, data: &Vec<D>) -> Result<(), AllocatorError> {
-
-        if self.is_data_transfering == false {
-            return Err(AllocatorError::DataTransferNotActivate)
-        }
+    pub fn shut_update(&mut self, device: &HaLogicalDevice) -> Result<(), AllocatorError> {
 
         if let Some(ref mut memory) = self.memory {
-
-            let offset = self.offsets[item.buffer_index] + item.offset;
-            memory.add_transfer_data(device, item, data, offset)?;
+            match memory.memory_type() {
+                | HaMemoryType::HostMemory => {
+                    memory.enable_map(device, false)?;
+                },
+                | HaMemoryType::DeviceMemory => {
+                    // currently nothing to do.
+                },
+            }
         } else {
             return Err(AllocatorError::Memory(MemoryError::MemoryNotYetAllocateError))
         }
@@ -82,29 +107,6 @@ impl HaBufferRepository {
         Ok(())
     }
 
-    pub fn execute_data_transfer(&mut self, device: &HaLogicalDevice) -> Result<(), AllocatorError> {
-
-        if self.is_data_transfering == false {
-            return Err(AllocatorError::DataTransferNotActivate)
-        }
-
-        if let Some(ref mut memory) = self.memory {
-
-            memory.transfer_data(device)?;
-            self.is_data_transfering = false;
-        } else {
-            return Err(AllocatorError::Memory(MemoryError::MemoryNotYetAllocateError))
-        }
-
-        Ok(())
-    }
-
-    pub(crate) fn buffer_at(&self, index: usize) -> &HaBuffer {
-        &self.buffers[index]
-    }
-    pub(crate) fn borrow_mut_memory(&mut self) -> &mut Box<HaMemoryAbstract> {
-        self.memory.as_mut().unwrap()
-    }
 
     pub fn vertex_binding_infos(&self, items: &[&BufferSubItem]) -> CmdVertexBindingInfos {
 
@@ -120,6 +122,7 @@ impl HaBufferRepository {
             offsets,
         }
     }
+
     pub fn index_binding_info(&self, item: &BufferSubItem) -> CmdIndexBindingInfo {
 
         CmdIndexBindingInfo {
@@ -145,7 +148,7 @@ impl HaBufferRepository {
 impl HaBufferRepository {
 
     // TODO: Make this function to support multiple buffer copy operation.
-    pub fn copy_buffers_to_buffers(device: &HaLogicalDevice, from_items: &[&BufferSubItem], to_items: &[&BufferSubItem])
+    pub fn copy_buffers_to_buffers(device: &HaLogicalDevice, from_items: &[BufferSubItem], to_items: &[BufferSubItem])
         -> Result<(), AllocatorError> {
 
         let mut transfer = device.transfer();
@@ -155,7 +158,7 @@ impl HaBufferRepository {
             let recorder = command_buffer.setup_record(device);
             recorder.begin_record(&[CommandBufferUsageFlag::OneTimeSubmitBit])?;
 
-            for (&from, &to) in from_items.iter().zip(to_items.iter()) {
+            for (from, to) in from_items.iter().zip(to_items.iter()) {
                 // TODO: Only support one region.
                 let copy_region = [
                     vk::BufferCopy {

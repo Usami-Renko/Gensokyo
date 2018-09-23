@@ -102,10 +102,10 @@ impl ProgramProc for UniformBufferProcedure {
         let ubo_buffer_item = buffer_allocator.attach_buffer(uniform_buffer_config)?.pop().unwrap();
 
         self.vertex_storage = buffer_allocator.allocate()?;
-        self.vertex_storage.prepare_data_transfer(device)?;
-        self.vertex_storage.upload_data(device, &self.vertex_item, &self.vertex_data)?;
-        self.vertex_storage.upload_data(device, &ubo_buffer_item, &self.ubo_data)?;
-        self.vertex_storage.execute_data_transfer(device)?;
+        self.vertex_storage.data_uploader(device)?
+            .upload(&self.vertex_item, &self.vertex_data)?
+            .upload(&ubo_buffer_item, &self.ubo_data)?
+            .done(device)?;
 
         // descriptor
         let ubo_info = DescriptorBufferBindingInfo {

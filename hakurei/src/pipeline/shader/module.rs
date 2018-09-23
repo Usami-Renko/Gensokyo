@@ -54,6 +54,7 @@ impl HaShaderInfo {
         Ok(bytes)
     }
 
+    #[allow(dead_code)]
     fn load_source_from_string(&self) -> Result<Vec<u8>, ShaderError> {
         unimplemented!()
     }

@@ -153,9 +153,4 @@ impl DeviceBufferAllocateInfos {
     pub fn new() -> DeviceBufferAllocateInfos {
         DeviceBufferAllocateInfos { configs: vec![], spaces: vec![], }
     }
-
-    pub fn clear(&mut self) {
-        self.configs.clear();
-        self.spaces.clear();
-    }
 }

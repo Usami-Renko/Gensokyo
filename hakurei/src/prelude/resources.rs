@@ -45,4 +45,5 @@ pub use resources::repository::{
     HaBufferRepository, CmdVertexBindingInfos, CmdIndexBindingInfo, // buffer
     HaDescriptorRepository, CmdDescriptorBindingInfos, // descriptor
     HaImageRepository, // image
+    BufferDataUploader, BufferDataUpdater, // transfer
 };

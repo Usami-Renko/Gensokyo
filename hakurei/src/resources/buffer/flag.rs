@@ -31,6 +31,7 @@ impl VulkanFlags for [BufferCreateFlag] {
 }
 
 #[derive(Debug, Clone, Copy, Eq, PartialEq)]
+#[allow(dead_code)]
 pub enum BufferUsageFlag {
     /// TransferSrcBit specifies that the buffer can be used as the source of a transfer command.
     ///

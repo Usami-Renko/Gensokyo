@@ -16,13 +16,13 @@ use utility::marker::{ VulkanFlags, VulkanEnum };
 
 use std::ptr;
 
-pub struct HaCommandRecorder<'buffer, 're> {
+pub struct HaCommandRecorder<'buffer, 're> where 're: 'buffer {
 
     pub(super) buffer: &'buffer HaCommandBuffer,
     pub(super) device: &'re HaLogicalDevice,
 }
 
-impl<'buffer, 're> HaCommandRecorder<'buffer, 're> {
+impl<'buffer, 're> HaCommandRecorder<'buffer, 're> where 're: 'buffer {
 
     pub fn begin_record(&'buffer self, flags: &[CommandBufferUsageFlag])
         -> Result<&HaCommandRecorder<'buffer, 're>, CommandError> {

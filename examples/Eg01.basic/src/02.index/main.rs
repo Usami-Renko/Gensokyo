@@ -94,10 +94,10 @@ impl ProgramProc for DrawIndexProcedure {
         self.index_item  = buffer_allocator.attach_buffer(index_buffer_config)?.pop().unwrap();
         self.buffer_storage = buffer_allocator.allocate()?;
 
-        self.buffer_storage.prepare_data_transfer(device)?;
-        self.buffer_storage.upload_data(device, &self.vertex_item, &self.vertex_data)?;
-        self.buffer_storage.upload_data(device, &self.index_item,  &self.index_data)?;
-        self.buffer_storage.execute_data_transfer(device)?;
+        self.buffer_storage.data_uploader(device)?
+            .upload(&self.vertex_item, &self.vertex_data)?
+            .upload(&self.index_item, &self.index_data)?
+            .done(device)?;
 
         Ok(())
     }

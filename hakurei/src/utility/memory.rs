@@ -1,6 +1,8 @@
 
 use ash::vk;
 
+use resources::memory::MemPtr;
+
 #[inline]
 pub fn bind_to_alignment(bind_value: vk::DeviceSize, alignment: vk::DeviceSize) -> vk::DeviceSize {
     if bind_value < alignment {
@@ -24,13 +26,13 @@ pub fn spaces_to_offsets(spaces: &Vec<vk::DeviceSize>) -> Vec<vk::DeviceSize> {
 
 pub(crate) struct MemoryWritePtr {
 
-    ptr: *mut vk::c_void,
+    ptr : MemPtr,
     size: vk::DeviceSize,
 }
 
 impl MemoryWritePtr {
 
-    pub fn new(ptr: *mut vk::c_void, size: vk::DeviceSize) -> MemoryWritePtr {
+    pub fn new(ptr: MemPtr, size: vk::DeviceSize) -> MemoryWritePtr {
         MemoryWritePtr { ptr, size }
     }
 
