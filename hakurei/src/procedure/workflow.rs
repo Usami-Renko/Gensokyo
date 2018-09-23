@@ -23,9 +23,11 @@ pub trait ProgramProc {
 
     fn assets(&mut self, device: &HaLogicalDevice, generator: &ResourceGenerator) -> Result<(), ProcedureError>;
     fn pipelines(&mut self, device: &HaLogicalDevice, swapchain: &HaSwapchain) -> Result<(), ProcedureError>;
-    fn subresources(&mut self, device: &HaLogicalDevice) -> Result<(), ProcedureError>;
+    fn subresources(&mut self, _device: &HaLogicalDevice) -> Result<(), ProcedureError> { Ok(())}
     fn commands(&mut self, device: &HaLogicalDevice) -> Result<(), ProcedureError>;
+    fn ready(&mut self, _device: &HaLogicalDevice) -> Result<(), ProcedureError> { Ok(()) }
     fn draw(&mut self, device: &HaLogicalDevice, device_available: &HaFence, image_available: &HaSemaphore, image_index: usize, delta_time: f32) -> Result<&HaSemaphore, ProcedureError>;
+    fn closure(&mut self, _device: &HaLogicalDevice) -> Result<(), ProcedureError> { Ok(()) }
     fn clean_resources(&mut self, device: &HaLogicalDevice) -> Result<(), ProcedureError>;
     fn cleanup(&mut self, device: &HaLogicalDevice);
 

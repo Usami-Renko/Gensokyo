@@ -7,12 +7,13 @@ use core::device::HaLogicalDevice;
 
 use resources::buffer::{ HaBuffer, BufferSubItem, BufferUsageFlag };
 use resources::buffer::BufferGenerator;
-use resources::memory::{ HaMemoryAbstract, MemoryDataTransfer, MemoryPropertyFlag, HaHostMemory };
+use resources::memory::{ HaMemoryAbstract, HaMemoryType, MemoryDataTransferable, MemoryPropertyFlag, HaHostMemory };
+use resources::memory::MemoryRange;
 use resources::allocator::DeviceBufferAllocateInfos;
 use resources::repository::HaBufferRepository;
 use resources::error::MemoryError;
 
-use utility::memory::MemoryWritePtr;
+use utility::memory::{ MemoryWritePtr, spaces_to_offsets };
 use utility::marker::{ VulkanFlags, VulkanEnum };
 
 use std::ptr;
@@ -35,6 +36,10 @@ impl HaMemoryAbstract for HaDeviceMemory {
     fn flag(&self) -> vk::MemoryPropertyFlags {
         self.mem_type.as_ref().and_then(|m| Some(m.property_flags))
             .unwrap_or(vk::MemoryPropertyFlags::empty())
+    }
+
+    fn memory_type(&self) -> HaMemoryType {
+        HaMemoryType::DeviceMemory
     }
 
     fn default_flag() -> vk::MemoryPropertyFlags {
@@ -64,54 +69,54 @@ impl HaMemoryAbstract for HaDeviceMemory {
         };
         Ok(memory)
     }
+
+    fn enable_map(&mut self, _: &HaLogicalDevice, _: bool) -> Result<(), MemoryError> {
+        // leave it empty
+        Ok(())
+    }
 }
 
-impl MemoryDataTransfer for HaDeviceMemory {
+impl MemoryDataTransferable for HaDeviceMemory {
 
     fn prepare_data_transfer(&mut self, device: &HaLogicalDevice) -> Result<(), MemoryError> {
-        // create staging host buffer
+
         self.staging.generate_repository(device)?;
-        self.staging.repository.prepare_data_transfer(device)
-            .or(Err(MemoryError::AllocateMemoryError))
+        if let Some(ref mut memory) = self.staging.memory {
+            memory.prepare_data_transfer(device)?;
+            Ok(())
+        } else {
+            Err(MemoryError::MemoryNotYetAllocateError)
+        }
     }
 
-    fn map_memory_ptr(&mut self, device: &HaLogicalDevice, item: &BufferSubItem, offset: vk::DeviceSize) -> Result<MemoryWritePtr, MemoryError> {
+    fn map_memory_ptr(&mut self, item: &BufferSubItem, _: vk::DeviceSize) -> Result<(MemoryWritePtr, MemoryRange), MemoryError> {
 
         let dst_item = item.clone();
         let mut src_item = item.clone();
-        src_item.handle = self.staging.repository.buffer_at(item.buffer_index).handle;
+        src_item.handle = self.staging.buffers[item.buffer_index].handle;
 
         // transfer data to staging buffer.
-        let staging_memory = self.staging.repository.borrow_mut_memory();
-        let writer = staging_memory.map_memory_ptr(device, &src_item, offset)?;
+        let offset = self.staging.offsets[item.buffer_index] + item.offset;
+        if let Some(ref mut memory) = self.staging.memory {
+            let (writer, range) = memory.map_memory_ptr(&src_item, offset)?;
 
-        self.staging.src_items.push(src_item);
-        self.staging.dst_items.push(dst_item);
+            self.staging.src_items.push(src_item);
+            self.staging.dst_items.push(dst_item);
 
-        Ok(writer)
-    }
-
-    fn unmap_memory_ptr(&mut self, item: &BufferSubItem, offset: vk::DeviceSize) {
-
-        let staging_memory = self.staging.repository.borrow_mut_memory();
-        staging_memory.unmap_memory_ptr(item, offset);
-    }
-
-    fn transfer_data(&mut self, device: &HaLogicalDevice) -> Result<(), MemoryError> {
-
-        self.staging.repository.execute_data_transfer(device)
-            .or(Err(MemoryError::AllocateMemoryError))?;
-
-        {
-            let mut src_items = vec![];
-            let mut dst_items = vec![];
-
-            for item in self.staging.src_items.iter() { src_items.push(item.as_ref()) }
-            for item in self.staging.dst_items.iter() { dst_items.push(item.as_ref()) }
-
-            HaBufferRepository::copy_buffers_to_buffers(device, &src_items, &dst_items)
-                .or(Err(MemoryError::BufferToBufferCopyError))?;
+            Ok((writer, range))
+        } else {
+            Err(MemoryError::MemoryNotYetAllocateError)
         }
+    }
+
+    fn terminate_transfer(&mut self, device: &HaLogicalDevice, ranges_to_flush: &Vec<MemoryRange>) -> Result<(), MemoryError> {
+
+        if let Some(ref mut memory) = self.staging.memory {
+            memory.terminate_transfer(device, ranges_to_flush)?;
+        }
+
+        HaBufferRepository::copy_buffers_to_buffers(device, &self.staging.src_items, &self.staging.dst_items)
+            .or(Err(MemoryError::BufferToBufferCopyError))?;
 
         self.staging.cleanup(device);
         Ok(())
@@ -131,7 +136,9 @@ impl HaDeviceMemory {
 struct StagingRepository {
 
     allo_infos: DeviceBufferAllocateInfos,
-    repository: HaBufferRepository,
+    buffers   : Vec<HaBuffer>,
+    memory    : Option<Box<HaMemoryAbstract>>,
+    offsets   : Vec<vk::DeviceSize>,
 
     src_items: Vec<BufferSubItem>,
     dst_items: Vec<BufferSubItem>,
@@ -142,7 +149,9 @@ impl StagingRepository {
     fn new() -> StagingRepository {
         StagingRepository {
             allo_infos: DeviceBufferAllocateInfos::new(),
-            repository: HaBufferRepository::empty(),
+            buffers: vec![],
+            memory: None,
+            offsets: vec![],
             src_items: vec![],
             dst_items: vec![],
         }
@@ -164,7 +173,7 @@ impl StagingRepository {
         }
 
         // allocate memory
-        let mem_flag = HaHostMemory::default_flag();
+        let _mem_flag = HaHostMemory::default_flag();
         // FIXME: mem_type_index and mem_type
         let mem_type = vk::MemoryType { property_flags: vk::MEMORY_PROPERTY_HOST_VISIBLE_BIT | vk::MEMORY_PROPERTY_HOST_COHERENT_BIT | vk::MEMORY_PROPERTY_HOST_CACHED_BIT, heap_index: 0 };
         let memory = HaHostMemory::allocate(device, self.allo_infos.spaces.iter().sum(), 1, Some(mem_type))?;
@@ -178,17 +187,25 @@ impl StagingRepository {
             repository_buffer.push(buffer);
         }
 
-        self.repository = HaBufferRepository::store(
-            repository_buffer, Box::new(memory), self.allo_infos.spaces.clone());
+        self.offsets = spaces_to_offsets(&self.allo_infos.spaces);
+        self.buffers = repository_buffer;
+        self.memory = Some(Box::new(memory));
 
         Ok(())
     }
 
     fn cleanup(&mut self, device: &HaLogicalDevice) {
 
-        self.allo_infos.clear();
-        self.repository.cleanup(device);
+        for buffer in self.buffers.iter() {
+            buffer.cleanup(device);
+        }
+        if let Some(ref memory) = self.memory {
+            memory.cleanup(device);
+        }
 
+        self.memory = None;
+        self.buffers.clear();
+        self.offsets.clear();
         self.src_items.clear();
         self.dst_items.clear();
     }

@@ -61,6 +61,7 @@ impl<T> ProgramEnv<T> where T: ProgramProc {
         let mut core = self.initialize_core(&window, requirement)?;
         let mut resources = self.load_resources(&core)?;
 
+        self.procedure.ready(&core.device)?;
 
         'outer_loop: loop {
             match self.main_loop(&mut core, &mut resources) {
@@ -82,6 +83,7 @@ impl<T> ProgramEnv<T> where T: ProgramProc {
             }
         }
 
+        self.procedure.closure(&core.device)?;
 
         self.wait_idle(&core.device)?;
 

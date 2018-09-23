@@ -91,9 +91,9 @@ impl ProgramProc for TextureMappingProcedure {
         self.vertex_item = vertex_allocator.attach_buffer(vertex_buffer_config)?.pop().unwrap();
         self.vertex_storage = vertex_allocator.allocate()?;
 
-        self.vertex_storage.prepare_data_transfer(device)?;
-        self.vertex_storage.upload_data(device, &self.vertex_item, &self.vertex_data)?;
-        self.vertex_storage.execute_data_transfer(device)?;
+        self.vertex_storage.data_uploader(device)?
+            .upload(&self.vertex_item, &self.vertex_data)?
+            .done(device)?;
 
         // image
         let image_desc = ImageDescInfo::init(

@@ -8,6 +8,8 @@ pub struct BufferSubItem {
     /// the index of buffer in HaBufferRepository.
     pub(crate) buffer_index: usize,
     /// the data offset in the buffer.
+    ///
+    /// This is not the offset in memory.
     pub(crate) offset: vk::DeviceSize,
     /// the size of this BufferSubItem represent.
     pub(crate) size  : vk::DeviceSize,

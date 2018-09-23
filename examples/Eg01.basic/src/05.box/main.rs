@@ -96,8 +96,9 @@ impl BoxProcedure {
         self.ubo_data[0].model = self.camera.object_model_transformation();
         self.ubo_data[0].view  = self.camera.view_matrix();
 
-        // FIXME: Define Update data method
-//        self.ubo_buffer.tranfer_data(device, &self.ubo_data, &self.ubo_item)?;
+        self.ubo_buffer.data_updater()?
+            .update(&self.ubo_item, &self.ubo_data)?
+            .done(device)?;
 
         Ok(())
     }
@@ -120,10 +121,10 @@ impl ProgramProc for BoxProcedure {
         self.index_item  = device_buffer_allocator.attach_buffer(index_buffer_config)?.pop().unwrap();
 
         self.buffer_storage = device_buffer_allocator.allocate()?;
-        self.buffer_storage.prepare_data_transfer(device)?;
-        self.buffer_storage.upload_data(device, &self.vertex_item, &self.vertex_data)?;
-        self.buffer_storage.upload_data(device, &self.index_item,  &self.index_data)?;
-        self.buffer_storage.execute_data_transfer(device)?;
+        self.buffer_storage.data_uploader(device)?
+            .upload(&self.vertex_item, &self.vertex_data)?
+            .upload(&self.index_item, &self.index_data)?
+            .done(device)?;
 
         // uniform buffer
         let mut host_buffer_allocator = generator.host_buffer();
@@ -134,9 +135,9 @@ impl ProgramProc for BoxProcedure {
         self.ubo_item = host_buffer_allocator.attach_buffer(uniform_buffer_config)?.pop().unwrap();
         self.ubo_buffer = host_buffer_allocator.allocate()?;
 
-        self.ubo_buffer.prepare_data_transfer(device)?;
-        self.ubo_buffer.upload_data(device, &self.ubo_item, &self.ubo_data)?;
-        self.ubo_buffer.execute_data_transfer(device)?;
+        self.ubo_buffer.data_uploader(device)?
+            .upload(&self.ubo_item, &self.ubo_data)?
+            .done(device)?;
 
         // descriptor
         let ubo_info = DescriptorBufferBindingInfo {
@@ -248,6 +249,13 @@ impl ProgramProc for BoxProcedure {
         Ok(())
     }
 
+    fn ready(&mut self, device: &HaLogicalDevice) -> Result<(), ProcedureError> {
+
+        self.ubo_buffer.ready_update(device)?;
+
+        Ok(())
+    }
+
     fn draw(&mut self, device: &HaLogicalDevice, device_available: &HaFence, image_available: &HaSemaphore, image_index: usize, _: f32) -> Result<&HaSemaphore, ProcedureError> {
 
         self.update_uniforms(device)?;
@@ -264,6 +272,13 @@ impl ProgramProc for BoxProcedure {
         device.submit(&submit_infos, Some(device_available), DeviceQueueIdentifier::Graphics)?;
 
         return Ok(&self.present_availables[image_index])
+    }
+
+    fn closure(&mut self, device: &HaLogicalDevice) -> Result<(), ProcedureError> {
+
+        self.ubo_buffer.shut_update(device)?;
+
+        Ok(())
     }
 
     fn clean_resources(&mut self, device: &HaLogicalDevice) -> Result<(), ProcedureError> {
