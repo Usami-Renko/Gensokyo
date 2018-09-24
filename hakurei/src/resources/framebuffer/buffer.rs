@@ -2,7 +2,7 @@
 use ash::vk;
 use ash::version::DeviceV1_0;
 
-use core::device::HaLogicalDevice;
+use core::device::HaDevice;
 
 pub struct HaFramebuffer {
 
@@ -11,7 +11,7 @@ pub struct HaFramebuffer {
 
 impl HaFramebuffer {
 
-    pub fn cleanup(&self, device: &HaLogicalDevice) {
+    pub fn cleanup(&self, device: &HaDevice) {
         unsafe {
             device.handle.destroy_framebuffer(self.handle, None);
         }

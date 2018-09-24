@@ -34,7 +34,7 @@ define_input! {
 //  |/      |/
 //  v2------v3
 //
-//  vertex of box
+//  vertex of cube
 
 pub const VERTEX_DATA: [Vertex; 8] = [
     Vertex { pos: [ 0.6,  0.6,  0.6, 1.0], color: [1.0, 0.0, 0.0, 1.0], }, // v0

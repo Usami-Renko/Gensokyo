@@ -3,7 +3,7 @@ use ash::vk;
 use ash::vk::c_float;
 use ash::version::DeviceV1_0;
 
-use core::device::HaLogicalDevice;
+use core::device::HaDevice;
 
 use resources::error::ImageError;
 
@@ -16,7 +16,7 @@ pub struct HaSampler {
 
 impl HaSampler {
 
-    pub fn init(device: &HaLogicalDevice, desc: SamplerDescInfo) -> Result<HaSampler, ImageError> {
+    pub fn init(device: &HaDevice, desc: SamplerDescInfo) -> Result<HaSampler, ImageError> {
 
         let info = vk::SamplerCreateInfo {
             s_type: vk::StructureType::SamplerCreateInfo,
@@ -49,7 +49,7 @@ impl HaSampler {
         Ok(sampler)
     }
 
-    pub fn cleanup(&self, device: &HaLogicalDevice) {
+    pub fn cleanup(&self, device: &HaDevice) {
         unsafe {
             device.handle.destroy_sampler(self.handle, None);
         }

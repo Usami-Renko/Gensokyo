@@ -2,7 +2,7 @@
 use ash::vk;
 use ash::vk::uint32_t;
 
-use core::device::HaLogicalDevice;
+use core::device::HaDevice;
 
 use resources::descriptor::{ DescriptorSetConfig, DescriptorItem, DescriptorSetItem };
 use resources::descriptor::{ DescriptorSetLayoutInfo };
@@ -14,20 +14,20 @@ use utility::marker::VulkanFlags;
 
 use std::collections::HashMap;
 
-pub struct HaDescriptorAllocator<'re> {
+pub struct HaDescriptorAllocator {
 
-    device: &'re HaLogicalDevice,
+    device: HaDevice,
     pool_flag: vk::DescriptorPoolCreateFlags,
 
     set_configs: Vec<DescriptorSetConfig>,
 }
 
-impl<'re> HaDescriptorAllocator<'re> {
+impl HaDescriptorAllocator {
 
-    pub(super) fn new(device: &'re HaLogicalDevice, flags: &[DescriptorPoolFlag]) -> HaDescriptorAllocator<'re> {
+    pub(crate) fn new(device: &HaDevice, flags: &[DescriptorPoolFlag]) -> HaDescriptorAllocator {
 
         HaDescriptorAllocator {
-            device,
+            device: device.clone(),
             pool_flag: flags.flags(),
 
             set_configs: vec![],
@@ -78,7 +78,7 @@ impl<'re> HaDescriptorAllocator<'re> {
         let sets = pool.allocator(&self.device, layouts)?;
         let configs = self.set_configs.drain(..).collect();
 
-        let repository = HaDescriptorRepository::store(pool, sets, configs);
+        let repository = HaDescriptorRepository::store(&self.device, pool, sets, configs);
         Ok(repository)
     }
 

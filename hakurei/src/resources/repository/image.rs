@@ -1,5 +1,5 @@
 
-use core::device::HaLogicalDevice;
+use core::device::HaDevice;
 
 use resources::memory::{ HaDeviceMemory, HaMemoryAbstract };
 use resources::image::{ HaImage, HaImageView, ImageViewItem };
@@ -38,7 +38,7 @@ impl HaImageRepository {
         }
     }
 
-    pub fn cleanup(&mut self, device: &HaLogicalDevice) {
+    pub fn cleanup(&mut self, device: &HaDevice) {
 
         for image in self.images.iter() {
             image.cleanup(device);

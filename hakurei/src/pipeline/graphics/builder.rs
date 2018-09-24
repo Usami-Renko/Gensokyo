@@ -3,7 +3,7 @@ use ash::vk;
 use ash::vk::uint32_t;
 use ash::version::DeviceV1_0;
 
-use core::device::HaLogicalDevice;
+use core::device::HaDevice;
 
 use pipeline::{
     graphics::pipeline::HaGraphicsPipeline,
@@ -111,13 +111,15 @@ impl GraphicsPipelineConfig {
 
 pub struct GraphicsPipelineBuilder {
 
+    device: HaDevice,
     configs: Vec<GraphicsPipelineConfig>,
 }
 
 impl GraphicsPipelineBuilder {
 
-    pub fn init() -> GraphicsPipelineBuilder {
+    pub(crate) fn new(device: &HaDevice) -> GraphicsPipelineBuilder {
         GraphicsPipelineBuilder {
+            device : device.clone(),
             configs: vec![],
         }
     }
@@ -125,12 +127,12 @@ impl GraphicsPipelineBuilder {
         self.configs.push(config);
     }
 
-    pub fn build(&mut self, device: &HaLogicalDevice) -> Result<Vec<HaGraphicsPipeline>, PipelineError> {
+    pub fn build(&mut self) -> Result<Vec<HaGraphicsPipeline>, PipelineError> {
 
         for config in self.configs.iter_mut() {
             let mut shader_modules = vec![];
             for shader in config.shaders.iter() {
-                let module = shader.build(device).map_err(|e| PipelineError::Shader(e))?;
+                let module = shader.build(&self.device).map_err(|e| PipelineError::Shader(e))?;
                 shader_modules.push(module);
             }
             config.shader_modules = shader_modules;
@@ -148,7 +150,7 @@ impl GraphicsPipelineBuilder {
             let dynamic_info = config.states.dynamic.as_ref()
                 .map_or(ptr::null(), |d| &d.info());
 
-            let pipeline_layout = config.layout_builder.build(device)?;
+            let pipeline_layout = config.layout_builder.build(&self.device)?;
             layouts.push(pipeline_layout);
 
             let graphics_pipeline_create_info = vk::GraphicsPipelineCreateInfo {
@@ -181,26 +183,26 @@ impl GraphicsPipelineBuilder {
         }
 
         let handles = unsafe {
-            device.handle.create_graphics_pipelines(vk::PipelineCache::null(), infos.as_slice(), None).unwrap()
+            self.device.handle.create_graphics_pipelines(vk::PipelineCache::null(), infos.as_slice(), None).unwrap()
         };
 
         let mut pipelines = vec![];
         for (i, config) in self.configs.iter_mut().enumerate() {
             let render_pass = config.render_pass.take().unwrap(); // transfer ownership of HaRenderPass.
-            let pipeline = HaGraphicsPipeline::new(handles[i], layouts[i], render_pass);
+            let pipeline = HaGraphicsPipeline::new(&self.device, handles[i], layouts[i], render_pass);
             pipelines.push(pipeline);
 
         }
 
-        self.clean_shader_modules(device);
+        self.clean_shader_modules();
 
         Ok(pipelines)
     }
 
-    fn clean_shader_modules(&self, device: &HaLogicalDevice) {
+    fn clean_shader_modules(&self) {
         self.configs.iter().for_each(|config| {
             config.shader_modules.iter().for_each(|module| {
-                module.cleanup(device);
+                module.cleanup(&self.device);
             });
         });
     }

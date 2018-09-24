@@ -87,10 +87,10 @@ impl UniformBufferProcedure {
 
 impl ProgramProc for UniformBufferProcedure {
 
-    fn assets(&mut self, device: &HaLogicalDevice, generator: &ResourceGenerator) -> Result<(), ProcedureError> {
+    fn assets(&mut self, _device: &HaDevice, kit: AllocatorKit) -> Result<(), ProcedureError> {
 
         // vertex and uniform buffer
-        let mut buffer_allocator = generator.host_buffer();
+        let mut buffer_allocator = kit.host_buffer();
 
         let mut vertex_buffer_config = HostBufferConfig::new(HostBufferUsage::VertexBuffer);
         vertex_buffer_config.add_item(data_size!(self.vertex_data, Vertex));
@@ -102,10 +102,10 @@ impl ProgramProc for UniformBufferProcedure {
         let ubo_buffer_item = buffer_allocator.attach_buffer(uniform_buffer_config)?.pop().unwrap();
 
         self.vertex_storage = buffer_allocator.allocate()?;
-        self.vertex_storage.data_uploader(device)?
+        self.vertex_storage.data_uploader()?
             .upload(&self.vertex_item, &self.vertex_data)?
             .upload(&ubo_buffer_item, &self.ubo_data)?
-            .done(device)?;
+            .done()?;
 
         // descriptor
         let ubo_info = DescriptorBufferBindingInfo {
@@ -120,18 +120,18 @@ impl ProgramProc for UniformBufferProcedure {
             ShaderStageFlag::VertexStage,
         ]);
 
-        let mut descriptor_allocator = generator.descriptor(&[]);
+        let mut descriptor_allocator = kit.descriptor(&[]);
         let (descriptor_set_item, descriptor_binding_items) = descriptor_allocator.attach_descriptor_set(descriptor_set_config);
         let ubo_descriptor_item = descriptor_binding_items[ubo_binding_index].clone();
 
         self.ubo_storage = descriptor_allocator.allocate()?;
-        self.ubo_storage.update_descriptors(device, &[ubo_descriptor_item]);
+        self.ubo_storage.update_descriptors(&[ubo_descriptor_item]);
         self.ubo_set = descriptor_set_item;
 
         Ok(())
     }
 
-    fn pipelines(&mut self, device: &HaLogicalDevice, swapchain: &HaSwapchain) -> Result<(), ProcedureError> {
+    fn pipelines(&mut self, kit: PipelineKit, swapchain: &HaSwapchain) -> Result<(), ProcedureError> {
         // shaders
         let vertex_shader = HaShaderInfo::setup(
             ShaderStageFlag::VertexStage,
@@ -148,10 +148,10 @@ impl ProgramProc for UniformBufferProcedure {
         let vertex_input_desc = Vertex::desc();
 
         // pipeline
-        let mut render_pass_builder = RenderPassBuilder::new();
+        let mut render_pass_builder = kit.pass_builder();
         let first_subpass = render_pass_builder.new_subpass(SubpassType::Graphics);
 
-        let color_attachment = RenderAttachement::setup(RenderAttachementPrefab::Present, swapchain.format);
+        let color_attachment = RenderAttachement::setup(RenderAttachementPrefab::BackColorAttachment, swapchain.format);
         let _attachment_index = render_pass_builder.add_attachemnt(color_attachment, first_subpass, AttachmentType::Color);
 
         let mut dependency = RenderDependency::setup(RenderDependencyPrefab::Common, SUBPASS_EXTERAL, first_subpass);
@@ -162,7 +162,7 @@ impl ProgramProc for UniformBufferProcedure {
         ]);
         render_pass_builder.add_dependenty(dependency);
 
-        let render_pass = render_pass_builder.build(device, swapchain)?;
+        let render_pass = render_pass_builder.build(swapchain)?;
         let viewport = HaViewport::setup(swapchain.extent);
 
         let pipeline_config = GraphicsPipelineConfig::new(shader_infos, vertex_input_desc, render_pass)
@@ -170,16 +170,16 @@ impl ProgramProc for UniformBufferProcedure {
             .add_descriptor_set(self.ubo_storage.set_layout_at(&self.ubo_set))
             .finish_config();
 
-        let mut pipeline_builder = GraphicsPipelineBuilder::init();
+        let mut pipeline_builder = kit.graphics_pipeline_builder();
         pipeline_builder.add_config(pipeline_config);
 
-        let mut graphics_pipelines = pipeline_builder.build(device)?;
+        let mut graphics_pipelines = pipeline_builder.build()?;
         self.graphics_pipeline = graphics_pipelines.pop().unwrap();
 
         Ok(())
     }
 
-    fn subresources(&mut self, device: &HaLogicalDevice) -> Result<(), ProcedureError> {
+    fn subresources(&mut self, device: &HaDevice) -> Result<(), ProcedureError> {
         // sync
         for _ in 0..self.graphics_pipeline.frame_count() {
             let present_available = HaSemaphore::setup(device)?;
@@ -188,7 +188,7 @@ impl ProgramProc for UniformBufferProcedure {
         Ok(())
     }
 
-    fn commands(&mut self, device: &HaLogicalDevice) -> Result<(), ProcedureError> {
+    fn commands(&mut self, device: &HaDevice) -> Result<(), ProcedureError> {
 
         // command buffer
         let command_pool = HaCommandPool::setup(&device, DeviceQueueIdentifier::Graphics, &[])?;
@@ -198,7 +198,7 @@ impl ProgramProc for UniformBufferProcedure {
             .allocate(device, CommandBufferUsage::UnitaryCommand, command_buffer_count)?;
 
         for (frame_index, command_buffer) in command_buffers.iter().enumerate() {
-            let recorder = command_buffer.setup_record(device);
+            let recorder = command_buffer.setup_record();
 
             recorder.begin_record(&[CommandBufferUsageFlag::SimultaneousUseBit])?
                 .begin_render_pass(&self.graphics_pipeline, frame_index)
@@ -215,7 +215,7 @@ impl ProgramProc for UniformBufferProcedure {
         Ok(())
     }
 
-    fn draw(&mut self, device: &HaLogicalDevice, device_available: &HaFence, image_available: &HaSemaphore, image_index: usize, _: f32) -> Result<&HaSemaphore, ProcedureError> {
+    fn draw(&mut self, device: &HaDevice, device_available: &HaFence, image_available: &HaSemaphore, image_index: usize, _: f32) -> Result<&HaSemaphore, ProcedureError> {
 
         let submit_infos = [
             QueueSubmitBundle {
@@ -231,30 +231,30 @@ impl ProgramProc for UniformBufferProcedure {
         return Ok(&self.present_availables[image_index])
     }
 
-    fn clean_resources(&mut self, device: &HaLogicalDevice) -> Result<(), ProcedureError> {
+    fn clean_resources(&mut self, device: &HaDevice) -> Result<(), ProcedureError> {
 
         for semaphore in self.present_availables.iter() {
-            semaphore.cleanup(device);
+            semaphore.cleanup();
         }
         self.present_availables.clear();
         self.command_buffers.clear();
 
-        self.graphics_pipeline.cleanup(device);
+        self.graphics_pipeline.cleanup();
         self.command_pool.cleanup(device);
 
         Ok(())
     }
 
-    fn cleanup(&mut self, device: &HaLogicalDevice) {
+    fn cleanup(&mut self, device: &HaDevice) {
 
         for semaphore in self.present_availables.iter() {
-            semaphore.cleanup(device);
+            semaphore.cleanup();
         }
 
-        self.graphics_pipeline.cleanup(device);
+        self.graphics_pipeline.cleanup();
         self.command_pool.cleanup(device);
-        self.ubo_storage.cleanup(device);
-        self.vertex_storage.cleanup(device);
+        self.ubo_storage.cleanup();
+        self.vertex_storage.cleanup();
     }
 
     fn react_input(&mut self, inputer: &ActionNerve, _: f32) -> SceneAction {

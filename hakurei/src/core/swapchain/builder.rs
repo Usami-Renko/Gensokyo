@@ -5,8 +5,8 @@ use ash::vk::{ uint32_t, uint64_t };
 
 use config::engine::EngineConfig;
 use core::instance::HaInstance;
-use core::physical::HaPhysicalDevice;
-use core::device::HaLogicalDevice;
+use core::physical::HaPhyDevice;
+use core::device::HaDevice;
 use core::surface::HaSurface;
 
 use core::swapchain::chain::HaSwapchain;
@@ -43,7 +43,7 @@ impl VulkanFlags for [SwapchainCreateFlag] {
 
 pub struct SwapchainBuilder<'vk, 'win: 'vk> {
 
-    device:  &'vk HaLogicalDevice,
+    device:  HaDevice,
     surface: &'vk HaSurface<'win>,
 
     support: SwapchainSupport,
@@ -54,7 +54,7 @@ pub struct SwapchainBuilder<'vk, 'win: 'vk> {
 
 impl<'vk, 'win: 'vk> SwapchainBuilder<'vk, 'win> {
 
-    pub fn init(config: &EngineConfig, physical: &HaPhysicalDevice, device: &'vk HaLogicalDevice, surface: &'vk HaSurface<'win>)
+    pub fn init(config: &EngineConfig, physical: &HaPhyDevice, device: &HaDevice, surface: &'vk HaSurface<'win>)
         -> Result<SwapchainBuilder<'vk, 'win>, SwapchainInitError> {
 
         let support = SwapchainSupport::query_support(surface, physical.handle, config)
@@ -63,7 +63,7 @@ impl<'vk, 'win: 'vk> SwapchainBuilder<'vk, 'win> {
         let image_share_info = sharing_mode(device);
 
         let builder = SwapchainBuilder {
-            device,
+            device: device.clone(),
             surface,
 
             support,
@@ -135,7 +135,7 @@ impl<'vk, 'win: 'vk> SwapchainBuilder<'vk, 'win> {
 
         let mut views = vec![];
         for image in images.iter() {
-            let view = HaImageView::config(self.device, image, &view_desc, prefer_format.format)
+            let view = HaImageView::config(&self.device, image, &view_desc, prefer_format.format)
                 .or(Err(SwapchainInitError::ImageViewCreationError))?;
             views.push(view);
         }
@@ -157,7 +157,7 @@ struct SwapchainImageShaingInfo {
     mode: vk::SharingMode,
     queue_family_indices: Vec<uint32_t>,
 }
-fn sharing_mode(device: &HaLogicalDevice) -> SwapchainImageShaingInfo {
+fn sharing_mode(device: &HaDevice) -> SwapchainImageShaingInfo {
 
     if device.graphics_queue.queue.family_index == device.present_queue.queue.family_index {
         SwapchainImageShaingInfo {

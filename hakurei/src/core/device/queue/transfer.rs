@@ -5,7 +5,7 @@ use ash::version::DeviceV1_0;
 
 use config::core::CoreConfig;
 use core::DeviceV1;
-use core::device::{ HaLogicalDevice, HaQueue };
+use core::device::{ HaLogicalDevice, HaDevice, HaQueue };
 use core::device::queue::HaQueueAbstract;
 use core::error::LogicalDeviceError;
 
@@ -46,47 +46,42 @@ impl HaQueueAbstract for HaTransferQueue {
         self.queue.handle
     }
 
-    fn clean(&self, device: &HaLogicalDevice) {
-        self.pool.cleanup(device);
+    fn cleanup(&self, device: &HaLogicalDevice) {
+        self.pool.cleanup_raw(device);
     }
 }
 
-impl<'re> HaTransferQueue {
+impl HaTransferQueue {
 
-    pub fn transfer(&'re self, device: &'re HaLogicalDevice) -> HaTransfer<'re> {
+    pub fn transfer(&self, device: &HaDevice) -> HaTransfer {
 
         // make sign to false, since the fence will be reset whenever transfer start.
         let fence = HaFence::setup(device, false).unwrap();
         let commands = vec![];
 
         HaTransfer {
-            device,
+            device: device.clone(),
             command_buffers: commands, fence,
-            queue: &self.queue,
-            pool : &self.pool,
             transfer_wait_time: self.transfer_wait_time,
         }
     }
-
 }
 
-pub struct HaTransfer<'re> {
+pub struct HaTransfer {
 
-    device: &'re HaLogicalDevice,
-    queue : &'re HaQueue,
-    pool  : &'re HaCommandPool,
+    device: HaDevice,
     command_buffers: Vec<HaCommandBuffer>,
 
     fence : HaFence,
     transfer_wait_time: TimePeriod,
 }
 
-impl<'re> HaTransfer<'re> {
+impl HaTransfer {
 
     pub fn commands(&mut self, count: usize) -> Result<&[HaCommandBuffer], CommandError> {
 
         // just use a single primary command buffer for transferation.
-        let mut new_commands = self.pool.allocate(self.device, CommandBufferUsage::UnitaryCommand, count)?;
+        let mut new_commands = self.device.transfer_queue.pool.allocate(&self.device, CommandBufferUsage::UnitaryCommand, count)?;
         let start_index = self.command_buffers.len();
         self.command_buffers.append(&mut new_commands);
 
@@ -96,7 +91,7 @@ impl<'re> HaTransfer<'re> {
 
     pub fn command(&mut self) -> Result<&HaCommandBuffer, CommandError> {
 
-        let mut new_commands = self.pool.allocate(self.device, CommandBufferUsage::UnitaryCommand, 1)?;
+        let mut new_commands = self.device.transfer_queue.pool.allocate(&self.device, CommandBufferUsage::UnitaryCommand, 1)?;
         self.command_buffers.append(&mut new_commands);
         Ok(&self.command_buffers.last().unwrap())
     }
@@ -107,7 +102,7 @@ impl<'re> HaTransfer<'re> {
             return Err(CommandError::NoCommandAvailable)?;
         }
 
-        self.fence.reset(self.device)?;
+        self.fence.reset()?;
 
         let submit_commands = self.command_buffers.handles();
 
@@ -124,24 +119,22 @@ impl<'re> HaTransfer<'re> {
         };
 
         unsafe {
-            self.device.handle.queue_submit(self.queue.handle, &[submit_info], self.fence.handle)
+            self.device.handle.queue_submit(self.device.transfer_queue.queue.handle, &[submit_info], self.fence.handle)
                 .or(Err(CommandError::QueueSubmitError))?;
         }
 
-        self.fence.wait(self.device, self.transfer_wait_time)?;
-        self.pool.free(self.device, &self.command_buffers);
+        self.fence.wait(self.transfer_wait_time)?;
+        self.device.transfer_queue.pool.free(&self.device, &self.command_buffers);
         self.command_buffers.clear();
 
         Ok(())
     }
 }
 
-impl<'re> Drop for HaTransfer<'re> {
+impl Drop for HaTransfer {
 
     fn drop(&mut self) {
 
-        unsafe {
-            self.device.handle.destroy_fence(self.fence.handle, None);
-        }
+        self.fence.cleanup();
     }
 }

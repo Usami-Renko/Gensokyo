@@ -3,7 +3,7 @@ use ash::vk;
 use ash::vk::uint32_t;
 use ash::version::DeviceV1_0;
 
-use core::device::HaLogicalDevice;
+use core::device::HaDevice;
 use resources::buffer::HaBuffer;
 use resources::buffer::{ DeviceBufferConfig, HostBufferConfig };
 use resources::buffer::{ BufferCreateFlag, BufferUsageFlag };
@@ -62,7 +62,7 @@ pub(crate) trait BufferGenerator {
     ///
     /// If the buffer is accessed by one queue family, set sharing_queue_families to None,
     /// or set it the queue family indices to share accessing.
-    fn generate(&self, device: &HaLogicalDevice, sharing_queue_families: Option<Vec<uint32_t>>) -> Result<HaBuffer, BufferError> {
+    fn generate(&self, device: &HaDevice, sharing_queue_families: Option<Vec<uint32_t>>) -> Result<HaBuffer, BufferError> {
 
         let (sharing_mode, indices) = match sharing_queue_families {
             | Some(families) => (vk::SharingMode::Concurrent, families),

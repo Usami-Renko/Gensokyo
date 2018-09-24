@@ -3,7 +3,7 @@ use ash::vk;
 use ash::vk::uint32_t;
 use ash::version::DeviceV1_0;
 
-use core::device::HaLogicalDevice;
+use core::device::HaDevice;
 
 use resources::buffer::BufferSubItem;
 use resources::memory::{ HaMemoryAbstract, HaMemoryType, MemoryDataTransferable, MemoryPropertyFlag };
@@ -46,7 +46,7 @@ impl HaMemoryAbstract for HaHostMemory {
         ].flags()
     }
 
-    fn allocate(device: &HaLogicalDevice, size: vk::DeviceSize, mem_type_index: usize, mem_type: Option<vk::MemoryType>) -> Result<HaHostMemory, MemoryError> {
+    fn allocate(device: &HaDevice, size: vk::DeviceSize, mem_type_index: usize, mem_type: Option<vk::MemoryType>) -> Result<HaHostMemory, MemoryError> {
 
         let allocate_info = vk::MemoryAllocateInfo {
             s_type: vk::StructureType::MemoryAllocateInfo,
@@ -70,7 +70,7 @@ impl HaMemoryAbstract for HaHostMemory {
         Ok(memory)
     }
 
-    fn enable_map(&mut self, device: &HaLogicalDevice, is_enable: bool) -> Result<(), MemoryError> {
+    fn enable_map(&mut self, device: &HaDevice, is_enable: bool) -> Result<(), MemoryError> {
 
         if is_enable {
             if !self.map_status.is_map {
@@ -94,7 +94,7 @@ impl HaHostMemory {
     /// Map specific range of the memory.
     ///
     /// If range is None, the function will map the whole memory.
-    fn map_range(&self, device: &HaLogicalDevice, range: Option<MemoryRange>) -> Result<MemPtr, MemoryError> {
+    fn map_range(&self, device: &HaDevice, range: Option<MemoryRange>) -> Result<MemPtr, MemoryError> {
 
         let data_ptr = unsafe {
             if let Some(range) = range {
@@ -116,7 +116,7 @@ impl HaHostMemory {
         Ok(data_ptr)
     }
 
-    fn flush_ranges(&self, device: &HaLogicalDevice, ranges: &Vec<MemoryRange>) -> Result<(), MemoryError> {
+    fn flush_ranges(&self, device: &HaDevice, ranges: &Vec<MemoryRange>) -> Result<(), MemoryError> {
 
         let flush_ranges = ranges.iter()
             .map(|range| {
@@ -135,7 +135,7 @@ impl HaHostMemory {
         }
     }
 
-    fn unmap(&self, device: &HaLogicalDevice) {
+    fn unmap(&self, device: &HaDevice) {
 
         unsafe {
             device.handle.unmap_memory(self.handle())
@@ -145,7 +145,7 @@ impl HaHostMemory {
 
 impl MemoryDataTransferable for HaHostMemory {
 
-    fn prepare_data_transfer(&mut self, device: &HaLogicalDevice) -> Result<(), MemoryError> {
+    fn prepare_data_transfer(&mut self, device: &HaDevice) -> Result<(), MemoryError> {
 
         self.enable_map(device, true)?;
         Ok(())
@@ -163,7 +163,7 @@ impl MemoryDataTransferable for HaHostMemory {
         Ok((writer, range))
     }
 
-    fn terminate_transfer(&mut self, device: &HaLogicalDevice, ranges_to_flush: &Vec<MemoryRange>) -> Result<(), MemoryError> {
+    fn terminate_transfer(&mut self, device: &HaDevice, ranges_to_flush: &Vec<MemoryRange>) -> Result<(), MemoryError> {
 
         if !self.is_coherent_memroy() {
             // FIXME: the VkPhysicalDeviceLimits::nonCoherentAtomSize is not satified for flushing range.

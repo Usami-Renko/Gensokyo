@@ -3,7 +3,7 @@ use ash::vk;
 use ash::vk::uint32_t;
 use ash::version::DeviceV1_0;
 
-use core::device::HaLogicalDevice;
+use core::device::HaDevice;
 
 use resources::framebuffer::HaFramebuffer;
 use resources::image::{ HaImageView, ImageViewItem };
@@ -29,7 +29,7 @@ impl<'i> FramebufferBuilder<'i> {
         }
     }
 
-    pub fn build(&self, device: &HaLogicalDevice, render_pass: vk::RenderPass) -> Result<HaFramebuffer, FramebufferError> {
+    pub fn build(&self, device: &HaDevice, render_pass: vk::RenderPass) -> Result<HaFramebuffer, FramebufferError> {
         let attachments: Vec<vk::ImageView> = self.attachments.iter()
             .map(|a| a.handle).collect();
 
@@ -73,4 +73,3 @@ impl<'i> FramebufferBuilder<'i> {
         self
     }
 }
-

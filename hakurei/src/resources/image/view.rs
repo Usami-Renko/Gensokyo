@@ -3,7 +3,7 @@ use ash::vk;
 use ash::vk::uint32_t;
 use ash::version::DeviceV1_0;
 
-use core::device::HaLogicalDevice;
+use core::device::HaDevice;
 use resources::image::{ HaImage, ImageAspectFlag };
 use resources::error::ImageError;
 
@@ -18,7 +18,7 @@ pub(crate) struct HaImageView {
 
 impl HaImageView {
 
-    pub fn config(device: &HaLogicalDevice, image: &HaImage, desc: &ImageViewDescInfo, format: vk::Format) -> Result<HaImageView, ImageError> {
+    pub fn config(device: &HaDevice, image: &HaImage, desc: &ImageViewDescInfo, format: vk::Format) -> Result<HaImageView, ImageError> {
 
         let view_info = vk::ImageViewCreateInfo {
             s_type: vk::StructureType::ImageViewCreateInfo,
@@ -43,7 +43,7 @@ impl HaImageView {
         Ok(view)
     }
 
-    pub fn cleanup(&self, device: &HaLogicalDevice) {
+    pub fn cleanup(&self, device: &HaDevice) {
         unsafe {
             device.handle.destroy_image_view(self.handle, None);
         }

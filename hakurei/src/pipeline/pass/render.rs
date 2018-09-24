@@ -2,7 +2,7 @@
 use ash::vk;
 use ash::version::DeviceV1_0;
 
-use core::device::HaLogicalDevice;
+use core::device::HaDevice;
 
 use resources::framebuffer::HaFramebuffer;
 
@@ -27,7 +27,7 @@ impl HaRenderPass {
         }
     }
 
-    pub(crate) fn cleanup(&self, device: &HaLogicalDevice) {
+    pub(crate) fn cleanup(&self, device: &HaDevice) {
         unsafe {
             device.handle.destroy_render_pass(self.handle, None);
         }

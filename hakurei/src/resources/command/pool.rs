@@ -4,7 +4,7 @@ use ash::vk::uint32_t;
 use ash::version::DeviceV1_0;
 
 use core::DeviceV1;
-use core::device::{ HaLogicalDevice, HaQueue, DeviceQueueIdentifier };
+use core::device::{ HaDevice, HaLogicalDevice, HaQueue, DeviceQueueIdentifier };
 
 use resources::command::buffer::{ HaCommandBuffer, CommandBufferUsage };
 use resources::error::CommandError;
@@ -48,7 +48,7 @@ impl HaCommandPool {
         Ok(pool)
     }
 
-    pub fn setup(device: &HaLogicalDevice, queue: DeviceQueueIdentifier, flags: &[CommandPoolFlag])
+    pub fn setup(device: &HaDevice, queue: DeviceQueueIdentifier, flags: &[CommandPoolFlag])
         -> Result<HaCommandPool, CommandError> {
 
         let queue = device.queue_handle_by_identifier(queue);
@@ -74,7 +74,7 @@ impl HaCommandPool {
     /// Allocate vk::CommandBuffer from the vk::CommandPool.
     ///
     /// usage indicates the type of command buffer.
-    pub fn allocate(&self, device: &HaLogicalDevice, usage: CommandBufferUsage, count: usize)
+    pub fn allocate(&self, device: &HaDevice, usage: CommandBufferUsage, count: usize)
         -> Result<Vec<HaCommandBuffer>, CommandError> {
 
         let allocate_info = vk::CommandBufferAllocateInfo {
@@ -91,11 +91,11 @@ impl HaCommandPool {
         };
 
         let buffers = handles.iter()
-            .map(|&handle| HaCommandBuffer { handle, usage }).collect();
+            .map(|&handle| HaCommandBuffer { device: device.clone(), handle, usage }).collect();
         Ok(buffers)
     }
 
-    pub fn free(&self, device: &HaLogicalDevice, buffers_to_free: &[HaCommandBuffer]) {
+    pub fn free(&self, device: &HaDevice, buffers_to_free: &[HaCommandBuffer]) {
         let buffer_handles = buffers_to_free.handles();
 
         unsafe {
@@ -103,10 +103,12 @@ impl HaCommandPool {
         }
     }
 
-    pub fn cleanup(&self, device: &HaLogicalDevice) {
-        unsafe {
-            device.handle.destroy_command_pool(self.handle, None);
-        }
+    pub fn cleanup(&self, device: &HaDevice) {
+        unsafe { device.handle.destroy_command_pool(self.handle, None); }
+    }
+
+    pub(crate) fn cleanup_raw(&self, device: &HaLogicalDevice) {
+        unsafe { device.handle.destroy_command_pool(self.handle, None); }
     }
 }
 
