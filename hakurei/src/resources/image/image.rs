@@ -3,7 +3,7 @@ use ash::vk;
 use ash::vk::uint32_t;
 use ash::version::DeviceV1_0;
 
-use core::device::HaLogicalDevice;
+use core::device::HaDevice;
 use resources::image::flag::{ ImageCreateFlag, ImageUsageFlag };
 use resources::error::ImageError;
 
@@ -31,7 +31,7 @@ impl HaImage {
         }
     }
 
-    pub fn config(device: &HaLogicalDevice, desc: &ImageDescInfo, dimension: Dimension3D, format: vk::Format)
+    pub fn config(device: &HaDevice, desc: &ImageDescInfo, dimension: Dimension3D, format: vk::Format)
         -> Result<HaImage, ImageError> {
 
         let info = vk::ImageCreateInfo {
@@ -66,7 +66,7 @@ impl HaImage {
         Ok(image)
     }
 
-    pub fn cleanup(&self, device: &HaLogicalDevice) {
+    pub fn cleanup(&self, device: &HaDevice) {
         unsafe {
             device.handle.destroy_image(self.handle, None);
         }

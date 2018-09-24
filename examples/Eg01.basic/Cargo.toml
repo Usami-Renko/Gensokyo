@@ -27,4 +27,4 @@ path = "src/04.texture/main.rs"
 
 [[bin]]
 name = "05"
-path = "src/05.box/main.rs"
+path = "src/05.cube/main.rs"

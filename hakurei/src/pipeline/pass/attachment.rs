@@ -7,12 +7,12 @@ use utility::marker::{ VulkanFlags, VulkanEnum };
 
 #[derive(Debug, Clone, Copy, Eq, PartialEq)]
 pub enum RenderAttachementPrefab {
-    Present,
+    BackColorAttachment,
 }
 impl RenderAttachementPrefab {
     fn generate(&self) -> RenderAttachement {
         match *self {
-            | RenderAttachementPrefab::Present => RenderAttachement {
+            | RenderAttachementPrefab::BackColorAttachment => RenderAttachement {
                 ..Default::default()
             }
         }

@@ -2,7 +2,7 @@
 use ash::vk;
 use ash::version::DeviceV1_0;
 
-use core::device::HaLogicalDevice;
+use core::device::HaDevice;
 
 use pipeline::error::ShaderError;
 
@@ -31,7 +31,7 @@ impl HaShaderInfo {
         HaShaderInfo { stage, path, main, }
     }
 
-    pub fn build(&self, device: &HaLogicalDevice) -> Result<HaShaderModule, ShaderError> {
+    pub fn build(&self, device: &HaDevice) -> Result<HaShaderModule, ShaderError> {
 
         let codes = self.load_source_from_bytes()?;
         let handle = self.create_module(device, &codes)?;
@@ -59,7 +59,7 @@ impl HaShaderInfo {
         unimplemented!()
     }
 
-    fn create_module(&self, device: &HaLogicalDevice, codes: &Vec<u8>) -> Result<vk::ShaderModule, ShaderError> {
+    fn create_module(&self, device: &HaDevice, codes: &Vec<u8>) -> Result<vk::ShaderModule, ShaderError> {
 
         let module_create_info = vk::ShaderModuleCreateInfo {
             s_type    : vk::StructureType::ShaderModuleCreateInfo,
@@ -159,7 +159,7 @@ impl HaShaderModule {
         }
     }
 
-    pub(crate) fn cleanup(&self, device: &HaLogicalDevice) {
+    pub(crate) fn cleanup(&self, device: &HaDevice) {
 
         unsafe {
             device.handle.destroy_shader_module(self.handle, None);

@@ -3,7 +3,7 @@ use ash;
 use ash::vk;
 use ash::vk::uint32_t;
 
-use core::device::{ HaLogicalDevice, HaGraphicsQueue, HaQueueAbstract };
+use core::device::{ HaDevice, HaGraphicsQueue, HaQueueAbstract };
 use core::swapchain::error::SwapchainRuntimeError;
 
 use resources::image::{ HaImage, HaImageView };
@@ -108,7 +108,7 @@ impl HaSwapchain {
         unimplemented!()
     }
 
-    pub fn cleanup(&self, device: &HaLogicalDevice) {
+    pub fn cleanup(&self, device: &HaDevice) {
 
         self.views.iter().for_each(|v| v.cleanup(device));
 

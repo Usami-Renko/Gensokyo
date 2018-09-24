@@ -2,8 +2,8 @@
 use ash::vk;
 use ash::version::DeviceV1_0;
 
-use core::device::HaLogicalDevice;
-use core::physical::{ HaPhysicalDevice, MemorySelector };
+use core::device::{ HaDevice, HaLogicalDevice };
+use core::physical::{ HaPhyDevice, MemorySelector };
 
 use resources::repository::HaImageRepository;
 use resources::image::{ ImageViewItem, ImageDescInfo, ImageViewDescInfo };
@@ -12,7 +12,7 @@ use resources::buffer::{ HostBufferConfig, HostBufferUsage, BufferSubItem };
 use resources::buffer::BufferConfigModifiable;
 use resources::image::{ ImageLayout, ImageStorageInfo, load_texture };
 use resources::allocator::{ HaHostBufferAllocator, HaBufferAllocatorAbstract };
-use resources::memory::{ HaMemoryAbstract, HaDeviceMemory };
+use resources::memory::{ HaMemoryAbstract, HaDeviceMemory, HaMemoryType };
 use resources::command::{ HaCommandRecorder, CommandBufferUsageFlag };
 use resources::error::{ ImageError, AllocatorError };
 use pipeline::stages::PipelineStageFlag;
@@ -26,10 +26,10 @@ use std::ptr;
 
 // TODO: Currently not support multi imageview for an image.
 
-pub struct HaImageAllocator<'re> {
+pub struct HaImageAllocator {
 
-    physical: &'re HaPhysicalDevice,
-    device  : &'re HaLogicalDevice,
+    physical: HaPhyDevice,
+    device  : HaDevice,
 
     images  : Vec<HaImage>,
     storages: Vec<ImageStorageInfo>,
@@ -38,17 +38,18 @@ pub struct HaImageAllocator<'re> {
     image_descs: Vec<ImageDescInfo>,
     view_descs : Vec<ImageViewDescInfo>,
 
-    memory_selector: MemorySelector<'re>,
+    memory_selector: MemorySelector,
     mem_flag: vk::MemoryPropertyFlags,
+    memory_type: HaMemoryType,
 }
 
-impl<'re> HaImageAllocator<'re> {
+impl HaImageAllocator {
 
-    pub(super) fn new(physical: &'re HaPhysicalDevice, device: &'re HaLogicalDevice) -> HaImageAllocator<'re> {
+    pub(crate) fn new(physical: &HaPhyDevice, device: &HaDevice, memory_type: HaMemoryType) -> HaImageAllocator {
 
         HaImageAllocator {
-            physical,
-            device,
+            physical: physical.clone(),
+            device  : device.clone(),
 
             images  : vec![],
             storages: vec![],
@@ -57,17 +58,17 @@ impl<'re> HaImageAllocator<'re> {
             view_descs : vec![],
             memory_selector: MemorySelector::init(physical),
             mem_flag: vk::MemoryPropertyFlags::empty(),
+            memory_type,
         }
     }
 
     pub fn attach_image(&mut self, path: &Path, image_desc: ImageDescInfo, view_desc: ImageViewDescInfo) -> Result<usize, AllocatorError> {
 
         let storage = load_texture(path)?;
-        let image = HaImage::config(self.device, &image_desc, storage.dimension, storage.format)?;
+        let image = HaImage::config(&self.device, &image_desc, storage.dimension, storage.format)?;
 
         // create the buffer
-        // TODO: Make this flag as a choose
-        let required_memory_flag = vk::MEMORY_PROPERTY_DEVICE_LOCAL_BIT;
+        let required_memory_flag = self.memory_type.image_property_flag();
         self.memory_selector.try(image.requirement.memory_type_bits, required_memory_flag)?;
 
         self.mem_flag = self.mem_flag | required_memory_flag;
@@ -91,7 +92,7 @@ impl<'re> HaImageAllocator<'re> {
         }
 
         // 1.create staging buffer and memories
-        let mut staging_allocator = HaHostBufferAllocator::new(self.physical, self.device);
+        let mut staging_allocator = HaHostBufferAllocator::new(&self.physical, &self.device);
         let staging_buffer_config = HostBufferConfig::new(HostBufferUsage::VertexBuffer);
         let mut staging_buffer_items = vec![];
 
@@ -106,11 +107,11 @@ impl<'re> HaImageAllocator<'re> {
 
         // 2.send textures to the staging buffer
         {
-            let mut uploader = staging_repository.data_uploader(self.device)?;
+            let mut uploader = staging_repository.data_uploader()?;
             for (i, item) in staging_buffer_items.iter().enumerate() {
                 uploader.upload(item, &self.storages[i].data)?;
             }
-            uploader.done(self.device)?;
+            uploader.done()?;
         }
 
         // 3.create image buffer and memories
@@ -121,7 +122,7 @@ impl<'re> HaImageAllocator<'re> {
 
         // allocate memory
         let memory = HaDeviceMemory::allocate(
-            self.device,
+            &self.device,
             allocate_size,
             optimal_memory_index,
             Some(mem_type),
@@ -130,23 +131,23 @@ impl<'re> HaImageAllocator<'re> {
         // bind images to memory
         let mut offset = 0;
         for (i, image) in self.images.iter().enumerate() {
-            memory.bind_to_image(self.device, image, offset)?;
+            memory.bind_to_image(&self.device, image, offset)?;
             offset += self.spaces[i];
         }
 
         // 4.create image view for each image
         let mut views = vec![];
         for i in 0..self.images.len() {
-            let view = HaImageView::config(self.device, &self.images[i], &self.view_descs[i], self.storages[i].format)?;
+            let view = HaImageView::config(&self.device, &self.images[i], &self.view_descs[i], self.storages[i].format)?;
             views.push(view);
         }
 
         // 5.create command buffer
-        let mut transfer = self.device.transfer();
+        let mut transfer = HaLogicalDevice::transfer(&self.device);
         {
             let command_buffer = transfer.command()?;
 
-            let recorder = command_buffer.setup_record(self.device);
+            let recorder = command_buffer.setup_record();
             let _ = recorder.begin_record(&[CommandBufferUsageFlag::OneTimeSubmitBit])?;
 
             // 6.transition image layout (from undefine to transferDst)
@@ -215,7 +216,7 @@ impl<'re> HaImageAllocator<'re> {
         transfer.excute()?;
 
         // 10.clean resources.
-        staging_repository.cleanup(self.device);
+        staging_repository.cleanup();
 
         // finial done.
         let image_ownership_transfer = self.images.drain(..).collect();

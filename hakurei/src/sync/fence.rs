@@ -2,7 +2,7 @@
 use ash::vk;
 use ash::version::DeviceV1_0;
 
-use core::device::HaLogicalDevice;
+use core::device::HaDevice;
 
 use sync::error::SyncError;
 use utility::marker::VulkanFlags;
@@ -14,12 +14,13 @@ use std::ptr;
 
 pub struct HaFence {
 
+    device: HaDevice,
     pub(crate) handle: vk::Fence,
 }
 
 impl HaFence {
 
-    pub fn setup(device: &HaLogicalDevice, sign: bool) -> Result<HaFence, SyncError> {
+    pub fn setup(device: &HaDevice, sign: bool) -> Result<HaFence, SyncError> {
 
         let flags = if sign {
             [&FenceCreateFlag::Signaled].flags()
@@ -39,6 +40,7 @@ impl HaFence {
         };
 
         let fence = HaFence {
+            device: device.clone(),
             handle,
         };
         Ok(fence)
@@ -47,18 +49,18 @@ impl HaFence {
     /// Tell device to wait for this fence.
     ///
     /// To wait for a group of fences, use LogicalDevice::wait_fences() method instead.
-    pub fn wait(&self, device: &HaLogicalDevice, timeout: TimePeriod) -> Result<(), SyncError> {
+    pub fn wait(&self, timeout: TimePeriod) -> Result<(), SyncError> {
         unsafe {
-            device.handle.wait_for_fences(&[self.handle], true, timeout.vulkan_time())
+            self.device.handle.wait_for_fences(&[self.handle], true, timeout.vulkan_time())
                 .or(Err(SyncError::FenceTimeOutError))?;
         }
         Ok(())
     }
 
     /// reset a single fence
-    pub fn reset(&self, device: &HaLogicalDevice) -> Result<(), SyncError> {
+    pub fn reset(&self) -> Result<(), SyncError> {
         unsafe {
-            device.handle.reset_fences(&[self.handle])
+            self.device.handle.reset_fences(&[self.handle])
                 .or(Err(SyncError::FenceResetError))?;
         }
         Ok(())
@@ -69,9 +71,9 @@ impl HaFence {
         vk::Fence::null()
     }
 
-    pub fn cleanup(&self, device: &HaLogicalDevice) {
+    pub fn cleanup(&self) {
         unsafe {
-            device.handle.destroy_fence(self.handle, None);
+            self.device.handle.destroy_fence(self.handle, None);
         }
     }
 }

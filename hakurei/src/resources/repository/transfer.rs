@@ -1,7 +1,7 @@
 
 use ash::vk;
 
-use core::device::HaLogicalDevice;
+use core::device::HaDevice;
 
 use resources::buffer::BufferSubItem;
 use resources::memory::{ HaMemoryAbstract, MemoryRange };
@@ -9,6 +9,7 @@ use resources::error::AllocatorError;
 
 pub struct BufferDataUploader<'mem> {
 
+    device  : HaDevice,
     memory  : &'mem mut Box<HaMemoryAbstract>,
     offsets : &'mem Vec<vk::DeviceSize>,
     ranges  : Vec<MemoryRange>,
@@ -16,11 +17,14 @@ pub struct BufferDataUploader<'mem> {
 
 impl<'mem> BufferDataUploader<'mem> {
 
-    pub(crate) fn new(device: &HaLogicalDevice, memory: &'mem mut Box<HaMemoryAbstract>, offsets: &'mem Vec<vk::DeviceSize>) -> Result<BufferDataUploader<'mem>, AllocatorError> {
+    pub(crate) fn new(device: &HaDevice, memory: &'mem mut Box<HaMemoryAbstract>, offsets: &'mem Vec<vk::DeviceSize>) -> Result<BufferDataUploader<'mem>, AllocatorError> {
 
         memory.prepare_data_transfer(device)?;
 
-        let uploader = BufferDataUploader { memory, offsets, ranges: vec![], };
+        let uploader = BufferDataUploader {
+            device: device.clone(),
+            memory, offsets, ranges: vec![],
+        };
         Ok(uploader)
     }
 
@@ -36,10 +40,10 @@ impl<'mem> BufferDataUploader<'mem> {
         Ok(self)
     }
 
-    pub fn done(&mut self, device: &HaLogicalDevice) -> Result<(), AllocatorError> {
+    pub fn done(&mut self) -> Result<(), AllocatorError> {
 
-        self.memory.terminate_transfer(device, &self.ranges)?;
-        self.memory.enable_map(device, false)?;
+        self.memory.terminate_transfer(&self.device, &self.ranges)?;
+        self.memory.enable_map(&self.device, false)?;
 
         Ok(())
     }
@@ -47,6 +51,7 @@ impl<'mem> BufferDataUploader<'mem> {
 
 pub struct BufferDataUpdater<'mem> {
 
+    device  : HaDevice,
     memory  : &'mem mut Box<HaMemoryAbstract>,
     offsets : &'mem Vec<vk::DeviceSize>,
     ranges  : Vec<MemoryRange>,
@@ -54,9 +59,10 @@ pub struct BufferDataUpdater<'mem> {
 
 impl<'mem> BufferDataUpdater<'mem> {
 
-    pub(crate) fn new(memory: &'mem mut Box<HaMemoryAbstract>, offsets: &'mem Vec<vk::DeviceSize>) -> BufferDataUpdater<'mem> {
+    pub(crate) fn new(device: &HaDevice, memory: &'mem mut Box<HaMemoryAbstract>, offsets: &'mem Vec<vk::DeviceSize>) -> BufferDataUpdater<'mem> {
 
         BufferDataUpdater {
+            device: device.clone(),
             memory, offsets, ranges: vec![],
         }
     }
@@ -73,9 +79,9 @@ impl<'mem> BufferDataUpdater<'mem> {
         Ok(self)
     }
 
-    pub fn done(&mut self, device: &HaLogicalDevice) -> Result<(), AllocatorError> {
+    pub fn done(&mut self) -> Result<(), AllocatorError> {
 
-        self.memory.terminate_transfer(device, &self.ranges)?;
+        self.memory.terminate_transfer(&self.device, &self.ranges)?;
 
         Ok(())
     }

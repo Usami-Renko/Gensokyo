@@ -3,7 +3,7 @@ use ash::vk;
 use ash::vk::uint32_t;
 use ash::version::DeviceV1_0;
 
-use core::device::HaLogicalDevice;
+use core::device::HaDevice;
 
 use pipeline::error::PipelineError;
 
@@ -19,7 +19,7 @@ pub struct PipelineLayoutBuilder {
 
 impl PipelineLayoutBuilder {
 
-    pub(super) fn build(&self, device: &HaLogicalDevice) -> Result<vk::PipelineLayout, PipelineError> {
+    pub(super) fn build(&self, device: &HaDevice) -> Result<vk::PipelineLayout, PipelineError> {
         let create_info = self.info();
 
         unsafe {
@@ -76,7 +76,7 @@ impl HaPipelineLayout {
         HaPipelineLayout { handle, }
     }
 
-    pub(super) fn cleanup(&self, device: &HaLogicalDevice) {
+    pub(super) fn cleanup(&self, device: &HaDevice) {
         unsafe {
             device.handle.destroy_pipeline_layout(self.handle, None);
         }

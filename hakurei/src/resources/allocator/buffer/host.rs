@@ -2,8 +2,8 @@
 use ash::vk;
 use ash::version::DeviceV1_0;
 
-use core::device::HaLogicalDevice;
-use core::physical::{ HaPhysicalDevice, MemorySelector };
+use core::device::HaDevice;
+use core::physical::{ HaPhyDevice, MemorySelector };
 
 use resources::allocator::HaBufferAllocatorAbstract;
 use resources::buffer::HaBuffer;
@@ -16,10 +16,10 @@ use resources::error::{ BufferError, AllocatorError };
 use utility::marker::VulkanEnum;
 use utility::memory::bind_to_alignment;
 
-pub struct HaHostBufferAllocator<'re> {
+pub struct HaHostBufferAllocator {
 
-    physical: &'re HaPhysicalDevice,
-    device  : &'re HaLogicalDevice,
+    physical: HaPhyDevice,
+    device  : HaDevice,
 
     buffers : Vec<HaBuffer>,
     /// The size of each buffer occupy.
@@ -27,16 +27,16 @@ pub struct HaHostBufferAllocator<'re> {
 
     require_mem_flag: vk::MemoryPropertyFlags,
 
-    memory_selector: MemorySelector<'re>,
+    memory_selector: MemorySelector,
 }
 
-impl<'re> HaHostBufferAllocator<'re> {
+impl HaHostBufferAllocator {
 
-    pub(crate) fn new(physical: &'re HaPhysicalDevice, device: &'re HaLogicalDevice) -> HaHostBufferAllocator<'re> {
+    pub(crate) fn new(physical: &HaPhyDevice, device: &HaDevice) -> HaHostBufferAllocator {
 
         HaHostBufferAllocator {
-            physical,
-            device,
+            physical: physical.clone(),
+            device  : device.clone(),
 
             buffers: vec![],
             spaces : vec![],
@@ -55,13 +55,13 @@ impl<'re> HaHostBufferAllocator<'re> {
     }
 }
 
-impl<'re> HaBufferAllocatorAbstract for HaHostBufferAllocator<'re> {
+impl HaBufferAllocatorAbstract for HaHostBufferAllocator {
     type BufferConfigType = HostBufferConfig;
 
     fn attach_buffer(&mut self, config: Self::BufferConfigType) -> Result<Vec<BufferSubItem>, AllocatorError> {
 
         // TODO: Currently HaBuffer only support operation in single queue family.
-        let buffer = config.generate(self.device, None)?;
+        let buffer = config.generate(&self.device, None)?;
         self.memory_selector.try(buffer.requirement.memory_type_bits, self.require_mem_flag)?;
 
         let buffer_index = self.buffers.len();
@@ -99,18 +99,18 @@ impl<'re> HaBufferAllocatorAbstract for HaHostBufferAllocator<'re> {
         // allocate memory
         let optimal_memory_index = self.memory_selector.optimal_memory()?;
         let mem_type = self.physical.memory.memory_type(optimal_memory_index);
-        let memory = HaHostMemory::allocate(self.device, self.spaces.iter().sum(), optimal_memory_index, Some(mem_type))?;
+        let memory = HaHostMemory::allocate(&self.device, self.spaces.iter().sum(), optimal_memory_index, Some(mem_type))?;
 
         // bind buffers to memory
         let mut offset = 0;
         let mut repository_buffer = vec![];
         for (i, buffer) in self.buffers.drain(..).enumerate() {
-            memory.bind_to_buffer(self.device, &buffer, offset)?;
+            memory.bind_to_buffer(&self.device, &buffer, offset)?;
             offset += self.spaces[i];
             repository_buffer.push(buffer);
         }
 
-        let repository = HaBufferRepository::store(repository_buffer, Box::new(memory), self.spaces.clone());
+        let repository = HaBufferRepository::store(&self.device, repository_buffer, Box::new(memory), self.spaces.clone());
 
         self.reset();
         Ok(repository)

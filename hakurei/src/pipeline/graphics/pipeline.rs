@@ -2,13 +2,14 @@
 use ash::vk;
 use ash::version::DeviceV1_0;
 
-use core::device::HaLogicalDevice;
+use core::device::HaDevice;
 
 use pipeline::layout::HaPipelineLayout;
 use pipeline::pass::HaRenderPass;
 
 pub struct HaGraphicsPipeline {
 
+    pub(crate) device: Option<HaDevice>,
     pub(crate) handle: vk::Pipeline,
     pub pass: HaRenderPass,
     pub(crate) layout: HaPipelineLayout,
@@ -20,6 +21,7 @@ impl HaGraphicsPipeline {
 
     pub fn uninitialize() -> HaGraphicsPipeline {
         HaGraphicsPipeline {
+            device: None,
             handle: vk::Pipeline::null(),
             pass: HaRenderPass::uninitialize(),
             layout: HaPipelineLayout::uninitialize(),
@@ -28,8 +30,9 @@ impl HaGraphicsPipeline {
         }
     }
 
-    pub(super) fn new(handle: vk::Pipeline, layout: vk::PipelineLayout, pass: HaRenderPass) -> HaGraphicsPipeline {
+    pub(super) fn new(device: &HaDevice, handle: vk::Pipeline, layout: vk::PipelineLayout, pass: HaRenderPass) -> HaGraphicsPipeline {
         HaGraphicsPipeline {
+            device: Some(device.clone()),
             handle,
             layout: HaPipelineLayout::new(layout),
             pass,
@@ -42,9 +45,12 @@ impl HaGraphicsPipeline {
         self.pass.framebuffers.len()
     }
 
-    pub fn cleanup(&self, device: &HaLogicalDevice) {
-        unsafe { device.handle.destroy_pipeline(self.handle, None); }
-        self.layout.cleanup(device);
-        self.pass.cleanup(device);
+    pub fn cleanup(&self) {
+
+        if let Some(ref device) = self.device {
+            unsafe { device.handle.destroy_pipeline(self.handle, None); }
+            self.layout.cleanup(device);
+            self.pass.cleanup(device);
+        }
     }
 }

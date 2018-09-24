@@ -69,10 +69,10 @@ impl TriangleProcedure {
 
 impl ProgramProc for TriangleProcedure {
 
-    fn assets(&mut self, device: &HaLogicalDevice, generator: &ResourceGenerator) -> Result<(), ProcedureError> {
+    fn assets(&mut self, _device: &HaDevice, kit: AllocatorKit) -> Result<(), ProcedureError> {
 
         // vertex buffer
-        let mut vertex_allocator = generator.host_buffer();
+        let mut vertex_allocator = kit.host_buffer();
 
         let mut vertex_buffer_config = HostBufferConfig::new(HostBufferUsage::VertexBuffer);
         vertex_buffer_config.add_item(data_size!(self.vertex_data, Vertex));
@@ -80,14 +80,14 @@ impl ProgramProc for TriangleProcedure {
         self.vertex_item = vertex_allocator.attach_buffer(vertex_buffer_config)?.pop().unwrap();
         self.vertex_buffer = vertex_allocator.allocate()?;
 
-        self.vertex_buffer.data_uploader(device)?
+        self.vertex_buffer.data_uploader()?
             .upload(&self.vertex_item, &self.vertex_data)?
-            .done(device)?;
+            .done()?;
 
         Ok(())
     }
 
-    fn pipelines(&mut self, device: &HaLogicalDevice, swapchain: &HaSwapchain) -> Result<(), ProcedureError> {
+    fn pipelines(&mut self, kit: PipelineKit, swapchain: &HaSwapchain) -> Result<(), ProcedureError> {
         // shaders
         let vertex_shader = HaShaderInfo::setup(
             ShaderStageFlag::VertexStage,
@@ -104,10 +104,10 @@ impl ProgramProc for TriangleProcedure {
         let vertex_input_desc = Vertex::desc();
 
         // pipeline
-        let mut render_pass_builder = RenderPassBuilder::new();
+        let mut render_pass_builder = kit.pass_builder();
         let first_subpass = render_pass_builder.new_subpass(SubpassType::Graphics);
 
-        let color_attachment = RenderAttachement::setup(RenderAttachementPrefab::Present, swapchain.format);
+        let color_attachment = RenderAttachement::setup(RenderAttachementPrefab::BackColorAttachment, swapchain.format);
         let _attachment_index = render_pass_builder.add_attachemnt(color_attachment, first_subpass, AttachmentType::Color);
 
         let mut dependency = RenderDependency::setup(RenderDependencyPrefab::Common, SUBPASS_EXTERAL, first_subpass);
@@ -118,22 +118,22 @@ impl ProgramProc for TriangleProcedure {
         ]);
         render_pass_builder.add_dependenty(dependency);
 
-        let render_pass = render_pass_builder.build(device, swapchain)?;
+        let render_pass = render_pass_builder.build(swapchain)?;
         let viewport = HaViewport::setup(swapchain.extent);
         let pipeline_config = GraphicsPipelineConfig::new(shader_infos, vertex_input_desc, render_pass)
             .setup_viewport(viewport)
             .finish_config();
 
-        let mut pipeline_builder = GraphicsPipelineBuilder::init();
+        let mut pipeline_builder = kit.graphics_pipeline_builder();
         pipeline_builder.add_config(pipeline_config);
 
-        let mut graphics_pipelines = pipeline_builder.build(device)?;
+        let mut graphics_pipelines = pipeline_builder.build()?;
         self.graphics_pipeline = graphics_pipelines.pop().unwrap();
 
         Ok(())
     }
 
-    fn subresources(&mut self, device: &HaLogicalDevice) -> Result<(), ProcedureError> {
+    fn subresources(&mut self, device: &HaDevice) -> Result<(), ProcedureError> {
         // sync
         for _ in 0..self.graphics_pipeline.frame_count() {
             let present_available = HaSemaphore::setup(device)?;
@@ -142,7 +142,7 @@ impl ProgramProc for TriangleProcedure {
         Ok(())
     }
 
-    fn commands(&mut self, device: &HaLogicalDevice) -> Result<(), ProcedureError> {
+    fn commands(&mut self, device: &HaDevice) -> Result<(), ProcedureError> {
         // command buffer
         let command_pool = HaCommandPool::setup(&device, DeviceQueueIdentifier::Graphics, &[])?;
 
@@ -151,7 +151,7 @@ impl ProgramProc for TriangleProcedure {
             .allocate(device, CommandBufferUsage::UnitaryCommand, command_buffer_count)?;
 
         for (frame_index, command_buffer) in command_buffers.iter().enumerate() {
-            let recorder = command_buffer.setup_record(device);
+            let recorder = command_buffer.setup_record();
 
             recorder.begin_record(&[CommandBufferUsageFlag::SimultaneousUseBit])?
                 .begin_render_pass(&self.graphics_pipeline, frame_index)
@@ -167,7 +167,7 @@ impl ProgramProc for TriangleProcedure {
         Ok(())
     }
 
-    fn draw(&mut self, device: &HaLogicalDevice, device_available: &HaFence, image_available: &HaSemaphore, image_index: usize, _: f32)
+    fn draw(&mut self, device: &HaDevice, device_available: &HaFence, image_available: &HaSemaphore, image_index: usize, _: f32)
             -> Result<&HaSemaphore, ProcedureError> {
 
         let submit_infos = [
@@ -184,29 +184,29 @@ impl ProgramProc for TriangleProcedure {
         return Ok(&self.present_availables[image_index])
     }
 
-    fn clean_resources(&mut self, device: &HaLogicalDevice) -> Result<(), ProcedureError> {
+    fn clean_resources(&mut self, device: &HaDevice) -> Result<(), ProcedureError> {
 
         for semaphore in self.present_availables.iter() {
-            semaphore.cleanup(device);
+            semaphore.cleanup();
         }
         self.present_availables.clear();
         self.command_buffers.clear();
 
-        self.graphics_pipeline.cleanup(device);
+        self.graphics_pipeline.cleanup();
         self.command_pool.cleanup(device);
 
         Ok(())
     }
 
-    fn cleanup(&mut self, device: &HaLogicalDevice) {
+    fn cleanup(&mut self, device: &HaDevice) {
 
         for semaphore in self.present_availables.iter() {
-            semaphore.cleanup(device);
+            semaphore.cleanup();
         }
 
-        self.graphics_pipeline.cleanup(device);
+        self.graphics_pipeline.cleanup();
         self.command_pool.cleanup(device);
-        self.vertex_buffer.cleanup(device);
+        self.vertex_buffer.cleanup();
     }
 
     fn react_input(&mut self, inputer: &ActionNerve, _: f32) -> SceneAction {

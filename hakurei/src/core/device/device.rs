@@ -4,6 +4,7 @@ use ash::vk;
 use ash::vk::uint32_t;
 use ash::version::{ V1_0, DeviceV1_0 };
 
+use core::device::HaDevice;
 use core::device::queue::QueueSubmitBundle;
 use core::device::queue::{ HaQueueAbstract, HaGraphicsQueue, HaPresentQueue, HaTransferQueue, HaTransfer };
 use core::device::queue::{ HaQueue, QueueContainer };
@@ -35,7 +36,7 @@ pub enum DeviceQueueIdentifier {
     Custom(Box<DeviceQueueIdentifier>, usize),
 }
 
-impl<'resource> HaLogicalDevice {
+impl HaLogicalDevice {
 
     /// Tell device to wait for a group of fences.
     ///
@@ -59,9 +60,9 @@ impl<'resource> HaLogicalDevice {
         Ok(())
     }
 
-    pub fn transfer(&self) -> HaTransfer {
+    pub fn transfer(device: &HaDevice) -> HaTransfer {
 
-        self.transfer_queue.transfer(&self)
+        device.transfer_queue.transfer(device)
     }
 
     pub fn submit(&self, bundles: &[QueueSubmitBundle], fence: Option<&HaFence>, queue_ident: DeviceQueueIdentifier)
@@ -116,7 +117,10 @@ impl<'resource> HaLogicalDevice {
     pub(crate) fn cleanup(&self) {
 
         unsafe {
-            self.transfer_queue.clean(self);
+            self.graphics_queue.cleanup(self);
+            self.present_queue.cleanup(self);
+            self.transfer_queue.cleanup(self);
+
             self.handle.destroy_device(None);
         }
     }

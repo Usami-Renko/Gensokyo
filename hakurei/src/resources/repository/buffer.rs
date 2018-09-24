@@ -1,7 +1,7 @@
 
 use ash::vk;
 
-use core::device::HaLogicalDevice;
+use core::device::{ HaDevice, HaLogicalDevice };
 
 use resources::buffer::{ HaBuffer, BufferSubItem };
 use resources::command::CommandBufferUsageFlag;
@@ -13,6 +13,7 @@ use utility::memory::spaces_to_offsets;
 
 pub struct HaBufferRepository {
 
+    device : Option<HaDevice>,
     buffers: Vec<HaBuffer>,
     memory : Option<Box<HaMemoryAbstract>>,
 
@@ -35,26 +36,31 @@ impl HaBufferRepository {
 
     pub fn empty() -> HaBufferRepository {
         HaBufferRepository {
+
+            device : None,
             buffers: vec![],
             memory : None,
 
             offsets: vec![],
-
         }
     }
 
-    pub(crate) fn store(buffers: Vec<HaBuffer>, memory: Box<HaMemoryAbstract>, spaces: Vec<vk::DeviceSize>) -> HaBufferRepository {
+    pub(crate) fn store(device: &HaDevice, buffers: Vec<HaBuffer>, memory: Box<HaMemoryAbstract>, spaces: Vec<vk::DeviceSize>) -> HaBufferRepository {
 
         let offsets = spaces_to_offsets(&spaces);
 
-        HaBufferRepository { buffers, memory: Some(memory), offsets, }
+        HaBufferRepository {
+            device: Some(device.clone()),
+            memory: Some(memory),
+            buffers, offsets,
+        }
     }
 
-    pub fn data_uploader(&mut self, device: &HaLogicalDevice) -> Result<BufferDataUploader, AllocatorError> {
+    pub fn data_uploader(&mut self) -> Result<BufferDataUploader, AllocatorError> {
 
         if let Some(ref mut memory) = self.memory {
 
-            BufferDataUploader::new(device, memory, &self.offsets)
+            BufferDataUploader::new(&self.device.as_ref().unwrap(), memory, &self.offsets)
         } else {
             Err(AllocatorError::Memory(MemoryError::MemoryNotYetAllocateError))
         }
@@ -64,14 +70,14 @@ impl HaBufferRepository {
 
         if let Some(ref mut memory) = self.memory {
 
-            let updater = BufferDataUpdater::new(memory, &self.offsets);
+            let updater = BufferDataUpdater::new(&self.device.as_ref().unwrap(), memory, &self.offsets);
             Ok(updater)
         } else {
             Err(AllocatorError::Memory(MemoryError::MemoryNotYetAllocateError))
         }
     }
 
-    pub fn ready_update(&mut self, device: &HaLogicalDevice) -> Result<(), AllocatorError> {
+    pub fn ready_update(&mut self, device: &HaDevice) -> Result<(), AllocatorError> {
 
         if let Some(ref mut memory) = self.memory {
             match memory.memory_type() {
@@ -89,7 +95,7 @@ impl HaBufferRepository {
         Ok(())
     }
 
-    pub fn shut_update(&mut self, device: &HaLogicalDevice) -> Result<(), AllocatorError> {
+    pub fn shut_update(&mut self, device: &HaDevice) -> Result<(), AllocatorError> {
 
         if let Some(ref mut memory) = self.memory {
             match memory.memory_type() {
@@ -131,13 +137,13 @@ impl HaBufferRepository {
         }
     }
 
-    pub fn cleanup(&mut self, device: &HaLogicalDevice) {
+    pub fn cleanup(&mut self) {
         for buffer in self.buffers.iter() {
-            buffer.cleanup(device);
+            buffer.cleanup(&self.device.as_ref().unwrap());
         }
 
         if let Some(ref memory) = self.memory {
-            memory.cleanup(device);
+            memory.cleanup(&self.device.as_ref().unwrap());
         }
 
         self.buffers.clear();
@@ -148,14 +154,14 @@ impl HaBufferRepository {
 impl HaBufferRepository {
 
     // TODO: Make this function to support multiple buffer copy operation.
-    pub fn copy_buffers_to_buffers(device: &HaLogicalDevice, from_items: &[BufferSubItem], to_items: &[BufferSubItem])
+    pub fn copy_buffers_to_buffers(device: &HaDevice, from_items: &[BufferSubItem], to_items: &[BufferSubItem])
         -> Result<(), AllocatorError> {
 
-        let mut transfer = device.transfer();
+        let mut transfer = HaLogicalDevice::transfer(device);
         {
             let command_buffer = transfer.command()?;
 
-            let recorder = command_buffer.setup_record(device);
+            let recorder = command_buffer.setup_record();
             recorder.begin_record(&[CommandBufferUsageFlag::OneTimeSubmitBit])?;
 
             for (from, to) in from_items.iter().zip(to_items.iter()) {

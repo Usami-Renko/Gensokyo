@@ -1,6 +1,5 @@
 
 pub use resources::allocator::{
-    ResourceGenerator,     // generator
     HaDeviceBufferAllocator, HaHostBufferAllocator, HaBufferAllocatorAbstract, // buffer
     HaDescriptorAllocator, // descriptor
     HaImageAllocator,      // image
@@ -46,4 +45,9 @@ pub use resources::repository::{
     HaDescriptorRepository, CmdDescriptorBindingInfos, // descriptor
     HaImageRepository, // image
     BufferDataUploader, BufferDataUpdater, // transfer
+};
+
+pub use resources::toolkit::{
+    AllocatorKit, // allocator
+    PipelineKit,  // pipeline
 };

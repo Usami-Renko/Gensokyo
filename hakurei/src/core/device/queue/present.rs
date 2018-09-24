@@ -26,7 +26,7 @@ impl HaQueueAbstract for HaPresentQueue {
         self.queue.handle
     }
 
-    fn clean(&self, _device: &HaLogicalDevice) {
+    fn cleanup(&self, _device: &HaLogicalDevice) {
         // nothing to clean
     }
 }

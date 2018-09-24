@@ -2,7 +2,7 @@
 use ash::vk;
 use ash::version::DeviceV1_0;
 
-use core::device::HaLogicalDevice;
+use core::device::HaDevice;
 
 use sync::error::SyncError;
 use utility::marker::Handles;
@@ -11,6 +11,7 @@ use std::ptr;
 
 pub struct HaSemaphore {
 
+    device: Option<HaDevice>,
     pub(crate) handle: vk::Semaphore,
 }
 
@@ -18,11 +19,12 @@ impl HaSemaphore {
 
     pub fn uninitialize() -> HaSemaphore {
         HaSemaphore {
+            device: None,
             handle: vk::Semaphore::null(),
         }
     }
 
-    pub fn setup(device: &HaLogicalDevice) -> Result<HaSemaphore, SyncError> {
+    pub fn setup(device: &HaDevice) -> Result<HaSemaphore, SyncError> {
 
         let create_info = vk::SemaphoreCreateInfo {
             s_type: vk::StructureType::SemaphoreCreateInfo,
@@ -37,6 +39,7 @@ impl HaSemaphore {
         };
 
         let semaphore = HaSemaphore {
+            device: Some(device.clone()),
             handle,
         };
         Ok(semaphore)
@@ -47,9 +50,9 @@ impl HaSemaphore {
         vk::Semaphore::null()
     }
 
-    pub fn cleanup(&self, device: &HaLogicalDevice) {
+    pub fn cleanup(&self) {
         unsafe {
-            device.handle.destroy_semaphore(self.handle, None);
+            self.device.as_ref().unwrap().handle.destroy_semaphore(self.handle, None);
         }
     }
 }

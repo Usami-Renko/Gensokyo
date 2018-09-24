@@ -1,4 +1,6 @@
 
+pub(crate) mod toolkit;
+
 pub(crate) mod buffer;
 pub(crate) mod descriptor;
 pub(crate) mod image;

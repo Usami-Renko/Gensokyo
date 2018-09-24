@@ -1,6 +1,6 @@
 
-pub use self::object::HaPhysicalDevice;
-
+pub(crate) type HaPhyDevice = ::std::rc::Rc<HaPhysicalDevice>;
+pub(crate) use self::object::HaPhysicalDevice;
 pub(crate) use self::object::PhysicalDeviceType;
 pub(crate) use self::extension::DeviceExtensionType;
 pub(crate) use self::memory::MemorySelector;

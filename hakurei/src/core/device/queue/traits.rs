@@ -11,5 +11,5 @@ pub trait HaQueueAbstract {
     fn new(device: &DeviceV1, queue: HaQueue, config: &CoreConfig) -> Result<Self, LogicalDeviceError> where Self: Sized;
 
     fn handle(&self) -> vk::Queue;
-    fn clean(&self, device: &HaLogicalDevice);
+    fn cleanup(&self, device: &HaLogicalDevice);
 }

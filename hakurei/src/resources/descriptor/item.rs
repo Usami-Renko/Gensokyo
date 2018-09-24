@@ -2,7 +2,7 @@
 use ash::vk;
 use ash::vk::uint32_t;
 
-use core::device::HaLogicalDevice;
+use core::device::HaDevice;
 use resources::descriptor::layout::{ BufferDescriptorType, ImageDescriptorType, DescriptorSetLayoutFlag };
 use resources::descriptor::HaDescriptorSet;
 use resources::buffer::BufferSubItem;
@@ -22,7 +22,7 @@ pub(crate) trait DescriptorBindingInfo {
     fn descritpor_count(&self) -> uint32_t;
 
     fn write_set(&self, set: &HaDescriptorSet) -> vk::WriteDescriptorSet;
-    fn cleanup(&self, device: &HaLogicalDevice);
+    fn cleanup(&self, device: &HaDevice);
 }
 
 pub struct DescriptorBufferBindingInfo {
@@ -79,7 +79,7 @@ impl DescriptorBindingInfo for DescriptorBufferBindingInfo {
         write_set
     }
 
-    fn cleanup(&self, _: &HaLogicalDevice) {
+    fn cleanup(&self, _: &HaDevice) {
         // nothing to clean
     }
 }
@@ -138,7 +138,7 @@ impl DescriptorBindingInfo for DescriptorImageBindingInfo {
         write_set
     }
 
-    fn cleanup(&self, device: &HaLogicalDevice) {
+    fn cleanup(&self, device: &HaDevice) {
         self.sampler.cleanup(device);
     }
 }
@@ -176,7 +176,7 @@ impl DescriptorSetConfig {
         descriptor_index
     }
 
-    pub(crate) fn cleanup(&self, device: &HaLogicalDevice) {
+    pub(crate) fn cleanup(&self, device: &HaDevice) {
         for binding in self.bindings.iter() {
             binding.cleanup(device);
         }

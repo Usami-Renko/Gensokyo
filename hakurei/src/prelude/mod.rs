@@ -7,7 +7,7 @@ pub use ash::vk::VertexInputRate;
 
 // core module
 pub use core::swapchain::HaSwapchain;
-pub use core::device::HaLogicalDevice;
+pub use core::device::HaDevice;
 
 // procedure module
 pub use procedure::window::ProgramEnv;

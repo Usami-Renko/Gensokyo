@@ -3,7 +3,7 @@ use ash::vk;
 use ash::vk::uint32_t;
 use ash::version::DeviceV1_0;
 
-use core::device::HaLogicalDevice;
+use core::device::HaDevice;
 
 use resources::buffer::{ HaBuffer, BufferSubItem, BufferUsageFlag };
 use resources::buffer::BufferGenerator;
@@ -46,7 +46,7 @@ impl HaMemoryAbstract for HaDeviceMemory {
         [MemoryPropertyFlag::DeviceLocalBit].flags()
     }
 
-    fn allocate(device: &HaLogicalDevice, size: vk::DeviceSize, mem_type_index: usize, mem_type: Option<vk::MemoryType>) -> Result<Self, MemoryError> {
+    fn allocate(device: &HaDevice, size: vk::DeviceSize, mem_type_index: usize, mem_type: Option<vk::MemoryType>) -> Result<Self, MemoryError> {
 
         let allocate_info = vk::MemoryAllocateInfo {
             s_type: vk::StructureType::MemoryAllocateInfo,
@@ -70,7 +70,7 @@ impl HaMemoryAbstract for HaDeviceMemory {
         Ok(memory)
     }
 
-    fn enable_map(&mut self, _: &HaLogicalDevice, _: bool) -> Result<(), MemoryError> {
+    fn enable_map(&mut self, _: &HaDevice, _: bool) -> Result<(), MemoryError> {
         // leave it empty
         Ok(())
     }
@@ -78,7 +78,7 @@ impl HaMemoryAbstract for HaDeviceMemory {
 
 impl MemoryDataTransferable for HaDeviceMemory {
 
-    fn prepare_data_transfer(&mut self, device: &HaLogicalDevice) -> Result<(), MemoryError> {
+    fn prepare_data_transfer(&mut self, device: &HaDevice) -> Result<(), MemoryError> {
 
         self.staging.generate_repository(device)?;
         if let Some(ref mut memory) = self.staging.memory {
@@ -109,7 +109,7 @@ impl MemoryDataTransferable for HaDeviceMemory {
         }
     }
 
-    fn terminate_transfer(&mut self, device: &HaLogicalDevice, ranges_to_flush: &Vec<MemoryRange>) -> Result<(), MemoryError> {
+    fn terminate_transfer(&mut self, device: &HaDevice, ranges_to_flush: &Vec<MemoryRange>) -> Result<(), MemoryError> {
 
         if let Some(ref mut memory) = self.staging.memory {
             memory.terminate_transfer(device, ranges_to_flush)?;
@@ -157,7 +157,7 @@ impl StagingRepository {
         }
     }
 
-    fn generate_repository(&mut self, device: &HaLogicalDevice) -> Result<(), MemoryError> {
+    fn generate_repository(&mut self, device: &HaDevice) -> Result<(), MemoryError> {
 
         // set buffer usage to transfer source.
         self.allo_infos.configs.iter_mut().for_each(|info| {
@@ -194,7 +194,7 @@ impl StagingRepository {
         Ok(())
     }
 
-    fn cleanup(&mut self, device: &HaLogicalDevice) {
+    fn cleanup(&mut self, device: &HaDevice) {
 
         for buffer in self.buffers.iter() {
             buffer.cleanup(device);
