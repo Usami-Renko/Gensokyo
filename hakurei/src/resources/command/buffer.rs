@@ -50,8 +50,11 @@ pub struct HaCommandBuffer {
 
 impl<'buffer> HaCommandBuffer {
 
-    pub fn setup_record(&'buffer self)
-        -> HaCommandRecorder<'buffer> {
+    pub(crate) fn new(device: &HaDevice, handle: vk::CommandBuffer, usage: CommandBufferUsage) -> HaCommandBuffer {
+        HaCommandBuffer { device: device.clone(), handle, usage, }
+    }
+
+    pub fn setup_record(&'buffer self) -> HaCommandRecorder<'buffer> {
 
         HaCommandRecorder {
             buffer: self,

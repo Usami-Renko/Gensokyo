@@ -50,4 +50,5 @@ pub use resources::repository::{
 pub use resources::toolkit::{
     AllocatorKit, // allocator
     PipelineKit,  // pipeline
+    CommandKit,   // command
 };

@@ -9,7 +9,7 @@ use core::device::{ HaDevice, HaLogicalDevice, LogicalDeviceBuilder };
 use core::swapchain::HaSwapchain;
 use core::swapchain::SwapchainBuilder;
 use core::swapchain::{ SwapchainError, SwapchainRuntimeError };
-use resources::toolkit::{ AllocatorKit, PipelineKit };
+use resources::toolkit::{ AllocatorKit, PipelineKit, CommandKit };
 use sync::fence::HaFence;
 use sync::semaphore::HaSemaphore;
 
@@ -26,12 +26,12 @@ pub trait ProgramProc {
     fn assets(&mut self, device: &HaDevice, kit: AllocatorKit) -> Result<(), ProcedureError>;
     fn pipelines(&mut self, kit: PipelineKit, swapchain: &HaSwapchain) -> Result<(), ProcedureError>;
     fn subresources(&mut self, _device: &HaDevice) -> Result<(), ProcedureError> { Ok(())}
-    fn commands(&mut self, device: &HaDevice) -> Result<(), ProcedureError>;
+    fn commands(&mut self, kit: CommandKit) -> Result<(), ProcedureError>;
     fn ready(&mut self, _device: &HaDevice) -> Result<(), ProcedureError> { Ok(()) }
     fn draw(&mut self, device: &HaDevice, device_available: &HaFence, image_available: &HaSemaphore, image_index: usize, delta_time: f32) -> Result<&HaSemaphore, ProcedureError>;
     fn closure(&mut self, _device: &HaDevice) -> Result<(), ProcedureError> { Ok(()) }
-    fn clean_resources(&mut self, device: &HaDevice) -> Result<(), ProcedureError>;
-    fn cleanup(&mut self, device: &HaDevice);
+    fn clean_resources(&mut self) -> Result<(), ProcedureError>;
+    fn cleanup(&mut self);
 
     fn react_input(&mut self, inputer: &ActionNerve, delta_time: f32) -> SceneAction;
 }
@@ -90,7 +90,7 @@ impl<'win, T> ProgramEnv<T> where T: ProgramProc {
         self.procedure.assets(&core.device, AllocatorKit::init(&core.physical, &core.device))?;
         self.procedure.pipelines(PipelineKit::init(&core.device), &inner_resource.swapchain)?;
         self.procedure.subresources(&core.device)?;
-        self.procedure.commands(&core.device,)?;
+        self.procedure.commands(CommandKit::init(&core.device))?;
 
         Ok(inner_resource)
     }
@@ -101,7 +101,7 @@ impl<'win, T> ProgramEnv<T> where T: ProgramProc {
 
         self.procedure.pipelines(PipelineKit::init(&core.device), &inner_resource.swapchain)?;
         self.procedure.subresources(&core.device)?;
-        self.procedure.commands(&core.device,)?;
+        self.procedure.commands(CommandKit::init(&core.device))?;
 
         Ok(inner_resource)
     }

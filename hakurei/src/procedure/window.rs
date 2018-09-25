@@ -69,7 +69,7 @@ impl<T> ProgramEnv<T> where T: ProgramProc {
                 | Err(error) => match error {
                     | ProcedureError::SwapchainRecreate => {
                         self.wait_idle(&core.device)?;
-                        self.procedure.clean_resources(&core.device)?;
+                        self.procedure.clean_resources()?;
                         let new_resources = self.reload_resources(&core, &resources)?;
                         resources.cleanup(&core.device);
                         resources.clear();
@@ -87,7 +87,7 @@ impl<T> ProgramEnv<T> where T: ProgramProc {
 
         self.wait_idle(&core.device)?;
 
-        self.procedure.cleanup(&core.device);
+        self.procedure.cleanup();
         resources.cleanup(&core.device);
         core.cleanup();
 

@@ -175,7 +175,7 @@ impl<'a, 'b> LogicalDeviceBuilder<'a, 'b> {
         }
 
         if VERBOSE {
-            self.print_queue_infos(&queue_create_infos, &queue_info_tmps);
+            print_queue_infos(&queue_create_infos, &queue_info_tmps);
         }
 
         (queue_create_infos, queue_info_tmps)
@@ -249,19 +249,19 @@ impl<'a, 'b> LogicalDeviceBuilder<'a, 'b> {
 
         Ok(device)
     }
+}
 
-    fn print_queue_infos(&self, family_infos: &Vec<vk::DeviceQueueCreateInfo>, queue_infos: &Vec<QueueInfoTmp>) {
+fn print_queue_infos(family_infos: &Vec<vk::DeviceQueueCreateInfo>, queue_infos: &Vec<QueueInfoTmp>) {
 
-        println!("[Info] Generate Queue Family: {}", family_infos.len());
-        println!("\tfamily index | queue count | priorities");
-        for family_info in family_infos.iter() {
-            println!("\t{:12} | {:11} | {:?}", family_info.queue_family_index, family_info.queue_count, family_info.p_queue_priorities);
-        }
+    println!("[Info] Generate Queue Family: {}", family_infos.len());
+    println!("\tfamily index | queue count | priorities");
+    for family_info in family_infos.iter() {
+        println!("\t{:12} | {:11} | {:?}", family_info.queue_family_index, family_info.queue_count, family_info.p_queue_priorities);
+    }
 
-        println!("[Info] Generate Queue: {}", queue_infos.len());
-        println!("\tpriority | family index | queue index | usage");
-        for queue_info in queue_infos.iter() {
-            println!("\t{:8} | {:12} | {:11} | {:?}", queue_info.priority, queue_info.family_index, queue_info.queue_index, queue_info.usage);
-        }
+    println!("[Info] Generate Queue: {}", queue_infos.len());
+    println!("\tpriority | family index | queue index | usage");
+    for queue_info in queue_infos.iter() {
+        println!("\t{:8} | {:12} | {:11} | {:?}", queue_info.priority, queue_info.family_index, queue_info.queue_index, queue_info.usage);
     }
 }

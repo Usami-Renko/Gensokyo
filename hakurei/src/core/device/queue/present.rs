@@ -30,4 +30,3 @@ impl HaQueueAbstract for HaPresentQueue {
         // nothing to clean
     }
 }
-

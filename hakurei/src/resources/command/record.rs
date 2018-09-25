@@ -150,7 +150,7 @@ impl<'buffer> HaCommandRecorder<'buffer> {
         self
     }
 
-    pub fn finish(&self) -> Result<(), CommandError> {
+    pub fn end_record(&self) -> Result<(), CommandError> {
         let _ = unsafe {
             self.device.handle.end_command_buffer(self.buffer.handle)
                 .or(Err(CommandError::RecordEndError))?

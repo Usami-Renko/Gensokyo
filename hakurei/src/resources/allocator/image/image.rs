@@ -210,7 +210,7 @@ impl HaImageAllocator {
 
 
             // 9.submit command buffer
-            recorder.finish()?;
+            recorder.end_record()?;
         }
 
         transfer.excute()?;
@@ -220,7 +220,7 @@ impl HaImageAllocator {
 
         // finial done.
         let image_ownership_transfer = self.images.drain(..).collect();
-        let repository = HaImageRepository::store(image_ownership_transfer, views, memory);
+        let repository = HaImageRepository::store(&self.device, image_ownership_transfer, views, memory);
         Ok(repository)
     }
 

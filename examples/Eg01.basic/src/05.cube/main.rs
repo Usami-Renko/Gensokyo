@@ -222,13 +222,14 @@ impl ProgramProc for CubeProcedure {
         Ok(())
     }
 
-    fn commands(&mut self, device: &HaDevice) -> Result<(), ProcedureError> {
+    fn commands(&mut self, kit: CommandKit) -> Result<(), ProcedureError> {
+
         // command buffer
-        let command_pool = HaCommandPool::setup(&device, DeviceQueueIdentifier::Graphics, &[])?;
+        let command_pool = kit.pool(DeviceQueueIdentifier::Graphics)?;
 
         let command_buffer_count = self.graphics_pipeline.frame_count();
         let command_buffers = command_pool
-            .allocate(device, CommandBufferUsage::UnitaryCommand, command_buffer_count)?;
+            .allocate(CommandBufferUsage::UnitaryCommand, command_buffer_count)?;
 
         for (frame_index, command_buffer) in command_buffers.iter().enumerate() {
             let recorder = command_buffer.setup_record();
@@ -241,7 +242,7 @@ impl ProgramProc for CubeProcedure {
                 .bind_descriptor_sets(&self.graphics_pipeline, 0, &self.ubo_storage.descriptor_binding_infos(&[&self.ubo_set]))
                 .draw_indexed(self.index_data.len() as uint32_t, 1, 0, 0, 0)
                 .end_render_pass()
-                .finish()?;
+                .end_record()?;
         }
         self.command_pool    = command_pool;
         self.command_buffers = command_buffers;
@@ -281,7 +282,7 @@ impl ProgramProc for CubeProcedure {
         Ok(())
     }
 
-    fn clean_resources(&mut self, device: &HaDevice) -> Result<(), ProcedureError> {
+    fn clean_resources(&mut self) -> Result<(), ProcedureError> {
 
         for semaphore in self.present_availables.iter() {
             semaphore.cleanup();
@@ -290,19 +291,19 @@ impl ProgramProc for CubeProcedure {
         self.command_buffers.clear();
 
         self.graphics_pipeline.cleanup();
-        self.command_pool.cleanup(device);
+        self.command_pool.cleanup();
 
         Ok(())
     }
 
-    fn cleanup(&mut self, device: &HaDevice) {
+    fn cleanup(&mut self) {
 
         for semaphore in self.present_availables.iter() {
             semaphore.cleanup();
         }
 
         self.graphics_pipeline.cleanup();
-        self.command_pool.cleanup(device);
+        self.command_pool.cleanup();
         self.ubo_storage.cleanup();
         self.ubo_buffer.cleanup();
         self.buffer_storage.cleanup();
