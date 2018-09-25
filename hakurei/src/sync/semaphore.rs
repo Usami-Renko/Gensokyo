@@ -11,18 +11,11 @@ use std::ptr;
 
 pub struct HaSemaphore {
 
-    device: Option<HaDevice>,
+    device: HaDevice,
     pub(crate) handle: vk::Semaphore,
 }
 
 impl HaSemaphore {
-
-    pub fn uninitialize() -> HaSemaphore {
-        HaSemaphore {
-            device: None,
-            handle: vk::Semaphore::null(),
-        }
-    }
 
     pub fn setup(device: &HaDevice) -> Result<HaSemaphore, SyncError> {
 
@@ -39,7 +32,7 @@ impl HaSemaphore {
         };
 
         let semaphore = HaSemaphore {
-            device: Some(device.clone()),
+            device: device.clone(),
             handle,
         };
         Ok(semaphore)
@@ -52,7 +45,7 @@ impl HaSemaphore {
 
     pub fn cleanup(&self) {
         unsafe {
-            self.device.as_ref().unwrap().handle.destroy_semaphore(self.handle, None);
+            self.device.handle.destroy_semaphore(self.handle, None);
         }
     }
 }

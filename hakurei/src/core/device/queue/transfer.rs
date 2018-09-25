@@ -9,13 +9,12 @@ use core::device::{ HaLogicalDevice, HaDevice, HaQueue };
 use core::device::queue::HaQueueAbstract;
 use core::error::LogicalDeviceError;
 
-use resources::command::{ HaCommandPool, CommandPoolFlag };
-use resources::command::{ HaCommandBuffer, CommandBufferUsage };
+use resources::command::{ HaCommandBuffer, CommandBufferUsage, CommandPoolFlag };
 use resources::error::{ CommandError, AllocatorError };
 
 use sync::fence::HaFence;
 
-use utility::marker::Handles;
+use utility::marker::{ VulkanFlags, Handles };
 use utility::time::TimePeriod;
 
 use std::ptr;
@@ -23,7 +22,7 @@ use std::ptr;
 pub struct HaTransferQueue {
 
     pub queue: HaQueue,
-    pool : HaCommandPool,
+    pool : TransferCommandPool,
 
     transfer_wait_time: TimePeriod,
 }
@@ -32,11 +31,7 @@ impl HaQueueAbstract for HaTransferQueue {
 
     fn new(device: &DeviceV1, queue: HaQueue, config: &CoreConfig) -> Result<Self, LogicalDeviceError> {
 
-        let pool = HaCommandPool::setup_from_handle(device, &queue, &[
-            // the command buffer will be short-live, so use TransientBit.
-            CommandPoolFlag::TransientBit,
-            // TODO: Consider CommandPoolFlag::ResetCommandBufferBit.
-        ])?;
+        let pool = TransferCommandPool::setup(device, &queue)?;
 
         let transfer_queue = HaTransferQueue { queue, pool, transfer_wait_time: config.transfer_wait_time, };
         Ok(transfer_queue)
@@ -47,7 +42,7 @@ impl HaQueueAbstract for HaTransferQueue {
     }
 
     fn cleanup(&self, device: &HaLogicalDevice) {
-        self.pool.cleanup_raw(device);
+        self.pool.cleanup(device);
     }
 }
 
@@ -81,7 +76,7 @@ impl HaTransfer {
     pub fn commands(&mut self, count: usize) -> Result<&[HaCommandBuffer], CommandError> {
 
         // just use a single primary command buffer for transferation.
-        let mut new_commands = self.device.transfer_queue.pool.allocate(&self.device, CommandBufferUsage::UnitaryCommand, count)?;
+        let mut new_commands = self.device.transfer_queue.pool.allocate(&self.device, count)?;
         let start_index = self.command_buffers.len();
         self.command_buffers.append(&mut new_commands);
 
@@ -91,7 +86,7 @@ impl HaTransfer {
 
     pub fn command(&mut self) -> Result<&HaCommandBuffer, CommandError> {
 
-        let mut new_commands = self.device.transfer_queue.pool.allocate(&self.device, CommandBufferUsage::UnitaryCommand, 1)?;
+        let mut new_commands = self.device.transfer_queue.pool.allocate(&self.device, 1)?;
         self.command_buffers.append(&mut new_commands);
         Ok(&self.command_buffers.last().unwrap())
     }
@@ -136,5 +131,75 @@ impl Drop for HaTransfer {
     fn drop(&mut self) {
 
         self.fence.cleanup();
+    }
+}
+
+
+
+
+
+struct TransferCommandPool {
+
+    handle: vk::CommandPool,
+}
+
+impl TransferCommandPool {
+
+    fn setup(device: &DeviceV1, queue: &HaQueue) -> Result<TransferCommandPool, CommandError> {
+
+        let info = vk::CommandPoolCreateInfo {
+            s_type: vk::StructureType::CommandPoolCreateInfo,
+            p_next: ptr::null(),
+            // TODO: Consider CommandPoolFlag::ResetCommandBufferBit.
+            // the command buffer will be short-live, so use TransientBit.
+            flags: [CommandPoolFlag::TransientBit].flags(),
+            queue_family_index: queue.family_index,
+        };
+
+        let handle = unsafe {
+            device.create_command_pool(&info, None)
+                .or(Err(CommandError::PoolCreationError))?
+        };
+
+        let pool = TransferCommandPool { handle, };
+        Ok(pool)
+    }
+
+    fn allocate(&self, device: &HaDevice, count: usize) -> Result<Vec<HaCommandBuffer>, CommandError> {
+
+        let allocate_info = vk::CommandBufferAllocateInfo {
+            s_type: vk::StructureType::CommandBufferAllocateInfo,
+            p_next: ptr::null(),
+            command_pool: self.handle,
+            level: vk::CommandBufferLevel::Primary,
+            command_buffer_count: count as uint32_t,
+        };
+
+        let handles = unsafe {
+            device.handle.allocate_command_buffers(&allocate_info)
+                .or(Err(CommandError::BufferAllocateError))?
+        };
+
+        let buffers = handles.iter()
+            .map(|&handle|
+                HaCommandBuffer::new(&device, handle, CommandBufferUsage::UnitaryCommand)
+            ).collect();
+
+        Ok(buffers)
+    }
+
+    fn free(&self, device: &HaDevice, buffers_to_free: &[HaCommandBuffer]) {
+        let buffer_handles = buffers_to_free.handles();
+
+        unsafe {
+            device.handle.free_command_buffers(self.handle, &buffer_handles);
+        }
+    }
+
+    fn cleanup(&self, device: &HaLogicalDevice) {
+
+        unsafe {
+            device.handle.destroy_command_pool(self.handle, None);
+        }
     }
 }

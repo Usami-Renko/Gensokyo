@@ -177,7 +177,7 @@ impl HaBufferRepository {
                 recorder.copy_buffer(from.handle, to.handle, &copy_region);
             }
 
-            recorder.finish()?;
+            recorder.end_record()?;
         }
 
         transfer.excute()?;
