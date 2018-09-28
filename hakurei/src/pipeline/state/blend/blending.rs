@@ -58,8 +58,8 @@ impl HaBlend {
     }
 
     pub(crate) fn info(&self) -> vk::PipelineColorBlendStateCreateInfo {
-        let attchement_infos: Vec<vk::PipelineColorBlendAttachmentState> = self.attachments.iter()
-            .map(|a| a.state()).collect();
+        let attchement_infos = self.attachments.iter()
+            .map(|a| a.state()).collect::<Vec<_>>();
 
         vk::PipelineColorBlendStateCreateInfo {
             s_type : vk::StructureType::PipelineColorBlendStateCreateInfo,

@@ -5,7 +5,7 @@ use ash::version::DeviceV1_0;
 
 use core::device::HaDevice;
 use resources::buffer::HaBuffer;
-use resources::buffer::{ DeviceBufferConfig, HostBufferConfig };
+use resources::buffer::{ HostBufferConfig, CachedBufferConfig, DeviceBufferConfig, StagingBufferConfig };
 use resources::buffer::{ BufferCreateFlag, BufferUsageFlag };
 use resources::error::BufferError;
 use utility::marker::{ VulkanFlags, VulkanEnum };
@@ -15,9 +15,9 @@ use std::ptr;
 pub trait BufferConfigModifiable {
 
     fn set_flags(&mut self, flags: &[BufferCreateFlag]);
+    /// estimate_size is the size in bytes of the buffer to be created. size must be greater than 0.
     fn add_item(&mut self, estimate_size: vk::DeviceSize) -> usize;
 }
-
 
 impl BufferConfigModifiable for HostBufferConfig {
 
@@ -25,7 +25,21 @@ impl BufferConfigModifiable for HostBufferConfig {
         self.flags = flags.flags();
     }
 
-    /// estimate_size is the size in bytes of the buffer to be created. size must be greater than 0.
+    fn add_item(&mut self, estimate_size: vk::DeviceSize) -> usize {
+        let item_index = self.items_size.len();
+        self.total_size += estimate_size;
+        self.items_size.push(estimate_size);
+
+        item_index
+    }
+}
+
+impl BufferConfigModifiable for CachedBufferConfig {
+
+    fn set_flags(&mut self, flags: &[BufferCreateFlag]) {
+        self.flags = flags.flags();
+    }
+
     fn add_item(&mut self, estimate_size: vk::DeviceSize) -> usize {
         let item_index = self.items_size.len();
         self.total_size += estimate_size;
@@ -41,7 +55,21 @@ impl BufferConfigModifiable for DeviceBufferConfig {
         self.flags = flags.flags();
     }
 
-    /// estimate_size is the size in bytes of the buffer to be created. size must be greater than 0.
+    fn add_item(&mut self, estimate_size: vk::DeviceSize) -> usize {
+        let item_index = self.items_size.len();
+        self.total_size += estimate_size;
+        self.items_size.push(estimate_size);
+
+        item_index
+    }
+}
+
+impl BufferConfigModifiable for StagingBufferConfig {
+
+    fn set_flags(&mut self, flags: &[BufferCreateFlag]) {
+        self.flags = flags.flags();
+    }
+
     fn add_item(&mut self, estimate_size: vk::DeviceSize) -> usize {
         let item_index = self.items_size.len();
         self.total_size += estimate_size;
@@ -99,7 +127,20 @@ pub(crate) trait BufferGenerator {
 impl BufferGenerator for HostBufferConfig {
 
     fn flags(&self) -> vk::BufferCreateFlags { self.flags }
-    fn usage(&self) -> vk::BufferUsageFlags  { self.usage }
+    fn usage(&self) -> vk::BufferUsageFlags  {
+        // No other specific flag for HostBufferConfig.
+        self.usage
+    }
+    fn total_size(&self) -> vk::DeviceSize { self.total_size }
+}
+
+impl BufferGenerator for CachedBufferConfig {
+
+    fn flags(&self) -> vk::BufferCreateFlags { self.flags }
+    fn usage(&self) -> vk::BufferUsageFlags  {
+        // Cached Buffer always need to be transfer dst.
+        self.usage | BufferUsageFlag::TransferDstBit.value()
+    }
     fn total_size(&self) -> vk::DeviceSize { self.total_size }
 }
 
@@ -109,6 +150,16 @@ impl BufferGenerator for DeviceBufferConfig {
     fn usage(&self) -> vk::BufferUsageFlags  {
         // Device Buffer always need to be transfer dst.
         self.usage | BufferUsageFlag::TransferDstBit.value()
+    }
+    fn total_size(&self) -> vk::DeviceSize { self.total_size }
+}
+
+impl BufferGenerator for StagingBufferConfig {
+
+    fn flags(&self) -> vk::BufferCreateFlags { self.flags }
+    fn usage(&self) -> vk::BufferUsageFlags {
+        // Staging Buffer always need to be transfer src.
+        self.usage | BufferUsageFlag::TransferSrcBit.value()
     }
     fn total_size(&self) -> vk::DeviceSize { self.total_size }
 }

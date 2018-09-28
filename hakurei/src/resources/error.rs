@@ -87,6 +87,7 @@ pub enum MemoryError {
     MapMemoryError,
     FlushMemoryError,
     BufferToBufferCopyError,
+    AllocateInfoMissing,
 }
 
 impl Error for MemoryError {}
@@ -102,6 +103,7 @@ impl fmt::Display for MemoryError {
             | MemoryError::MapMemoryError            => "Failed to map memory for buffer object.",
             | MemoryError::FlushMemoryError          => "Failed to flush certain range of memory.",
             | MemoryError::BufferToBufferCopyError   => "Failed to copy buffer from another buffer",
+            | MemoryError::AllocateInfoMissing       => "The allocate info is missing, check the logic of code.",
         };
         write!(f, "{}", description)
     }

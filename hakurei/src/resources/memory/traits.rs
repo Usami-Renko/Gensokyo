@@ -3,18 +3,19 @@ use ash::vk;
 use ash::version::DeviceV1_0;
 
 use core::device::HaDevice;
+use core::physical::HaPhyDevice;
 
 use resources::buffer::{ HaBuffer, BufferSubItem };
-use resources::memory::MemoryPropertyFlag;
+use resources::memory::{ HaMemoryType, MemPtr, MemoryRange, UploadStagingResource };
+use resources::allocator::BufferAllocateInfos;
 use resources::image::HaImage;
 use resources::error::MemoryError;
 
 use utility::memory::MemoryWritePtr;
-use utility::marker::VulkanFlags;
 
-// TODO: Split HaMemoryAbstract into small trait.
+use std::ptr;
 
-pub(crate) trait HaMemoryAbstract: MemoryDataTransferable {
+pub(crate) trait HaMemoryAbstract: MemoryDataUploadable {
 
     fn handle(&self) -> vk::DeviceMemory;
     fn flag(&self) -> vk::MemoryPropertyFlags;
@@ -44,48 +45,103 @@ pub(crate) trait HaMemoryAbstract: MemoryDataTransferable {
         }
     }
 
-    fn enable_map(&mut self, device: &HaDevice, is_enable: bool) -> Result<(), MemoryError>;
-
     fn is_coherent_memroy(&self) -> bool {
         self.flag().subset(vk::MEMORY_PROPERTY_HOST_COHERENT_BIT)
     }
 }
 
-pub(crate) trait MemoryDataTransferable {
+/// A trait indicate a Memory is able to map.
+pub(crate) trait MemoryMapable: HaMemoryAbstract {
 
-    // data transfer
-    // only use the following theree function for first time data transfer.
-    fn prepare_data_transfer(&mut self, device: &HaDevice) -> Result<(), MemoryError>;
+    /// Map specific range of the memory.
+    ///
+    /// If range is None, the function will map the whole memory.
+    fn map_range(&self, device: &HaDevice, range: Option<MemoryRange>) -> Result<MemPtr, MemoryError> {
 
-    fn map_memory_ptr(&mut self, item: &BufferSubItem, offset: vk::DeviceSize) -> Result<(MemoryWritePtr, MemoryRange), MemoryError>;
-
-    fn terminate_transfer(&mut self, device: &HaDevice, ranges_to_flush: &Vec<MemoryRange>) -> Result<(), MemoryError>;
-}
-
-pub struct MemoryRange {
-
-    pub offset: vk::DeviceSize,
-    pub size  : vk::DeviceSize,
-}
-
-pub(crate) enum HaMemoryType {
-    HostMemory,
-    DeviceMemory,
-}
-
-impl HaMemoryType {
-
-    pub fn image_property_flag(&self) -> vk::MemoryPropertyFlags {
-        match self {
-            | HaMemoryType::HostMemory => {
-                [
-                    MemoryPropertyFlag::HostVisibleBit,
-                    MemoryPropertyFlag::HostCoherentBit,
-                ].flags()
-            },
-            | HaMemoryType::DeviceMemory => {
-                [MemoryPropertyFlag::DeviceLocalBit].flags()
+        let data_ptr = unsafe {
+            if let Some(range) = range {
+                device.handle.map_memory(
+                    self.handle(),
+                    // zero-based byte offset from the beginning of the memory object.
+                    range.offset,
+                    // the size of the memory range to map, or VK_WHOLE_SIZE to map from offset to the end of the allocation.
+                    range.size,
+                    // flags is reserved for future use in API version 1.1.82.
+                    vk::MemoryMapFlags::empty(),
+                ).or(Err(MemoryError::MapMemoryError))?
+            } else {
+                device.handle.map_memory(self.handle(), 0, vk::VK_WHOLE_SIZE, vk::MemoryMapFlags::empty())
+                    .or(Err(MemoryError::MapMemoryError))?
             }
+        };
+
+        Ok(data_ptr)
+    }
+
+    fn flush_ranges(&self, device: &HaDevice, ranges: &Vec<MemoryRange>) -> Result<(), MemoryError> {
+
+        let flush_ranges = ranges.iter()
+            .map(|range| {
+                vk::MappedMemoryRange {
+                    s_type: vk::StructureType::MappedMemoryRange,
+                    p_next: ptr::null(),
+                    memory: self.handle(),
+                    offset: range.offset,
+                    size  : range.size,
+                }
+            }).collect::<Vec<_>>();
+
+        unsafe {
+            device.handle.flush_mapped_memory_ranges(&flush_ranges)
+                .or(Err(MemoryError::FlushMemoryError))
+        }
+    }
+
+    fn unmap(&self, device: &HaDevice) {
+
+        unsafe {
+            device.handle.unmap_memory(self.handle())
         }
     }
 }
+
+pub(crate) trait MemoryDataUploadable {
+
+    fn prepare_data_transfer(&mut self, physical: &HaPhyDevice, device: &HaDevice, allocate_infos: &Option<BufferAllocateInfos>) -> Result<Option<UploadStagingResource>, MemoryError> {
+
+        let staging = UploadStagingResource::new(physical, device, allocate_infos)?;
+
+        Ok(Some(staging))
+    }
+
+    fn map_memory_ptr(&mut self, staging: &mut Option<UploadStagingResource>, item: &BufferSubItem, _offset: vk::DeviceSize) -> Result<(MemoryWritePtr, MemoryRange), MemoryError> {
+
+        if let Some(ref mut staging) = staging {
+
+            let result = staging.append_dst_item(item)?;
+            Ok(result)
+        } else {
+            Err(MemoryError::AllocateInfoMissing)
+        }
+    }
+
+    fn terminate_transfer(&mut self, device: &HaDevice, staging: &Option<UploadStagingResource>, _ranges_to_flush: &Vec<MemoryRange>) -> Result<(), MemoryError> {
+
+        if let Some(staging) = staging {
+            staging.transfer(device)
+                .or(Err(MemoryError::BufferToBufferCopyError))?
+        } else {
+            return Err(MemoryError::AllocateInfoMissing)
+        }
+
+        Ok(())
+    }
+}
+
+
+// TODO: Implement MemoryDataUpdatable.
+//
+//pub(crate) trait MemoryDataUpdatable {
+//
+//
+//}

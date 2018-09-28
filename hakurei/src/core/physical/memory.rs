@@ -39,7 +39,7 @@ impl PhysicalMemory {
                 }
             }
         } else {
-            let candidates: Vec<usize> = (0..self.types.len()).collect();
+            let candidates = (0..self.types.len()).collect::<Vec<_>>();
 
             for &i in candidates.iter() {
                 if (type_filter & (1 << i)) > 0 && self.types[i].property_flags.subset(require_flags) {

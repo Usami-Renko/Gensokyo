@@ -17,7 +17,7 @@ use utility::memory::MemoryWritePtr;
 
 use std::ptr;
 
-pub struct HaHostMemory {
+pub struct HaStagingMemory {
 
     handle     : vk::DeviceMemory,
     _size      : vk::DeviceSize,
@@ -26,9 +26,9 @@ pub struct HaHostMemory {
     map_status : MemoryMapStatus,
 }
 
-impl MemoryMapable for HaHostMemory {}
+impl MemoryMapable for HaStagingMemory {}
 
-impl HaMemoryAbstract for HaHostMemory {
+impl HaMemoryAbstract for HaStagingMemory {
 
     fn handle(&self) -> vk::DeviceMemory {
         self.handle
@@ -41,14 +41,14 @@ impl HaMemoryAbstract for HaHostMemory {
     }
 
     fn memory_type(&self) -> HaMemoryType {
-        HaMemoryType::HostMemory
+        HaMemoryType::StagingMemory
     }
 
     fn default_flag() -> vk::MemoryPropertyFlags {
-        HaMemoryType::HostMemory.property_flags()
+        HaMemoryType::StagingMemory.property_flags()
     }
 
-    fn allocate(device: &HaDevice, size: vk::DeviceSize, mem_type_index: usize, mem_type: Option<vk::MemoryType>) -> Result<HaHostMemory, MemoryError> {
+    fn allocate(device: &HaDevice, size: vk::DeviceSize, mem_type_index: usize, mem_type: Option<vk::MemoryType>) -> Result<HaStagingMemory, MemoryError> {
 
         let allocate_info = vk::MemoryAllocateInfo {
             s_type: vk::StructureType::MemoryAllocateInfo,
@@ -63,7 +63,7 @@ impl HaMemoryAbstract for HaHostMemory {
                 .or(Err(MemoryError::AllocateMemoryError))?
         };
 
-        let memory = HaHostMemory {
+        let memory = HaStagingMemory {
             handle,
             _size: size,
             mem_type,
@@ -71,21 +71,34 @@ impl HaMemoryAbstract for HaHostMemory {
         };
         Ok(memory)
     }
+}
 
-    fn cleanup(&self, device: &HaDevice) {
+impl HaStagingMemory {
 
-        self.unmap(device);
+    fn enable_map(&mut self, device: &HaDevice, is_enable: bool) -> Result<(), MemoryError> {
 
-        unsafe {
-            device.handle.free_memory(self.handle(), None);
+        if is_enable {
+            if !self.map_status.is_map {
+                let ptr = self.map_range(device, None)?;
+                self.map_status.set_map(ptr);
+            }
+        } else {
+            if self.map_status.is_map {
+                self.unmap(device);
+                self.map_status.invaild_map();
+            }
         }
+
+        Ok(())
     }
 }
 
-impl MemoryDataUploadable for HaHostMemory {
 
-    fn prepare_data_transfer(&mut self, _: &HaPhyDevice, _: &HaDevice, _: &Option<BufferAllocateInfos>) -> Result<Option<UploadStagingResource>, MemoryError> {
+impl MemoryDataUploadable for HaStagingMemory {
 
+    fn prepare_data_transfer(&mut self, _: &HaPhyDevice, device: &HaDevice, _: &Option<BufferAllocateInfos>) -> Result<Option<UploadStagingResource>, MemoryError> {
+
+        self.enable_map(device, true)?;
         Ok(None)
     }
 
@@ -107,18 +120,7 @@ impl MemoryDataUploadable for HaHostMemory {
             self.flush_ranges(device, ranges_to_flush)?;
         }
 
-        Ok(())
-    }
-}
-
-impl HaHostMemory {
-
-    pub fn map_whole(&mut self, device: &HaDevice) -> Result<(), MemoryError> {
-
-        if !self.map_status.is_map {
-            let ptr = self.map_range(device, None)?;
-            self.map_status.set_map(ptr);
-        }
+        self.enable_map(device, false)?;
 
         Ok(())
     }

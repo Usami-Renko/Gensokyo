@@ -30,8 +30,8 @@ impl<'i> FramebufferBuilder<'i> {
     }
 
     pub fn build(&self, device: &HaDevice, render_pass: vk::RenderPass) -> Result<HaFramebuffer, FramebufferError> {
-        let attachments: Vec<vk::ImageView> = self.attachments.iter()
-            .map(|a| a.handle).collect();
+        let attachments = self.attachments.iter()
+            .map(|a| a.handle).collect::<Vec<_>>();
 
         let info = vk::FramebufferCreateInfo {
             s_type: vk::StructureType::FramebufferCreateInfo,

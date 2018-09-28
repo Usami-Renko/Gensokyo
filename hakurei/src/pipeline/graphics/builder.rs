@@ -143,8 +143,8 @@ impl GraphicsPipelineBuilder {
 
         for config in self.configs.iter() {
 
-            let shader_create_infos: Vec<vk::PipelineShaderStageCreateInfo> = config.shader_modules.iter()
-                .map(|m| m.info().clone()).collect();
+            let shader_create_infos = config.shader_modules.iter()
+                .map(|m| m.info().clone()).collect::<Vec<_>>();
             let tessellation_info = config.states.tessellation.as_ref()
                 .map_or(ptr::null(), |t| &t.info());
             let dynamic_info = config.states.dynamic.as_ref()

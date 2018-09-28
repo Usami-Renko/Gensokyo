@@ -48,8 +48,8 @@ impl HaShaderInfo {
 
         let spv = File::open(self.path.to_owned())
             .or(Err(ShaderError::SourceNotFoundError))?;
-        let bytes: Vec<u8> = spv.bytes()
-            .filter_map(|byte| byte.ok()).collect();
+        let bytes = spv.bytes()
+            .filter_map(|byte| byte.ok()).collect::<Vec<_>>();
 
         Ok(bytes)
     }
