@@ -16,7 +16,6 @@ use utility::cast;
 use config::VERBOSE;
 
 use std::ptr;
-use std::os::raw::c_char;
 
 // TODO: The generation step hasn't been well test.
 
@@ -193,7 +192,7 @@ impl<'a, 'b> LogicalDeviceBuilder<'a, 'b> {
 
         let enable_features = self.physical_device.features.get_enable_features();
         let enable_layer_names = cast::to_array_ptr(&self.instance.enable_layer_names);
-        let enable_extension_names: Vec<*const c_char> = cast::to_array_ptr(&self.physical_device.extensions.enables);
+        let enable_extension_names = cast::to_array_ptr(&self.physical_device.extensions.enables);
 
         let device_create_info = vk::DeviceCreateInfo {
             s_type                     : vk::StructureType::DeviceCreateInfo,

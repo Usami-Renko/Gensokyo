@@ -1,14 +1,14 @@
 
 pub use resources::allocator::{
-    HaDeviceBufferAllocator, HaHostBufferAllocator, HaBufferAllocatorAbstract, // buffer
+    HaHostBufferAllocator, HaDeviceBufferAllocator, HaCachedBufferAllocator, HaStagingBufferAllocator, HaBufferAllocatorAbstract, // buffer
     HaDescriptorAllocator, // descriptor
     HaImageAllocator,      // image
 };
 
 pub use resources::buffer::{
-    BufferCreateFlag, DeviceBufferUsage, HostBufferUsage, // flag
+    BufferCreateFlag, HostBufferUsage, CachedBufferUsage, DeviceBufferUsage, StagingBufferUsage, // flag
     BufferItem, BufferSubItem, // item
-    DeviceBufferConfig, HostBufferConfig, // config
+    HostBufferConfig, CachedBufferConfig, DeviceBufferConfig, StagingBufferConfig, // config
     BufferConfigModifiable, // traits
 };
 

@@ -49,10 +49,10 @@ impl PhysicalExtension {
 
         if requrie_extensions.is_empty() { return true }
 
-        let requrie_extension_names: Vec<CString> = requrie_extensions.iter()
-            .map(|e| e.name()).collect();
-        let available_extensions: Vec<CString> = self.handles.iter()
-            .map(|e| cast::vk_to_cstring(&e.extension_name)).collect();
+        let requrie_extension_names = requrie_extensions.iter()
+            .map(|e| e.name()).collect::<Vec<_>>();
+        let available_extensions = self.handles.iter()
+            .map(|e| cast::vk_to_cstring(&e.extension_name)).collect::<Vec<_>>();
 
         requrie_extension_names.iter().all(|test_extension| {
             available_extensions.iter().find(|&backup_extension| {

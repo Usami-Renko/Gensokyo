@@ -8,10 +8,10 @@ use core::physical::{ HaPhyDevice, MemorySelector };
 use resources::repository::HaImageRepository;
 use resources::image::{ ImageViewItem, ImageDescInfo, ImageViewDescInfo };
 use resources::image::{ HaImage, HaImageView };
-use resources::buffer::{ HostBufferConfig, HostBufferUsage, BufferSubItem };
+use resources::buffer::{ CachedBufferConfig, CachedBufferUsage, BufferSubItem };
 use resources::buffer::BufferConfigModifiable;
 use resources::image::{ ImageLayout, ImageStorageInfo, load_texture };
-use resources::allocator::{ HaHostBufferAllocator, HaBufferAllocatorAbstract };
+use resources::allocator::{ HaCachedBufferAllocator, HaBufferAllocatorAbstract };
 use resources::memory::{ HaMemoryAbstract, HaDeviceMemory, HaMemoryType };
 use resources::command::{ HaCommandRecorder, CommandBufferUsageFlag };
 use resources::error::{ ImageError, AllocatorError };
@@ -68,7 +68,7 @@ impl HaImageAllocator {
         let image = HaImage::config(&self.device, &image_desc, storage.dimension, storage.format)?;
 
         // create the buffer
-        let required_memory_flag = self.memory_type.image_property_flag();
+        let required_memory_flag = self.memory_type.property_flags();
         self.memory_selector.try(image.requirement.memory_type_bits, required_memory_flag)?;
 
         self.mem_flag = self.mem_flag | required_memory_flag;
@@ -92,8 +92,8 @@ impl HaImageAllocator {
         }
 
         // 1.create staging buffer and memories
-        let mut staging_allocator = HaHostBufferAllocator::new(&self.physical, &self.device);
-        let staging_buffer_config = HostBufferConfig::new(HostBufferUsage::VertexBuffer);
+        let mut staging_allocator = HaCachedBufferAllocator::new(&self.physical, &self.device);
+        let staging_buffer_config = CachedBufferConfig::new(CachedBufferUsage::VertexBuffer);
         let mut staging_buffer_items = vec![];
 
         for storage in self.storages.iter() {

@@ -2,10 +2,12 @@
 use ash::vk;
 
 use core::device::{ HaDevice, HaLogicalDevice };
+use core::physical::HaPhyDevice;
 
+use resources::allocator::BufferAllocateInfos;
 use resources::buffer::{ HaBuffer, BufferSubItem };
 use resources::command::CommandBufferUsageFlag;
-use resources::memory::{ HaMemoryAbstract, HaMemoryType };
+use resources::memory::HaMemoryAbstract;
 use resources::repository::{ BufferDataUploader, BufferDataUpdater };
 use resources::error::{ AllocatorError, MemoryError };
 
@@ -13,12 +15,15 @@ use utility::memory::spaces_to_offsets;
 
 pub struct HaBufferRepository {
 
-    device : Option<HaDevice>,
-    buffers: Vec<HaBuffer>,
-    memory : Option<Box<HaMemoryAbstract>>,
+    device  : Option<HaDevice>,
+    physical: Option<HaPhyDevice>,
+    buffers : Vec<HaBuffer>,
+    memory  : Option<Box<HaMemoryAbstract>>,
 
     /// The offset of each buffer in memory.
     offsets: Vec<vk::DeviceSize>,
+
+    allocate_infos: Option<BufferAllocateInfos>,
 }
 
 pub struct CmdVertexBindingInfos {
@@ -37,22 +42,27 @@ impl HaBufferRepository {
     pub fn empty() -> HaBufferRepository {
         HaBufferRepository {
 
-            device : None,
-            buffers: vec![],
-            memory : None,
+            device  : None,
+            physical: None,
+            buffers : vec![],
+            memory  : None,
 
             offsets: vec![],
+            allocate_infos: None,
         }
     }
 
-    pub(crate) fn store(device: &HaDevice, buffers: Vec<HaBuffer>, memory: Box<HaMemoryAbstract>, spaces: Vec<vk::DeviceSize>) -> HaBufferRepository {
+    pub(crate) fn store(device: &HaDevice, physical: &HaPhyDevice, buffers: Vec<HaBuffer>, memory: Box<HaMemoryAbstract>, allocate_infos: BufferAllocateInfos) -> HaBufferRepository {
 
-        let offsets = spaces_to_offsets(&spaces);
+        let offsets = spaces_to_offsets(&allocate_infos.spaces);
 
         HaBufferRepository {
-            device: Some(device.clone()),
-            memory: Some(memory),
+            device  : Some(device.clone()),
+            physical: Some(physical.clone()),
+            memory  : Some(memory),
+
             buffers, offsets,
+            allocate_infos: Some(allocate_infos),
         }
     }
 
@@ -60,7 +70,7 @@ impl HaBufferRepository {
 
         if let Some(ref mut memory) = self.memory {
 
-            BufferDataUploader::new(&self.device.as_ref().unwrap(), memory, &self.offsets)
+            BufferDataUploader::new(&self.physical.as_ref().unwrap(), &self.device.as_ref().unwrap(), memory, &self.offsets, &self.allocate_infos)
         } else {
             Err(AllocatorError::Memory(MemoryError::MemoryNotYetAllocateError))
         }
@@ -76,43 +86,6 @@ impl HaBufferRepository {
             Err(AllocatorError::Memory(MemoryError::MemoryNotYetAllocateError))
         }
     }
-
-    pub fn ready_update(&mut self, device: &HaDevice) -> Result<(), AllocatorError> {
-
-        if let Some(ref mut memory) = self.memory {
-            match memory.memory_type() {
-                | HaMemoryType::HostMemory => {
-                    memory.enable_map(device, true)?;
-                },
-                | HaMemoryType::DeviceMemory => {
-                    // currently nothing to do.
-                },
-            }
-        } else {
-            return Err(AllocatorError::Memory(MemoryError::MemoryNotYetAllocateError))
-        }
-
-        Ok(())
-    }
-
-    pub fn shut_update(&mut self, device: &HaDevice) -> Result<(), AllocatorError> {
-
-        if let Some(ref mut memory) = self.memory {
-            match memory.memory_type() {
-                | HaMemoryType::HostMemory => {
-                    memory.enable_map(device, false)?;
-                },
-                | HaMemoryType::DeviceMemory => {
-                    // currently nothing to do.
-                },
-            }
-        } else {
-            return Err(AllocatorError::Memory(MemoryError::MemoryNotYetAllocateError))
-        }
-
-        Ok(())
-    }
-
 
     pub fn vertex_binding_infos(&self, items: &[&BufferSubItem]) -> CmdVertexBindingInfos {
 
@@ -153,7 +126,6 @@ impl HaBufferRepository {
 
 impl HaBufferRepository {
 
-    // TODO: Make this function to support multiple buffer copy operation.
     pub fn copy_buffers_to_buffers(device: &HaDevice, from_items: &[BufferSubItem], to_items: &[BufferSubItem])
         -> Result<(), AllocatorError> {
 

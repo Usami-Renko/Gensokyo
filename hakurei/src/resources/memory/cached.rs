@@ -5,23 +5,21 @@ use ash::version::DeviceV1_0;
 
 use core::device::HaDevice;
 
-use resources::memory::{ HaMemoryAbstract, HaMemoryType, MemoryDataUploadable };
+use resources::memory::{ HaMemoryAbstract, HaMemoryType, MemoryDataUploadable, };
 use resources::error::MemoryError;
 
 use std::ptr;
 
-// TODO: Remove Anything about memory mapping.
-
-pub struct HaDeviceMemory {
+pub struct HaCachedMemory  {
 
     handle     : vk::DeviceMemory,
     _size      : vk::DeviceSize,
     mem_type   : Option<vk::MemoryType>,
 }
 
-impl MemoryDataUploadable for HaDeviceMemory {}
+impl MemoryDataUploadable for HaCachedMemory {}
 
-impl HaMemoryAbstract for HaDeviceMemory {
+impl HaMemoryAbstract for HaCachedMemory {
 
     fn handle(&self) -> vk::DeviceMemory {
         self.handle
@@ -34,14 +32,14 @@ impl HaMemoryAbstract for HaDeviceMemory {
     }
 
     fn memory_type(&self) -> HaMemoryType {
-        HaMemoryType::DeviceMemory
+        HaMemoryType::CachedMemory
     }
 
     fn default_flag() -> vk::MemoryPropertyFlags {
-        HaMemoryType::DeviceMemory.property_flags()
+        HaMemoryType::CachedMemory.property_flags()
     }
 
-    fn allocate(device: &HaDevice, size: vk::DeviceSize, mem_type_index: usize, mem_type: Option<vk::MemoryType>) -> Result<Self, MemoryError> {
+    fn allocate(device: &HaDevice, size: vk::DeviceSize, mem_type_index: usize, mem_type: Option<vk::MemoryType>) -> Result<HaCachedMemory, MemoryError> {
 
         let allocate_info = vk::MemoryAllocateInfo {
             s_type: vk::StructureType::MemoryAllocateInfo,
@@ -56,7 +54,7 @@ impl HaMemoryAbstract for HaDeviceMemory {
                 .or(Err(MemoryError::AllocateMemoryError))?
         };
 
-        let memory = HaDeviceMemory {
+        let memory = HaCachedMemory {
             handle,
             _size: size,
             mem_type,

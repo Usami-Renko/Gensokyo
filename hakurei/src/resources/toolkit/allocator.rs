@@ -2,7 +2,7 @@
 use core::physical::HaPhyDevice;
 use core::device::HaDevice;
 
-use resources::allocator::{ HaHostBufferAllocator, HaDeviceBufferAllocator };
+use resources::allocator::{ HaHostBufferAllocator, HaCachedBufferAllocator, HaDeviceBufferAllocator, HaStagingBufferAllocator };
 use resources::allocator::HaDescriptorAllocator;
 use resources::allocator::HaImageAllocator;
 use resources::memory::HaMemoryType;
@@ -27,8 +27,16 @@ impl AllocatorKit {
         HaHostBufferAllocator::new(&self.physical, &self.device)
     }
 
+    pub fn cached_buffer(&self) -> HaCachedBufferAllocator {
+        HaCachedBufferAllocator::new(&self.physical, &self.device)
+    }
+
     pub fn device_buffer(&self) -> HaDeviceBufferAllocator {
         HaDeviceBufferAllocator::new(&self.physical, &self.device)
+    }
+
+    pub fn staging_buffer(&self) -> HaStagingBufferAllocator {
+        HaStagingBufferAllocator::new(&self.physical, &self.device)
     }
 
     pub fn descriptor(&self, flags: &[DescriptorPoolFlag]) -> HaDescriptorAllocator {

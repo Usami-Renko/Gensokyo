@@ -124,9 +124,9 @@ impl<'vk, 'win: 'vk> SwapchainBuilder<'vk, 'win> {
                 .or(Err(SwapchainInitError::SwapchianCreationError))?
         };
 
-        let images: Vec<_> = loader.get_swapchain_images_khr(handle)
+        let images = loader.get_swapchain_images_khr(handle)
             .or(Err(SwapchainInitError::SwapchainImageGetError))?
-            .iter().map(|&img_handle| HaImage::from_swapchain(img_handle)).collect();
+            .iter().map(|&img_handle| HaImage::from_swapchain(img_handle)).collect::<Vec<_>>();
 
         let mut view_desc = ImageViewDescInfo::init(
             ImageViewType::Type2d,

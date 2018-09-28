@@ -250,13 +250,6 @@ impl ProgramProc for CubeProcedure {
         Ok(())
     }
 
-    fn ready(&mut self, device: &HaDevice) -> Result<(), ProcedureError> {
-
-        self.ubo_buffer.ready_update(device)?;
-
-        Ok(())
-    }
-
     fn draw(&mut self, device: &HaDevice, device_available: &HaFence, image_available: &HaSemaphore, image_index: usize, _: f32) -> Result<&HaSemaphore, ProcedureError> {
 
         self.update_uniforms()?;
@@ -273,13 +266,6 @@ impl ProgramProc for CubeProcedure {
         device.submit(&submit_infos, Some(device_available), DeviceQueueIdentifier::Graphics)?;
 
         return Ok(&self.present_availables[image_index])
-    }
-
-    fn closure(&mut self, device: &HaDevice) -> Result<(), ProcedureError> {
-
-        self.ubo_buffer.shut_update(device)?;
-
-        Ok(())
     }
 
     fn clean_resources(&mut self) -> Result<(), ProcedureError> {

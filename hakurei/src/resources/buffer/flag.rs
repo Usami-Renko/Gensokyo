@@ -82,6 +82,44 @@ impl VulkanEnum for BufferUsageFlag {
 
 
 // TODO: Currently not all usages is cover as shown in BufferUsageFlag.
+
+#[derive(Debug, Clone, Copy, Eq, PartialEq)]
+pub enum HostBufferUsage {
+    VertexBuffer,
+    IndexBuffer,
+    UniformBuffer,
+}
+
+impl VulkanEnum for HostBufferUsage {
+    type EnumType = vk::BufferUsageFlags;
+
+    fn value(&self) -> Self::EnumType {
+        match self {
+            | HostBufferUsage::VertexBuffer  => vk::BUFFER_USAGE_VERTEX_BUFFER_BIT,
+            | HostBufferUsage::IndexBuffer   => vk::BUFFER_USAGE_INDEX_BUFFER_BIT,
+            | HostBufferUsage::UniformBuffer => vk::BUFFER_USAGE_UNIFORM_BUFFER_BIT,
+        }
+    }
+}
+
+
+#[derive(Debug, Clone, Copy, Eq, PartialEq)]
+pub enum CachedBufferUsage {
+    VertexBuffer,
+    IndexBuffer,
+}
+
+impl VulkanEnum for CachedBufferUsage {
+    type EnumType = vk::BufferUsageFlags;
+
+    fn value(&self) -> Self::EnumType {
+        match self {
+            | CachedBufferUsage::VertexBuffer  => vk::BUFFER_USAGE_VERTEX_BUFFER_BIT,
+            | CachedBufferUsage::IndexBuffer   => vk::BUFFER_USAGE_INDEX_BUFFER_BIT,
+        }
+    }
+}
+
 #[derive(Debug, Clone, Copy, Eq, PartialEq)]
 pub enum DeviceBufferUsage {
     VertexBuffer,
@@ -100,20 +138,20 @@ impl VulkanEnum for DeviceBufferUsage {
 }
 
 #[derive(Debug, Clone, Copy, Eq, PartialEq)]
-pub enum HostBufferUsage {
-    VertexBuffer,
-    IndexBuffer,
-    UniformBuffer,
+pub enum StagingBufferUsage {
+    VertexCopySrc,
+    IndexCopySrc,
+    UniformCopySrc,
 }
 
-impl VulkanEnum for HostBufferUsage {
+impl VulkanEnum for StagingBufferUsage {
     type EnumType = vk::BufferUsageFlags;
 
     fn value(&self) -> Self::EnumType {
         match self {
-            | HostBufferUsage::VertexBuffer  => vk::BUFFER_USAGE_VERTEX_BUFFER_BIT,
-            | HostBufferUsage::IndexBuffer   => vk::BUFFER_USAGE_INDEX_BUFFER_BIT,
-            | HostBufferUsage::UniformBuffer => vk::BUFFER_USAGE_UNIFORM_BUFFER_BIT,
+            | StagingBufferUsage::VertexCopySrc  => vk::BUFFER_USAGE_VERTEX_BUFFER_BIT,
+            | StagingBufferUsage::IndexCopySrc   => vk::BUFFER_USAGE_INDEX_BUFFER_BIT,
+            | StagingBufferUsage::UniformCopySrc => vk::BUFFER_USAGE_UNIFORM_BUFFER_BIT,
         }
     }
 }

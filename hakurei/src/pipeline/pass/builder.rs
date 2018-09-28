@@ -85,9 +85,9 @@ impl RenderPassBuilder {
 
     pub fn build(&self, swapchain: &HaSwapchain) -> Result<HaRenderPass, PipelineError> {
 
-        let attachments : Vec<vk::AttachmentDescription> = self.attachments.iter().map(|a| a.desc()).collect();
-        let subpasses   : Vec<vk::SubpassDescription>    = self.subpasses.iter().map(|r| r.desc()).collect();
-        let dependencies: Vec<vk::SubpassDependency>     = self.dependencies.iter().map(|d| d.desc()).collect();
+        let attachments = self.attachments.iter().map(|a| a.desc()).collect::<Vec<_>>();
+        let subpasses = self.subpasses.iter().map(|r| r.desc()).collect::<Vec<_>>();
+        let dependencies = self.dependencies.iter().map(|d| d.desc()).collect::<Vec<_>>();
 
         let create_info = vk::RenderPassCreateInfo {
             s_type: vk::StructureType::RenderPassCreateInfo,

@@ -2,37 +2,43 @@
 use ash::vk;
 
 use core::device::HaDevice;
+use core::physical::HaPhyDevice;
 
 use resources::buffer::BufferSubItem;
-use resources::memory::{ HaMemoryAbstract, MemoryRange };
+use resources::memory::{ HaMemoryAbstract, MemoryRange, UploadStagingResource };
+use resources::allocator::BufferAllocateInfos;
 use resources::error::AllocatorError;
 
-pub struct BufferDataUploader<'mem> {
+pub struct BufferDataUploader<'a> {
 
     device  : HaDevice,
-    memory  : &'mem mut Box<HaMemoryAbstract>,
-    offsets : &'mem Vec<vk::DeviceSize>,
-    ranges  : Vec<MemoryRange>,
+    dst_memory: &'a mut Box<HaMemoryAbstract>,
+
+    offsets: &'a Vec<vk::DeviceSize>,
+    ranges : Vec<MemoryRange>,
+    
+    staging : Option<UploadStagingResource>,
 }
 
-impl<'mem> BufferDataUploader<'mem> {
+impl<'a> BufferDataUploader<'a> {
 
-    pub(crate) fn new(device: &HaDevice, memory: &'mem mut Box<HaMemoryAbstract>, offsets: &'mem Vec<vk::DeviceSize>) -> Result<BufferDataUploader<'mem>, AllocatorError> {
+    pub(crate) fn new(physical: &HaPhyDevice, device: &HaDevice, memory: &'a mut Box<HaMemoryAbstract>, offsets: &'a Vec<vk::DeviceSize>, allocate_infos: &Option<BufferAllocateInfos>) -> Result<BufferDataUploader<'a>, AllocatorError> {
 
-        memory.prepare_data_transfer(device)?;
+        let staging = memory.prepare_data_transfer(physical, device, &allocate_infos)?;
 
         let uploader = BufferDataUploader {
-            device: device.clone(),
-            memory, offsets, ranges: vec![],
+            device  : device.clone(),
+            dst_memory: memory,
+            offsets, ranges: vec![], staging,
         };
         Ok(uploader)
     }
 
-    pub fn upload<D: Copy>(&mut self, item: &BufferSubItem, data: &Vec<D>) -> Result<&mut BufferDataUploader<'mem>, AllocatorError> {
+    pub fn upload<D: Copy>(&mut self, item: &BufferSubItem, data: &Vec<D>) -> Result<&mut BufferDataUploader<'a>, AllocatorError> {
 
         let offset = self.offsets[item.buffer_index] + item.offset;
 
-        let (writer, range) = self.memory.map_memory_ptr(item, offset)?;
+        let (writer, range) = self.dst_memory.map_memory_ptr(&mut self.staging, item, offset)?;
         writer.write_data(data);
 
         self.ranges.push(range);
@@ -42,24 +48,32 @@ impl<'mem> BufferDataUploader<'mem> {
 
     pub fn done(&mut self) -> Result<(), AllocatorError> {
 
-        self.memory.terminate_transfer(&self.device, &self.ranges)?;
-        self.memory.enable_map(&self.device, false)?;
+        if let Some(ref mut staging) = self.staging {
+            staging.finish_src_transfer(&self.device, &self.ranges)?;
+        }
+
+        self.dst_memory.terminate_transfer(&self.device, &self.staging, &self.ranges)?;
+
+        if let Some(ref mut staging) = self.staging {
+            staging.cleanup(&self.device);
+        }
 
         Ok(())
     }
 }
 
-pub struct BufferDataUpdater<'mem> {
+// TODO: Use MemoryDataUpdatable instead of HaMemoryAbstract as bound trait.
+pub struct BufferDataUpdater<'a> {
 
     device  : HaDevice,
-    memory  : &'mem mut Box<HaMemoryAbstract>,
-    offsets : &'mem Vec<vk::DeviceSize>,
+    memory  : &'a mut Box<HaMemoryAbstract>,
+    offsets : &'a Vec<vk::DeviceSize>,
     ranges  : Vec<MemoryRange>,
 }
 
-impl<'mem> BufferDataUpdater<'mem> {
+impl<'a> BufferDataUpdater<'a> {
 
-    pub(crate) fn new(device: &HaDevice, memory: &'mem mut Box<HaMemoryAbstract>, offsets: &'mem Vec<vk::DeviceSize>) -> BufferDataUpdater<'mem> {
+    pub(crate) fn new(device: &HaDevice, memory: &'a mut Box<HaMemoryAbstract>, offsets: &'a Vec<vk::DeviceSize>) -> BufferDataUpdater<'a> {
 
         BufferDataUpdater {
             device: device.clone(),
@@ -67,11 +81,11 @@ impl<'mem> BufferDataUpdater<'mem> {
         }
     }
 
-    pub fn update<D: Copy>(&mut self, item: &BufferSubItem, data: &Vec<D>) -> Result<&mut BufferDataUpdater<'mem>, AllocatorError> {
+    pub fn update<D: Copy>(&mut self, item: &BufferSubItem, data: &Vec<D>) -> Result<&mut BufferDataUpdater<'a>, AllocatorError> {
 
         let offset = self.offsets[item.buffer_index] + item.offset;
 
-        let (writer, range) = self.memory.map_memory_ptr(item, offset)?;
+        let (writer, range) = self.memory.map_memory_ptr(&mut None, item, offset)?;
         writer.write_data(data);
 
         self.ranges.push(range);
@@ -81,7 +95,7 @@ impl<'mem> BufferDataUpdater<'mem> {
 
     pub fn done(&mut self) -> Result<(), AllocatorError> {
 
-        self.memory.terminate_transfer(&self.device, &self.ranges)?;
+        self.memory.terminate_transfer(&self.device, &None, &self.ranges)?;
 
         Ok(())
     }
