@@ -4,6 +4,8 @@ use core::device::HaDevice;
 use pipeline::graphics::GraphicsPipelineBuilder;
 use pipeline::pass::RenderPassBuilder;
 
+use pipeline::error::PipelineError;
+
 pub struct PipelineKit {
 
     device: HaDevice,
@@ -22,7 +24,7 @@ impl PipelineKit {
         RenderPassBuilder::new(&self.device)
     }
 
-    pub fn graphics_pipeline_builder(&self) -> GraphicsPipelineBuilder {
+    pub fn graphics_pipeline_builder(&self) -> Result<GraphicsPipelineBuilder, PipelineError> {
 
         GraphicsPipelineBuilder::new(&self.device)
     }

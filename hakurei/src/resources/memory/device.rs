@@ -10,8 +10,6 @@ use resources::error::MemoryError;
 
 use std::ptr;
 
-// TODO: Remove Anything about memory mapping.
-
 pub struct HaDeviceMemory {
 
     handle     : vk::DeviceMemory,
