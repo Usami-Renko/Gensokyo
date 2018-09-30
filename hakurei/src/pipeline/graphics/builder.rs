@@ -27,6 +27,7 @@ use pipeline::{
 
 use resources::descriptor::HaDescriptorSetLayout;
 
+use utility::shaderc::{ HaShaderCompiler, ShaderCompilePrefab, ShadercConfiguration };
 use utility::marker::VulkanFlags;
 
 use std::ptr;
@@ -111,18 +112,30 @@ impl GraphicsPipelineConfig {
 
 pub struct GraphicsPipelineBuilder {
 
-    device: HaDevice,
+    device : HaDevice,
     configs: Vec<GraphicsPipelineConfig>,
+    shaderc: HaShaderCompiler,
 }
 
 impl GraphicsPipelineBuilder {
 
-    pub(crate) fn new(device: &HaDevice) -> GraphicsPipelineBuilder {
-        GraphicsPipelineBuilder {
+    pub(crate) fn new(device: &HaDevice) -> Result<GraphicsPipelineBuilder, PipelineError> {
+
+        let builder = GraphicsPipelineBuilder {
             device : device.clone(),
             configs: vec![],
-        }
+            shaderc: HaShaderCompiler::setup(ShaderCompilePrefab::Vulkan)?,
+        };
+
+        Ok(builder)
     }
+
+    pub fn set_shaderc(&mut self, configuration: ShadercConfiguration) -> Result<(), PipelineError> {
+        self.shaderc = HaShaderCompiler::setup_from_configuration(configuration)
+            .map_err(|e| PipelineError::Shaderc(e))?;
+        Ok(())
+    }
+
     pub fn add_config(&mut self, config: GraphicsPipelineConfig) {
         self.configs.push(config);
     }
@@ -132,7 +145,7 @@ impl GraphicsPipelineBuilder {
         for config in self.configs.iter_mut() {
             let mut shader_modules = vec![];
             for shader in config.shaders.iter() {
-                let module = shader.build(&self.device).map_err(|e| PipelineError::Shader(e))?;
+                let module = shader.build(&self.device, &mut self.shaderc)?;
                 shader_modules.push(module);
             }
             config.shader_modules = shader_modules;

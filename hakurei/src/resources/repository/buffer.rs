@@ -7,7 +7,7 @@ use core::physical::HaPhyDevice;
 use resources::allocator::BufferAllocateInfos;
 use resources::buffer::{ HaBuffer, BufferSubItem };
 use resources::command::CommandBufferUsageFlag;
-use resources::memory::HaMemoryAbstract;
+use resources::memory::{ HaMemoryAbstract, HaMemoryType };
 use resources::repository::{ BufferDataUploader, BufferDataUpdater };
 use resources::error::{ AllocatorError, MemoryError };
 
@@ -80,7 +80,17 @@ impl HaBufferRepository {
 
         if let Some(ref mut memory) = self.memory {
 
-            let updater = BufferDataUpdater::new(&self.device.as_ref().unwrap(), memory, &self.offsets);
+            let updater = match memory.memory_type() {
+                | HaMemoryType::HostMemory
+                | HaMemoryType::StagingMemory => {
+                    BufferDataUpdater::new(&self.device.as_ref().unwrap(), memory, &self.offsets)
+                },
+                | HaMemoryType::CachedMemory
+                | HaMemoryType::DeviceMemory => {
+                    return Err(AllocatorError::Memory(MemoryError::MemoryUnableToUpdate))
+                }
+            };
+
             Ok(updater)
         } else {
             Err(AllocatorError::Memory(MemoryError::MemoryNotYetAllocateError))

@@ -4,9 +4,11 @@ use ash::version::DeviceV1_0;
 
 use core::device::HaDevice;
 
-use pipeline::error::ShaderError;
+use pipeline::shader::ShaderStageFlag;
+use pipeline::error::{ ShaderError, PipelineError };
 
-use utility::marker::{ VulkanFlags, VulkanEnum };
+use utility::shaderc::HaShaderCompiler;
+use utility::marker::VulkanEnum;
 
 use std::path::{ Path, PathBuf };
 use std::ffi::CString;
@@ -17,46 +19,70 @@ use std::ptr;
 pub struct HaShaderInfo {
 
     stage: ShaderStageFlag,
-    path  : PathBuf,
-    main  : CString,
+    path : PathBuf,
+    main : String,
+
+    pattern : ShaderSourcePattern,
+    tag_name: Option<String>,
+}
+
+enum ShaderSourcePattern {
+    SourceCode,
+    SprivCode,
 }
 
 impl HaShaderInfo {
 
-    pub fn setup(stage: ShaderStageFlag, source_path: &Path, main_func: Option<&str>) -> HaShaderInfo {
-        let main = main_func.and_then(|s| Some(CString::new(s).unwrap()))
-            .unwrap_or(CString::new("main").unwrap());
-        let path = PathBuf::from(source_path);
+    pub fn from_source(stage: ShaderStageFlag, source_path: &Path, main_func: Option<&str>, tag_name: &str) -> HaShaderInfo {
 
-        HaShaderInfo { stage, path, main, }
+        let path = PathBuf::from(source_path);
+        let main = main_func
+            .and_then(|m| Some(m.to_owned()))
+            .unwrap_or(String::from("main"));
+
+        HaShaderInfo {
+            stage, path, main,
+            pattern : ShaderSourcePattern::SourceCode,
+            tag_name: Some(tag_name.to_owned()),
+        }
     }
 
-    pub fn build(&self, device: &HaDevice) -> Result<HaShaderModule, ShaderError> {
+    pub fn from_spirv(stage: ShaderStageFlag, spirv_path: &Path, main_func: Option<&str>) -> HaShaderInfo {
 
-        let codes = self.load_source_from_bytes()?;
+        let path = PathBuf::from(spirv_path);
+        let main = main_func
+            .and_then(|m| Some(m.to_owned()))
+            .unwrap_or(String::from("main"));
+
+        HaShaderInfo {
+            stage, path, main,
+            pattern : ShaderSourcePattern::SprivCode,
+            tag_name: None,
+        }
+    }
+
+    pub fn build(&self, device: &HaDevice, compiler: &mut HaShaderCompiler) -> Result<HaShaderModule, PipelineError> {
+
+        let codes = match self.pattern {
+            | ShaderSourcePattern::SourceCode => {
+                let source = load_to_str(&self.path)?;
+                let kind = self.stage.to_shaderc_kind();
+
+                compiler.compile_source_into_spirv(&source, kind, &self.tag_name.as_ref().unwrap(), &self.main)?
+            },
+            | ShaderSourcePattern::SprivCode => {
+                load_spriv_bytes(&self.path)?
+            },
+        };
+
         let handle = self.create_module(device, &codes)?;
 
         let shader_module = HaShaderModule {
             handle,
             stage: self.stage,
-            main: self.main.clone()
+            main : CString::new(self.main.as_str()).unwrap(),
         };
         Ok(shader_module)
-    }
-
-    fn load_source_from_bytes(&self) -> Result<Vec<u8>, ShaderError> {
-
-        let spv = File::open(self.path.to_owned())
-            .or(Err(ShaderError::SourceNotFoundError))?;
-        let bytes = spv.bytes()
-            .filter_map(|byte| byte.ok()).collect::<Vec<_>>();
-
-        Ok(bytes)
-    }
-
-    #[allow(dead_code)]
-    fn load_source_from_string(&self) -> Result<Vec<u8>, ShaderError> {
-        unimplemented!()
     }
 
     fn create_module(&self, device: &HaDevice, codes: &Vec<u8>) -> Result<vk::ShaderModule, ShaderError> {
@@ -73,64 +99,6 @@ impl HaShaderInfo {
         unsafe {
             device.handle.create_shader_module(&module_create_info, None)
                 .or(Err(ShaderError::ModuleCreationError))
-        }
-    }
-}
-
-#[derive(Debug, Clone, Copy, Eq, PartialEq)]
-pub enum ShaderStageFlag {
-
-    /// VertexStage specifies the vertex stage.
-    VertexStage,
-    /// TessellationControlStage the tessellation control stage.
-    TessellationControlStage,
-    /// TessellationEvaluationStage specifies the tessellation evaluation stage.
-    TessellationEvaluationStage,
-    /// GeometryStage specifies the geometry stage.
-    GeometryStage,
-    /// FragmentStage specifies the fragment stage.
-    FragmentStage,
-    /// ComputeStage specifies the compute stage.
-    ComputeStage,
-    /// AllGraphicsStage is a combination of bits used as shorthand to specify all graphics stages (excluding the compute stage).
-    AllGraphicsStage,
-    /// AllStage is a combination of bits used as shorthand to specify all shader stages supported by the device,
-    /// including all additional stages which are introduced by extensions.
-    AllStage,
-}
-
-impl VulkanFlags for [ShaderStageFlag] {
-    type FlagType = vk::ShaderStageFlags;
-
-    fn flags(&self) -> Self::FlagType {
-        self.iter().fold(vk::ShaderStageFlags::empty(), |acc, flag| {
-            match *flag {
-                | ShaderStageFlag::VertexStage                 => acc | vk::SHADER_STAGE_VERTEX_BIT,
-                | ShaderStageFlag::GeometryStage               => acc | vk::SHADER_STAGE_GEOMETRY_BIT,
-                | ShaderStageFlag::TessellationControlStage    => acc | vk::SHADER_STAGE_TESSELLATION_CONTROL_BIT,
-                | ShaderStageFlag::TessellationEvaluationStage => acc | vk::SHADER_STAGE_TESSELLATION_EVALUATION_BIT,
-                | ShaderStageFlag::FragmentStage               => acc | vk::SHADER_STAGE_FRAGMENT_BIT,
-                | ShaderStageFlag::ComputeStage                => acc | vk::SHADER_STAGE_COMPUTE_BIT,
-                | ShaderStageFlag::AllGraphicsStage            => acc | vk::SHADER_STAGE_ALL_GRAPHICS,
-                | ShaderStageFlag::AllStage                    => acc | vk::SHADER_STAGE_ALL,
-            }
-        })
-    }
-}
-
-impl VulkanEnum for ShaderStageFlag {
-    type EnumType = vk::ShaderStageFlags;
-
-    fn value(&self) -> Self::EnumType {
-        match *self {
-            | ShaderStageFlag::VertexStage                 => vk::SHADER_STAGE_VERTEX_BIT,
-            | ShaderStageFlag::GeometryStage               => vk::SHADER_STAGE_GEOMETRY_BIT,
-            | ShaderStageFlag::TessellationControlStage    => vk::SHADER_STAGE_TESSELLATION_CONTROL_BIT,
-            | ShaderStageFlag::TessellationEvaluationStage => vk::SHADER_STAGE_TESSELLATION_EVALUATION_BIT,
-            | ShaderStageFlag::FragmentStage               => vk::SHADER_STAGE_FRAGMENT_BIT,
-            | ShaderStageFlag::ComputeStage                => vk::SHADER_STAGE_COMPUTE_BIT,
-            | ShaderStageFlag::AllGraphicsStage            => vk::SHADER_STAGE_ALL_GRAPHICS,
-            | ShaderStageFlag::AllStage                    => vk::SHADER_STAGE_ALL,
         }
     }
 }
@@ -165,4 +133,27 @@ impl HaShaderModule {
             device.handle.destroy_shader_module(self.handle, None);
         }
     }
+}
+
+
+fn load_spriv_bytes(path: &PathBuf) -> Result<Vec<u8>, ShaderError> {
+
+    let file = File::open(path.to_owned())
+        .or(Err(ShaderError::SpirvReadError))?;
+    let bytes = file.bytes()
+        .filter_map(|byte| byte.ok())
+        .collect::<Vec<_>>();
+
+    Ok(bytes)
+}
+
+fn load_to_str(path: &PathBuf) -> Result<String, ShaderError> {
+
+    let mut file = File::open(path.to_owned())
+        .or(Err(ShaderError::SourceReadError))?;
+    let mut contents = String::new();
+    let _size = file.read_to_string(&mut contents)
+        .or(Err(ShaderError::SourceReadError))?;
+
+    Ok(contents)
 }

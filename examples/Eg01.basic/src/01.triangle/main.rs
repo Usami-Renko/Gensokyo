@@ -16,8 +16,8 @@ use std::path::Path;
 const WINDOW_TITLE: &'static str = "01.Trangle";
 const WINDOW_WIDTH:  u32 = 800;
 const WINDOW_HEIGHT: u32 = 600;
-const VERTEX_SHADER_PATH  : &'static str = "shaders/triangle.vert.spv";
-const FRAGMENT_SHADER_PATH: &'static str = "shaders/triangle.frag.spv";
+const VERTEX_SHADER_SPIRV_PATH  : &'static str = "src/01.triangle/triangle.vert.spv";
+const FRAGMENT_SHADER_SPIRV_PATH: &'static str = "src/01.triangle/triangle.frag.spv";
 
 define_input! {
     #[binding = 0, rate = vertex]
@@ -89,13 +89,13 @@ impl ProgramProc for TriangleProcedure {
 
     fn pipelines(&mut self, kit: PipelineKit, swapchain: &HaSwapchain) -> Result<(), ProcedureError> {
         // shaders
-        let vertex_shader = HaShaderInfo::setup(
+        let vertex_shader = HaShaderInfo::from_spirv(
             ShaderStageFlag::VertexStage,
-            Path::new(VERTEX_SHADER_PATH),
+            Path::new(VERTEX_SHADER_SPIRV_PATH),
             None);
-        let fragment_shader = HaShaderInfo::setup(
+        let fragment_shader = HaShaderInfo::from_spirv(
             ShaderStageFlag::FragmentStage,
-            Path::new(FRAGMENT_SHADER_PATH),
+            Path::new(FRAGMENT_SHADER_SPIRV_PATH),
             None);
         let shader_infos = vec![
             vertex_shader,
@@ -124,7 +124,7 @@ impl ProgramProc for TriangleProcedure {
             .setup_viewport(viewport)
             .finish_config();
 
-        let mut pipeline_builder = kit.graphics_pipeline_builder();
+        let mut pipeline_builder = kit.graphics_pipeline_builder()?;
         pipeline_builder.add_config(pipeline_config);
 
         let mut graphics_pipelines = pipeline_builder.build()?;

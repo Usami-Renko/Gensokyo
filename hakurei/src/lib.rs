@@ -6,6 +6,7 @@ extern crate num;
 extern crate image;
 extern crate smallvec;
 extern crate cgmath;
+extern crate shaderc;
 
 #[macro_use]
 extern crate hakurei_macros;
@@ -27,6 +28,6 @@ mod pipeline;
 mod resources;
 mod sync;
 mod input;
-
 mod utility;
+
 pub mod prelude;

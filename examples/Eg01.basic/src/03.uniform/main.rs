@@ -19,8 +19,8 @@ use std::path::Path;
 const WINDOW_TITLE: &'static str = "03.Unifrom";
 const WINDOW_WIDTH:  u32 = 800;
 const WINDOW_HEIGHT: u32 = 600;
-const VERTEX_SHADER_PATH  : &'static str = "shaders/uniform.vert.spv";
-const FRAGMENT_SHADER_PATH: &'static str = "shaders/uniform.frag.spv";
+const VERTEX_SHADER_SOURCE_PATH  : &'static str = "src/03.uniform/uniform.vert";
+const FRAGMENT_SHADER_SOURCE_PATH: &'static str = "src/03.uniform/uniform.frag";
 
 define_input! {
     #[binding = 0, rate = vertex]
@@ -133,14 +133,16 @@ impl ProgramProc for UniformBufferProcedure {
 
     fn pipelines(&mut self, kit: PipelineKit, swapchain: &HaSwapchain) -> Result<(), ProcedureError> {
         // shaders
-        let vertex_shader = HaShaderInfo::setup(
+        let vertex_shader = HaShaderInfo::from_source(
             ShaderStageFlag::VertexStage,
-            Path::new(VERTEX_SHADER_PATH),
-            None);
-        let fragment_shader = HaShaderInfo::setup(
+            Path::new(VERTEX_SHADER_SOURCE_PATH),
+            None,
+            "[Vertex Shader]");
+        let fragment_shader = HaShaderInfo::from_source(
             ShaderStageFlag::FragmentStage,
-            Path::new(FRAGMENT_SHADER_PATH),
-            None);
+            Path::new(FRAGMENT_SHADER_SOURCE_PATH),
+            None,
+            "[Fragment Shader]");
         let shader_infos = vec![
             vertex_shader,
             fragment_shader,
@@ -170,7 +172,7 @@ impl ProgramProc for UniformBufferProcedure {
             .add_descriptor_set(self.ubo_storage.set_layout_at(&self.ubo_set))
             .finish_config();
 
-        let mut pipeline_builder = kit.graphics_pipeline_builder();
+        let mut pipeline_builder = kit.graphics_pipeline_builder()?;
         pipeline_builder.add_config(pipeline_config);
 
         let mut graphics_pipelines = pipeline_builder.build()?;
