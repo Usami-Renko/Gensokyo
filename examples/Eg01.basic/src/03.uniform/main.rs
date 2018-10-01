@@ -90,7 +90,7 @@ impl ProgramProc for UniformBufferProcedure {
     fn assets(&mut self, _device: &HaDevice, kit: AllocatorKit) -> Result<(), ProcedureError> {
 
         // vertex and uniform buffer
-        let mut buffer_allocator = kit.host_buffer();
+        let mut buffer_allocator = kit.buffer(BufferStorageType::Host);
 
         let mut vertex_buffer_config = HostBufferConfig::new(HostBufferUsage::VertexBuffer);
         vertex_buffer_config.add_item(data_size!(self.vertex_data, Vertex));
@@ -98,8 +98,8 @@ impl ProgramProc for UniformBufferProcedure {
         let mut uniform_buffer_config = HostBufferConfig::new(HostBufferUsage::UniformBuffer);
         uniform_buffer_config.add_item(data_size!(self.ubo_data, UboObject));
 
-        self.vertex_item = buffer_allocator.attach_buffer(vertex_buffer_config)?.pop().unwrap();
-        let ubo_buffer_item = buffer_allocator.attach_buffer(uniform_buffer_config)?.pop().unwrap();
+        self.vertex_item = buffer_allocator.attach_host_buffer(vertex_buffer_config)?.pop().unwrap();
+        let ubo_buffer_item = buffer_allocator.attach_host_buffer(uniform_buffer_config)?.pop().unwrap();
 
         self.vertex_storage = buffer_allocator.allocate()?;
         self.vertex_storage.data_uploader()?

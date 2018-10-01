@@ -67,8 +67,9 @@ impl HaShaderInfo {
             | ShaderSourcePattern::SourceCode => {
                 let source = load_to_str(&self.path)?;
                 let kind = self.stage.to_shaderc_kind();
+                let tag_name = self.tag_name.as_ref().unwrap();
 
-                compiler.compile_source_into_spirv(&source, kind, &self.tag_name.as_ref().unwrap(), &self.main)?
+                compiler.compile_source_into_spirv(&source, kind, tag_name, &self.main)?
             },
             | ShaderSourcePattern::SprivCode => {
                 load_spriv_bytes(&self.path)?

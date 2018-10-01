@@ -4,7 +4,7 @@ use ash::vk;
 use core::device::HaDevice;
 use core::physical::{ HaPhyDevice, MemorySelector };
 
-use resources::buffer::{ HaBuffer, BufferSubItem, BufferGenerator };
+use resources::buffer::{HaBuffer, BufferSubItem, BufferGeneratable};
 use resources::memory::{ HaMemoryAbstract, MemoryDataUploadable, MemoryPropertyFlag, MemPtr };
 use resources::memory::HaStagingMemory;
 use resources::allocator::BufferAllocateInfos;
@@ -108,7 +108,7 @@ impl UploadStagingResource {
             // generate buffers
             let mut buffers = vec![];
             for config in infos.configs.iter() {
-                let staging_config = config.to_staging_config();
+                let staging_config = config.to_staging_config().unwrap();
                 let buffer = staging_config.generate(device, None)
                     .or(Err(MemoryError::AllocateMemoryError))?;
 

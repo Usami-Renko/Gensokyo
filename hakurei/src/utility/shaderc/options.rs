@@ -37,8 +37,8 @@ impl HaShadercOptions {
         if self.debug_info       {
             options.set_generate_debug_info();
         }
-        if self.suppress_warning { options.set_suppress_warnings();   }
-        if self.error_warning    { options.set_warnings_as_errors();  }
+        if self.suppress_warning { options.set_suppress_warnings();  }
+        if self.error_warning    { options.set_warnings_as_errors(); }
 
         if let Some(profile) = self.glsl_profile {
             if let Some(version) = self.glsl_version {

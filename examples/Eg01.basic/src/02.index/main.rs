@@ -82,7 +82,7 @@ impl ProgramProc for DrawIndexProcedure {
     fn assets(&mut self, _device: &HaDevice, kit: AllocatorKit) -> Result<(), ProcedureError> {
 
         // vertex & index buffer
-        let mut buffer_allocator = kit.cached_buffer();
+        let mut buffer_allocator = kit.buffer(BufferStorageType::Cached);
 
         let mut vertex_buffer_config = CachedBufferConfig::new(CachedBufferUsage::VertexBuffer);
         vertex_buffer_config.add_item(data_size!(self.vertex_data, Vertex));
@@ -90,8 +90,8 @@ impl ProgramProc for DrawIndexProcedure {
         let mut index_buffer_config  = CachedBufferConfig::new(CachedBufferUsage::IndexBuffer);
         index_buffer_config.add_item(data_size!(self.index_data, uint32_t));
 
-        self.vertex_item = buffer_allocator.attach_buffer(vertex_buffer_config)?.pop().unwrap();
-        self.index_item  = buffer_allocator.attach_buffer(index_buffer_config)?.pop().unwrap();
+        self.vertex_item = buffer_allocator.attach_cached_buffer(vertex_buffer_config)?.pop().unwrap();
+        self.index_item  = buffer_allocator.attach_cached_buffer(index_buffer_config)?.pop().unwrap();
         self.buffer_storage = buffer_allocator.allocate()?;
 
         self.buffer_storage.data_uploader()?

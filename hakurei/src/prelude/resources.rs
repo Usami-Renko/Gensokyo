@@ -1,6 +1,6 @@
 
 pub use resources::allocator::{
-    HaHostBufferAllocator, HaDeviceBufferAllocator, HaCachedBufferAllocator, HaStagingBufferAllocator, HaBufferAllocatorAbstract, // buffer
+    HaBufferAllocator, BufferStorageType, // buffer
     HaDescriptorAllocator, // descriptor
     HaImageAllocator,      // image
 };

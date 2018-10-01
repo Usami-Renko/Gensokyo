@@ -1,48 +1,64 @@
 
-use resources::repository::HaBufferRepository;
-use resources::buffer::BufferSubItem;
-use resources::buffer::{ CachedBufferConfig, DeviceBufferConfig, StagingBufferConfig };
-use resources::error::AllocatorError;
+use ash::vk;
 
-pub trait HaBufferAllocatorAbstract {
-    type BufferConfigType;
+use core::device::HaDevice;
 
-    fn attach_buffer(&mut self, config: Self::BufferConfigType) -> Result<Vec<BufferSubItem>, AllocatorError>;
+use resources::allocator::BufferAllocateInfos;
+use resources::buffer::BufferConfigAbstract;
+use resources::buffer::{ HostBufferConfig, CachedBufferConfig, DeviceBufferConfig, StagingBufferConfig };
+use resources::memory::HaMemoryAbstract;
+use resources::error::MemoryError;
 
-    /// Allocate memory for buffers, and bind those buffer to the memory. All resource store in BufferRepository Object.
-    ///
-    /// Must not call attach_buffer method after calling this method.
-    fn allocate(&mut self) -> Result<HaBufferRepository, AllocatorError>;
-    fn reset(&mut self);
+
+/// Represent an trait object as a Buffer Memory Allocator.
+pub(crate) trait BufMemAlloAbstract {
+
+    fn add_allocate(&mut self, space: vk::DeviceSize, config: Box<BufferConfigAbstract>);
+    fn allocate(&mut self, device: &HaDevice, size: vk::DeviceSize, mem_type_index: usize, mem_type: Option<vk::MemoryType>) -> Result<(), MemoryError>;
+    fn borrow_memory(&self) -> Result<&HaMemoryAbstract, MemoryError>;
+    fn memory_map_if_need(&mut self, device: &HaDevice) -> Result<(), MemoryError>;
+    fn take_memory(&mut self) -> Result<Box<HaMemoryAbstract>, MemoryError>;
+    fn take_info(&mut self) -> BufferAllocateInfos;
 }
+
+
 
 pub trait BufferConfigsAllocatable {
 
-    fn to_staging_config(&self) -> StagingBufferConfig;
+    fn to_staging_config(&self) -> Option<StagingBufferConfig> { None }
 }
 
 impl BufferConfigsAllocatable for CachedBufferConfig {
 
-    fn to_staging_config(&self) -> StagingBufferConfig {
+    fn to_staging_config(&self) -> Option<StagingBufferConfig> {
 
-        StagingBufferConfig {
+        let config = StagingBufferConfig {
             usage: self.usage.clone(),
             flags: self.flags.clone(),
 
             total_size: self.total_size,
             items_size: self.items_size.clone(),
-        }
+        };
+
+        Some(config)
     }
 }
+
 impl BufferConfigsAllocatable for DeviceBufferConfig {
 
-    fn to_staging_config(&self) -> StagingBufferConfig {
-        StagingBufferConfig {
+    fn to_staging_config(&self) -> Option<StagingBufferConfig> {
+
+        let config = StagingBufferConfig {
             usage: self.usage.clone(),
             flags: self.flags.clone(),
 
             total_size: self.total_size,
             items_size: self.items_size.clone(),
-        }
+        };
+
+        Some(config)
     }
 }
+
+impl BufferConfigsAllocatable for HostBufferConfig    {}
+impl BufferConfigsAllocatable for StagingBufferConfig {}
