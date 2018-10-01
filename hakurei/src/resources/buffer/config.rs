@@ -70,6 +70,7 @@ impl DeviceBufferConfig {
     }
 }
 
+#[derive(Debug, Clone)]
 pub struct StagingBufferConfig {
 
     pub(crate) usage: vk::BufferUsageFlags,

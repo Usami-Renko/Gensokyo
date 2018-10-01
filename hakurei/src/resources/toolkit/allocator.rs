@@ -2,7 +2,7 @@
 use core::physical::HaPhyDevice;
 use core::device::HaDevice;
 
-use resources::allocator::{ HaHostBufferAllocator, HaCachedBufferAllocator, HaDeviceBufferAllocator, HaStagingBufferAllocator };
+use resources::allocator::{ HaBufferAllocator, BufferStorageType };
 use resources::allocator::HaDescriptorAllocator;
 use resources::allocator::HaImageAllocator;
 use resources::memory::HaMemoryType;
@@ -23,20 +23,8 @@ impl AllocatorKit {
         }
     }
 
-    pub fn host_buffer(&self) -> HaHostBufferAllocator {
-        HaHostBufferAllocator::new(&self.physical, &self.device)
-    }
-
-    pub fn cached_buffer(&self) -> HaCachedBufferAllocator {
-        HaCachedBufferAllocator::new(&self.physical, &self.device)
-    }
-
-    pub fn device_buffer(&self) -> HaDeviceBufferAllocator {
-        HaDeviceBufferAllocator::new(&self.physical, &self.device)
-    }
-
-    pub fn staging_buffer(&self) -> HaStagingBufferAllocator {
-        HaStagingBufferAllocator::new(&self.physical, &self.device)
+    pub fn buffer(&self, ty: BufferStorageType) -> HaBufferAllocator {
+        HaBufferAllocator::new(&self.physical, &self.device, ty)
     }
 
     pub fn descriptor(&self, flags: &[DescriptorPoolFlag]) -> HaDescriptorAllocator {

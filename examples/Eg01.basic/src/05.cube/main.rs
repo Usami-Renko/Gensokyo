@@ -109,7 +109,7 @@ impl ProgramProc for CubeProcedure {
     fn assets(&mut self, _device: &HaDevice, kit: AllocatorKit) -> Result<(), ProcedureError> {
 
         // vertex, index buffer
-        let mut device_buffer_allocator = kit.device_buffer();
+        let mut device_buffer_allocator = kit.buffer(BufferStorageType::Device);
 
         let mut vertex_buffer_config = DeviceBufferConfig::new(DeviceBufferUsage::VertexBuffer);
         vertex_buffer_config.add_item(data_size!(self.vertex_data, Vertex));
@@ -117,8 +117,8 @@ impl ProgramProc for CubeProcedure {
         let mut index_buffer_config = DeviceBufferConfig::new(DeviceBufferUsage::IndexBuffer);
         index_buffer_config.add_item(data_size!(self.index_data, uint32_t));
 
-        self.vertex_item = device_buffer_allocator.attach_buffer(vertex_buffer_config)?.pop().unwrap();
-        self.index_item  = device_buffer_allocator.attach_buffer(index_buffer_config)?.pop().unwrap();
+        self.vertex_item = device_buffer_allocator.attach_device_buffer(vertex_buffer_config)?.pop().unwrap();
+        self.index_item  = device_buffer_allocator.attach_device_buffer(index_buffer_config)?.pop().unwrap();
 
         self.buffer_storage = device_buffer_allocator.allocate()?;
         self.buffer_storage.data_uploader()?
@@ -127,12 +127,12 @@ impl ProgramProc for CubeProcedure {
             .done()?;
 
         // uniform buffer
-        let mut host_buffer_allocator = kit.host_buffer();
+        let mut host_buffer_allocator = kit.buffer(BufferStorageType::Host);
 
         let mut uniform_buffer_config = HostBufferConfig::new(HostBufferUsage::UniformBuffer);
         uniform_buffer_config.add_item(data_size!(self.ubo_data, UboObject));
 
-        self.ubo_item = host_buffer_allocator.attach_buffer(uniform_buffer_config)?.pop().unwrap();
+        self.ubo_item = host_buffer_allocator.attach_host_buffer(uniform_buffer_config)?.pop().unwrap();
         self.ubo_buffer = host_buffer_allocator.allocate()?;
 
         self.ubo_buffer.data_uploader()?

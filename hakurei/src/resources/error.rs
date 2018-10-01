@@ -122,6 +122,7 @@ pub enum AllocatorError {
     MemoryNotYetAllocated,
     DeviceMemoryNotSupportDirectUpdate,
     DataTransferNotActivate,
+    UnmatchBufferConfig,
 }
 
 impl_from_err!(Buffer(BufferError)   -> AllocatorError);
@@ -149,6 +150,9 @@ impl fmt::Display for AllocatorError {
             },
             | AllocatorError::DataTransferNotActivate => {
                 String::from("The repository must be activated before making data transfer operations.")
+            },
+            | AllocatorError::UnmatchBufferConfig => {
+                String::from("The type of buffer config is unable to match with the type of buffer allocator.")
             },
         };
         write!(f, "{}", description)

@@ -6,7 +6,7 @@ pub use self::traits::BufferConfigModifiable;
 
 pub(crate) use self::object::HaBuffer;
 pub(crate) use self::flag::BufferUsageFlag;
-pub(crate) use self::traits::BufferGenerator;
+pub(crate) use self::traits::{BufferConfigAbstract, BufferGeneratable};
 
 mod flag;
 mod object;

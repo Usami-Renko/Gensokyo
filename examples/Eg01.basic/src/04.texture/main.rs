@@ -83,12 +83,12 @@ impl ProgramProc for TextureMappingProcedure {
     fn assets(&mut self, device: &HaDevice, kit: AllocatorKit) -> Result<(), ProcedureError> {
 
         // vertex buffer
-        let mut vertex_allocator = kit.cached_buffer();
+        let mut vertex_allocator = kit.buffer(BufferStorageType::Cached);
 
         let mut vertex_buffer_config = CachedBufferConfig::new(CachedBufferUsage::VertexBuffer);
         vertex_buffer_config.add_item(data_size!(self.vertex_data, Vertex));
 
-        self.vertex_item = vertex_allocator.attach_buffer(vertex_buffer_config)?.pop().unwrap();
+        self.vertex_item = vertex_allocator.attach_cached_buffer(vertex_buffer_config)?.pop().unwrap();
         self.vertex_storage = vertex_allocator.allocate()?;
 
         self.vertex_storage.data_uploader()?

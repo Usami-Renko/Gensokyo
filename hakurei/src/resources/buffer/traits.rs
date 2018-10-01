@@ -7,10 +7,19 @@ use core::device::HaDevice;
 use resources::buffer::HaBuffer;
 use resources::buffer::{ HostBufferConfig, CachedBufferConfig, DeviceBufferConfig, StagingBufferConfig };
 use resources::buffer::{ BufferCreateFlag, BufferUsageFlag };
+use resources::allocator::BufferConfigsAllocatable;
 use resources::error::BufferError;
 use utility::marker::{ VulkanFlags, VulkanEnum };
 
 use std::ptr;
+
+pub(crate) trait BufferConfigAbstract: BufferGeneratable + BufferConfigsAllocatable {}
+
+impl BufferConfigAbstract for HostBufferConfig    {}
+impl BufferConfigAbstract for CachedBufferConfig  {}
+impl BufferConfigAbstract for DeviceBufferConfig  {}
+impl BufferConfigAbstract for StagingBufferConfig {}
+
 
 pub trait BufferConfigModifiable {
 
@@ -80,11 +89,12 @@ impl BufferConfigModifiable for StagingBufferConfig {
 }
 
 
-pub(crate) trait BufferGenerator {
+pub(crate) trait BufferGeneratable {
 
     fn flags(&self)      -> vk::BufferCreateFlags;
     fn usage(&self)      -> vk::BufferUsageFlags;
     fn total_size(&self) -> vk::DeviceSize;
+    fn items_size(&self) -> &Vec<vk::DeviceSize>;
 
     /// Generate a buffer object.
     ///
@@ -124,7 +134,7 @@ pub(crate) trait BufferGenerator {
     }
 }
 
-impl BufferGenerator for HostBufferConfig {
+impl BufferGeneratable for HostBufferConfig {
 
     fn flags(&self) -> vk::BufferCreateFlags { self.flags }
     fn usage(&self) -> vk::BufferUsageFlags  {
@@ -132,9 +142,10 @@ impl BufferGenerator for HostBufferConfig {
         self.usage
     }
     fn total_size(&self) -> vk::DeviceSize { self.total_size }
+    fn items_size(&self) -> &Vec<vk::DeviceSize> { &self.items_size }
 }
 
-impl BufferGenerator for CachedBufferConfig {
+impl BufferGeneratable for CachedBufferConfig {
 
     fn flags(&self) -> vk::BufferCreateFlags { self.flags }
     fn usage(&self) -> vk::BufferUsageFlags  {
@@ -142,9 +153,10 @@ impl BufferGenerator for CachedBufferConfig {
         self.usage | BufferUsageFlag::TransferDstBit.value()
     }
     fn total_size(&self) -> vk::DeviceSize { self.total_size }
+    fn items_size(&self) -> &Vec<vk::DeviceSize> { &self.items_size }
 }
 
-impl BufferGenerator for DeviceBufferConfig {
+impl BufferGeneratable for DeviceBufferConfig {
 
     fn flags(&self) -> vk::BufferCreateFlags { self.flags }
     fn usage(&self) -> vk::BufferUsageFlags  {
@@ -152,9 +164,10 @@ impl BufferGenerator for DeviceBufferConfig {
         self.usage | BufferUsageFlag::TransferDstBit.value()
     }
     fn total_size(&self) -> vk::DeviceSize { self.total_size }
+    fn items_size(&self) -> &Vec<vk::DeviceSize> { &self.items_size }
 }
 
-impl BufferGenerator for StagingBufferConfig {
+impl BufferGeneratable for StagingBufferConfig {
 
     fn flags(&self) -> vk::BufferCreateFlags { self.flags }
     fn usage(&self) -> vk::BufferUsageFlags {
@@ -162,4 +175,5 @@ impl BufferGenerator for StagingBufferConfig {
         self.usage | BufferUsageFlag::TransferSrcBit.value()
     }
     fn total_size(&self) -> vk::DeviceSize { self.total_size }
+    fn items_size(&self) -> &Vec<vk::DeviceSize> { &self.items_size }
 }

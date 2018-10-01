@@ -2,123 +2,66 @@
 use ash::vk;
 
 use core::device::HaDevice;
-use core::physical::{ HaPhyDevice, MemorySelector };
 
-use resources::allocator::{ HaBufferAllocatorAbstract, BufferAllocateInfos };
-use resources::buffer::HaBuffer;
-use resources::buffer::{ CachedBufferConfig, BufferSubItem };
-use resources::buffer::BufferGenerator;
+use resources::allocator::{ BufMemAlloAbstract, BufferAllocateInfos };
+use resources::buffer::BufferConfigAbstract;
 use resources::memory::{ HaCachedMemory, HaMemoryAbstract };
-use resources::repository::HaBufferRepository;
-use resources::error::{ BufferError, AllocatorError };
+use resources::error::MemoryError;
 
-use utility::memory::bind_to_alignment;
 
-pub struct HaCachedBufferAllocator {
+pub(crate) struct CachedBufMemAllocator {
 
-    physical: HaPhyDevice,
-    device  : HaDevice,
-
-    buffers : Vec<HaBuffer>,
-    /// The size of each buffer occupy.
-    spaces  : Vec<vk::DeviceSize>,
-
-    require_mem_flag: vk::MemoryPropertyFlags,
-    memory_selector: MemorySelector,
-
-    allocate_infos: Option<BufferAllocateInfos>,
+    infos : Option<BufferAllocateInfos>,
+    memory: Option<HaCachedMemory>,
 }
 
-impl HaCachedBufferAllocator {
+impl CachedBufMemAllocator {
 
-    pub(crate) fn new(physical: &HaPhyDevice, device: &HaDevice) -> HaCachedBufferAllocator {
-
-        HaCachedBufferAllocator {
-            physical: physical.clone(),
-            device  : device.clone(),
-
-            buffers: vec![],
-            spaces : vec![],
-            require_mem_flag: HaCachedMemory::default_flag(),
-            memory_selector : MemorySelector::init(physical),
-
-            allocate_infos: Some(BufferAllocateInfos::new()),
+    pub fn new() -> CachedBufMemAllocator {
+        CachedBufMemAllocator {
+            infos : Some(BufferAllocateInfos::new()),
+            memory: None,
         }
     }
 }
 
-impl HaBufferAllocatorAbstract for HaCachedBufferAllocator {
-    type BufferConfigType = CachedBufferConfig;
+impl BufMemAlloAbstract for CachedBufMemAllocator {
 
-    fn attach_buffer(&mut self, config: Self::BufferConfigType) -> Result<Vec<BufferSubItem>, AllocatorError> {
-
-        // TODO: Currently HaBuffer only support operation in single queue family.
-        let buffer = config.generate(&self.device, None)?;
-        self.memory_selector.try(buffer.requirement.memory_type_bits, self.require_mem_flag)?;
-
-        let buffer_index = self.buffers.len();
-        let aligment_space = bind_to_alignment(buffer.requirement.size, buffer.requirement.alignment);
-
-        let mut items = vec![];
-        let mut offset: vk::DeviceSize = 0;
-
-        for &item_size in config.items_size.iter() {
-            let item = BufferSubItem {
-                handle: buffer.handle,
-                buffer_index,
-                offset,
-                size: item_size,
-            };
-            items.push(item);
-            offset += item_size;
+    fn add_allocate(&mut self, space: vk::DeviceSize, config: Box<BufferConfigAbstract>) {
+        if let Some(ref mut infos) = self.infos {
+            infos.spaces.push(space);
+            infos.configs.push(config);
         }
-
-        self.spaces.push(aligment_space);
-        self.buffers.push(buffer);
-
-        if let Some(ref mut infos) = self.allocate_infos {
-            infos.configs.push(Box::new(config));
-            infos.spaces.push(aligment_space);
-        }
-
-        Ok(items)
     }
 
-    fn allocate(&mut self) -> Result<HaBufferRepository, AllocatorError> {
+    fn allocate(&mut self, device: &HaDevice, size: vk::DeviceSize, mem_type_index: usize, mem_type: Option<vk::MemoryType>) -> Result<(), MemoryError> {
 
-        if self.buffers.is_empty() {
-            return Err(AllocatorError::Buffer(BufferError::NoBufferAttachError))
-        }
-
-        // allocate memory
-        let optimal_memory_index = self.memory_selector.optimal_memory()?;
-        let mem_type = self.physical.memory.memory_type(optimal_memory_index);
-        let memory = HaCachedMemory::allocate(
-            &self.device, self.spaces.iter().sum(), optimal_memory_index, Some(mem_type)
-        )?;
-
-        // bind buffers to memory
-        let mut offset = 0;
-        let mut repository_buffer = vec![];
-        for (i, buffer) in self.buffers.drain(..).enumerate() {
-            memory.bind_to_buffer(&self.device, &buffer, offset)?;
-            offset += self.spaces[i];
-            repository_buffer.push(buffer);
-        }
-
-        let repository = HaBufferRepository::store(&self.device, &self.physical, repository_buffer, Box::new(memory), self.allocate_infos.take().unwrap());
-
-        self.reset();
-        Ok(repository)
+        let memory = HaCachedMemory::allocate(device, size, mem_type_index, mem_type)?;
+        self.memory = Some(memory);
+        Ok(())
     }
 
-    fn reset(&mut self) {
+    fn borrow_memory(&self) -> Result<&HaMemoryAbstract, MemoryError> {
 
-        self.buffers.iter().for_each(|buffer| buffer.cleanup(&self.device));
-        self.buffers.clear();
+        self.memory.as_ref()
+            .and_then(|mem| Some(mem as &HaMemoryAbstract))
+            .ok_or(MemoryError::MemoryNotYetAllocateError)
+    }
 
-        self.spaces.clear();
-        self.memory_selector.reset();
-        self.allocate_infos = Some(BufferAllocateInfos::new());
+    fn memory_map_if_need(&mut self, _: &HaDevice) -> Result<(), MemoryError> {
+        // ignore it.
+        Ok(())
+    }
+
+    fn take_memory(&mut self) -> Result<Box<HaMemoryAbstract>, MemoryError> {
+
+        self.memory.take()
+            .and_then(|mem| Some(Box::new(mem) as Box<HaMemoryAbstract>))
+            .ok_or(MemoryError::MemoryNotYetAllocateError)
+    }
+
+    fn take_info(&mut self) -> BufferAllocateInfos {
+
+        self.infos.take().unwrap()
     }
 }
