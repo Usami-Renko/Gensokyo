@@ -1,10 +1,12 @@
 
-pub use self::device::HaLogicalDevice;
 pub use self::device::DeviceQueueIdentifier;
-pub use self::builder::{ LogicalDeviceBuilder, PrefabQueuePriority };
-pub use self::queue::QueueUsage;
-pub use self::queue::QueueSubmitBundle;
-pub use self::queue::HaQueue;
+pub use self::builder::PrefabQueuePriority;
+pub type HaDevice = ::std::rc::Rc<HaLogicalDevice>;
+
+pub(crate) use self::device::HaLogicalDevice;
+pub(crate) use self::builder::LogicalDeviceBuilder;
+
+pub use self::queue::*;
 
 mod builder;
 mod queue;

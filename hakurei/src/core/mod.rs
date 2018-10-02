@@ -2,7 +2,7 @@
 use ash;
 pub(crate) type EntryV1    = ash::Entry<ash::version::V1_0>;
 pub(crate) type InstanceV1 = ash::Instance<ash::version::V1_0>;
-pub(crate) use self::debug::ValidationInfo;
+pub(crate) type DeviceV1   = ash::Device<ash::version::V1_0>;
 
 mod platforms;
 

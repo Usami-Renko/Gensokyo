@@ -3,7 +3,7 @@ use ash::vk;
 use ash::vk::uint32_t;
 use ash::version::DeviceV1_0;
 
-use core::device::HaLogicalDevice;
+use core::device::HaDevice;
 
 use resources::descriptor::DescriptorBindingInfo;
 use resources::error::DescriptorError;
@@ -51,7 +51,7 @@ impl DescriptorSetLayoutInfo {
         binding_index
     }
 
-    pub(crate) fn build(&self, device: &HaLogicalDevice) -> Result<HaDescriptorSetLayout, DescriptorError> {
+    pub(crate) fn build(&self, device: &HaDevice) -> Result<HaDescriptorSetLayout, DescriptorError> {
 
         let info = vk::DescriptorSetLayoutCreateInfo {
             s_type: vk::StructureType::DescriptorSetLayoutCreateInfo,
@@ -80,7 +80,7 @@ pub struct HaDescriptorSetLayout {
 
 impl HaDescriptorSetLayout {
 
-    pub(crate) fn cleanup(&self, device: &HaLogicalDevice) {
+    pub(crate) fn cleanup(&self, device: &HaDevice) {
         unsafe {
             device.handle.destroy_descriptor_set_layout(self.handle, None);
         }

@@ -1,18 +1,18 @@
 
 use ash::vk;
 
-use pipeline::state::multisample::SampleCountType;
+use pipeline::state::SampleCountType;
 use resources::image::ImageLayout;
 use utility::marker::{ VulkanFlags, VulkanEnum };
 
 #[derive(Debug, Clone, Copy, Eq, PartialEq)]
 pub enum RenderAttachementPrefab {
-    Common,
+    BackColorAttachment,
 }
 impl RenderAttachementPrefab {
     fn generate(&self) -> RenderAttachement {
         match *self {
-            | RenderAttachementPrefab::Common => RenderAttachement {
+            | RenderAttachementPrefab::BackColorAttachment => RenderAttachement {
                 ..Default::default()
             }
         }

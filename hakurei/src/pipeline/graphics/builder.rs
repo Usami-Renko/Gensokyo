@@ -3,30 +3,31 @@ use ash::vk;
 use ash::vk::uint32_t;
 use ash::version::DeviceV1_0;
 
-use core::device::HaLogicalDevice;
+use core::device::HaDevice;
 
 use pipeline::{
     graphics::pipeline::HaGraphicsPipeline,
 
-    shader::module::{ HaShaderModule, HaShaderInfo },
-    shader::input::VertexInputDescription,
+    shader::{ HaShaderModule, HaShaderInfo },
+    shader::VertexInputDescription,
     state::PipelineStates,
-    state::vertex_input::HaVertexInput,
-    state::input_assembly::HaInputAssembly,
-    state::viewport::HaViewport,
-    state::rasterizer::HaRasterizer,
-    state::multisample::HaMultisample,
-    state::depth_stencil::HaDepthStencil,
-    state::blend::HaBlend,
-    state::tessellation::HaTessellation,
-    state::dynamic::HaDynamicState,
-    pass::render::HaRenderPass,
+    state::HaVertexInput,
+    state::HaInputAssembly,
+    state::HaViewport,
+    state::HaRasterizer,
+    state::HaMultisample,
+    state::HaDepthStencil,
+    state::HaBlend,
+    state::HaTessellation,
+    state::HaDynamicState,
+    pass::HaRenderPass,
     layout::PipelineLayoutBuilder,
     error::PipelineError,
 };
 
 use resources::descriptor::HaDescriptorSetLayout;
 
+use utility::shaderc::{ HaShaderCompiler, ShaderCompilePrefab, ShadercConfiguration };
 use utility::marker::VulkanFlags;
 
 use std::ptr;
@@ -76,6 +77,7 @@ pub struct GraphicsPipelineConfig {
     shaders        : Vec<HaShaderInfo>,
     states         : PipelineStates,
     render_pass    : Option<HaRenderPass>,
+    flags          : vk::PipelineCreateFlags,
 
     shader_modules : Vec<HaShaderModule>,
     layout_builder : PipelineLayoutBuilder,
@@ -83,16 +85,21 @@ pub struct GraphicsPipelineConfig {
 
 impl GraphicsPipelineConfig {
 
-    pub fn init(shaders: Vec<HaShaderInfo>, input: VertexInputDescription, pass: HaRenderPass) -> GraphicsPipelineConfig {
+    pub fn new(shaders: Vec<HaShaderInfo>, input: VertexInputDescription, pass: HaRenderPass) -> GraphicsPipelineConfig {
 
         GraphicsPipelineConfig {
             shaders,
             states         : PipelineStates::setup(input),
             render_pass    : Some(pass),
+            flags          : vk::PipelineCreateFlags::empty(),
 
             shader_modules : vec![],
             layout_builder : PipelineLayoutBuilder::default(),
         }
+    }
+
+    pub fn set_flags(&mut self, flags: &[PipelineCreateFlag]) {
+        self.flags = flags.flags();
     }
 
     pub fn finish_config(self) -> GraphicsPipelineConfig {
@@ -105,26 +112,40 @@ impl GraphicsPipelineConfig {
 
 pub struct GraphicsPipelineBuilder {
 
+    device : HaDevice,
     configs: Vec<GraphicsPipelineConfig>,
+    shaderc: HaShaderCompiler,
 }
 
 impl GraphicsPipelineBuilder {
 
-    pub fn init() -> GraphicsPipelineBuilder {
-        GraphicsPipelineBuilder {
+    pub(crate) fn new(device: &HaDevice) -> Result<GraphicsPipelineBuilder, PipelineError> {
+
+        let builder = GraphicsPipelineBuilder {
+            device : device.clone(),
             configs: vec![],
-        }
+            shaderc: HaShaderCompiler::setup(ShaderCompilePrefab::Vulkan)?,
+        };
+
+        Ok(builder)
     }
+
+    pub fn set_shaderc(&mut self, configuration: ShadercConfiguration) -> Result<(), PipelineError> {
+        self.shaderc = HaShaderCompiler::setup_from_configuration(configuration)
+            .map_err(|e| PipelineError::Shaderc(e))?;
+        Ok(())
+    }
+
     pub fn add_config(&mut self, config: GraphicsPipelineConfig) {
         self.configs.push(config);
     }
 
-    pub fn build(&mut self, device: &HaLogicalDevice) -> Result<Vec<HaGraphicsPipeline>, PipelineError> {
+    pub fn build(&mut self) -> Result<Vec<HaGraphicsPipeline>, PipelineError> {
 
         for config in self.configs.iter_mut() {
             let mut shader_modules = vec![];
             for shader in config.shaders.iter() {
-                let module = shader.build(device).map_err(|e| PipelineError::Shader(e))?;
+                let module = shader.build(&self.device, &mut self.shaderc)?;
                 shader_modules.push(module);
             }
             config.shader_modules = shader_modules;
@@ -135,14 +156,14 @@ impl GraphicsPipelineBuilder {
 
         for config in self.configs.iter() {
 
-            let shader_create_infos: Vec<vk::PipelineShaderStageCreateInfo> = config.shader_modules.iter()
-                .map(|m| m.info().clone()).collect();
+            let shader_create_infos = config.shader_modules.iter()
+                .map(|m| m.info().clone()).collect::<Vec<_>>();
             let tessellation_info = config.states.tessellation.as_ref()
                 .map_or(ptr::null(), |t| &t.info());
             let dynamic_info = config.states.dynamic.as_ref()
                 .map_or(ptr::null(), |d| &d.info());
 
-            let pipeline_layout = config.layout_builder.build(device)?;
+            let pipeline_layout = config.layout_builder.build(&self.device)?;
             layouts.push(pipeline_layout);
 
             let graphics_pipeline_create_info = vk::GraphicsPipelineCreateInfo {
@@ -175,26 +196,26 @@ impl GraphicsPipelineBuilder {
         }
 
         let handles = unsafe {
-            device.handle.create_graphics_pipelines(vk::PipelineCache::null(), infos.as_slice(), None).unwrap()
+            self.device.handle.create_graphics_pipelines(vk::PipelineCache::null(), infos.as_slice(), None).unwrap()
         };
 
         let mut pipelines = vec![];
         for (i, config) in self.configs.iter_mut().enumerate() {
             let render_pass = config.render_pass.take().unwrap(); // transfer ownership of HaRenderPass.
-            let pipeline = HaGraphicsPipeline::new(handles[i], layouts[i], render_pass);
+            let pipeline = HaGraphicsPipeline::new(&self.device, handles[i], layouts[i], render_pass);
             pipelines.push(pipeline);
 
         }
 
-        self.clean_shader_modules(device);
+        self.clean_shader_modules();
 
         Ok(pipelines)
     }
 
-    fn clean_shader_modules(&self, device: &HaLogicalDevice) {
+    fn clean_shader_modules(&self) {
         self.configs.iter().for_each(|config| {
             config.shader_modules.iter().for_each(|module| {
-                module.cleanup(device);
+                module.cleanup(&self.device);
             });
         });
     }

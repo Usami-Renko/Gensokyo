@@ -3,21 +3,19 @@ use ash::vk;
 use ash::version::{ InstanceV1_0, DeviceV1_0 };
 use ash::vk::uint32_t;
 
+use config::core::CoreConfig;
 use core::instance::HaInstance;
 use core::physical::HaPhysicalDevice;
 use core::device::HaLogicalDevice;
 use core::device::DeviceQueueIdentifier;
-use core::device::queue::QueueUsage;
-use core::device::queue::{ HaQueue, QueueInfoTmp };
+use core::device::queue::{ HaQueue, QueueInfoTmp, QueueUsage };
+use core::device::queue::{ HaQueueAbstract, HaGraphicsQueue, HaPresentQueue, HaTransferQueue, QueueContainer };
 use core::error::LogicalDeviceError;
-
-use resources::command::{ HaCommandPool, CommandPoolFlag };
 
 use utility::cast;
 use config::VERBOSE;
 
 use std::ptr;
-use std::os::raw::c_char;
 
 // TODO: The generation step hasn't been well test.
 
@@ -62,6 +60,10 @@ pub struct LogicalDeviceBuilder<'a, 'b> {
 
     instance            : &'a HaInstance,
     physical_device     : &'b HaPhysicalDevice,
+
+    graphics_count      : usize,
+    present_count       : usize,
+    transfer_count      : usize,
 }
 
 impl<'a, 'b> LogicalDeviceBuilder<'a, 'b> {
@@ -80,22 +82,43 @@ impl<'a, 'b> LogicalDeviceBuilder<'a, 'b> {
 
             instance,
             physical_device     : physical,
+
+            graphics_count      : 0,
+            present_count       : 0,
+            transfer_count      : 0,
         }
     }
 
     #[allow(dead_code)]
     pub fn add_queue(&mut self, usage: QueueUsage, priority: PrefabQueuePriority) -> DeviceQueueIdentifier {
         let queue_index = self.setup_queue(usage, priority);
-        DeviceQueueIdentifier::Custom(queue_index)
+
+        match usage {
+            | QueueUsage::Graphics => DeviceQueueIdentifier::Custom(Box::new(DeviceQueueIdentifier::Graphics), queue_index),
+            | QueueUsage::Present  => DeviceQueueIdentifier::Custom(Box::new(DeviceQueueIdentifier::Present), queue_index),
+            | QueueUsage::Transfer => DeviceQueueIdentifier::Custom(Box::new(DeviceQueueIdentifier::Transfer), queue_index),
+        }
     }
 
     fn setup_queue(&mut self, usage: QueueUsage, priority: PrefabQueuePriority) -> usize {
 
         // TODO: Add more usage configuration
-        let family_index = match usage {
-            | QueueUsage::Graphics => self.physical_device.families.family_indices.graphics_index,
-            | QueueUsage::Present  => self.physical_device.families.family_indices.present_index,
-            | QueueUsage::Transfer => self.physical_device.families.family_indices.transfer_index,
+        let (family_index, queue_index) = match usage {
+            | QueueUsage::Graphics => {
+                let result = (self.physical_device.families.family_indices.graphics_index, self.graphics_count);
+                self.graphics_count += 1;
+                result
+            },
+            | QueueUsage::Present  => {
+                let result = (self.physical_device.families.family_indices.present_index, self.present_count);
+                self.present_count += 1;
+                result
+            },
+            | QueueUsage::Transfer => {
+                let result = (self.physical_device.families.family_indices.transfer_index, self.transfer_count);
+                self.transfer_count += 1;
+                result
+            },
         };
 
         self.family_indices.push(family_index);
@@ -105,7 +128,7 @@ impl<'a, 'b> LogicalDeviceBuilder<'a, 'b> {
         self.family_queue_counts[family_index as usize] += 1;
         self.total_queue_count += 1;
 
-        self.queue_indices.len() - 1
+        queue_index
     }
 
     fn generate_queue_create_info(&self) -> (Vec<vk::DeviceQueueCreateInfo>, Vec<QueueInfoTmp>) {
@@ -151,13 +174,13 @@ impl<'a, 'b> LogicalDeviceBuilder<'a, 'b> {
         }
 
         if VERBOSE {
-            self.print_queue_infos(&queue_create_infos, &queue_info_tmps);
+            print_queue_infos(&queue_create_infos, &queue_info_tmps);
         }
 
         (queue_create_infos, queue_info_tmps)
     }
 
-    pub fn build(&mut self) -> Result<HaLogicalDevice, LogicalDeviceError> {
+    pub fn build(&mut self, config: &CoreConfig) -> Result<HaLogicalDevice, LogicalDeviceError> {
 
         // TODO: Add configuration for priorities.
         let _ = self.setup_queue(QueueUsage::Graphics, PrefabQueuePriority::Highest);
@@ -169,7 +192,7 @@ impl<'a, 'b> LogicalDeviceBuilder<'a, 'b> {
 
         let enable_features = self.physical_device.features.get_enable_features();
         let enable_layer_names = cast::to_array_ptr(&self.instance.enable_layer_names);
-        let enable_extension_names: Vec<*const c_char> = cast::to_array_ptr(&self.physical_device.extensions.enables);
+        let enable_extension_names = cast::to_array_ptr(&self.physical_device.extensions.enables);
 
         let device_create_info = vk::DeviceCreateInfo {
             s_type                     : vk::StructureType::DeviceCreateInfo,
@@ -191,7 +214,7 @@ impl<'a, 'b> LogicalDeviceBuilder<'a, 'b> {
         };
 
         // Custom queues
-        let mut all_queues: Vec<HaQueue> = vec![];
+        let mut all_queues = vec![];
         for queue_info_tmp in queue_info_tmps.iter() {
             let queue_handle = unsafe {
                 handle.get_device_queue(queue_info_tmp.family_index, queue_info_tmp.queue_index)
@@ -200,43 +223,44 @@ impl<'a, 'b> LogicalDeviceBuilder<'a, 'b> {
             all_queues.push(queue);
         }
 
+        // Default queues
         let transfer_queue = all_queues.pop().unwrap();
         let present_queue  = all_queues.pop().unwrap();
         let graphics_queue = all_queues.pop().unwrap();
 
-        // Default queues
+        let graphics_queue = HaGraphicsQueue::new(&handle, graphics_queue, config)?;
+        let present_queue = HaPresentQueue::new(&handle, present_queue, config)?;
+        let transfer_queue = HaTransferQueue::new(&handle, transfer_queue, config)?;
 
-        let mut device = HaLogicalDevice {
+        let mut queue_container = QueueContainer::empty();
+        for queue_data in all_queues.into_iter() {
+            queue_container.add_queue(&handle, queue_data, config)?;
+        }
+
+        let device = HaLogicalDevice {
             handle,
-            queues: all_queues,
+            queue_container,
 
             graphics_queue,
             present_queue,
             transfer_queue,
-
-            transfer_command_pool: HaCommandPool::uninitialize(),
         };
-
-        let transfer_command_pool = HaCommandPool::setup(&device, &[
-            CommandPoolFlag::TransientBit,
-        ]).map_err(|e| LogicalDeviceError::Command(e))?;
-        device.transfer_command_pool = transfer_command_pool;
 
         Ok(device)
     }
+}
 
-    fn print_queue_infos(&self, family_infos: &Vec<vk::DeviceQueueCreateInfo>, queue_infos: &Vec<QueueInfoTmp>) {
+fn print_queue_infos(family_infos: &Vec<vk::DeviceQueueCreateInfo>, queue_infos: &Vec<QueueInfoTmp>) {
 
-        println!("[Info] Generate Queue Family: {}", family_infos.len());
-        println!("\tfamily index | queue count | priorities");
-        for family_info in family_infos.iter() {
-            println!("\t{:12} | {:11} | {:?}", family_info.queue_family_index, family_info.queue_count, family_info.p_queue_priorities);
-        }
+    println!("[Info] Generate Queue Family: {}", family_infos.len());
+    println!("\tfamily index | queue count | priorities");
+    for family_info in family_infos.iter() {
+        println!("\t{:12} | {:11} | {:?}", family_info.queue_family_index, family_info.queue_count, family_info.p_queue_priorities);
+    }
 
-        println!("[Info] Generate Queue: {}", queue_infos.len());
-        println!("\tpriority | family index | queue index | usage");
-        for queue_info in queue_infos.iter() {
-            println!("\t{:8} | {:12} | {:11} | {:?}", queue_info.priority, queue_info.family_index, queue_info.queue_index, queue_info.usage);
-        }
+    println!("[Info] Generate Queue: {}", queue_infos.len());
+    println!("\tpriority | family index | queue index | usage");
+    for queue_info in queue_infos.iter() {
+        println!("\t{:8} | {:12} | {:11} | {:?}", queue_info.priority, queue_info.family_index, queue_info.queue_index, queue_info.usage);
     }
 }

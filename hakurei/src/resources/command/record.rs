@@ -3,29 +3,29 @@ use ash::vk;
 use ash::vk::{ uint32_t, int32_t };
 use ash::version::DeviceV1_0;
 
-use core::device::HaLogicalDevice;
+use core::device::HaDevice;
 
 use resources::command::buffer::HaCommandBuffer;
 use resources::error::CommandError;
 
-use pipeline::graphics::pipeline::HaGraphicsPipeline;
+use pipeline::graphics::HaGraphicsPipeline;
 use pipeline::stages::PipelineStageFlag;
-use pipeline::pass::dependency::DependencyFlag;
+use pipeline::pass::DependencyFlag;
 use resources::repository::{ CmdVertexBindingInfos, CmdIndexBindingInfo, CmdDescriptorBindingInfos };
 use utility::marker::{ VulkanFlags, VulkanEnum };
 
 use std::ptr;
 
-pub struct HaCommandRecorder<'buffer, 're> {
+pub struct HaCommandRecorder<'buffer> {
 
     pub(super) buffer: &'buffer HaCommandBuffer,
-    pub(super) device: &'re HaLogicalDevice,
+    pub(super) device: HaDevice,
 }
 
-impl<'buffer, 're> HaCommandRecorder<'buffer, 're> {
+impl<'buffer> HaCommandRecorder<'buffer> {
 
     pub fn begin_record(&'buffer self, flags: &[CommandBufferUsageFlag])
-        -> Result<&HaCommandRecorder<'buffer, 're>, CommandError> {
+        -> Result<&HaCommandRecorder<'buffer>, CommandError> {
 
         let begin_info = vk::CommandBufferBeginInfo {
             s_type: vk::StructureType::CommandBufferBeginInfo,
@@ -47,7 +47,7 @@ impl<'buffer, 're> HaCommandRecorder<'buffer, 're> {
 
 
     pub fn begin_render_pass(&self, pipeline: &HaGraphicsPipeline, framebuffer_index: usize)
-        -> &HaCommandRecorder<'buffer, 're> {
+        -> &HaCommandRecorder<'buffer> {
 
         let begin_info = vk::RenderPassBeginInfo {
             s_type: vk::StructureType::RenderPassBeginInfo,
@@ -70,27 +70,27 @@ impl<'buffer, 're> HaCommandRecorder<'buffer, 're> {
         self
     }
 
-    pub fn bind_pipeline(&self, pipeline: &HaGraphicsPipeline) -> &HaCommandRecorder<'buffer, 're> {
+    pub fn bind_pipeline(&self, pipeline: &HaGraphicsPipeline) -> &HaCommandRecorder<'buffer> {
         unsafe {
             self.device.handle.cmd_bind_pipeline(self.buffer.handle, pipeline.bind_point, pipeline.handle)
         };
         self
     }
 
-    pub fn bind_vertex_buffers(&self, first_binding: uint32_t, binding_infos: &CmdVertexBindingInfos) -> &HaCommandRecorder<'buffer, 're> {
+    pub fn bind_vertex_buffers(&self, first_binding: uint32_t, binding_infos: &CmdVertexBindingInfos) -> &HaCommandRecorder<'buffer> {
         unsafe {
             self.device.handle.cmd_bind_vertex_buffers(self.buffer.handle, first_binding, &binding_infos.handles, &binding_infos.offsets)
         };
         self
     }
-    pub fn bind_index_buffers(&self, index_info: &CmdIndexBindingInfo) -> &HaCommandRecorder<'buffer, 're> {
+    pub fn bind_index_buffers(&self, index_info: &CmdIndexBindingInfo) -> &HaCommandRecorder<'buffer> {
         unsafe {
             // TODO: Add configuration for IndexType.
             self.device.handle.cmd_bind_index_buffer(self.buffer.handle, index_info.handle, index_info.offset, vk::IndexType::Uint32)
         };
         self
     }
-    pub fn bind_descriptor_sets(&self, pipeline: &HaGraphicsPipeline, first_set: uint32_t, binding_infos: &CmdDescriptorBindingInfos) -> &HaCommandRecorder<'buffer, 're> {
+    pub fn bind_descriptor_sets(&self, pipeline: &HaGraphicsPipeline, first_set: uint32_t, binding_infos: &CmdDescriptorBindingInfos) -> &HaCommandRecorder<'buffer> {
         unsafe {
             // TODO: Currently dynamic_offsets field is not configuration.
             self.device.handle.cmd_bind_descriptor_sets(self.buffer.handle, pipeline.bind_point, pipeline.layout.handle, first_set, &binding_infos.handles, &[])
@@ -98,59 +98,59 @@ impl<'buffer, 're> HaCommandRecorder<'buffer, 're> {
         self
     }
 
-    pub(crate) fn copy_buffer(&self, src_buffer_handle: vk::Buffer, dst_buffer_handle: vk::Buffer, regions: &[vk::BufferCopy]) -> &HaCommandRecorder<'buffer, 're> {
+    pub(crate) fn copy_buffer(&self, src_buffer_handle: vk::Buffer, dst_buffer_handle: vk::Buffer, regions: &[vk::BufferCopy]) -> &HaCommandRecorder<'buffer> {
         unsafe {
             self.device.handle.cmd_copy_buffer(self.buffer.handle, src_buffer_handle, dst_buffer_handle, regions)
         };
         self
     }
     pub(crate) fn copy_buffer_to_image(&self, src_handle: vk::Buffer, dst_handle: vk::Image, dst_layout: vk::ImageLayout, regions: &[vk::BufferImageCopy])
-        -> &HaCommandRecorder<'buffer, 're> {
+        -> &HaCommandRecorder<'buffer> {
         unsafe {
             self.device.handle.cmd_copy_buffer_to_image(self.buffer.handle, src_handle, dst_handle, dst_layout, regions)
         };
         self
     }
 
-    pub fn draw(&self, vertex_count: uint32_t, instance_count: uint32_t, first_vertex: uint32_t, first_instance: uint32_t) -> &HaCommandRecorder<'buffer, 're> {
+    pub fn draw(&self, vertex_count: uint32_t, instance_count: uint32_t, first_vertex: uint32_t, first_instance: uint32_t) -> &HaCommandRecorder<'buffer> {
         unsafe {
             self.device.handle.cmd_draw(self.buffer.handle, vertex_count, instance_count, first_vertex, first_instance)
         };
         self
     }
-    pub fn draw_indexed(&self, index_count: uint32_t, instance_count: uint32_t, first_index: uint32_t, vertex_offset: int32_t, first_instance: uint32_t) -> &HaCommandRecorder<'buffer, 're> {
+    pub fn draw_indexed(&self, index_count: uint32_t, instance_count: uint32_t, first_index: uint32_t, vertex_offset: int32_t, first_instance: uint32_t) -> &HaCommandRecorder<'buffer> {
         unsafe {
             self.device.handle
                 .cmd_draw_indexed(self.buffer.handle, index_count, instance_count,first_index, vertex_offset, first_instance)
         };
         self
     }
-//    pub fn draw_indirect(&self, buffer: &HaBuffer, offset: vk::DeviceSize, draw_count: uint32_t, stride: uint32_t) -> &HaCommandRecorder<'buffer, 're> {
+//    pub fn draw_indirect(&self, buffer: &HaBuffer, offset: vk::DeviceSize, draw_count: uint32_t, stride: uint32_t) -> &HaCommandRecorder<'buffer> {
 //        unsafe {
 //            self.device.handle.cmd_draw_indirect(self.buffer.handle, buffer.handle, offset, draw_count, stride)
 //        };
 //        self
 //    }
-//    pub fn draw_indexed_indirect(&self, buffer: &HaBuffer, offset: vk::DeviceSize, draw_count: uint32_t, stride: uint32_t) -> &HaCommandRecorder<'buffer, 're> {
+//    pub fn draw_indexed_indirect(&self, buffer: &HaBuffer, offset: vk::DeviceSize, draw_count: uint32_t, stride: uint32_t) -> &HaCommandRecorder<'buffer> {
 //        unsafe {
 //            self.device.handle.cmd_draw_indexed_indirect(self.buffer.handle, buffer.handle, offset, draw_count, stride)
 //        };
 //        self
 //    }
 
-    pub(crate) fn pipeline_barrrier(&self, src_stage: PipelineStageFlag, dst_stage: PipelineStageFlag, dependencies: &[DependencyFlag], memory_barries: &[vk::MemoryBarrier], buffer_memory_barries: &[vk::BufferMemoryBarrier], image_memory_barries: &[vk::ImageMemoryBarrier], ) -> &HaCommandRecorder<'buffer, 're> {
+    pub(crate) fn pipeline_barrrier(&self, src_stage: PipelineStageFlag, dst_stage: PipelineStageFlag, dependencies: &[DependencyFlag], memory_barries: &[vk::MemoryBarrier], buffer_memory_barries: &[vk::BufferMemoryBarrier], image_memory_barries: &[vk::ImageMemoryBarrier], ) -> &HaCommandRecorder<'buffer> {
         unsafe {
             self.device.handle.cmd_pipeline_barrier(self.buffer.handle, src_stage.value(), dst_stage.value(), dependencies.flags(), memory_barries, buffer_memory_barries, image_memory_barries)
         };
         self
     }
 
-    pub fn end_render_pass(&self) -> &HaCommandRecorder<'buffer, 're> {
+    pub fn end_render_pass(&self) -> &HaCommandRecorder<'buffer> {
         unsafe { self.device.handle.cmd_end_render_pass(self.buffer.handle) };
         self
     }
 
-    pub fn finish(&self) -> Result<(), CommandError> {
+    pub fn end_record(&self) -> Result<(), CommandError> {
         let _ = unsafe {
             self.device.handle.end_command_buffer(self.buffer.handle)
                 .or(Err(CommandError::RecordEndError))?

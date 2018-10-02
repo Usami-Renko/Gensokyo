@@ -134,3 +134,5 @@ impl fmt::Display for LogicalDeviceError {
         }
     }
 }
+
+impl_from_err!(Command(CommandError) -> LogicalDeviceError);

@@ -2,14 +2,14 @@
 use ash;
 use ash::vk;
 use ash::vk::uint32_t;
-use ash::version::V1_0;
-use ash::version::DeviceV1_0;
+use ash::version::{ V1_0, DeviceV1_0 };
 
-use core::device::queue::HaQueue;
+use core::device::HaDevice;
 use core::device::queue::QueueSubmitBundle;
+use core::device::queue::{ HaQueueAbstract, HaGraphicsQueue, HaPresentQueue, HaTransferQueue, HaTransfer };
+use core::device::queue::{ HaQueue, QueueContainer };
 use core::error::LogicalDeviceError;
 
-use resources::command::{ HaCommandPool };
 use resources::error::CommandError;
 
 use sync::fence::HaFence;
@@ -22,23 +22,21 @@ use std::ptr;
 pub struct HaLogicalDevice {
 
     pub(crate) handle: ash::Device<V1_0>,
-    pub(crate) queues: Vec<HaQueue>,
+    pub(super) queue_container: QueueContainer,
 
-    pub(crate) graphics_queue: HaQueue,
-    pub(crate) present_queue : HaQueue,
-    pub(crate) transfer_queue: HaQueue,
-
-    pub(crate) transfer_command_pool: HaCommandPool,
+    pub(crate) graphics_queue: HaGraphicsQueue,
+    pub(crate) present_queue : HaPresentQueue,
+    pub(super) transfer_queue: HaTransferQueue,
 }
 
 pub enum DeviceQueueIdentifier {
     Graphics,
     Present,
     Transfer,
-    Custom(usize),
+    Custom(Box<DeviceQueueIdentifier>, usize),
 }
 
-impl<'resource> HaLogicalDevice {
+impl HaLogicalDevice {
 
     /// Tell device to wait for a group of fences.
     ///
@@ -62,7 +60,12 @@ impl<'resource> HaLogicalDevice {
         Ok(())
     }
 
-    pub fn submit(&self, bundles: &[QueueSubmitBundle], fence: Option<&HaFence>, queue: DeviceQueueIdentifier)
+    pub fn transfer(device: &HaDevice) -> HaTransfer {
+
+        device.transfer_queue.transfer(device)
+    }
+
+    pub fn submit(&self, bundles: &[QueueSubmitBundle], fence: Option<&HaFence>, queue_ident: DeviceQueueIdentifier)
         -> Result<(), CommandError> {
 
         // TODO: Add configuration to select submit queue family
@@ -94,7 +97,7 @@ impl<'resource> HaLogicalDevice {
             submit_infos.push(submit_info);
         }
 
-        let queue = self.queue_by_identifier(queue);
+        let queue = self.queue_handle_by_identifier(queue_ident);
         let fence = fence
             .and_then(|f| Some(f.handle))
             .unwrap_or(HaFence::null_handle());
@@ -114,17 +117,22 @@ impl<'resource> HaLogicalDevice {
     pub(crate) fn cleanup(&self) {
 
         unsafe {
-            self.transfer_command_pool.cleanup(self);
+            self.graphics_queue.cleanup(self);
+            self.present_queue.cleanup(self);
+            self.transfer_queue.cleanup(self);
+
             self.handle.destroy_device(None);
         }
     }
 
-    fn queue_by_identifier(&self, identifier: DeviceQueueIdentifier) -> &HaQueue {
+    pub(crate) fn queue_handle_by_identifier(&self, identifier: DeviceQueueIdentifier) -> &HaQueue {
         match identifier {
-            | DeviceQueueIdentifier::Graphics => &self.graphics_queue,
-            | DeviceQueueIdentifier::Present  => &self.present_queue,
-            | DeviceQueueIdentifier::Transfer => &self.transfer_queue,
-            | DeviceQueueIdentifier::Custom(queue_index) => &self.queues[queue_index],
+            | DeviceQueueIdentifier::Graphics => &self.graphics_queue.queue,
+            | DeviceQueueIdentifier::Present  => &self.present_queue.queue,
+            | DeviceQueueIdentifier::Transfer => &self.transfer_queue.queue,
+            | DeviceQueueIdentifier::Custom(ident, queue_index) => {
+                self.queue_container.queue(*ident, queue_index)
+            },
         }
     }
 }

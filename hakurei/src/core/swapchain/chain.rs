@@ -3,8 +3,7 @@ use ash;
 use ash::vk;
 use ash::vk::uint32_t;
 
-use core::device::HaLogicalDevice;
-use core::device::HaQueue;
+use core::device::{ HaDevice, HaGraphicsQueue, HaQueueAbstract };
 use core::swapchain::error::SwapchainRuntimeError;
 
 use resources::image::{ HaImage, HaImageView };
@@ -68,7 +67,7 @@ impl HaSwapchain {
         }
     }
 
-    pub fn present(&self, wait_semaphores: &[&HaSemaphore], image_index: uint32_t, queue: &HaQueue)
+    pub fn present(&self, wait_semaphores: &[&HaSemaphore], image_index: uint32_t, queue: &HaGraphicsQueue)
         -> Result<(), SwapchainRuntimeError> {
 
         let semaphores = wait_semaphores.handles();
@@ -88,7 +87,7 @@ impl HaSwapchain {
         };
 
         unsafe {
-            self.loader.queue_present_khr(queue.handle, &present_info)
+            self.loader.queue_present_khr(queue.handle(), &present_info)
                 .map_err(|err| {
                     match err {
                         | vk::Result::SuboptimalKhr          => SwapchainRuntimeError::SurfaceSubOptimalError,
@@ -109,7 +108,7 @@ impl HaSwapchain {
         unimplemented!()
     }
 
-    pub fn cleanup(&self, device: &HaLogicalDevice) {
+    pub fn cleanup(&self, device: &HaDevice) {
 
         self.views.iter().for_each(|v| v.cleanup(device));
 

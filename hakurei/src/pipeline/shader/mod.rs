@@ -1,5 +1,10 @@
 
-pub(crate) mod module;
-pub(crate) mod input;
+pub use self::input::{ HaVertexInputBinding, HaVertexInputAttribute, VertexInputDescription };
+pub use self::module::HaShaderInfo;
+pub use self::flag::ShaderStageFlag;
 
-pub mod prelude;
+pub(crate) use self::module::HaShaderModule;
+
+mod module;
+mod input;
+mod flag;

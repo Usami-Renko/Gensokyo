@@ -1,10 +1,10 @@
 
 use ash::vk::uint32_t;
 
-use core::ValidationInfo;
-use core::debug::DebugReportFlag;
-
+use core::debug::{ ValidationInfo, DebugReportFlag };
 use core::physical::DeviceExtensionType;
+
+use utility::time::TimePeriod;
 
 pub const APPLICATION_VERSION: uint32_t = vk_make_version!(1, 0, 0);
 pub const ENGINE_VERSION:      uint32_t = vk_make_version!(1, 0, 0);
@@ -20,6 +20,8 @@ pub const DEVICE_EXTENSION: [DeviceExtensionType; 1] = [
 pub struct CoreConfig {
 
     pub validation: ValidationInfo,
+
+    pub transfer_wait_time: TimePeriod,
 }
 
 impl Default for CoreConfig {
@@ -37,7 +39,9 @@ impl Default for CoreConfig {
                     DebugReportFlag::WarningBit,
                     DebugReportFlag::PerformanceWarningBit,
                 ],
-            }
+            },
+
+            transfer_wait_time: TimePeriod::Infinte,
         }
     }
 }

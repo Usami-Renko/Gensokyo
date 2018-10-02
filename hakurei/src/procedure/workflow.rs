@@ -5,28 +5,35 @@ use core::instance::HaInstance;
 use core::debug::HaDebugger;
 use core::physical::{ HaPhysicalDevice, PhysicalRequirement };
 use core::surface::HaSurface;
-use core::device::{ HaLogicalDevice, LogicalDeviceBuilder };
-use core::swapchain::chain::HaSwapchain;
-use core::swapchain::builder::SwapchainBuilder;
-use core::swapchain::error::{ SwapchainError, SwapchainRuntimeError };
-use resources::allocator::ResourceGenerator;
+use core::device::{ HaDevice, HaLogicalDevice, LogicalDeviceBuilder };
+use core::swapchain::HaSwapchain;
+use core::swapchain::SwapchainBuilder;
+use core::swapchain::{ SwapchainError, SwapchainRuntimeError };
+use resources::toolkit::{ AllocatorKit, PipelineKit, CommandKit };
 use sync::fence::HaFence;
 use sync::semaphore::HaSemaphore;
 
 use procedure::window::ProgramEnv;
 use procedure::error::ProcedureError;
 
+use input::{ ActionNerve, SceneAction };
 use utility::time::TimePeriod;
+
+use std::rc::Rc;
 
 pub trait ProgramProc {
 
-    fn assets(&mut self, device: &HaLogicalDevice, generator: &ResourceGenerator) -> Result<(), ProcedureError>;
-    fn pipelines(&mut self, device: &HaLogicalDevice, swapchain: &HaSwapchain) -> Result<(), ProcedureError>;
-    fn subresources(&mut self, device: &HaLogicalDevice) -> Result<(), ProcedureError>;
-    fn commands(&mut self, device: &HaLogicalDevice) -> Result<(), ProcedureError>;
-    fn draw(&mut self, device: &HaLogicalDevice, device_available: &HaFence, image_available: &HaSemaphore, image_index: usize) -> Result<&HaSemaphore, ProcedureError>;
-    fn clean_resources(&mut self, device: &HaLogicalDevice) -> Result<(), ProcedureError>;
-    fn cleanup(&mut self, device: &HaLogicalDevice);
+    fn assets(&mut self, device: &HaDevice, kit: AllocatorKit) -> Result<(), ProcedureError>;
+    fn pipelines(&mut self, kit: PipelineKit, swapchain: &HaSwapchain) -> Result<(), ProcedureError>;
+    fn subresources(&mut self, _device: &HaDevice) -> Result<(), ProcedureError> { Ok(())}
+    fn commands(&mut self, kit: CommandKit) -> Result<(), ProcedureError>;
+    fn ready(&mut self, _device: &HaDevice) -> Result<(), ProcedureError> { Ok(()) }
+    fn draw(&mut self, device: &HaDevice, device_available: &HaFence, image_available: &HaSemaphore, image_index: usize, delta_time: f32) -> Result<&HaSemaphore, ProcedureError>;
+    fn closure(&mut self, _device: &HaDevice) -> Result<(), ProcedureError> { Ok(()) }
+    fn clean_resources(&mut self) -> Result<(), ProcedureError>;
+    fn cleanup(&mut self);
+
+    fn react_input(&mut self, inputer: &ActionNerve, delta_time: f32) -> SceneAction;
 }
 
 pub struct CoreInfrastructure<'win> {
@@ -35,8 +42,8 @@ pub struct CoreInfrastructure<'win> {
     debugger  : Option<HaDebugger>,
     surface   : HaSurface<'win>,
 
-    pub(crate) physical: HaPhysicalDevice,
-    pub(crate) device  : HaLogicalDevice,
+    pub(crate) physical: Rc<HaPhysicalDevice>,
+    pub(crate) device  : Rc<HaLogicalDevice>,
 }
 
 pub struct HaResources {
@@ -66,43 +73,44 @@ impl<'win, T> ProgramEnv<T> where T: ProgramProc {
         let physical = HaPhysicalDevice::new(&instance, &surface, requirement)?;
         // Initialize the device with default queues. (one graphics queue, one present queue, one transfer queue)
         let device = LogicalDeviceBuilder::init(&instance, &physical)
-            .build()?;
+            .build(&self.config.core)?;
 
         let core = CoreInfrastructure {
-            instance, debugger, surface, physical, device,
+            instance, debugger, surface,
+            device  : Rc::new(device),
+            physical: Rc::new(physical),
         };
         Ok(core)
     }
 
     pub(super) fn load_resources(&mut self, core: &CoreInfrastructure) -> Result<HaResources, ProcedureError> {
 
-        let inner_resource = self.create_inner_resources(core)?;
+        let inner_resource = self.create_inner_resources(core, None)?;
 
-        let resource_generator = ResourceGenerator::init(&core.physical, &core.device);
-        self.procedure.assets(&core.device, &resource_generator)?;
-        self.procedure.pipelines(&core.device, &inner_resource.swapchain)?;
+        self.procedure.assets(&core.device, AllocatorKit::init(&core.physical, &core.device))?;
+        self.procedure.pipelines(PipelineKit::init(&core.device), &inner_resource.swapchain)?;
         self.procedure.subresources(&core.device)?;
-        self.procedure.commands(&core.device,)?;
+        self.procedure.commands(CommandKit::init(&core.device))?;
 
         Ok(inner_resource)
     }
 
-    pub(super) fn reload_resources(&mut self, core: &CoreInfrastructure) -> Result<HaResources, ProcedureError> {
+    pub(super) fn reload_resources(&mut self, core: &CoreInfrastructure, old_resource: &HaResources) -> Result<HaResources, ProcedureError> {
 
-        let inner_resource = self.create_inner_resources(core)?;
+        let inner_resource = self.create_inner_resources(core, Some(&old_resource))?;
 
-        self.procedure.pipelines(&core.device, &inner_resource.swapchain)?;
+        self.procedure.pipelines(PipelineKit::init(&core.device), &inner_resource.swapchain)?;
         self.procedure.subresources(&core.device)?;
-        self.procedure.commands(&core.device,)?;
+        self.procedure.commands(CommandKit::init(&core.device))?;
 
         Ok(inner_resource)
     }
 
-    pub(super) fn draw_frame(&mut self, current_frame: usize, core: &mut CoreInfrastructure, resources: &mut HaResources)
+    pub(super) fn draw_frame(&mut self, current_frame: usize, core: &mut CoreInfrastructure, resources: &mut HaResources, delta_time: f32)
         -> Result<(), ProcedureError> {
 
         let fence_to_wait = &resources.sync_fences[current_frame];
-        fence_to_wait.wait(&core.device, TimePeriod::Infinte)?;
+        fence_to_wait.wait(TimePeriod::Infinte)?;
 
         let image_result = resources.swapchain.next_image(Some(&resources.image_awaits[current_frame]), None);
         let image_index = match image_result {
@@ -117,13 +125,13 @@ impl<'win, T> ProgramEnv<T> where T: ProgramProc {
                 }
         };
 
-        fence_to_wait.reset(&core.device)?;
+        fence_to_wait.reset()?;
 
-        let present_available = self.procedure.draw(&core.device, fence_to_wait, &resources.image_awaits[current_frame], current_frame)?;
+        let present_available = self.procedure.draw(&core.device, fence_to_wait, &resources.image_awaits[current_frame], current_frame, delta_time)?;
 
         // FIXME: Use present queue will cause crash. Image ownership transfer is necessary,
         // see https://github.com/KhronosGroup/Vulkan-Docs/wiki/Synchronization-Examples.
-        // or see https://software.intel.com/en-us/articles/api-without-secrets-introduction-to-vulkan-part-3
+        // or see https://software.intel.com/en-us/articles/api-without-secrets-introduction-to-vulkan-part-3#inpage-nav-6-3
         let present_result = resources.swapchain.present(
             &[present_available],
             image_index,
@@ -142,15 +150,15 @@ impl<'win, T> ProgramEnv<T> where T: ProgramProc {
         Ok(())
     }
 
-    pub fn wait_idle(&self, device: &HaLogicalDevice) -> Result<(), ProcedureError> {
+    pub fn wait_idle(&self, device: &HaDevice) -> Result<(), ProcedureError> {
         device.wait_idle()
             .map_err(|e| ProcedureError::LogicalDevice(e))
     }
 
-    fn create_inner_resources(&self, core: &CoreInfrastructure) -> Result<HaResources, ProcedureError> {
+    fn create_inner_resources(&self, core: &CoreInfrastructure, old_resource: Option<&HaResources>) -> Result<HaResources, ProcedureError> {
 
         let swapchain = SwapchainBuilder::init(&self.config, &core.physical, &core.device, &core.surface)?
-            .build(&core.instance)?;
+            .build(&core.instance, old_resource.and_then(|re| Some(&re.swapchain)))?;
 
         // sync
         let mut image_awaits = vec![];
@@ -192,11 +200,11 @@ impl<'win> CoreInfrastructure<'win> {
 
 impl HaResources {
 
-    pub fn cleanup(&self, device: &HaLogicalDevice) {
+    pub fn cleanup(&self, device: &HaDevice) {
 
         self.swapchain.cleanup(device);
-        self.image_awaits.iter().for_each(|i| i.cleanup(device));
-        self.sync_fences.iter().for_each(|f| f.cleanup(device));
+        self.image_awaits.iter().for_each(|i| i.cleanup());
+        self.sync_fences.iter().for_each(|f| f.cleanup());
     }
 
     pub fn clear(&mut self) {

@@ -2,7 +2,7 @@
 use ash::vk;
 use ash::vk::uint32_t;
 
-use pipeline::state::vertex_input::HaVertexInput;
+use pipeline::state::HaVertexInput;
 
 #[derive(Debug)]
 pub struct HaVertexInputBinding {
@@ -30,15 +30,15 @@ impl VertexInputDescription {
 
     pub(crate) fn desc(self) -> HaVertexInput {
 
-        let bindings: Vec<vk::VertexInputBindingDescription> = self.bindings.iter()
+        let bindings = self.bindings.iter()
             .map(|b|
                 vk::VertexInputBindingDescription {
                     binding   : b.binding,
                     stride    : b.stride,
                     input_rate: b.rate,
                 }
-        ).collect();
-        let attributes: Vec<vk::VertexInputAttributeDescription> = self.attributes.iter()
+        ).collect::<Vec<_>>();
+        let attributes = self.attributes.iter()
             .map(|a|
                 vk::VertexInputAttributeDescription {
                     binding : a.binding,
@@ -46,7 +46,7 @@ impl VertexInputDescription {
                     format  : a.format,
                     offset  : a.offset,
                 }
-        ).collect();
+        ).collect::<Vec<_>>();
 
         HaVertexInput::setup(bindings, attributes)
     }

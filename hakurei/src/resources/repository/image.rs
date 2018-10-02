@@ -1,29 +1,36 @@
 
-use core::device::HaLogicalDevice;
+use core::device::HaDevice;
 
-use resources::memory::device::HaDeviceMemory;
+use resources::memory::HaMemoryAbstract;
 use resources::image::{ HaImage, HaImageView, ImageViewItem };
 
 pub struct HaImageRepository {
 
+    device : Option<HaDevice>,
     images : Vec<HaImage>,
     views  : Vec<HaImageView>,
-    memory : Option<HaDeviceMemory>,
+    memory : Option<Box<HaMemoryAbstract>>,
 }
 
 impl HaImageRepository {
 
     pub fn empty() -> HaImageRepository {
         HaImageRepository {
+
+            device: None,
             images: vec![],
             views : vec![],
             memory: None,
         }
     }
 
-    pub(crate) fn store(images: Vec<HaImage>, views: Vec<HaImageView>, memory: HaDeviceMemory) -> HaImageRepository {
+    pub(crate) fn store(device: &HaDevice, images: Vec<HaImage>, views: Vec<HaImageView>, memory: Box<HaMemoryAbstract>) -> HaImageRepository {
 
-        HaImageRepository { images, views, memory: Some(memory) }
+        HaImageRepository {
+            device: Some(device.clone()),
+            memory: Some(memory),
+            images, views,
+        }
     }
 
     pub(crate) fn view_at(&self, item: &ImageViewItem) -> &HaImageView {
@@ -38,19 +45,19 @@ impl HaImageRepository {
         }
     }
 
-    pub fn cleanup(&mut self, device: &HaLogicalDevice) {
+    pub fn cleanup(&mut self) {
 
-        for image in self.images.iter() {
-            image.cleanup(device);
+        if let Some(ref device) = self.device {
+
+            self.images.iter().for_each(|image| image.cleanup(device));
+            self.views.iter().for_each(|view| view.cleanup(device));
+
+            if let Some(ref memory) = self.memory {
+                memory.cleanup(device);
+            }
         }
-        for view in self.views.iter() {
-            view.cleanup(device);
-        }
+
         self.views.clear();
         self.images.clear();
-
-        if let Some(ref memory) = self.memory {
-            memory.cleanup(device);
-        }
     }
 }

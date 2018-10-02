@@ -1,13 +1,14 @@
 
 use winit;
-use winit::{ VirtualKeyCode, Event, WindowEvent };
 
 use utility::dimension::Dimension2D;
+use utility::fps::HaFpsTimer;
 use config::engine::EngineConfig;
 
 use procedure::workflow::{ CoreInfrastructure, HaResources, ProgramProc };
-use procedure::error::RuntimeError;
-use procedure::error::ProcedureError;
+use procedure::error::{ RuntimeError, ProcedureError };
+
+use input::{ ActionNerve, SceneReaction };
 
 struct WindowInfo {
     window_size : Dimension2D,
@@ -44,7 +45,7 @@ impl<T> ProgramEnv<T> where T: ProgramProc {
         let event_loop = winit::EventsLoop::new();
         let frame_in_flights = config.swapchain.image_count as usize;
 
-        ProgramEnv { config, event_loop, window_info, procedure, frame_in_flights, }
+        ProgramEnv { config, event_loop, window_info, procedure, frame_in_flights }
     }
 
     pub fn launch(&mut self) -> Result<(), RuntimeError> {
@@ -60,6 +61,7 @@ impl<T> ProgramEnv<T> where T: ProgramProc {
         let mut core = self.initialize_core(&window, requirement)?;
         let mut resources = self.load_resources(&core)?;
 
+        self.procedure.ready(&core.device)?;
 
         'outer_loop: loop {
             match self.main_loop(&mut core, &mut resources) {
@@ -67,10 +69,12 @@ impl<T> ProgramEnv<T> where T: ProgramProc {
                 | Err(error) => match error {
                     | ProcedureError::SwapchainRecreate => {
                         self.wait_idle(&core.device)?;
+                        self.procedure.clean_resources()?;
+                        let new_resources = self.reload_resources(&core, &resources)?;
                         resources.cleanup(&core.device);
                         resources.clear();
-                        self.procedure.clean_resources(&core.device)?;
-                        resources = self.reload_resources(&core)?;
+
+                        resources = new_resources;
 
                         continue
                     },
@@ -79,10 +83,11 @@ impl<T> ProgramEnv<T> where T: ProgramProc {
             }
         }
 
+        self.procedure.closure(&core.device)?;
 
         self.wait_idle(&core.device)?;
 
-        self.procedure.cleanup(&core.device);
+        self.procedure.cleanup();
         resources.cleanup(&core.device);
         core.cleanup();
 
@@ -91,59 +96,49 @@ impl<T> ProgramEnv<T> where T: ProgramProc {
 
     fn main_loop(&mut self, core: &mut CoreInfrastructure, resources: &mut HaResources) -> Result<(), ProcedureError> {
 
-        let mut is_running        = true;
-        let mut is_first_resized  = true;
-        let mut is_resized_tiggle = false;
+        let mut actioner = ActionNerve::new();
         let mut current_fame = 0_usize;
+        let mut fps_timer = HaFpsTimer::new();
 
         'mainloop: loop {
+
+            let delta_time = fps_timer.delta_time();
+
             self.event_loop.poll_events(|event| {
                 match event {
-                    // handling keyboard event
-                    | Event::WindowEvent { event, .. } => match event {
-                        | WindowEvent::KeyboardInput { input, .. } => {
-                            if let Some(VirtualKeyCode::Escape) = input.virtual_keycode {
-                                is_running = false;
-                            }
-                        },
-                        | WindowEvent::Resized(_) => {
-
-                            if is_first_resized {
-                                is_first_resized = false;
-                            } else {
-                                is_running        = false;
-                                is_resized_tiggle = true;
-                            }
-                        },
-                        | WindowEvent::CloseRequested => {
-                            is_running = false;
-                        },
-                        | _ => (),
+                    | winit::Event::WindowEvent { event, .. } => {
+                        actioner.record_event(&event);
                     },
                     | _ => (),
                 }
             });
 
-            match self.draw_frame(current_fame, core, resources) {
+            let app_action = self.procedure.react_input(&actioner, delta_time);
+            actioner.cover_reaction(app_action);
+
+            match self.draw_frame(current_fame, core, resources, delta_time) {
                 | Ok(_) => (),
                 | Err(error) => match error {
                     | ProcedureError::SwapchainRecreate => {
-                        is_running        = false;
-                        is_resized_tiggle = true;
+                        actioner.force_reaction(SceneReaction::SwapchainRecreate)
                     },
                     | _ => return Err(error)
                 }
             }
 
-            if is_running == false {
-                if is_resized_tiggle {
+            let reaction = actioner.get_reaction();
+            match reaction {
+                | SceneReaction::Rendering => {},
+                | SceneReaction::SwapchainRecreate => {
                     return Err(ProcedureError::SwapchainRecreate)
-                } else {
+                },
+                | SceneReaction::Terminate => {
                     break 'mainloop
                 }
             }
 
             current_fame = (current_fame + 1) % self.frame_in_flights;
+            fps_timer.tick_frame();
         }
 
         Ok(())

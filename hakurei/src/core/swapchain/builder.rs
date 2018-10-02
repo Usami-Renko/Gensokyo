@@ -5,8 +5,8 @@ use ash::vk::{ uint32_t, uint64_t };
 
 use config::engine::EngineConfig;
 use core::instance::HaInstance;
-use core::physical::HaPhysicalDevice;
-use core::device::HaLogicalDevice;
+use core::physical::HaPhyDevice;
+use core::device::HaDevice;
 use core::surface::HaSurface;
 
 use core::swapchain::chain::HaSwapchain;
@@ -43,7 +43,7 @@ impl VulkanFlags for [SwapchainCreateFlag] {
 
 pub struct SwapchainBuilder<'vk, 'win: 'vk> {
 
-    device:  &'vk HaLogicalDevice,
+    device:  HaDevice,
     surface: &'vk HaSurface<'win>,
 
     support: SwapchainSupport,
@@ -54,7 +54,7 @@ pub struct SwapchainBuilder<'vk, 'win: 'vk> {
 
 impl<'vk, 'win: 'vk> SwapchainBuilder<'vk, 'win> {
 
-    pub fn init(config: &EngineConfig, physical: &HaPhysicalDevice, device: &'vk HaLogicalDevice, surface: &'vk HaSurface<'win>)
+    pub fn init(config: &EngineConfig, physical: &HaPhyDevice, device: &HaDevice, surface: &'vk HaSurface<'win>)
         -> Result<SwapchainBuilder<'vk, 'win>, SwapchainInitError> {
 
         let support = SwapchainSupport::query_support(surface, physical.handle, config)
@@ -63,7 +63,7 @@ impl<'vk, 'win: 'vk> SwapchainBuilder<'vk, 'win> {
         let image_share_info = sharing_mode(device);
 
         let builder = SwapchainBuilder {
-            device,
+            device: device.clone(),
             surface,
 
             support,
@@ -75,7 +75,7 @@ impl<'vk, 'win: 'vk> SwapchainBuilder<'vk, 'win> {
         Ok(builder)
     }
 
-    pub fn build(&self, instance: &HaInstance)
+    pub fn build(&self, instance: &HaInstance, old_chain: Option<&HaSwapchain>)
         -> Result<HaSwapchain, SwapchainInitError> {
 
         let prefer_format = self.support.optimal_format();
@@ -97,7 +97,6 @@ impl<'vk, 'win: 'vk> SwapchainBuilder<'vk, 'win> {
             // this value must be greater than 0.
             // for non-stereoscopic-3D applications, this value is 1
             image_array_layers: 1,
-
             // what kind of operations we'll use the images in the swap chain for.
             image_usage: vk::IMAGE_USAGE_COLOR_ATTACHMENT_BIT,
             // for range or image subresources accessing,
@@ -113,8 +112,8 @@ impl<'vk, 'win: 'vk> SwapchainBuilder<'vk, 'win> {
             present_mode             : prefer_present_mode,
             // set this true to discard the pixels out of surface
             clipped                  : vk::VK_TRUE,
-            // because this is the first creation of swapchain, no need to set this field
-            old_swapchain            : vk::SwapchainKHR::null(),
+            // pass the old swapchain may help vulkan to reuse some resources.
+            old_swapchain            : if let Some(chain) = old_chain { chain.handle } else { vk::SwapchainKHR::null() },
         };
 
         let loader = ash::extensions::Swapchain::new(&instance.handle, &self.device.handle)
@@ -125,9 +124,9 @@ impl<'vk, 'win: 'vk> SwapchainBuilder<'vk, 'win> {
                 .or(Err(SwapchainInitError::SwapchianCreationError))?
         };
 
-        let images: Vec<_> = loader.get_swapchain_images_khr(handle)
+        let images = loader.get_swapchain_images_khr(handle)
             .or(Err(SwapchainInitError::SwapchainImageGetError))?
-            .iter().map(|&img_handle| HaImage::from_swapchain(img_handle)).collect();
+            .iter().map(|&img_handle| HaImage::from_swapchain(img_handle)).collect::<Vec<_>>();
 
         let mut view_desc = ImageViewDescInfo::init(
             ImageViewType::Type2d,
@@ -136,7 +135,7 @@ impl<'vk, 'win: 'vk> SwapchainBuilder<'vk, 'win> {
 
         let mut views = vec![];
         for image in images.iter() {
-            let view = HaImageView::config(self.device, image, &view_desc, prefer_format.format)
+            let view = HaImageView::config(&self.device, image, &view_desc, prefer_format.format)
                 .or(Err(SwapchainInitError::ImageViewCreationError))?;
             views.push(view);
         }
@@ -158,9 +157,9 @@ struct SwapchainImageShaingInfo {
     mode: vk::SharingMode,
     queue_family_indices: Vec<uint32_t>,
 }
-fn sharing_mode(device: &HaLogicalDevice) -> SwapchainImageShaingInfo {
+fn sharing_mode(device: &HaDevice) -> SwapchainImageShaingInfo {
 
-    if device.graphics_queue.family_index == device.present_queue.family_index {
+    if device.graphics_queue.queue.family_index == device.present_queue.queue.family_index {
         SwapchainImageShaingInfo {
             mode: vk::SharingMode::Exclusive,
             queue_family_indices: vec![],
@@ -169,8 +168,8 @@ fn sharing_mode(device: &HaLogicalDevice) -> SwapchainImageShaingInfo {
         SwapchainImageShaingInfo {
             mode: vk::SharingMode::Concurrent,
             queue_family_indices: vec![
-                device.graphics_queue.family_index,
-                device.present_queue.family_index,
+                device.graphics_queue.queue.family_index,
+                device.present_queue.queue.family_index,
             ],
         }
     }

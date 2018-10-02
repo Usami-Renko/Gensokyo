@@ -1,9 +1,15 @@
 
-pub use self::flag::{ BufferCreateFlag, BufferUsageFlag };
-pub use self::item::{ BufferConfig, BufferItem, BufferSubItem };
+pub use self::flag::{ BufferCreateFlag, HostBufferUsage, CachedBufferUsage, DeviceBufferUsage, StagingBufferUsage };
+pub use self::item::{ BufferItem, BufferSubItem };
+pub use self::config::{ HostBufferConfig, CachedBufferConfig, DeviceBufferConfig, StagingBufferConfig };
+pub use self::traits::BufferConfigModifiable;
 
-pub(crate) use self::handle::HaBuffer;
+pub(crate) use self::object::HaBuffer;
+pub(crate) use self::flag::BufferUsageFlag;
+pub(crate) use self::traits::{BufferConfigAbstract, BufferGeneratable};
 
 mod flag;
-mod handle;
+mod object;
 mod item;
+mod traits;
+mod config;

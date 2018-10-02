@@ -2,6 +2,8 @@
 use std::fmt;
 use std::error::Error;
 
+use sync::error::SyncError;
+
 /// possible error may occur during the creation of vk::Framebuffer.
 #[derive(Debug, Clone, Copy, Eq, PartialEq)]
 pub enum FramebufferError {
@@ -27,6 +29,7 @@ pub enum CommandError {
 
     QueueFamilyUnavailable,
     QueueSubmitError,
+    NoCommandAvailable,
     PoolCreationError,
     BufferAllocateError,
     RecordBeginError,
@@ -41,6 +44,7 @@ impl fmt::Display for CommandError {
         let description = match self {
             | CommandError::QueueFamilyUnavailable => "Graphics Queue Family is not available.",
             | CommandError::QueueSubmitError       => "Failed to submit command to device.",
+            | CommandError::NoCommandAvailable     => "There must be command buffer to execute",
             | CommandError::PoolCreationError      => "Failed to create Command Pool.",
             | CommandError::BufferAllocateError    => "Failed to allocate Command Buffer.",
             | CommandError::RecordBeginError       => "Failed to begin Command Buffer recording.",
@@ -82,6 +86,9 @@ pub enum MemoryError {
     BindMemoryError,
     MapMemoryError,
     FlushMemoryError,
+    BufferToBufferCopyError,
+    AllocateInfoMissing,
+    MemoryUnableToUpdate,
 }
 
 impl Error for MemoryError {}
@@ -92,10 +99,13 @@ impl fmt::Display for MemoryError {
         let description = match self {
             | MemoryError::NoSuitableMemoryError     => "Failed to find suitable memory type for Buffer memory allocation.",
             | MemoryError::MemoryNotYetAllocateError => "The memory must be allocated before transfering data.",
-            | MemoryError::AllocateMemoryError       => "Failed to allocate memory for buffer object.",
+            | MemoryError::AllocateMemoryError       => "Failed to allocate memory for buffer or image object.",
             | MemoryError::BindMemoryError           => "Failed to bind memory to buffer object.",
             | MemoryError::MapMemoryError            => "Failed to map memory for buffer object.",
             | MemoryError::FlushMemoryError          => "Failed to flush certain range of memory.",
+            | MemoryError::BufferToBufferCopyError   => "Failed to copy buffer from another buffer",
+            | MemoryError::AllocateInfoMissing       => "The allocate info is missing, check the logic of code.",
+            | MemoryError::MemoryUnableToUpdate      => "This type of memory is not support to use updater.",
         };
         write!(f, "{}", description)
     }
@@ -108,13 +118,18 @@ pub enum AllocatorError {
     Memory(MemoryError),
     Command(CommandError),
     Image(ImageError),
+    Sync(SyncError),
     MemoryNotYetAllocated,
+    DeviceMemoryNotSupportDirectUpdate,
+    DataTransferNotActivate,
+    UnmatchBufferConfig,
 }
 
 impl_from_err!(Buffer(BufferError)   -> AllocatorError);
 impl_from_err!(Memory(MemoryError)   -> AllocatorError);
 impl_from_err!(Command(CommandError) -> AllocatorError);
 impl_from_err!(Image(ImageError)     -> AllocatorError);
+impl_from_err!(Sync(SyncError)       -> AllocatorError);
 
 impl Error for AllocatorError {}
 impl fmt::Display for AllocatorError {
@@ -126,8 +141,18 @@ impl fmt::Display for AllocatorError {
             | AllocatorError::Memory(ref e)  => e.to_string(),
             | AllocatorError::Command(ref e) => e.to_string(),
             | AllocatorError::Image(ref e)   => e.to_string(),
+            | AllocatorError::Sync(ref e)    => e.to_string(),
             | AllocatorError::MemoryNotYetAllocated   => {
                 String::from("The memory is not allocated yet. Memory must be allocated first before using it.")
+            },
+            | AllocatorError::DeviceMemoryNotSupportDirectUpdate => {
+                String::from("It's not support to send data to device memory directly. Please use buffer copy operation.")
+            },
+            | AllocatorError::DataTransferNotActivate => {
+                String::from("The repository must be activated before making data transfer operations.")
+            },
+            | AllocatorError::UnmatchBufferConfig => {
+                String::from("The type of buffer config is unable to match with the type of buffer allocator.")
             },
         };
         write!(f, "{}", description)

@@ -4,9 +4,5 @@ members = [
     "hakurei",
     "hakurei-macros",
 
-    "examples/Eg001.triangle",
-    "examples/Eg002.index_buffer",
-    "examples/Eg003.staging_buffer",
-    "examples/Eg004.uniform_buffer",
-    "examples/Eg005.texture_mapping",
+    "examples/Eg01.basic",
 ]

@@ -2,7 +2,7 @@
 use ash::vk;
 use ash::version::DeviceV1_0;
 
-use core::device::HaLogicalDevice;
+use core::device::HaDevice;
 
 use resources::descriptor::HaDescriptorPool;
 use resources::descriptor::{ DescriptorItem, DescriptorSetItem };
@@ -17,6 +17,7 @@ pub struct CmdDescriptorBindingInfos {
 
 pub struct HaDescriptorRepository {
 
+    device : Option<HaDevice>,
     pool   : HaDescriptorPool,
     sets   : Vec<HaDescriptorSet>,
     configs: Vec<DescriptorSetConfig>,
@@ -26,21 +27,25 @@ impl HaDescriptorRepository {
 
     pub fn empty() -> HaDescriptorRepository {
         HaDescriptorRepository {
+            device : None,
             pool   : HaDescriptorPool::uninitialize(),
             sets   : vec![],
             configs: vec![],
         }
     }
 
-    pub(crate) fn store(pool: HaDescriptorPool, sets: Vec<HaDescriptorSet>, configs: Vec<DescriptorSetConfig>)
+    pub(crate) fn store(device: &HaDevice, pool: HaDescriptorPool, sets: Vec<HaDescriptorSet>, configs: Vec<DescriptorSetConfig>)
         -> HaDescriptorRepository {
 
-        HaDescriptorRepository { pool, sets, configs, }
+        HaDescriptorRepository {
+            device: Some(device.clone()),
+            pool, sets, configs,
+        }
     }
 
     // TODO: Currently only support descriptors in the same Buffer Repository.
     // TODO: Redesign the API, if items is not buffer items, the function will crash.
-    pub fn update_descriptors(&self, device: &HaLogicalDevice, items: &[DescriptorItem]) {
+    pub fn update_descriptors(&self, items: &[DescriptorItem]) {
 
         let mut write_sets = vec![];
 
@@ -52,7 +57,7 @@ impl HaDescriptorRepository {
         }
 
         unsafe {
-            device.handle.update_descriptor_sets(&write_sets, &[]);
+            self.device.as_ref().unwrap().handle.update_descriptor_sets(&write_sets, &[]);
         }
     }
 
@@ -69,17 +74,19 @@ impl HaDescriptorRepository {
         }
     }
 
-    pub fn cleanup(&mut self, device: &HaLogicalDevice) {
+    pub fn cleanup(&mut self) {
 
-        for config in self.configs.iter() {
-            config.cleanup(device);
-        }
+        if let Some(ref device) = self.device {
+            for config in self.configs.iter() {
+                config.cleanup(&device);
+            }
 
-        self.pool.cleanup(device);
-        self.pool = HaDescriptorPool::uninitialize();
+            self.pool.cleanup(&device);
+            self.pool = HaDescriptorPool::uninitialize();
 
-        for set in self.sets.iter() {
-            set.cleanup(device);
+            for set in self.sets.iter() {
+                set.cleanup(&device);
+            }
         }
 
         self.sets.clear();

@@ -1,7 +1,7 @@
 
 use ash::vk;
 
-use core::device::HaLogicalDevice;
+use core::device::HaDevice;
 
 use resources::command::record::HaCommandRecorder;
 
@@ -42,18 +42,23 @@ impl CommandBufferUsage {
 
 pub struct HaCommandBuffer {
 
+    pub(super) device : HaDevice,
+
     pub(crate) handle: vk::CommandBuffer,
     pub(super) usage: CommandBufferUsage,
 }
 
-impl<'buffer, 'vk: 'buffer> HaCommandBuffer {
+impl<'buffer> HaCommandBuffer {
 
-    pub fn setup_record(&'buffer self, device: &'vk HaLogicalDevice)
-        -> HaCommandRecorder<'buffer, 'vk> {
+    pub(crate) fn new(device: &HaDevice, handle: vk::CommandBuffer, usage: CommandBufferUsage) -> HaCommandBuffer {
+        HaCommandBuffer { device: device.clone(), handle, usage, }
+    }
+
+    pub fn setup_record(&'buffer self) -> HaCommandRecorder<'buffer> {
 
         HaCommandRecorder {
             buffer: self,
-            device,
+            device: self.device.clone(),
         }
     }
 

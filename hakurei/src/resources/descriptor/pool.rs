@@ -3,7 +3,7 @@ use ash::vk;
 use ash::vk::uint32_t;
 use ash::version::DeviceV1_0;
 
-use core::device::HaLogicalDevice;
+use core::device::HaDevice;
 
 use resources::descriptor::set::HaDescriptorSet;
 use resources::descriptor::layout::HaDescriptorSetLayout;
@@ -40,7 +40,7 @@ impl DescriptorPoolInfo {
         });
     }
 
-    pub fn build(&self, device: &HaLogicalDevice) -> Result<HaDescriptorPool, DescriptorError> {
+    pub fn build(&self, device: &HaDevice) -> Result<HaDescriptorPool, DescriptorError> {
         let max_sets = if self.max_sets == 0 { self.pool_sizes.len() as uint32_t } else { self.max_sets };
 
         let info = vk::DescriptorPoolCreateInfo {
@@ -77,7 +77,7 @@ impl HaDescriptorPool {
         }
     }
 
-    pub fn allocator(&self, device: &HaLogicalDevice, layouts: Vec<HaDescriptorSetLayout>)
+    pub fn allocator(&self, device: &HaDevice, layouts: Vec<HaDescriptorSetLayout>)
         -> Result<Vec<HaDescriptorSet>, DescriptorError> {
         let handles = layouts.handles();
 
@@ -106,7 +106,7 @@ impl HaDescriptorPool {
         Ok(sets)
     }
 
-    pub fn cleanup(&self, device: &HaLogicalDevice) {
+    pub fn cleanup(&self, device: &HaDevice) {
         unsafe {
             device.handle.destroy_descriptor_pool(self.handle, None);
         }

@@ -79,8 +79,8 @@ impl HaRasterizer {
     }
 
 
-    pub fn set_polygon_mode(&mut self, mode: vk::PolygonMode) {
-        self.polygon_mode = mode;
+    pub fn set_polygon_mode(&mut self, mode: PolygonMode) {
+        self.polygon_mode = mode.value();
     }
     pub fn set_cull_mode(&mut self, mode: CullModeType) {
         self.cull_mode = mode.value();
@@ -159,6 +159,55 @@ impl VulkanEnum for CullModeType {
             | CullModeType::Front        => vk::CULL_MODE_FRONT_BIT,
             | CullModeType::Back         => vk::CULL_MODE_BACK_BIT,
             | CullModeType::FrontAndBack => vk::CULL_MODE_FRONT_AND_BACK,
+        }
+    }
+}
+
+
+
+/// PolygonMode specifies the method of rasterization for polygons.
+///
+/// These modes affect only the final rasterization of polygons:
+/// in particular, a polygon’s vertices are shaded and the polygon is clipped and possibly culled before these modes are applied.
+#[derive(Debug, Clone, Copy, Eq, PartialEq)]
+pub enum PolygonMode {
+    /// Fill specifies that polygon vertices are drawn as points.
+    Fill,
+    /// Line specifies that polygon edges are drawn as line segments.
+    Line,
+    /// Point specifies that polygons are rendered using the polygon rasterization rules in this section.
+    Point
+}
+
+impl VulkanEnum for PolygonMode {
+    type EnumType = vk::PolygonMode;
+
+    fn value(&self) -> Self::EnumType {
+        match *self {
+            | PolygonMode::Fill  => vk::PolygonMode::Fill,
+            | PolygonMode::Line  => vk::PolygonMode::Line,
+            | PolygonMode::Point => vk::PolygonMode::Point,
+        }
+    }
+}
+
+
+/// FrontFaceType determine whether the triangle is back-facing or front-facing.
+#[derive(Debug, Clone, Copy, Eq, PartialEq)]
+pub enum FrontFaceType {
+    /// CounterClockwise specifies that the face of triangle drawed with CounterClockwise order is considered front-facing.
+    CounterClockwise,
+    /// Clockwise specifies that the face of triangle drawed with Clockwise order is considered front-facing.
+    Clockwise,
+}
+
+impl VulkanEnum for FrontFaceType {
+    type EnumType = vk::FrontFace;
+
+    fn value(&self) -> Self::EnumType {
+        match *self {
+            | FrontFaceType::CounterClockwise => vk::FrontFace::CounterClockwise,
+            | FrontFaceType::Clockwise        => vk::FrontFace::Clockwise,
         }
     }
 }

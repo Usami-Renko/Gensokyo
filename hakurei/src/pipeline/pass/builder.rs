@@ -3,8 +3,8 @@ use ash::vk;
 use ash::vk::uint32_t;
 use ash::version::DeviceV1_0;
 
-use core::device::HaLogicalDevice;
-use core::swapchain::chain::HaSwapchain;
+use core::device::HaDevice;
+use core::swapchain::HaSwapchain;
 
 use pipeline::pass::render::HaRenderPass;
 use pipeline::pass::attachment::RenderAttachement;
@@ -21,6 +21,7 @@ use std::ptr;
 
 pub struct RenderPassBuilder {
 
+    device: HaDevice,
     attachments : Vec<RenderAttachement>,
     subpasses   : Vec<RenderSubpass>,
     dependencies: Vec<RenderDependency>,
@@ -30,8 +31,9 @@ pub struct RenderPassBuilder {
 
 impl RenderPassBuilder {
 
-    pub fn new() -> RenderPassBuilder {
+    pub(crate) fn new(device: &HaDevice) -> RenderPassBuilder {
         RenderPassBuilder {
+            device: device.clone(),
             attachments : vec![],
             subpasses   : vec![],
             dependencies: vec![],
@@ -81,11 +83,11 @@ impl RenderPassBuilder {
         self.dependencies.push(dependency);
     }
 
-    pub fn build(&self, device: &HaLogicalDevice, swapchain: &HaSwapchain) -> Result<HaRenderPass, PipelineError> {
+    pub fn build(&self, swapchain: &HaSwapchain) -> Result<HaRenderPass, PipelineError> {
 
-        let attachments : Vec<vk::AttachmentDescription> = self.attachments.iter().map(|a| a.desc()).collect();
-        let subpasses   : Vec<vk::SubpassDescription>    = self.subpasses.iter().map(|r| r.desc()).collect();
-        let dependencies: Vec<vk::SubpassDependency>     = self.dependencies.iter().map(|d| d.desc()).collect();
+        let attachments = self.attachments.iter().map(|a| a.desc()).collect::<Vec<_>>();
+        let subpasses = self.subpasses.iter().map(|r| r.desc()).collect::<Vec<_>>();
+        let dependencies = self.dependencies.iter().map(|d| d.desc()).collect::<Vec<_>>();
 
         let create_info = vk::RenderPassCreateInfo {
             s_type: vk::StructureType::RenderPassCreateInfo,
@@ -101,11 +103,11 @@ impl RenderPassBuilder {
         };
 
         let handle = unsafe {
-            device.handle.create_render_pass(&create_info, None)
+            self.device.handle.create_render_pass(&create_info, None)
                 .or(Err(PipelineError::RenderPass(RenderPassError::RenderPassCreationError)))?
         };
 
-        let framebuffers = generate_framebuffers(device, swapchain, handle)
+        let framebuffers = generate_framebuffers(&self.device, swapchain, handle)
             .map_err(|e| PipelineError::RenderPass(e))?;
 
         let render_pass = HaRenderPass {
@@ -119,7 +121,7 @@ impl RenderPassBuilder {
     }
 }
 
-fn generate_framebuffers(device: &HaLogicalDevice, swapchain: &HaSwapchain, render_pass: vk::RenderPass)
+fn generate_framebuffers(device: &HaDevice, swapchain: &HaSwapchain, render_pass: vk::RenderPass)
     -> Result<Vec<HaFramebuffer>, RenderPassError> {
 
     // TODO: Make layers property configurate

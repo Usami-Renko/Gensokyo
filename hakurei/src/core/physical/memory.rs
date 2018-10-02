@@ -4,7 +4,7 @@ use ash::vk::uint32_t;
 use ash::version::InstanceV1_0;
 
 use core::instance::HaInstance;
-use core::physical::HaPhysicalDevice;
+use core::physical::HaPhyDevice;
 
 use resources::error::MemoryError;
 
@@ -39,7 +39,7 @@ impl PhysicalMemory {
                 }
             }
         } else {
-            let candidates: Vec<usize> = (0..self.types.len()).collect();
+            let candidates = (0..self.types.len()).collect::<Vec<_>>();
 
             for &i in candidates.iter() {
                 if (type_filter & (1 << i)) > 0 && self.types[i].property_flags.subset(require_flags) {
@@ -63,18 +63,18 @@ impl PhysicalMemory {
 }
 
 
-pub struct MemorySelector<'re> {
+pub struct MemorySelector {
 
-    physical: &'re HaPhysicalDevice,
+    physical: HaPhyDevice,
     /// The index of memory type that available to use.
     candidate_memories: Vec<usize>,
 }
 
-impl<'re> MemorySelector<'re> {
+impl MemorySelector {
 
-    pub fn init(physical: &'re HaPhysicalDevice) -> MemorySelector {
+    pub fn init(physical: &HaPhyDevice) -> MemorySelector {
         MemorySelector {
-            physical,
+            physical: physical.clone(),
             candidate_memories: vec![],
         }
     }
