@@ -4,8 +4,7 @@ use core::device::HaDevice;
 
 use resources::allocator::{ HaBufferAllocator, BufferStorageType };
 use resources::allocator::HaDescriptorAllocator;
-use resources::allocator::HaImageAllocator;
-use resources::memory::HaMemoryType;
+use resources::allocator::{ HaImageAllocator, ImageStorageType };
 use resources::descriptor::DescriptorPoolFlag;
 
 pub struct AllocatorKit {
@@ -31,8 +30,7 @@ impl AllocatorKit {
         HaDescriptorAllocator::new(&self.device, flags)
     }
 
-    pub fn image(&self) -> HaImageAllocator {
-        // TODO: Currently only work for Device memory
-        HaImageAllocator::new(&self.physical, &self.device, HaMemoryType::DeviceMemory)
+    pub fn image(&self, ty: ImageStorageType) -> HaImageAllocator {
+        HaImageAllocator::new(&self.physical, &self.device, ty)
     }
 }

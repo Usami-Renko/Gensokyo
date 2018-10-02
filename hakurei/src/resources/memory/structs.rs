@@ -112,7 +112,7 @@ impl UploadStagingResource {
                 let buffer = staging_config.generate(device, None)
                     .or(Err(MemoryError::AllocateMemoryError))?;
 
-                memory_selector.try(buffer.requirement.memory_type_bits, HaStagingMemory::default_flag())?;
+                memory_selector.try(buffer.requirement.memory_type_bits, HaMemoryType::StagingMemory.property_flags())?;
                 buffers.push(buffer);
             }
 

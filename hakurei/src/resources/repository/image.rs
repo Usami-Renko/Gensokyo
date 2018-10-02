@@ -1,7 +1,7 @@
 
 use core::device::HaDevice;
 
-use resources::memory::{ HaDeviceMemory, HaMemoryAbstract };
+use resources::memory::HaMemoryAbstract;
 use resources::image::{ HaImage, HaImageView, ImageViewItem };
 
 pub struct HaImageRepository {
@@ -9,7 +9,7 @@ pub struct HaImageRepository {
     device : Option<HaDevice>,
     images : Vec<HaImage>,
     views  : Vec<HaImageView>,
-    memory : Option<HaDeviceMemory>,
+    memory : Option<Box<HaMemoryAbstract>>,
 }
 
 impl HaImageRepository {
@@ -24,7 +24,7 @@ impl HaImageRepository {
         }
     }
 
-    pub(crate) fn store(device: &HaDevice, images: Vec<HaImage>, views: Vec<HaImageView>, memory: HaDeviceMemory) -> HaImageRepository {
+    pub(crate) fn store(device: &HaDevice, images: Vec<HaImage>, views: Vec<HaImageView>, memory: Box<HaMemoryAbstract>) -> HaImageRepository {
 
         HaImageRepository {
             device: Some(device.clone()),
@@ -48,12 +48,9 @@ impl HaImageRepository {
     pub fn cleanup(&mut self) {
 
         if let Some(ref device) = self.device {
-            for image in self.images.iter() {
-                image.cleanup(device);
-            }
-            for view in self.views.iter() {
-                view.cleanup(device);
-            }
+
+            self.images.iter().for_each(|image| image.cleanup(device));
+            self.views.iter().for_each(|view| view.cleanup(device));
 
             if let Some(ref memory) = self.memory {
                 memory.cleanup(device);

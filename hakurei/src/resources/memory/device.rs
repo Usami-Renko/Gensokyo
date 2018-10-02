@@ -35,10 +35,6 @@ impl HaMemoryAbstract for HaDeviceMemory {
         HaMemoryType::DeviceMemory
     }
 
-    fn default_flag() -> vk::MemoryPropertyFlags {
-        HaMemoryType::DeviceMemory.property_flags()
-    }
-
     fn allocate(device: &HaDevice, size: vk::DeviceSize, mem_type_index: usize, mem_type: Option<vk::MemoryType>) -> Result<Self, MemoryError> {
 
         let allocate_info = vk::MemoryAllocateInfo {

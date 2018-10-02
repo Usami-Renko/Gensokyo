@@ -186,12 +186,11 @@ impl ProgramProc for TriangleProcedure {
 
     fn clean_resources(&mut self) -> Result<(), ProcedureError> {
 
-        for semaphore in self.present_availables.iter() {
-            semaphore.cleanup();
-        }
+        self.present_availables.iter()
+            .for_each(|semaphore| semaphore.cleanup());
+
         self.present_availables.clear();
         self.command_buffers.clear();
-
         self.graphics_pipeline.cleanup();
         self.command_pool.cleanup();
 

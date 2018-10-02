@@ -35,10 +35,6 @@ impl HaMemoryAbstract for HaCachedMemory {
         HaMemoryType::CachedMemory
     }
 
-    fn default_flag() -> vk::MemoryPropertyFlags {
-        HaMemoryType::CachedMemory.property_flags()
-    }
-
     fn allocate(device: &HaDevice, size: vk::DeviceSize, mem_type_index: usize, mem_type: Option<vk::MemoryType>) -> Result<HaCachedMemory, MemoryError> {
 
         let allocate_info = vk::MemoryAllocateInfo {

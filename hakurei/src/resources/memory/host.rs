@@ -44,10 +44,6 @@ impl HaMemoryAbstract for HaHostMemory {
         HaMemoryType::HostMemory
     }
 
-    fn default_flag() -> vk::MemoryPropertyFlags {
-        HaMemoryType::HostMemory.property_flags()
-    }
-
     fn allocate(device: &HaDevice, size: vk::DeviceSize, mem_type_index: usize, mem_type: Option<vk::MemoryType>) -> Result<HaHostMemory, MemoryError> {
 
         let allocate_info = vk::MemoryAllocateInfo {

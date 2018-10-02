@@ -142,6 +142,7 @@ pub enum StagingBufferUsage {
     VertexCopySrc,
     IndexCopySrc,
     UniformCopySrc,
+    ImageCopySrc,
 }
 
 impl VulkanEnum for StagingBufferUsage {
@@ -152,6 +153,7 @@ impl VulkanEnum for StagingBufferUsage {
             | StagingBufferUsage::VertexCopySrc  => vk::BUFFER_USAGE_VERTEX_BUFFER_BIT,
             | StagingBufferUsage::IndexCopySrc   => vk::BUFFER_USAGE_INDEX_BUFFER_BIT,
             | StagingBufferUsage::UniformCopySrc => vk::BUFFER_USAGE_UNIFORM_BUFFER_BIT,
+            | StagingBufferUsage::ImageCopySrc   => vk::BufferUsageFlags::empty(),
         }
     }
 }

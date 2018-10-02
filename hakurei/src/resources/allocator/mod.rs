@@ -1,17 +1,20 @@
 
 pub use self::buffer::{ HaBufferAllocator, BufferStorageType };
+pub use self::image::{ HaImageAllocator, ImageStorageType };
 
 pub use self::descriptor::HaDescriptorAllocator;
-pub use self::image::HaImageAllocator;
 
-pub(crate) use self::buffer::BufferAllocateInfos;
-pub(crate) use self::buffer::BufferConfigsAllocatable;
-pub(crate) use self::buffer::BufMemAlloAbstract;
+pub(crate) use self::buffer::{ BufMemAlloAbstract, BufferAllocateInfos, BufferConfigsAllocatable };
 pub(crate) use self::buffer::{
     HostBufMemAllocator,
     CachedBufMemAllocator,
     DeviceBufMemAllocator,
     StagingBufMemAllocator,
+};
+pub(crate) use self::image::ImgMemAlloAbstract;
+pub(crate) use self::image::{
+    DeviceImgMemAllocator,
+    CachedImgMemAllocator,
 };
 
 mod buffer;
