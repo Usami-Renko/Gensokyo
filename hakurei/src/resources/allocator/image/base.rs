@@ -8,11 +8,12 @@ use core::physical::{ HaPhyDevice, MemorySelector };
 use resources::repository::HaImageRepository;
 use resources::image::{ ImageViewItem, ImageDescInfo, ImageViewDescInfo };
 use resources::image::{ HaImage, HaImageView };
-use resources::buffer::{ CachedBufferConfig, CachedBufferUsage, BufferSubItem };
+use resources::buffer::{ StagingBufferConfig, StagingBufferUsage, BufferSubItem };
 use resources::buffer::BufferConfigModifiable;
 use resources::image::{ ImageLayout, ImageStorageInfo, load_texture };
-use resources::allocator::{ HaBufferAllocator, BufferStorageType };
-use resources::memory::{ HaMemoryAbstract, HaDeviceMemory, HaMemoryType };
+use resources::allocator::{ HaBufferAllocator, BufferStorageType, ImgMemAlloAbstract };
+use resources::allocator::{ DeviceImgMemAllocator, CachedImgMemAllocator };
+use resources::memory::HaMemoryType;
 use resources::command::{ HaCommandRecorder, CommandBufferUsageFlag };
 use resources::error::{ ImageError, AllocatorError };
 use pipeline::stages::PipelineStageFlag;
@@ -38,27 +39,32 @@ pub struct HaImageAllocator {
     image_descs: Vec<ImageDescInfo>,
     view_descs : Vec<ImageViewDescInfo>,
 
-    memory_selector: MemorySelector,
-    mem_flag: vk::MemoryPropertyFlags,
-    memory_type: HaMemoryType,
+    ty: ImageStorageType,
+    allocator: Box<ImgMemAlloAbstract>,
+    require_mem_flag: vk::MemoryPropertyFlags,
+    memory_selector : MemorySelector,
 }
 
 impl HaImageAllocator {
 
-    pub(crate) fn new(physical: &HaPhyDevice, device: &HaDevice, memory_type: HaMemoryType) -> HaImageAllocator {
+    pub(crate) fn new(physical: &HaPhyDevice, device: &HaDevice, ty: ImageStorageType) -> HaImageAllocator {
 
         HaImageAllocator {
+
             physical: physical.clone(),
             device  : device.clone(),
 
             images  : vec![],
             storages: vec![],
             spaces  : vec![],
+
             image_descs: vec![],
             view_descs : vec![],
-            memory_selector: MemorySelector::init(physical),
-            mem_flag: vk::MemoryPropertyFlags::empty(),
-            memory_type,
+
+            ty,
+            allocator: ty.allocator(),
+            require_mem_flag: ty.memory_type().property_flags(),
+            memory_selector : MemorySelector::init(physical),
         }
     }
 
@@ -67,14 +73,12 @@ impl HaImageAllocator {
         let storage = load_texture(path)?;
         let image = HaImage::config(&self.device, &image_desc, storage.dimension, storage.format)?;
 
-        // create the buffer
-        let required_memory_flag = self.memory_type.property_flags();
-        self.memory_selector.try(image.requirement.memory_type_bits, required_memory_flag)?;
+        self.memory_selector.try(image.requirement.memory_type_bits, self.require_mem_flag)?;
 
-        self.mem_flag = self.mem_flag | required_memory_flag;
         let aligment_space = bind_to_alignment(image.requirement.size, image.requirement.alignment);
 
         let image_index = self.images.len();
+
         self.storages.push(storage);
         self.images.push(image);
         self.image_descs.push(image_desc);
@@ -84,7 +88,6 @@ impl HaImageAllocator {
         Ok(image_index)
     }
 
-    // TODO: Reset this function after Split ImageRepository to Device and host.
     pub fn allocate(&mut self) -> Result<HaImageRepository, AllocatorError> {
 
         if self.images.is_empty() {
@@ -92,14 +95,14 @@ impl HaImageAllocator {
         }
 
         // 1.create staging buffer and memories
-        let mut staging_allocator = HaBufferAllocator::new(&self.physical, &self.device, BufferStorageType::Cached);
-        let staging_buffer_config = CachedBufferConfig::new(CachedBufferUsage::VertexBuffer);
+        let mut staging_allocator = HaBufferAllocator::new(&self.physical, &self.device, BufferStorageType::Staging);
+        let staging_buffer_config = StagingBufferConfig::new(StagingBufferUsage::ImageCopySrc);
         let mut staging_buffer_items = vec![];
 
         for storage in self.storages.iter() {
             let mut config = staging_buffer_config.clone();
             let _ = config.add_item(storage.size);
-            let item = staging_allocator.attach_cached_buffer(config)?.pop().unwrap();
+            let item = staging_allocator.attach_staging_buffer(config)?.pop().unwrap();
             staging_buffer_items.push(item);
         }
 
@@ -115,24 +118,22 @@ impl HaImageAllocator {
         }
 
         // 3.create image buffer and memories
-        // TODO: Reduce duplicate code same in resources::allocator::buffer.
         let optimal_memory_index = self.memory_selector.optimal_memory()?;
-        let allocate_size = self.spaces.iter().sum();
         let mem_type = self.physical.memory.memory_type(optimal_memory_index);
 
-        // allocate memory
-        let memory = HaDeviceMemory::allocate(
-            &self.device,
-            allocate_size,
-            optimal_memory_index,
-            Some(mem_type),
+        self.allocator.allocate(
+            &self.device, self.spaces.iter().sum(), optimal_memory_index, Some(mem_type)
         )?;
 
-        // bind images to memory
-        let mut offset = 0;
-        for (i, image) in self.images.iter().enumerate() {
-            memory.bind_to_image(&self.device, image, offset)?;
-            offset += self.spaces[i];
+        {
+            let memory = self.allocator.borrow_memory()?;
+
+            // bind images to memory
+            let mut offset = 0;
+            for (i, image) in self.images.iter().enumerate() {
+                memory.bind_to_image(&self.device, image, offset)?;
+                offset += self.spaces[i];
+            }
         }
 
         // 4.create image view for each image
@@ -219,8 +220,12 @@ impl HaImageAllocator {
         staging_repository.cleanup();
 
         // finial done.
-        let image_ownership_transfer = self.images.drain(..).collect();
-        let repository = HaImageRepository::store(&self.device, image_ownership_transfer, views, memory);
+        let repository = HaImageRepository::store(
+            &self.device,
+            self.images.drain(..).collect(),
+            views,
+            self.allocator.take_memory()?
+        );
         Ok(repository)
     }
 
@@ -270,6 +275,30 @@ impl HaImageAllocator {
         self.storages.clear();
         self.spaces.clear();
         self.memory_selector.reset();
-        self.mem_flag = vk::MemoryPropertyFlags::empty();
+        self.require_mem_flag = self.ty.memory_type().property_flags();
+    }
+}
+
+
+#[derive(Debug, Clone, Copy, Eq, PartialEq)]
+pub enum ImageStorageType {
+    Device,
+    Cached,
+}
+
+impl ImageStorageType {
+
+    fn allocator(&self) -> Box<ImgMemAlloAbstract> {
+        match self {
+            | ImageStorageType::Device => Box::new(DeviceImgMemAllocator::new()),
+            | ImageStorageType::Cached => Box::new(CachedImgMemAllocator::new()),
+        }
+    }
+
+    fn memory_type(&self) -> HaMemoryType {
+        match self {
+            | ImageStorageType::Cached  => HaMemoryType::CachedMemory,
+            | ImageStorageType::Device  => HaMemoryType::DeviceMemory,
+        }
     }
 }

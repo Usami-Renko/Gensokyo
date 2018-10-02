@@ -248,9 +248,8 @@ impl ProgramProc for UniformBufferProcedure {
 
     fn cleanup(&mut self) {
 
-        for semaphore in self.present_availables.iter() {
-            semaphore.cleanup();
-        }
+        self.present_availables.iter()
+            .for_each(|semaphore| semaphore.cleanup());
 
         self.graphics_pipeline.cleanup();
         self.command_pool.cleanup();

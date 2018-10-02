@@ -107,7 +107,7 @@ impl ProgramProc for TextureMappingProcedure {
         );
         let view_desc = ImageViewDescInfo::init(ImageViewType::Type2d);
 
-        let mut image_allocator = kit.image();
+        let mut image_allocator = kit.image(ImageStorageType::Device);
         let image_view_index = image_allocator.attach_image(Path::new(TEXTURE_PATH), image_desc, view_desc)?;
         self.image_repository = image_allocator.allocate()?;
         let image_view_item = self.image_repository.view_item(image_view_index);
@@ -259,9 +259,8 @@ impl ProgramProc for TextureMappingProcedure {
 
     fn cleanup(&mut self) {
 
-        for semaphore in self.present_availables.iter() {
-            semaphore.cleanup();
-        }
+        self.present_availables.iter()
+            .for_each(|semaphore| semaphore.cleanup());
 
         self.graphics_pipeline.cleanup();
         self.command_pool.cleanup();

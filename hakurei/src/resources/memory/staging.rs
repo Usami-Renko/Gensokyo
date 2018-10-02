@@ -44,10 +44,6 @@ impl HaMemoryAbstract for HaStagingMemory {
         HaMemoryType::StagingMemory
     }
 
-    fn default_flag() -> vk::MemoryPropertyFlags {
-        HaMemoryType::StagingMemory.property_flags()
-    }
-
     fn allocate(device: &HaDevice, size: vk::DeviceSize, mem_type_index: usize, mem_type: Option<vk::MemoryType>) -> Result<HaStagingMemory, MemoryError> {
 
         let allocate_info = vk::MemoryAllocateInfo {

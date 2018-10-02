@@ -32,6 +32,7 @@ pub struct HaBufferAllocator {
 impl  HaBufferAllocator {
 
     pub(crate) fn new(physical: &HaPhyDevice, device: &HaDevice, ty: BufferStorageType) -> HaBufferAllocator {
+
         HaBufferAllocator {
             physical: physical.clone(),
             device: device.clone(),
@@ -169,6 +170,7 @@ impl  HaBufferAllocator {
 
         self.spaces.clear();
         self.memory_selector.reset();
+        self.require_mem_flag = self.ty.memory_type().property_flags();
     }
 }
 
@@ -189,7 +191,7 @@ impl BufferStorageType {
             | BufferStorageType::Cached  => Box::new(CachedBufMemAllocator::new()),
             | BufferStorageType::Device  => Box::new(DeviceBufMemAllocator::new()),
             | BufferStorageType::Staging => Box::new(StagingBufMemAllocator::new()),
-            }
+        }
     }
 
     fn memory_type(&self) -> HaMemoryType {
