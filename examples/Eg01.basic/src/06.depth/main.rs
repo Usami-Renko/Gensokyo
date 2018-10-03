@@ -1,6 +1,6 @@
 
-mod data;
 mod program;
+mod data;
 
 #[macro_use]
 extern crate hakurei_macros;
@@ -11,12 +11,12 @@ use hakurei::prelude::*;
 use hakurei::prelude::config::*;
 
 
-const WINDOW_TITLE: &'static str = "05.Cube";
+const WINDOW_TITLE: &'static str = "06.Depth";
 
 pub const WINDOW_WIDTH:  u32 = 800;
 pub const WINDOW_HEIGHT: u32 = 600;
 
-use self::program::CubeProcedure;
+use self::program::DepthProcedure;
 
 fn main() {
 
@@ -26,8 +26,9 @@ fn main() {
         height: WINDOW_HEIGHT,
     };
     config.window.title = String::from(WINDOW_TITLE);
+    config.core.device.features.push(PhysicalFeatureType::FillModeNonSolid);
 
-    let procecure = CubeProcedure::new();
+    let procecure = DepthProcedure::new();
 
     let mut program = ProgramEnv::new(config, procecure);
 

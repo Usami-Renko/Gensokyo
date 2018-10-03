@@ -4,13 +4,12 @@ use ash::version::{ EntryV1_0, InstanceV1_0 };
 
 use core::{ EntryV1, InstanceV1 };
 
+use config::core;
 use config::engine::EngineConfig;
 use core::error::InstanceError;
 use core::debug::ValidationInfo;
 use core::platforms;
 use core::debug;
-
-use config::core::*;
 
 use utility::cast;
 
@@ -36,17 +35,17 @@ impl HaInstance {
         let entry = EntryV1::new()
             .or(Err(InstanceError::EntryCreationError))?;
 
-        let app_name    = CString::new(APPLICATION_NAME).unwrap();
-        let engine_name = CString::new(ENGINE_NAME).unwrap();
+        let app_name    = CString::new(core::APPLICATION_NAME).unwrap();
+        let engine_name = CString::new(core::ENGINE_NAME).unwrap();
 
         let app_info = vk::ApplicationInfo {
             s_type              : vk::StructureType::ApplicationInfo,
             p_next              : ptr::null(),
             p_application_name  : app_name.as_ptr(),
-            application_version : APPLICATION_VERSION,
+            application_version : core::APPLICATION_VERSION,
             p_engine_name       : engine_name.as_ptr(),
-            engine_version      : ENGINE_VERSION,
-            api_version         : API_VERSION,
+            engine_version      : core::ENGINE_VERSION,
+            api_version         : core::API_VERSION,
         };
 
         // get the names of required vulkan layers.

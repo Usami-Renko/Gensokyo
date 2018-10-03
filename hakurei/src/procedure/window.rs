@@ -1,12 +1,13 @@
 
 use winit;
 
-use utility::dimension::Dimension2D;
-use utility::fps::HaFpsTimer;
 use config::engine::EngineConfig;
 
 use procedure::workflow::{ CoreInfrastructure, HaResources, ProgramProc };
 use procedure::error::{ RuntimeError, ProcedureError };
+
+use utility::dimension::Dimension2D;
+use utility::fps::HaFpsTimer;
 
 use input::{ ActionNerve, SceneReaction };
 
@@ -43,22 +44,16 @@ impl<T> ProgramEnv<T> where T: ProgramProc {
             window_title: config.window.title.to_owned(),
         };
         let event_loop = winit::EventsLoop::new();
-        let frame_in_flights = config.swapchain.image_count as usize;
+        let frame_in_flights = config.core.swapchain.image_count as usize;
 
         ProgramEnv { config, event_loop, window_info, procedure, frame_in_flights }
     }
 
     pub fn launch(&mut self) -> Result<(), RuntimeError> {
 
-        // TODO: Refactor the following two lines
-        use core::physical::PhysicalRequirement;
-        use config::core::DEVICE_EXTENSION;
-        let requirement = PhysicalRequirement::init(&self.config)
-            .require_queue_extensions(DEVICE_EXTENSION.to_vec());
-
         let window = self.window_info.build(&self.event_loop)
             .map_err(|e| RuntimeError::Window(e))?;
-        let mut core = self.initialize_core(&window, requirement)?;
+        let mut core = self.initialize_core(&window, self.config.core.to_physical_requirement())?;
         let mut resources = self.load_resources(&core)?;
 
         self.procedure.ready(&core.device)?;

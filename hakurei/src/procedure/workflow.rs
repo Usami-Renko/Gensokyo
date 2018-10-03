@@ -163,7 +163,7 @@ impl<'win, T> ProgramEnv<T> where T: ProgramProc {
         // sync
         let mut image_awaits = vec![];
         let mut sync_fences = vec![];
-        for _ in 0..self.config.swapchain.image_count {
+        for _ in 0..self.config.core.swapchain.image_count {
             let image_await = HaSemaphore::setup(&core.device)?;
             let sync_fence = HaFence::setup(&core.device, true)?;
 

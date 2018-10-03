@@ -29,8 +29,7 @@ pub struct HaPhysicalDevice {
 
 impl HaPhysicalDevice {
 
-    pub fn new(instance: &HaInstance, surface: &HaSurface, requirement: PhysicalRequirement)
-               -> Result<HaPhysicalDevice, PhysicalDeviceError> {
+    pub fn new(instance: &HaInstance, surface: &HaSurface, requirement: PhysicalRequirement) -> Result<HaPhysicalDevice, PhysicalDeviceError> {
 
         let alternative_devices = instance.handle.enumerate_physical_devices()
             .or(Err(PhysicalDeviceError::EnumerateDeviceError))?;
