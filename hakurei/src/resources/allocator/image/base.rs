@@ -209,7 +209,6 @@ impl HaImageAllocator {
                 &image_barriers
             );
 
-
             // 9.submit command buffer
             recorder.end_record()?;
         }
@@ -265,11 +264,11 @@ impl HaImageAllocator {
 
     pub fn reset(&mut self) {
 
-        unsafe {
-            for image in self.images.iter() {
+        self.images.iter().for_each(|image| {
+            unsafe {
                 self.device.handle.destroy_image(image.handle, None);
             }
-        }
+        });
 
         self.images.clear();
         self.storages.clear();

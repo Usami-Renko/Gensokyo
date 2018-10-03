@@ -86,7 +86,7 @@ impl PhyscialFeatures {
     pub fn check_requirements(&self, require_features: &Vec<PhysicalFeatureType>) -> bool {
         require_features.iter().all(|requirement| {
 
-            match *requirement {
+            match requirement {
                 | PhysicalFeatureType::RobustBufferAccess => self.handle.robust_buffer_access == 1,
                 | PhysicalFeatureType::FullDrawIndexUint32 => self.handle.full_draw_index_uint32 == 1,
                 | PhysicalFeatureType::ImageCubeArray => self.handle.image_cube_array == 1,
@@ -152,7 +152,7 @@ impl PhyscialFeatures {
         };
 
         require_features.iter().for_each(|feature| {
-            match *feature {
+            match feature {
                 | PhysicalFeatureType::RobustBufferAccess => enable_features.robust_buffer_access = 1,
                 | PhysicalFeatureType::FullDrawIndexUint32 => enable_features.full_draw_index_uint32 = 1,
                 | PhysicalFeatureType::ImageCubeArray => enable_features.image_cube_array = 1,

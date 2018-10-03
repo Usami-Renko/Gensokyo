@@ -68,8 +68,8 @@ impl<'vk, 'win: 'vk> SwapchainBuilder<'vk, 'win> {
 
             support,
             image_share_info,
-            image_count       : config.swapchain.image_count,
-            acquire_image_time: config.swapchain.acquire_image_time_out.vulkan_time(),
+            image_count       : config.core.swapchain.image_count,
+            acquire_image_time: config.core.swapchain.acquire_image_time_out.vulkan_time(),
         };
 
         Ok(builder)

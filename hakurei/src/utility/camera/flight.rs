@@ -3,7 +3,7 @@ use cgmath;
 use cgmath::{ Matrix4, Vector3, Point3, InnerSpace, Zero, Deg };
 use winit::VirtualKeyCode;
 
-use config::camera as CameraConfig;
+use config::utility;
 use input::ActionNerve;
 
 use utility::camera::traits::HaCameraAbstract;
@@ -112,14 +112,14 @@ impl Default for HaFlightCamera {
             right: Vector3::zero(),
             world_up: Vector3::unit_y(),
 
-            yaw  : CameraConfig::CAMERA_YAW,
-            pitch: CameraConfig::CAMERA_PITCH,
+            yaw  : utility::CAMERA_YAW,
+            pitch: utility::CAMERA_PITCH,
 
-            move_speed: CameraConfig::CAMERA_MOVE_SPEED,
-            _mouse_sentivity: CameraConfig::CAMERA_MOUSE_SENTIVITY,
-            _wheel_sentivity: CameraConfig::CAMERA_WHEEL_SENTIVITY,
+            move_speed: utility::CAMERA_MOVE_SPEED,
+            _mouse_sentivity: utility::CAMERA_MOUSE_SENTIVITY,
+            _wheel_sentivity: utility::CAMERA_WHEEL_SENTIVITY,
 
-            zoom: CameraConfig::CAMERA_ZOOM,
+            zoom: utility::CAMERA_ZOOM,
             near: 0.1,
             far : 100.0,
             screen_aspect: 1.0,

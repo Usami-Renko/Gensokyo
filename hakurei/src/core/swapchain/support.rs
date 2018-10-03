@@ -5,7 +5,7 @@ use ash::vk::uint32_t;
 use num::clamp;
 
 use config::engine::EngineConfig;
-use config::swapchain::SwapchainConfig;
+use config::core::SwapchainConfig;
 use core::surface::HaSurface;
 use core::error::SurfaceError;
 
@@ -26,7 +26,7 @@ impl SwapchainSupport {
             capabilities  : surface.capabilities(physical)?,
             formats       : surface.formats(physical)?,
             present_modes : surface.present_modes(physical)?,
-            config        : config.swapchain.clone(),
+            config        : config.core.swapchain.clone(),
         };
         Ok(support)
     }

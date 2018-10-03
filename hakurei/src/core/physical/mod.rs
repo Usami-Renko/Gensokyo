@@ -1,10 +1,13 @@
 
 pub(crate) type HaPhyDevice = ::std::rc::Rc<HaPhysicalDevice>;
 pub(crate) use self::object::HaPhysicalDevice;
-pub(crate) use self::object::PhysicalDeviceType;
-pub(crate) use self::extension::DeviceExtensionType;
 pub(crate) use self::memory::MemorySelector;
 pub(crate) use self::requirement::PhysicalRequirement;
+
+pub use self::object::PhysicalDeviceType;
+pub use self::features::PhysicalFeatureType;
+pub use self::extension::DeviceExtensionType;
+pub use self::family::QueueOperationType;
 
 mod object;
 mod features;

@@ -3,7 +3,7 @@ use cgmath;
 use cgmath::{ Matrix4, Vector3, Point3, InnerSpace, Zero, Deg, Rad };
 use winit::VirtualKeyCode;
 
-use config::camera as CameraConfig;
+use config::utility;
 use input::ActionNerve;
 
 use utility::camera::traits::HaCameraAbstract;
@@ -114,9 +114,9 @@ impl Default for HaStageCamera {
             up   : Vector3::zero(),
             right: Vector3::zero(),
 
-            _wheel_sentivity: CameraConfig::CAMERA_WHEEL_SENTIVITY,
+            _wheel_sentivity: utility::CAMERA_WHEEL_SENTIVITY,
 
-            zoom: CameraConfig::CAMERA_ZOOM,
+            zoom: utility::CAMERA_ZOOM,
             near: 0.1,
             far : 100.0,
             screen_aspect: 1.0,

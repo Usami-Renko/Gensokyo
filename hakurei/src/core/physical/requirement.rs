@@ -1,7 +1,6 @@
 
 use ash::vk::uint32_t;
 
-use config::engine::EngineConfig;
 use core::physical::features::PhysicalFeatureType;
 use core::physical::PhysicalDeviceType;
 use core::physical::family::QueueOperationType;
@@ -21,14 +20,14 @@ pub struct PhysicalRequirement {
 
 impl PhysicalRequirement {
 
-    pub fn init(config: &EngineConfig) -> PhysicalRequirement {
+    pub fn init() -> PhysicalRequirement {
         PhysicalRequirement {
             device_types:     vec![],
             features:         vec![],
             queue_operations: vec![],
             extensions:       vec![],
 
-            swapchain_image_count: config.swapchain.image_count,
+            swapchain_image_count: 2,
         }
     }
 
