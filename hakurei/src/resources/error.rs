@@ -119,17 +119,19 @@ pub enum AllocatorError {
     Command(CommandError),
     Image(ImageError),
     Sync(SyncError),
+    Descriptor(DescriptorError),
     MemoryNotYetAllocated,
     DeviceMemoryNotSupportDirectUpdate,
     DataTransferNotActivate,
     UnmatchBufferConfig,
 }
 
-impl_from_err!(Buffer(BufferError)   -> AllocatorError);
-impl_from_err!(Memory(MemoryError)   -> AllocatorError);
-impl_from_err!(Command(CommandError) -> AllocatorError);
-impl_from_err!(Image(ImageError)     -> AllocatorError);
-impl_from_err!(Sync(SyncError)       -> AllocatorError);
+impl_from_err!(Buffer(BufferError)         -> AllocatorError);
+impl_from_err!(Memory(MemoryError)         -> AllocatorError);
+impl_from_err!(Command(CommandError)       -> AllocatorError);
+impl_from_err!(Image(ImageError)           -> AllocatorError);
+impl_from_err!(Sync(SyncError)             -> AllocatorError);
+impl_from_err!(Descriptor(DescriptorError) -> AllocatorError);
 
 impl Error for AllocatorError {}
 impl fmt::Display for AllocatorError {
@@ -137,11 +139,12 @@ impl fmt::Display for AllocatorError {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
 
         let description = match self {
-            | AllocatorError::Buffer(ref e)  => e.to_string(),
-            | AllocatorError::Memory(ref e)  => e.to_string(),
-            | AllocatorError::Command(ref e) => e.to_string(),
-            | AllocatorError::Image(ref e)   => e.to_string(),
-            | AllocatorError::Sync(ref e)    => e.to_string(),
+            | AllocatorError::Buffer(ref e)     => e.to_string(),
+            | AllocatorError::Memory(ref e)     => e.to_string(),
+            | AllocatorError::Command(ref e)    => e.to_string(),
+            | AllocatorError::Image(ref e)      => e.to_string(),
+            | AllocatorError::Sync(ref e)       => e.to_string(),
+            | AllocatorError::Descriptor(ref e) => e.to_string(),
             | AllocatorError::MemoryNotYetAllocated   => {
                 String::from("The memory is not allocated yet. Memory must be allocated first before using it.")
             },
@@ -166,6 +169,7 @@ pub enum DescriptorError {
     PoolCreationError,
     SetLayoutCreationError,
     SetAllocateError,
+    Resource(DescriptorResourceError),
 }
 
 impl Error for DescriptorError {}
@@ -177,6 +181,28 @@ impl fmt::Display for DescriptorError {
             | DescriptorError::PoolCreationError      => "Failed to create Descriptor Pool.",
             | DescriptorError::SetLayoutCreationError => "Failed to create Descriptor Set Layout.",
             | DescriptorError::SetAllocateError       => "Failed to allocate Descriptor Set.",
+            | DescriptorError::Resource(ref e)        => return write!(f, "{}", e.to_string()),
+        };
+        write!(f, "{}", description)
+    }
+}
+
+
+#[derive(Debug, Clone, Copy, Eq, PartialEq)]
+pub enum DescriptorResourceError {
+
+    BufferNotAllocated,
+    ImageNotAllocated,
+}
+
+impl Error for DescriptorResourceError {}
+impl fmt::Display for DescriptorResourceError {
+
+    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+
+        let description = match self {
+            | DescriptorResourceError::BufferNotAllocated => "Buffer must be allocated before binding it to descriptor.",
+            | DescriptorResourceError::ImageNotAllocated  => "Image must be allocated before binding it to descriptor.",
         };
         write!(f, "{}", description)
     }
@@ -190,6 +216,7 @@ pub enum ImageError {
     ViewCreationError,
     Memory(MemoryError),
     NoImageAttachError,
+    NotYetAllocateError,
     SamplerCreationError,
 }
 
@@ -205,6 +232,7 @@ impl fmt::Display for ImageError {
             | ImageError::ImageCreationError   => write!(f, "Failed to create Image Object."),
             | ImageError::ViewCreationError    => write!(f, "Failed to create ImageView Object."),
             | ImageError::Memory(ref e)        => write!(f, "{}", e.to_string()),
+            | ImageError::NotYetAllocateError  => write!(f, "The image or image view have not yet allocated."),
             | ImageError::NoImageAttachError   => write!(f, "There must be images attached to allocator before allocate memory."),
             | ImageError::SamplerCreationError => write!(f, "Failed to create Sampler Object."),
         }

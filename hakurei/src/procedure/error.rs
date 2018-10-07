@@ -6,7 +6,6 @@ use core::swapchain::SwapchainError;
 use pipeline::error::PipelineError;
 use resources::error::CommandError;
 use resources::error::AllocatorError;
-use resources::error::DescriptorError;
 use sync::error::SyncError;
 
 use std::fmt;
@@ -51,7 +50,6 @@ pub enum ProcedureError {
     Pipeline(PipelineError),
     Command(CommandError),
     Sync(SyncError),
-    Descriptor(DescriptorError),
     Allocator(AllocatorError),
 
     SwapchainRecreate,
@@ -69,7 +67,6 @@ impl Error for ProcedureError {
             | ProcedureError::Pipeline(ref e)       => Some(e),
             | ProcedureError::Command(ref e)        => Some(e),
             | ProcedureError::Sync(ref e)           => Some(e),
-            | ProcedureError::Descriptor(ref e)     => Some(e),
             | ProcedureError::Allocator(ref e)      => Some(e),
 
             | ProcedureError::SwapchainRecreate     => None,
@@ -87,7 +84,6 @@ impl_from_err!(Swapchain(SwapchainError)           -> ProcedureError);
 impl_from_err!(Pipeline(PipelineError)             -> ProcedureError);
 impl_from_err!(Command(CommandError)               -> ProcedureError);
 impl_from_err!(Sync(SyncError)                     -> ProcedureError);
-impl_from_err!(Descriptor(DescriptorError)         -> ProcedureError);
 impl_from_err!(Allocator(AllocatorError)           -> ProcedureError);
 
 impl fmt::Display for ProcedureError {

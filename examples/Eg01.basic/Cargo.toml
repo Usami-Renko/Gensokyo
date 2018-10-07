@@ -1,5 +1,5 @@
 [package]
-name = "hakurei-basic"
+name = "hakurei-ex01-baisc"
 version = "0.1.0"
 authors = ["usami-renko <usami-ssc@protonmail.com>"]
 description = "Basic examples of hakurei Engine."

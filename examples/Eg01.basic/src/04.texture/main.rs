@@ -36,9 +36,10 @@ struct TextureMappingProcedure {
     vertex_storage: HaBufferRepository,
     vertex_item   : BufferSubItem,
 
-    sampler_repository: HaDescriptorRepository,
-    sampler_set       : DescriptorSetItem,
-    image_repository  : HaImageRepository,
+    descriptor_repository: HaDescriptorRepository,
+    sampler_set          : DescriptorSetItem,
+    image_repository     : HaImageRepository,
+    sample_image         : HaSampleImage,
 
     graphics_pipeline: HaGraphicsPipeline,
 
@@ -63,10 +64,10 @@ impl TextureMappingProcedure {
             vertex_storage: HaBufferRepository::empty(),
             vertex_item: BufferSubItem::unset(),
 
-            sampler_repository: HaDescriptorRepository::empty(),
+            descriptor_repository: HaDescriptorRepository::empty(),
             sampler_set       : DescriptorSetItem::unset(),
             image_repository  : HaImageRepository::empty(),
-
+            sample_image      : HaSampleImage::uninitialize(),
 
             graphics_pipeline: HaGraphicsPipeline::uninitialize(),
 
@@ -80,7 +81,7 @@ impl TextureMappingProcedure {
 
 impl ProgramProc for TextureMappingProcedure {
 
-    fn assets(&mut self, device: &HaDevice, kit: AllocatorKit) -> Result<(), ProcedureError> {
+    fn assets(&mut self, kit: AllocatorKit) -> Result<(), ProcedureError> {
 
         // vertex buffer
         let mut vertex_allocator = kit.buffer(BufferStorageType::Cached);
@@ -96,37 +97,16 @@ impl ProgramProc for TextureMappingProcedure {
             .done()?;
 
         // image
-        let image_desc = ImageDescInfo::init(
-            ImageType::Type2d,
-            ImageTiling::Optimal,
-            &[
-                ImageUsageFlag::TransferDstBit,
-                ImageUsageFlag::SampledBit,
-            ],
-            ImageLayout::Undefined
-        );
-        let view_desc = ImageViewDescInfo::init(ImageViewType::Type2d);
+        let image_info = SampleImageInfo::new(0, 1);
 
         let mut image_allocator = kit.image(ImageStorageType::Device);
-        let image_view_index = image_allocator.attach_image(Path::new(TEXTURE_PATH), image_desc, view_desc)?;
+        self.sample_image = image_allocator.attach_sample_image(Path::new(TEXTURE_PATH), image_info)?;
         self.image_repository = image_allocator.allocate()?;
-        let image_view_item = self.image_repository.view_item(image_view_index);
+        self.image_repository.get_allocated_infos(&mut self.sample_image);
 
         // descriptor
-        let sampler_info = SamplerDescInfo::init();
-        let sampler = HaSampler::init(device, sampler_info).unwrap();
-
-        let sampler_descriptor_info = DescriptorImageBindingInfo {
-            binding: 0,
-            type_  : ImageDescriptorType::CombinedImageSampler,
-            count  : 1,
-            sampler,
-            layout: ImageLayout::ShaderReadOnlyOptimal,
-            view_item: image_view_item,
-        };
-
         let mut descriptor_set_config = DescriptorSetConfig::init(&[]);
-        let _ = descriptor_set_config.add_image_binding(sampler_descriptor_info, &[
+        let _ = descriptor_set_config.add_image_binding(self.sample_image.binding_info()?, &[
             ShaderStageFlag::FragmentStage,
         ]);
 
@@ -134,8 +114,8 @@ impl ProgramProc for TextureMappingProcedure {
         let (set_item, mut descriptor_binding_items) = descriptor_allocator.attach_descriptor_set(descriptor_set_config);
         let sampler_item = descriptor_binding_items.pop().unwrap();
 
-        self.sampler_repository = descriptor_allocator.allocate()?;
-        self.sampler_repository.update_descriptors(&[sampler_item]);
+        self.descriptor_repository = descriptor_allocator.allocate()?;
+        self.descriptor_repository.update_descriptors(&[sampler_item])?;
         self.sampler_set = set_item;
 
         Ok(())
@@ -179,7 +159,7 @@ impl ProgramProc for TextureMappingProcedure {
 
         let pipeline_config = GraphicsPipelineConfig::new(shader_infos, vertex_input_desc, render_pass)
             .setup_viewport(viewport)
-            .add_descriptor_set(self.sampler_repository.set_layout_at(&self.sampler_set))
+            .add_descriptor_set(self.descriptor_repository.set_layout_at(&self.sampler_set))
             .finish_config();
 
         let mut pipeline_builder = kit.graphics_pipeline_builder()?;
@@ -216,7 +196,7 @@ impl ProgramProc for TextureMappingProcedure {
                 .begin_render_pass(&self.graphics_pipeline, frame_index)
                 .bind_pipeline(&self.graphics_pipeline)
                 .bind_vertex_buffers(0, &self.vertex_storage.vertex_binding_infos(&[&self.vertex_item]))
-                .bind_descriptor_sets(&self.graphics_pipeline, 0, &self.sampler_repository.descriptor_binding_infos(&[&self.sampler_set]))
+                .bind_descriptor_sets(&self.graphics_pipeline, 0, &self.descriptor_repository.descriptor_binding_infos(&[&self.sampler_set]))
                 .draw(self.vertex_data.len() as uint32_t, 1, 0, 0)
                 .end_render_pass()
                 .end_record()?;
@@ -243,7 +223,7 @@ impl ProgramProc for TextureMappingProcedure {
         return Ok(&self.present_availables[image_index])
     }
 
-    fn clean_resources(&mut self) -> Result<(), ProcedureError> {
+    fn clean_resources(&mut self, _: &HaDevice) -> Result<(), ProcedureError> {
 
         for semaphore in self.present_availables.iter() {
             semaphore.cleanup();
@@ -257,7 +237,7 @@ impl ProgramProc for TextureMappingProcedure {
         Ok(())
     }
 
-    fn cleanup(&mut self) {
+    fn cleanup(&mut self, device: &HaDevice) {
 
         self.present_availables.iter()
             .for_each(|semaphore| semaphore.cleanup());
@@ -265,7 +245,8 @@ impl ProgramProc for TextureMappingProcedure {
         self.graphics_pipeline.cleanup();
         self.command_pool.cleanup();
 
-        self.sampler_repository.cleanup();
+        self.sample_image.cleanup(device);
+        self.descriptor_repository.cleanup();
         self.image_repository.cleanup();
         self.vertex_storage.cleanup();
     }

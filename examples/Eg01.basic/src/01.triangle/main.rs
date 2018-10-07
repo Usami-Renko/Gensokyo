@@ -69,7 +69,7 @@ impl TriangleProcedure {
 
 impl ProgramProc for TriangleProcedure {
 
-    fn assets(&mut self, _device: &HaDevice, kit: AllocatorKit) -> Result<(), ProcedureError> {
+    fn assets(&mut self, kit: AllocatorKit) -> Result<(), ProcedureError> {
 
         // vertex buffer
         let mut vertex_allocator = kit.buffer(BufferStorageType::Cached);
@@ -184,7 +184,7 @@ impl ProgramProc for TriangleProcedure {
         return Ok(&self.present_availables[image_index])
     }
 
-    fn clean_resources(&mut self) -> Result<(), ProcedureError> {
+    fn clean_resources(&mut self, _: &HaDevice) -> Result<(), ProcedureError> {
 
         self.present_availables.iter()
             .for_each(|semaphore| semaphore.cleanup());
@@ -197,7 +197,7 @@ impl ProgramProc for TriangleProcedure {
         Ok(())
     }
 
-    fn cleanup(&mut self) {
+    fn cleanup(&mut self, _: &HaDevice) {
 
         for semaphore in self.present_availables.iter() {
             semaphore.cleanup();

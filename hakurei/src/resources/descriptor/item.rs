@@ -2,11 +2,11 @@
 use ash::vk;
 use ash::vk::uint32_t;
 
-use core::device::HaDevice;
 use resources::descriptor::layout::{ BufferDescriptorType, ImageDescriptorType, DescriptorSetLayoutFlag };
 use resources::descriptor::HaDescriptorSet;
 use resources::buffer::BufferSubItem;
-use resources::image::{ ImageViewItem, ImageLayout, HaSampler };
+use resources::image::{ ImageViewItem, ImageLayout };
+use resources::error::{ DescriptorError, DescriptorResourceError };
 
 use pipeline::shader::ShaderStageFlag;
 
@@ -21,19 +21,19 @@ pub(crate) trait DescriptorBindingInfo {
     fn descriptor_type(&self)  -> vk::DescriptorType;
     fn descritpor_count(&self) -> uint32_t;
 
-    fn write_set(&self, set: &HaDescriptorSet) -> vk::WriteDescriptorSet;
-    fn cleanup(&self, device: &HaDevice);
+    fn write_set(&self, set: &HaDescriptorSet) -> Result<vk::WriteDescriptorSet, DescriptorError>;
 }
 
+// TODO: Make this struct to pub(crate)
 pub struct DescriptorBufferBindingInfo {
 
     /// the binding index used in shader for the descriptor.
     pub binding: uint32_t,
+    /// the element count of each descriptor.
+    pub count  : uint32_t,
     // TODO: Limit to specific buffer type
     /// the type of descriptor.
     pub type_  : BufferDescriptorType,
-    /// the element count of each descriptor.
-    pub count  : uint32_t,
     /// the size of each element of descriptor.
     pub element_size: vk::DeviceSize,
     /// the reference to buffer where the descriptor data stores.
@@ -46,7 +46,7 @@ impl DescriptorBindingInfo for DescriptorBufferBindingInfo {
     fn descriptor_type(&self)  -> vk::DescriptorType { self.type_.value() }
     fn descritpor_count(&self) -> uint32_t { self.count }
 
-    fn write_set(&self, set: &HaDescriptorSet) -> vk::WriteDescriptorSet {
+    fn write_set(&self, set: &HaDescriptorSet) -> Result<vk::WriteDescriptorSet, DescriptorError> {
 
         let mut buffer_infos = vec![];
         for i in 0..(self.count as vk::DeviceSize) {
@@ -76,30 +76,27 @@ impl DescriptorBindingInfo for DescriptorBufferBindingInfo {
             p_texel_buffer_view : ptr::null(),
         };
 
-        write_set
-    }
-
-    fn cleanup(&self, _: &HaDevice) {
-        // nothing to clean
+        Ok(write_set)
     }
 }
 
 
+// TODO: Make this struct to pub(crate)
 pub struct DescriptorImageBindingInfo {
 
     /// the binding index used in shader for the descriptor.
-    pub binding: uint32_t,
+    pub(crate) binding: uint32_t,
+    /// the element count of each descriptor.
+    pub(crate) count  : uint32_t,
     // TODO: Limit to specific buffer type
     /// the type of descritpor.
-    pub type_  : ImageDescriptorType,
-    /// the element count of each descriptor.
-    pub count  : uint32_t,
+    pub(crate) type_  : ImageDescriptorType,
     /// sampler information.
-    pub sampler: HaSampler,
+    pub(crate) sampler: vk::Sampler,
     /// what the layout is for this descriptor in shader.
-    pub layout: ImageLayout,
+    pub(crate) dst_layout: ImageLayout,
     /// the reference to image view where the descriptor data stores.
-    pub view_item: ImageViewItem,
+    pub(crate) view_item: ImageViewItem,
 }
 
 impl DescriptorBindingInfo for DescriptorImageBindingInfo {
@@ -108,15 +105,18 @@ impl DescriptorBindingInfo for DescriptorImageBindingInfo {
     fn descriptor_type(&self)  -> vk::DescriptorType { self.type_.value() }
     fn descritpor_count(&self) -> uint32_t { self.count }
 
-    fn write_set(&self, set: &HaDescriptorSet) -> vk::WriteDescriptorSet {
+    fn write_set(&self, set: &HaDescriptorSet) -> Result<vk::WriteDescriptorSet, DescriptorError> {
 
         let mut image_infos = vec![];
         for _ in 0..(self.count as vk::DeviceSize) {
 
+            let view_handle = self.view_item.get_view_handle()
+                .ok_or(DescriptorError::Resource(DescriptorResourceError::ImageNotAllocated))?;
+
             let info = vk::DescriptorImageInfo {
-                sampler      : self.sampler.handle,
-                image_view   : self.view_item.view_handle,
-                image_layout : vk::ImageLayout::ShaderReadOnlyOptimal,
+                sampler      : self.sampler,
+                image_view   : view_handle,
+                image_layout : self.dst_layout.value(),
             };
             image_infos.push(info);
         }
@@ -135,11 +135,7 @@ impl DescriptorBindingInfo for DescriptorImageBindingInfo {
             p_texel_buffer_view: ptr::null(),
         };
 
-        write_set
-    }
-
-    fn cleanup(&self, device: &HaDevice) {
-        self.sampler.cleanup(device);
+        Ok(write_set)
     }
 }
 
@@ -161,12 +157,12 @@ impl DescriptorSetConfig {
         }
     }
 
-    pub fn add_buffer_binding(&mut self, item: DescriptorBufferBindingInfo, stages: &[ShaderStageFlag]) -> usize {
-        self.add_binding(Box::new(item), stages)
+    pub fn add_buffer_binding(&mut self, binding_info: DescriptorBufferBindingInfo, stages: &[ShaderStageFlag]) -> usize {
+        self.add_binding(Box::new(binding_info), stages)
     }
 
-    pub fn add_image_binding(&mut self, item: DescriptorImageBindingInfo, stages: &[ShaderStageFlag]) -> usize {
-        self.add_binding(Box::new(item), stages)
+    pub fn add_image_binding(&mut self, binding_info: DescriptorImageBindingInfo, stages: &[ShaderStageFlag]) -> usize {
+        self.add_binding(Box::new(binding_info), stages)
     }
 
     fn add_binding(&mut self, binding: Box<DescriptorBindingInfo>, stages: &[ShaderStageFlag]) -> usize {
@@ -174,12 +170,6 @@ impl DescriptorSetConfig {
         self.bindings.push(binding);
         self.stage_flags.push(stages.flags());
         descriptor_index
-    }
-
-    pub(crate) fn cleanup(&self, device: &HaDevice) {
-        for binding in self.bindings.iter() {
-            binding.cleanup(device);
-        }
     }
 }
 

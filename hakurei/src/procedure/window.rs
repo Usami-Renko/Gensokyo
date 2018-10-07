@@ -53,7 +53,7 @@ impl<T> ProgramEnv<T> where T: ProgramProc {
 
         let window = self.window_info.build(&self.event_loop)
             .map_err(|e| RuntimeError::Window(e))?;
-        let mut core = self.initialize_core(&window, self.config.core.to_physical_requirement())?;
+        let mut core = self.initialize_core(&window, &self.config)?;
         let mut resources = self.load_resources(&core)?;
 
         self.procedure.ready(&core.device)?;
@@ -64,7 +64,7 @@ impl<T> ProgramEnv<T> where T: ProgramProc {
                 | Err(error) => match error {
                     | ProcedureError::SwapchainRecreate => {
                         self.wait_idle(&core.device)?;
-                        self.procedure.clean_resources()?;
+                        self.procedure.clean_resources(&core.device)?;
                         let new_resources = self.reload_resources(&core, &resources)?;
                         resources.cleanup(&core.device);
                         resources.clear();
@@ -82,7 +82,7 @@ impl<T> ProgramEnv<T> where T: ProgramProc {
 
         self.wait_idle(&core.device)?;
 
-        self.procedure.cleanup();
+        self.procedure.cleanup(&core.device);
         resources.cleanup(&core.device);
         core.cleanup();
 

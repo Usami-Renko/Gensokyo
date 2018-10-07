@@ -8,7 +8,7 @@ use resources::descriptor::{ DescriptorSetConfig, DescriptorItem, DescriptorSetI
 use resources::descriptor::{ DescriptorSetLayoutInfo };
 use resources::descriptor::{ DescriptorPoolInfo, DescriptorPoolFlag };
 use resources::repository::HaDescriptorRepository;
-use resources::error::DescriptorError;
+use resources::error::AllocatorError;
 
 use utility::marker::VulkanFlags;
 
@@ -53,7 +53,7 @@ impl HaDescriptorAllocator {
         (set, items)
     }
 
-    pub fn allocate(&mut self) -> Result<HaDescriptorRepository, DescriptorError> {
+    pub fn allocate(&mut self) -> Result<HaDescriptorRepository, AllocatorError> {
 
         // descriptor pool
         let pool_sizes = self.pool_sizes();

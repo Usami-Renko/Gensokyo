@@ -36,7 +36,7 @@ pub struct DepthProcedure {
     command_pool   : HaCommandPool,
     command_buffers: Vec<HaCommandBuffer>,
 
-    camera: HaStageCamera,
+    camera: HaFlightCamera,
 
     present_availables: Vec<HaSemaphore>,
 }
@@ -47,7 +47,7 @@ impl DepthProcedure {
         let camera = CameraConfigurator::config()
             .place_at(Point3::new(0.0, 0.0, 3.0))
             .screen_dimension(super::WINDOW_WIDTH, super::WINDOW_HEIGHT)
-            .for_stage_camera();
+            .for_flight_camera();
 
         DepthProcedure {
             vertex_data: VERTEX_DATA.to_vec(),
@@ -82,7 +82,6 @@ impl DepthProcedure {
 
     fn update_uniforms(&mut self) -> Result<(), ProcedureError> {
 
-        self.ubo_data[0].model = self.camera.object_model_transformation();
         self.ubo_data[0].view  = self.camera.view_matrix();
 
         self.ubo_buffer.data_updater()?
@@ -95,7 +94,7 @@ impl DepthProcedure {
 
 impl ProgramProc for DepthProcedure {
 
-    fn assets(&mut self, _device: &HaDevice, kit: AllocatorKit) -> Result<(), ProcedureError> {
+    fn assets(&mut self, kit: AllocatorKit) -> Result<(), ProcedureError> {
 
         // vertex, index buffer
         let mut device_buffer_allocator = kit.buffer(BufferStorageType::Device);
@@ -146,13 +145,14 @@ impl ProgramProc for DepthProcedure {
         let ubo_descriptor_item = descriptor_binding_items[ubo_binding_index].clone();
 
         self.ubo_storage = descriptor_allocator.allocate()?;
-        self.ubo_storage.update_descriptors(&[ubo_descriptor_item]);
+        self.ubo_storage.update_descriptors(&[ubo_descriptor_item])?;
         self.ubo_set = descriptor_set_item;
 
         Ok(())
     }
 
     fn pipelines(&mut self, kit: PipelineKit, swapchain: &HaSwapchain) -> Result<(), ProcedureError> {
+
         // shaders
         let vertex_shader = HaShaderInfo::from_source(
             ShaderStageFlag::VertexStage,
@@ -187,12 +187,12 @@ impl ProgramProc for DepthProcedure {
 
         let render_pass = render_pass_builder.build(swapchain)?;
         let viewport = HaViewport::setup(swapchain.extent);
-        let mut rasterizer = HaRasterizer::setup(RasterizerPrefab::Common);
-        rasterizer.set_polygon_mode(PolygonMode::Line);
+        let mut rasterization = HaRasterizer::setup(RasterizerPrefab::Common);
+        rasterization.set_polygon_mode(PolygonMode::Line);
 
         let pipeline_config = GraphicsPipelineConfig::new(shader_infos, vertex_input_desc, render_pass)
             .setup_viewport(viewport)
-            .setup_rasterizer(rasterizer)
+            .setup_rasterizer(rasterization)
             .add_descriptor_set(self.ubo_storage.set_layout_at(&self.ubo_set))
             .finish_config();
 
@@ -262,7 +262,7 @@ impl ProgramProc for DepthProcedure {
         return Ok(&self.present_availables[image_index])
     }
 
-    fn clean_resources(&mut self) -> Result<(), ProcedureError> {
+    fn clean_resources(&mut self, _: &HaDevice) -> Result<(), ProcedureError> {
 
         for semaphore in self.present_availables.iter() {
             semaphore.cleanup();
@@ -276,7 +276,7 @@ impl ProgramProc for DepthProcedure {
         Ok(())
     }
 
-    fn cleanup(&mut self) {
+    fn cleanup(&mut self, _: &HaDevice) {
 
         self.present_availables.iter()
             .for_each(|semaphore| semaphore.cleanup());

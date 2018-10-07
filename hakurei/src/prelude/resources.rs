@@ -29,12 +29,8 @@ pub use resources::descriptor::{
 pub use resources::framebuffer::{};
 
 pub use resources::image::{
-    ImageDescInfo,     // image
-    ImageViewDescInfo, // view
-    ImageLayout, ImageAspectFlag, ImageCreateFlag, ImageUsageFlag, // flag
-    ImageViewItem, // item
-    HaSampler, SamplerDescInfo, // sampler
-    ImageType, ImageViewType, ImageTiling, Filter, MipmapMode, CompareOp, BorderColor, // enums
+    ImageTiling, Filter, MipmapMode, CompareOp, BorderColor, // enums
+    SampleImageInfo, HaSampleImage, // variety
 };
 
 // currently no memory API is public,

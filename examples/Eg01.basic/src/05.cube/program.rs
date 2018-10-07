@@ -95,7 +95,7 @@ impl CubeProcedure {
 
 impl ProgramProc for CubeProcedure {
 
-    fn assets(&mut self, _device: &HaDevice, kit: AllocatorKit) -> Result<(), ProcedureError> {
+    fn assets(&mut self, kit: AllocatorKit) -> Result<(), ProcedureError> {
 
         // vertex, index buffer
         let mut device_buffer_allocator = kit.buffer(BufferStorageType::Device);
@@ -146,7 +146,7 @@ impl ProgramProc for CubeProcedure {
         let ubo_descriptor_item = descriptor_binding_items[ubo_binding_index].clone();
 
         self.ubo_storage = descriptor_allocator.allocate()?;
-        self.ubo_storage.update_descriptors(&[ubo_descriptor_item]);
+        self.ubo_storage.update_descriptors(&[ubo_descriptor_item])?;
         self.ubo_set = descriptor_set_item;
 
         Ok(())
@@ -259,7 +259,7 @@ impl ProgramProc for CubeProcedure {
         return Ok(&self.present_availables[image_index])
     }
 
-    fn clean_resources(&mut self) -> Result<(), ProcedureError> {
+    fn clean_resources(&mut self, _: &HaDevice) -> Result<(), ProcedureError> {
 
         for semaphore in self.present_availables.iter() {
             semaphore.cleanup();
@@ -273,7 +273,7 @@ impl ProgramProc for CubeProcedure {
         Ok(())
     }
 
-    fn cleanup(&mut self) {
+    fn cleanup(&mut self, _: &HaDevice) {
 
         self.present_availables.iter()
             .for_each(|semaphore| semaphore.cleanup());
