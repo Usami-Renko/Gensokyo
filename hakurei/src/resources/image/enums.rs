@@ -5,9 +5,11 @@ use utility::marker::VulkanEnum;
 
 // TODO: Map to raw value
 #[derive(Debug, Clone, Copy, Eq, PartialEq)]
-pub enum ImageType {
+pub(crate) enum ImageType {
+    #[allow(dead_code)]
     Type1d,
     Type2d,
+    #[allow(dead_code)]
     Type3d,
 }
 
@@ -25,13 +27,19 @@ impl VulkanEnum for ImageType {
 
 // TODO: Map to raw value
 #[derive(Debug, Clone, Copy, Eq, PartialEq)]
-pub enum ImageViewType {
+pub(crate) enum ImageViewType {
+    #[allow(dead_code)]
     Type1d,
     Type2d,
+    #[allow(dead_code)]
     Type3d,
+    #[allow(dead_code)]
     Cube,
+    #[allow(dead_code)]
     Type1dArray,
+    #[allow(dead_code)]
     Type2dArray,
+    #[allow(dead_code)]
     CubeArray,
 }
 

@@ -1,5 +1,5 @@
 
-pub use self::config::CoreConfig;
+pub(crate) use self::config::CoreConfig;
 
 pub(crate) use self::config::{ APPLICATION_VERSION, ENGINE_VERSION, API_VERSION };
 pub(crate) use self::config::{ APPLICATION_NAME, ENGINE_NAME };

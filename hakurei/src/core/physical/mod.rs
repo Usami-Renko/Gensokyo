@@ -16,4 +16,5 @@ mod memory;
 mod family;
 mod requirement;
 mod extension;
+mod formats;
 mod limits;

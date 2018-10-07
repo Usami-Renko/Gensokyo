@@ -5,25 +5,32 @@ use utility::marker::VulkanFlags;
 use utility::marker::VulkanEnum;
 
 #[derive(Debug, Clone, Copy, Eq, PartialEq)]
-pub enum ImageUsageFlag {
+pub(crate) enum ImageUsageFlag {
     /// TransferSrcBit specifies that the image can be used as the source of a transfer command.
+    #[allow(dead_code)]
     TransferSrcBit,
     /// TransferDstBit specifies that the image can be used as the destination of a transfer command.
     TransferDstBit,
     /// SampledBit specifies that the image can be used to create a vk::ImageView suitable for occupying a vk::DescriptorSet slot either of type DescriptorType::SampledImage or DescriptorType::CombinedImageSampler, and be sampled by a shader.
+    #[allow(dead_code)]
     SampledBit,
     /// StorageBit specifies that the image can be used to create a vk::ImageView suitable for occupying a vk::DescriptorSet slot of type DescriptorType::StorageImage.
+    #[allow(dead_code)]
     StorageBit,
     /// ColorAttachmentBit specifies that the image can be used to create a vk::ImageView suitable for use as a color
     /// or resolve attachment in a vk::Framebuffer.
+    #[allow(dead_code)]
     ColorAttachmentBit,
     /// DepthStencilAttachmentBit specifies that the image can be used to create a vk::ImageView suitable for use as a depth/stencil attachment in a vk::Framebuffer.
+    #[allow(dead_code)]
     DepthStencilAttachmentBit,
     /// TransientAttachmentBit specifies that the memory bound to this image will have been allocated with the MemoryPropertyFlag::LazilyAllocatedBit.
     ///
     /// This bit can be set for any image that can be used to create a vk::ImageView suitable for use as a color, resolve, depth/stencil, or input attachment.
+    #[allow(dead_code)]
     TransientAttachmentBit,
     /// InputAttachmentBit specifies that the image can be used to create a vk::ImageView suitable for occupying vk::DescriptorSet slot of type DescriptorType::InputAttachment; be read from a shader as an input attachment; and be used as an input attachment in a framebuffer.
+    #[allow(dead_code)]
     InputAttachmentBit,
 }
 
@@ -48,8 +55,9 @@ impl VulkanFlags for [ImageUsageFlag] {
 
 // TODO: Turn this flags into different type of HaImageObj.
 // TODO: Some enum is not available in ash crate yet.
+#[allow(dead_code)]
 #[derive(Debug, Clone, Copy, Eq, PartialEq)]
-pub enum ImageCreateFlag {
+pub(crate) enum ImageCreateFlag {
     /// SparseBindingBit specifies that the image will be backed using sparse memory binding.
     SparseBindingBit,
     /// SparseResidencyBit specifies that the image can be partially backed using sparse memory binding.
@@ -114,8 +122,9 @@ impl VulkanFlags for [ImageCreateFlag] {
     }
 }
 
+#[allow(dead_code)]
 #[derive(Debug, Clone, Copy, Eq, PartialEq)]
-pub enum ImageAspectFlag {
+pub(crate) enum ImageAspectFlag {
     /// ColorBit specifies the color aspect.
     ColorBit,
     /// DepthBit specifies the depth aspect.

@@ -4,16 +4,17 @@ use ash::vk::uint32_t;
 use ash::version::DeviceV1_0;
 
 use core::device::HaDevice;
-use resources::image::flag::{ ImageCreateFlag, ImageUsageFlag };
+use resources::image::flag::ImageUsageFlag;
 use resources::error::ImageError;
-
-use pipeline::state::SampleCountType;
 
 use utility::dimension::Dimension3D;
 use utility::marker::{ VulkanFlags, VulkanEnum };
 
 use std::ptr;
 
+/// Images represent all kind of ‘pixel-like’ arrays.
+///
+/// HaImage is a wrapper class for vk::Image.
 pub(crate) struct HaImage {
 
     pub(crate) handle: vk::Image,
@@ -73,32 +74,33 @@ impl HaImage {
     }
 }
 
-pub struct ImageDescInfo {
+#[derive(Debug, Clone)]
+pub(crate) struct ImageDescInfo {
 
-    flags     : vk::ImageCreateFlags,
+    pub flags     : vk::ImageCreateFlags,
     /// tiling specifies the tiling arrangement of the data elements in memory.
-    tiling    : vk::ImageTiling,
+    pub tiling    : vk::ImageTiling,
     /// usage describes the intended usage of the image.
-    usage     : vk::ImageUsageFlags,
+    pub usage     : vk::ImageUsageFlags,
     /// sample_count is the number of sub-data element samples in the image used in multisampling.
-    sample_count: vk::SampleCountFlags,
+    pub sample_count: vk::SampleCountFlags,
     /// image_type specifies the basic dimensionality of the image.
     ///
     /// Layers in array textures do not count as a dimension for the purposes of the image type.
-    image_type: vk::ImageType,
+    pub image_type: vk::ImageType,
     /// mip_levels describes the number of levels of detail available for minified sampling of the image.
-    mip_levels: uint32_t,
+    pub mip_levels: uint32_t,
     /// array_layers is the number of layers in the image.
-    array_layers: uint32_t,
+    pub array_layers: uint32_t,
     /// initial_layout specifies the initial vk::ImageLayout of all image subresources of the image.
-    initial_layout: vk::ImageLayout,
+    pub initial_layout: vk::ImageLayout,
 
     /// sharing specifies the sharing mode of the image when it will be accessed by multiple queue families.
-    sharing   : vk::SharingMode,
+    pub sharing: vk::SharingMode,
     /// queue_family_indices is a list of queue families that will access this image.
     ///
     /// ignored if sharingMode is not vk::SharingMode::Concurrent.
-    queue_family_indices: Vec<uint32_t>,
+    pub queue_family_indices: Vec<uint32_t>,
 }
 
 impl ImageDescInfo {
@@ -108,19 +110,6 @@ impl ImageDescInfo {
             tiling: tiling.value(), usage: usages.flags(), image_type: img_type.value(), initial_layout: initial_layout.value(),
             ..Default::default()
         }
-    }
-
-    pub fn set_flags(&mut self, flags: &[ImageCreateFlag]) {
-        self.flags = flags.flags();
-    }
-    pub fn set_samples(&mut self, count: SampleCountType, mip_levels: uint32_t, array_layers: uint32_t) {
-        self.sample_count = count.value();
-        self.mip_levels   = mip_levels;
-        self.array_layers = array_layers;
-    }
-    pub fn set_share_queues(&mut self, queue_family_indices: Vec<uint32_t>) {
-        self.sharing = vk::SharingMode::Concurrent;
-        self.queue_family_indices = queue_family_indices;
     }
 }
 

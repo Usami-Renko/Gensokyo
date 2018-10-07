@@ -64,6 +64,7 @@ pub enum PhysicalDeviceError {
     PresentQueueNotSupportError,
     TransferQueueNotSupportError,
     EnumerateExtensionsError,
+    FormatUsageNotSupport(PhysicalFormatUsage),
 }
 
 impl Error for PhysicalDeviceError {}
@@ -77,13 +78,31 @@ impl fmt::Display for PhysicalDeviceError {
             | PhysicalDeviceError::GraphicsQueueNotSupportError => "Physical device does not support graphics requirement.",
             | PhysicalDeviceError::PresentQueueNotSupportError  => "Physical device does not support present requirement.",
             | PhysicalDeviceError::TransferQueueNotSupportError => "Physical device does not support transfer requirement",
-            | PhysicalDeviceError::EnumerateExtensionsError     => "Failed to enumerate Device Extensions."
+            | PhysicalDeviceError::EnumerateExtensionsError     => "Failed to enumerate Device Extensions.",
+            | PhysicalDeviceError::FormatUsageNotSupport(usage) => return write!(f, "Unable to find support format for {}.", usage),
         };
 
         write!(f, "{}", description)
     }
 }
 
+/// The possible specific required usage of vk::Format in Vulkan.
+#[derive(Debug, Clone, Copy, Eq, PartialEq)]
+pub enum PhysicalFormatUsage {
+    DepthStencil,
+}
+
+impl fmt::Display for PhysicalFormatUsage {
+
+    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+
+        let description = match self {
+            | PhysicalFormatUsage::DepthStencil => "Depth or Stencil Buffer",
+        };
+
+        write!(f, "{}", description)
+    }
+}
 
 /// possible error may occur during the creation of vk::Surface.
 #[derive(Debug, Clone, Copy, Eq, PartialEq)]

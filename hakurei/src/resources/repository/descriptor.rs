@@ -8,6 +8,7 @@ use resources::descriptor::HaDescriptorPool;
 use resources::descriptor::{ DescriptorItem, DescriptorSetItem };
 use resources::descriptor::HaDescriptorSetLayout;
 use resources::descriptor::{ DescriptorSetConfig, HaDescriptorSet };
+use resources::error::AllocatorError;
 
 pub struct CmdDescriptorBindingInfos {
 
@@ -45,20 +46,22 @@ impl HaDescriptorRepository {
 
     // TODO: Currently only support descriptors in the same Buffer Repository.
     // TODO: Redesign the API, if items is not buffer items, the function will crash.
-    pub fn update_descriptors(&self, items: &[DescriptorItem]) {
+    pub fn update_descriptors(&self, items: &[DescriptorItem]) -> Result<(), AllocatorError> {
 
         let mut write_sets = vec![];
 
         for item in items.iter() {
 
             let binding_info = &self.configs[item.set_index].bindings[item.binding_index];
-            let write_set = binding_info.write_set(&self.sets[item.set_index]);
+            let write_set = binding_info.write_set(&self.sets[item.set_index])?;
             write_sets.push(write_set);
         }
 
         unsafe {
             self.device.as_ref().unwrap().handle.update_descriptor_sets(&write_sets, &[]);
         }
+
+        Ok(())
     }
 
     pub fn set_layout_at(&self, set_item: &DescriptorSetItem) -> &HaDescriptorSetLayout {
@@ -77,9 +80,6 @@ impl HaDescriptorRepository {
     pub fn cleanup(&mut self) {
 
         if let Some(ref device) = self.device {
-            for config in self.configs.iter() {
-                config.cleanup(&device);
-            }
 
             self.pool.cleanup(&device);
             self.pool = HaDescriptorPool::uninitialize();

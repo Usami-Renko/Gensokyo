@@ -1,9 +1,10 @@
 
 use winit;
 
+use config::engine::EngineConfig;
 use core::instance::HaInstance;
 use core::debug::HaDebugger;
-use core::physical::{ HaPhysicalDevice, PhysicalRequirement };
+use core::physical::HaPhysicalDevice;
 use core::surface::HaSurface;
 use core::device::{ HaDevice, HaLogicalDevice, LogicalDeviceBuilder };
 use core::swapchain::HaSwapchain;
@@ -23,15 +24,15 @@ use std::rc::Rc;
 
 pub trait ProgramProc {
 
-    fn assets(&mut self, device: &HaDevice, kit: AllocatorKit) -> Result<(), ProcedureError>;
+    fn assets(&mut self, kit: AllocatorKit) -> Result<(), ProcedureError>;
     fn pipelines(&mut self, kit: PipelineKit, swapchain: &HaSwapchain) -> Result<(), ProcedureError>;
     fn subresources(&mut self, _device: &HaDevice) -> Result<(), ProcedureError> { Ok(())}
     fn commands(&mut self, kit: CommandKit) -> Result<(), ProcedureError>;
     fn ready(&mut self, _device: &HaDevice) -> Result<(), ProcedureError> { Ok(()) }
     fn draw(&mut self, device: &HaDevice, device_available: &HaFence, image_available: &HaSemaphore, image_index: usize, delta_time: f32) -> Result<&HaSemaphore, ProcedureError>;
     fn closure(&mut self, _device: &HaDevice) -> Result<(), ProcedureError> { Ok(()) }
-    fn clean_resources(&mut self) -> Result<(), ProcedureError>;
-    fn cleanup(&mut self);
+    fn clean_resources(&mut self, device: &HaDevice) -> Result<(), ProcedureError>;
+    fn cleanup(&mut self, device: &HaDevice);
 
     fn react_input(&mut self, inputer: &ActionNerve, delta_time: f32) -> SceneAction;
 }
@@ -57,7 +58,7 @@ pub struct HaResources {
 
 impl<'win, T> ProgramEnv<T> where T: ProgramProc {
 
-    pub(super) fn initialize_core(&self, window: &'win winit::Window, requirement: PhysicalRequirement)
+    pub(super) fn initialize_core(&self, window: &'win winit::Window, config: &EngineConfig)
         -> Result<CoreInfrastructure<'win>, ProcedureError> {
 
         let instance = HaInstance::new(&self.config)?;
@@ -70,7 +71,7 @@ impl<'win, T> ProgramEnv<T> where T: ProgramProc {
         };
 
         let surface = HaSurface::new(&instance, window)?;
-        let physical = HaPhysicalDevice::new(&instance, &surface, requirement)?;
+        let physical = HaPhysicalDevice::new(&instance, &surface, config)?;
         // Initialize the device with default queues. (one graphics queue, one present queue, one transfer queue)
         let device = LogicalDeviceBuilder::init(&instance, &physical)
             .build(&self.config.core)?;
@@ -87,7 +88,7 @@ impl<'win, T> ProgramEnv<T> where T: ProgramProc {
 
         let inner_resource = self.create_inner_resources(core, None)?;
 
-        self.procedure.assets(&core.device, AllocatorKit::init(&core.physical, &core.device))?;
+        self.procedure.assets(AllocatorKit::init(&core.physical, &core.device))?;
         self.procedure.pipelines(PipelineKit::init(&core.device), &inner_resource.swapchain)?;
         self.procedure.subresources(&core.device)?;
         self.procedure.commands(CommandKit::init(&core.device))?;

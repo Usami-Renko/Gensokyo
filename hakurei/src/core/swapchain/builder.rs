@@ -130,8 +130,13 @@ impl<'vk, 'win: 'vk> SwapchainBuilder<'vk, 'win> {
 
         let mut view_desc = ImageViewDescInfo::init(
             ImageViewType::Type2d,
+            &[ImageAspectFlag::ColorBit],
         );
-        view_desc.set_subrange(&[ImageAspectFlag::ColorBit], 0, 1, 0, 1);
+
+        view_desc.subrange = vk::ImageSubresourceRange {
+            aspect_mask: [ImageAspectFlag::ColorBit].flags(),
+            base_mip_level: 0, level_count: 1, base_array_layer: 0, layer_count: 1
+        };
 
         let mut views = vec![];
         for image in images.iter() {

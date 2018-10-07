@@ -3,6 +3,7 @@ use ash::vk;
 use ash::version::InstanceV1_0;
 
 use config::VERBOSE;
+use config::engine::EngineConfig;
 use core::instance::HaInstance;
 use core::surface::HaSurface;
 use core::error::PhysicalDeviceError;
@@ -11,7 +12,7 @@ use core::physical::features::PhyscialFeatures;
 use core::physical::memory::PhysicalMemory;
 use core::physical::family::PhysicalQueueFamilies;
 use core::physical::extension::PhysicalExtension;
-use core::physical::requirement::PhysicalRequirement;
+use core::physical::formats::PhysicalFormatProperties;
 
 use utility::marker::VulkanEnum;
 
@@ -25,14 +26,17 @@ pub struct HaPhysicalDevice {
     pub(crate) memory     : PhysicalMemory,
     pub(crate) families   : PhysicalQueueFamilies,
     pub(crate) extensions : PhysicalExtension,
+    pub(crate) formats    : PhysicalFormatProperties,
 }
 
 impl HaPhysicalDevice {
 
-    pub fn new(instance: &HaInstance, surface: &HaSurface, requirement: PhysicalRequirement) -> Result<HaPhysicalDevice, PhysicalDeviceError> {
+    pub fn new(instance: &HaInstance, surface: &HaSurface, config: &EngineConfig) -> Result<HaPhysicalDevice, PhysicalDeviceError> {
 
         let alternative_devices = instance.handle.enumerate_physical_devices()
             .or(Err(PhysicalDeviceError::EnumerateDeviceError))?;
+
+        let requirement = config.core.to_physical_requirement();
 
         let mut optimal_device = None;
 
@@ -66,14 +70,12 @@ impl HaPhysicalDevice {
                 continue
             }
 
+            let formats = PhysicalFormatProperties::inspect(instance, physical_device, config)?;
+
             optimal_device = Some(
                 HaPhysicalDevice {
                     handle: physical_device,
-                    properties,
-                    features,
-                    memory,
-                    families,
-                    extensions,
+                    properties, features, memory, families, extensions, formats,
                 }
             );
 
@@ -88,6 +90,8 @@ impl HaPhysicalDevice {
 
         optimal_device.ok_or(PhysicalDeviceError::NoSuitableDeviceError)
     }
+
+
 
     pub fn cleanup(&self) {
         // No method for delete physical device

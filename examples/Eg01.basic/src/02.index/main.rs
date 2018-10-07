@@ -79,7 +79,7 @@ impl DrawIndexProcedure {
 
 impl ProgramProc for DrawIndexProcedure {
 
-    fn assets(&mut self, _device: &HaDevice, kit: AllocatorKit) -> Result<(), ProcedureError> {
+    fn assets(&mut self, kit: AllocatorKit) -> Result<(), ProcedureError> {
 
         // vertex & index buffer
         let mut buffer_allocator = kit.buffer(BufferStorageType::Cached);
@@ -204,7 +204,7 @@ impl ProgramProc for DrawIndexProcedure {
         return Ok(&self.present_availables[image_index])
     }
 
-    fn clean_resources(&mut self) -> Result<(), ProcedureError> {
+    fn clean_resources(&mut self, _: &HaDevice) -> Result<(), ProcedureError> {
 
         self.present_availables.iter()
             .for_each(|semaphore| semaphore.cleanup());
@@ -217,7 +217,7 @@ impl ProgramProc for DrawIndexProcedure {
         Ok(())
     }
 
-    fn cleanup(&mut self) {
+    fn cleanup(&mut self, _: &HaDevice) {
 
         for semaphore in self.present_availables.iter() {
             semaphore.cleanup();

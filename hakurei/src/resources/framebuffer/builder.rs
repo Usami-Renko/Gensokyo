@@ -6,8 +6,7 @@ use ash::version::DeviceV1_0;
 use core::device::HaDevice;
 
 use resources::framebuffer::HaFramebuffer;
-use resources::image::{ HaImageView, ImageViewItem };
-use resources::repository::HaImageRepository;
+use resources::image::HaImageView;
 use resources::error::FramebufferError;
 
 use utility::dimension::BufferDimension;
@@ -66,10 +65,11 @@ impl<'i> FramebufferBuilder<'i> {
         self.attachments.push(attachment);
         self
     }
-    #[allow(dead_code)]
-    pub fn add_attachment(&mut self, repository: &'i HaImageRepository, item: &ImageViewItem) -> &mut FramebufferBuilder<'i> {
-        let view = repository.view_at(item);
-        self.attachments.push(view);
-        self
-    }
+
+//    #[allow(dead_code)]
+//    pub fn add_attachment(&mut self, repository: &'i HaImageRepository, item: &ImageViewItem) -> &mut FramebufferBuilder<'i> {
+//        let view = repository.view_at(item);
+//        self.attachments.push(view);
+//        self
+//    }
 }

@@ -8,6 +8,7 @@ use core::physical::{ HaPhyDevice, MemorySelector };
 use resources::repository::HaImageRepository;
 use resources::image::{ ImageViewItem, ImageDescInfo, ImageViewDescInfo };
 use resources::image::{ HaImage, HaImageView };
+use resources::image::{ HaSampler, SampleImageInfo, HaSampleImage };
 use resources::buffer::{ StagingBufferConfig, StagingBufferUsage, BufferSubItem };
 use resources::buffer::BufferConfigModifiable;
 use resources::image::{ ImageLayout, ImageStorageInfo, load_texture };
@@ -68,24 +69,24 @@ impl HaImageAllocator {
         }
     }
 
-    pub fn attach_image(&mut self, path: &Path, image_desc: ImageDescInfo, view_desc: ImageViewDescInfo) -> Result<usize, AllocatorError> {
+    pub fn attach_sample_image(&mut self, path: &Path, info: SampleImageInfo) -> Result<HaSampleImage, AllocatorError> {
 
         let storage = load_texture(path)?;
-        let image = HaImage::config(&self.device, &image_desc, storage.dimension, storage.format)?;
+        let image = HaImage::config(&self.device, &info.image_desc, storage.dimension, storage.format)?;
+        let sampler = HaSampler::new(&self.device, info.sampler_desc)?;
+        let result = HaSampleImage::setup(sampler, info.binding, info.count, self.images.len());
 
         self.memory_selector.try(image.requirement.memory_type_bits, self.require_mem_flag)?;
 
         let aligment_space = bind_to_alignment(image.requirement.size, image.requirement.alignment);
 
-        let image_index = self.images.len();
-
         self.storages.push(storage);
         self.images.push(image);
-        self.image_descs.push(image_desc);
-        self.view_descs.push(view_desc);
+        self.image_descs.push(info.image_desc);
+        self.view_descs.push(info.view_desc);
         self.spaces.push(aligment_space);
 
-        Ok(image_index)
+        Ok(result)
     }
 
     pub fn allocate(&mut self) -> Result<HaImageRepository, AllocatorError> {
@@ -185,11 +186,7 @@ impl HaImageAllocator {
             // 7.copy textures from buffer to image
             // do image barrier transition and copy buffer to image.
             for (i, buffer_item) in staging_buffer_items.iter().enumerate() {
-                let image_item = ImageViewItem {
-                    image_handle: self.images[i].handle,
-                    view_handle : views[i].handle,
-                    view_index  : i,
-                };
+                let image_item = ImageViewItem::new(self.images[i].handle, views[i].handle, i);
                 self.copy_buffer_to_image(&recorder, buffer_item, &image_item)?;
             }
 
@@ -254,7 +251,8 @@ impl HaImageAllocator {
 
         let _ = recorder.copy_buffer_to_image(
             from_item.handle,
-            to_item.image_handle,
+            to_item.get_image_handle()
+                .ok_or(AllocatorError::Image(ImageError::NotYetAllocateError))?,
             // TODO: make dst_layout configurable.
             vk::ImageLayout::TransferDstOptimal,
             &copy_regions
