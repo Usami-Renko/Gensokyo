@@ -17,8 +17,9 @@ pub(crate) use self::io::{ ImageStorageInfo, ImageSource };
 pub(crate) use self::enums::{ ImageVarietyType, ImageType, ImageViewType, DepthImageUsage };
 
 pub(crate) use self::variety::{
-    HaImageDescAbs, HaImageViewDescAbs, // traits
-    HaSamplerDescAbs, HaSampler, SamplerDescInfo, // sample
+    HaImageDescAbs, HaImageViewDescAbs, ImageBarrierBundleAbs, // traits
+    HaSamplerDescAbs, HaSampler, SamplerDescInfo, SampleImageBarrierBundle, // sample
+    DepSteImageBarrierBundle, // depth
 };
 
 
