@@ -6,7 +6,6 @@ use ash::version::DeviceV1_0;
 use core::device::HaDevice;
 
 use resources::framebuffer::HaFramebuffer;
-use resources::image::HaImageView;
 use resources::error::FramebufferError;
 
 use utility::dimension::BufferDimension;

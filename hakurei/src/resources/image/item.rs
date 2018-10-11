@@ -24,17 +24,6 @@ impl ImageViewItem {
         }
     }
 
-    pub fn new(image: vk::Image, view: vk::ImageView, view_index: usize) -> ImageViewItem {
-
-        let handles = ImageObjHandles {
-            image, view,
-        };
-
-        ImageViewItem {
-            handles: Some(handles), view_index,
-        }
-    }
-
     pub fn set_handles(&mut self, image: vk::Image, view: vk::ImageView) {
         let handles = ImageObjHandles {
             image, view,
@@ -45,11 +34,6 @@ impl ImageViewItem {
     pub fn get_view_handle(&self) -> Option<vk::ImageView> {
         self.handles.as_ref()
             .and_then(|handles| Some(handles.view.clone()))
-    }
-
-    pub fn get_image_handle(&self) -> Option<vk::Image> {
-        self.handles.as_ref()
-            .and_then(|handles| Some(handles.image.clone()))
     }
 }
 

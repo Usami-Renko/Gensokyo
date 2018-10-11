@@ -2,10 +2,14 @@
 use ash::vk;
 use ash::vk::uint32_t;
 
+use resources::allocator::ImageAllocateInfo;
 use resources::image::{ ImageTiling, ImageLayout };
+use resources::command::HaCommandRecorder;
+use resources::error::AllocatorError;
+
 use pipeline::state::SampleCountType;
 
-pub trait HaImageDescAbs {
+pub(crate) trait HaImageDescAbs {
 
     // image property.
     fn set_tiling(&mut self, tiling: ImageTiling);
@@ -14,7 +18,7 @@ pub trait HaImageDescAbs {
     fn set_share_queues(&mut self, queue_family_indices: Vec<uint32_t>);
 }
 
-pub trait HaImageViewDescAbs {
+pub(crate) trait HaImageViewDescAbs {
 
     // image view property.
     fn set_mapping_component(&mut self, r: vk::ComponentSwizzle, g: vk::ComponentSwizzle, b: vk::ComponentSwizzle, a: vk::ComponentSwizzle);
@@ -29,4 +33,11 @@ pub trait HaImageViewDescAbs {
     ///
     /// layer_count is the number of array layers (starting from baseArrayLayer) accessible to the view.
     fn set_subrange(&mut self, base_mip_level: uint32_t, level_count: uint32_t, base_array_layer: uint32_t, layer_count: uint32_t);
+}
+
+/// Image Barrier Bundle Abstract.
+pub(crate) trait ImageBarrierBundleAbs {
+
+    fn make_transfermation(&mut self, recorder: &HaCommandRecorder, infos: &Vec<ImageAllocateInfo>) -> Result<(), AllocatorError>;
+    fn cleanup(&mut self);
 }

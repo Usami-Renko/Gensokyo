@@ -12,7 +12,7 @@ use pipeline::pass::subpass::{ RenderSubpass, AttachmentType, SubpassType };
 use pipeline::pass::dependency::RenderDependency;
 use pipeline::error::{ RenderPassError, PipelineError };
 
-use resources::image::{ HaDepthStencilImage, HaImageView };
+use resources::image::HaDepthStencilImage;
 use resources::framebuffer::{ HaFramebuffer, FramebufferBuilder };
 
 use utility::dimension::BufferDimension;

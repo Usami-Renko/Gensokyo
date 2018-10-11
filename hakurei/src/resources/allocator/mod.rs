@@ -13,6 +13,7 @@ pub(crate) use self::buffer::{
 };
 pub(crate) use self::image::ImgMemAlloAbstract;
 pub(crate) use self::image::{
+    ImageAllocateInfo,
     DeviceImgMemAllocator,
     CachedImgMemAllocator,
 };
