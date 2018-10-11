@@ -12,6 +12,7 @@ use pipeline::pass::subpass::{ RenderSubpass, AttachmentType, SubpassType };
 use pipeline::pass::dependency::RenderDependency;
 use pipeline::error::{ RenderPassError, PipelineError };
 
+use resources::image::{ HaDepthStencilImage, HaImageView };
 use resources::framebuffer::{ HaFramebuffer, FramebufferBuilder };
 
 use utility::dimension::BufferDimension;
@@ -26,7 +27,8 @@ pub struct RenderPassBuilder {
     subpasses   : Vec<RenderSubpass>,
     dependencies: Vec<RenderDependency>,
 
-    clear_values: Vec<vk::ClearValue>,
+    // TODO: Remove the following two fields.
+    depth_handle: Option<vk::ImageView>,
 }
 
 impl RenderPassBuilder {
@@ -38,13 +40,7 @@ impl RenderPassBuilder {
             subpasses   : vec![],
             dependencies: vec![],
 
-            clear_values:  vec![
-                vk::ClearValue {
-                    color: vk::ClearColorValue {
-                        float32: [0.0, 0.0, 0.0, 1.0],
-                    }
-                }
-            ],
+            depth_handle: None,
         }
     }
 
@@ -83,6 +79,10 @@ impl RenderPassBuilder {
         self.dependencies.push(dependency);
     }
 
+    pub fn set_depth_attachment(&mut self, depth_view: &HaDepthStencilImage) {
+        self.depth_handle = depth_view.get_view_handle();
+    }
+
     pub fn build(&self, swapchain: &HaSwapchain) -> Result<HaRenderPass, PipelineError> {
 
         let attachments = self.attachments.iter().map(|a| a.desc()).collect::<Vec<_>>();
@@ -107,12 +107,14 @@ impl RenderPassBuilder {
                 .or(Err(PipelineError::RenderPass(RenderPassError::RenderPassCreationError)))?
         };
 
-        let framebuffers = generate_framebuffers(&self.device, swapchain, handle)
+        let framebuffers = generate_framebuffers(&self.device, swapchain, handle, &self.depth_handle)
             .map_err(|e| PipelineError::RenderPass(e))?;
+        let clear_values = self.attachments.iter()
+            .map(|a| a.clear_value).collect::<Vec<_>>();
 
         let render_pass = HaRenderPass {
             handle,
-            clear_values: self.clear_values.clone(),
+            clear_values,
 
             framebuffers,
             framebuffer_extent: swapchain.extent,
@@ -121,21 +123,35 @@ impl RenderPassBuilder {
     }
 }
 
-fn generate_framebuffers(device: &HaDevice, swapchain: &HaSwapchain, render_pass: vk::RenderPass)
+// TODO: Redesign this function, since this function is for temporarily used.
+fn generate_framebuffers(device: &HaDevice, swapchain: &HaSwapchain, render_pass: vk::RenderPass, depth: &Option<vk::ImageView>)
     -> Result<Vec<HaFramebuffer>, RenderPassError> {
 
     // TODO: Make layers property configurate
     let dimension = BufferDimension::new(swapchain.extent, 1);
 
     let mut framebuffers = vec![];
-    for view in swapchain.views.iter() {
-        let mut builder = FramebufferBuilder::init(&dimension);
-        builder.add_attachment_inner(view);
-        let framebuffer = builder.build(device, render_pass)
-            .map_err(|e| RenderPassError::Framebuffer(e))?;
-        framebuffers.push(framebuffer);
+
+    if let Some(depth_view) = depth {
+
+        for view in swapchain.views.iter() {
+            let mut builder = FramebufferBuilder::init(&dimension);
+            builder.add_attachment(&view.handle);
+            builder.add_attachment(depth_view);
+            let framebuffer = builder.build(device, render_pass)
+                .map_err(|e| RenderPassError::Framebuffer(e))?;
+            framebuffers.push(framebuffer);
+        }
+    } else {
+
+        for view in swapchain.views.iter() {
+            let mut builder = FramebufferBuilder::init(&dimension);
+            builder.add_attachment(&view.handle);
+            let framebuffer = builder.build(device, render_pass)
+                .map_err(|e| RenderPassError::Framebuffer(e))?;
+            framebuffers.push(framebuffer);
+        }
     }
 
     Ok(framebuffers)
 }
-

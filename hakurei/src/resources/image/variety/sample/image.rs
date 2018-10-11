@@ -4,19 +4,20 @@ use ash::vk::{ uint32_t, c_float };
 
 use core::device::HaDevice;
 
-use resources::image::{ ImageType, ImageTiling, ImageUsageFlag, ImageLayout, ImageViewType };
+use resources::image::{ ImageType, ImageViewType, ImageTiling, ImageUsageFlag, ImageLayout, ImageAspectFlag };
 use resources::image::{ ImageDescInfo, ImageViewDescInfo, ImageViewItem };
-use resources::image::ImageAspectFlag;
 use resources::image::{ HaImageDescAbs, HaImageViewDescAbs, HaImageVarietyAbs };
+use resources::image::ImagePipelineStage;
 use resources::image::{ HaSamplerDescAbs, HaSampler, SamplerDescInfo };
 use resources::descriptor::{ DescriptorImageBindingInfo, ImageDescriptorType };
 use resources::error::{ ImageError, AllocatorError };
 
 use pipeline::state::SampleCountType;
-
 use utility::marker::VulkanEnum;
 
 pub struct SampleImageInfo {
+
+    pub(crate) pipeline_stage: ImagePipelineStage,
 
     pub(crate) binding: uint32_t,
     pub(crate) count  : uint32_t,
@@ -28,7 +29,7 @@ pub struct SampleImageInfo {
 
 impl SampleImageInfo {
 
-    pub fn new(binding: uint32_t, count: uint32_t) -> SampleImageInfo {
+    pub fn new(binding: uint32_t, count: uint32_t, pipeline_stage: ImagePipelineStage) -> SampleImageInfo {
 
         let image_desc = ImageDescInfo::init(
             // TODO: Currently HaSampleImage only support
@@ -49,7 +50,7 @@ impl SampleImageInfo {
         let sampler_desc = SamplerDescInfo::default();
 
         SampleImageInfo {
-            binding, count, image_desc, view_desc, sampler_desc,
+            pipeline_stage, binding, count, image_desc, view_desc, sampler_desc,
         }
     }
 }
@@ -107,49 +108,8 @@ impl HaSampleImage {
     }
 }
 
-impl HaImageVarietyAbs for HaSampleImage {
-
-    fn view_index(&self) -> usize {
-        self.item.view_index
-    }
-    fn fill_handles(&mut self, image: vk::Image, view: vk::ImageView) {
-        self.item.set_handles(image, view);
-    }
-}
-
-impl HaImageDescAbs for SampleImageInfo {
-
-    fn set_tiling(&mut self, tiling: ImageTiling) {
-        self.image_desc.tiling = tiling.value();
-    }
-    fn set_initial_layout(&mut self, layout: ImageLayout) {
-        self.image_desc.initial_layout = layout.value();
-    }
-    fn set_samples(&mut self, count: SampleCountType, mip_levels: uint32_t, array_layers: uint32_t) {
-        self.image_desc.sample_count = count.value();
-        self.image_desc.mip_levels   = mip_levels;
-        self.image_desc.array_layers = array_layers;
-    }
-    fn set_share_queues(&mut self, queue_family_indices: Vec<uint32_t>) {
-        self.image_desc.sharing = vk::SharingMode::Concurrent;
-        self.image_desc.queue_family_indices = queue_family_indices;
-    }
-}
-
-impl HaImageViewDescAbs for SampleImageInfo {
-
-    // image view property.
-    fn set_mapping_component(&mut self, r: vk::ComponentSwizzle, g: vk::ComponentSwizzle, b: vk::ComponentSwizzle, a: vk::ComponentSwizzle) {
-        self.view_desc.components = vk::ComponentMapping { r, g, b, a };
-    }
-    fn set_subrange(&mut self, base_mip_level: uint32_t, level_count: uint32_t, base_array_layer: uint32_t, layer_count: uint32_t) {
-
-        self.view_desc.subrange.base_mip_level   = base_mip_level;
-        self.view_desc.subrange.level_count      = level_count;
-        self.view_desc.subrange.base_array_layer = base_array_layer;
-        self.view_desc.subrange.layer_count      = layer_count;
-    }
-}
+impl_image_variety_abs!(HaSampleImage);
+impl_image_desc_info_abs!(SampleImageInfo);
 
 impl HaSamplerDescAbs for SampleImageInfo {
 

@@ -38,7 +38,7 @@ impl  HaBufferAllocator {
             device: device.clone(),
 
             buffers: vec![],
-            spaces: vec![],
+            spaces : vec![],
 
             ty,
             allocator: ty.allocator(),

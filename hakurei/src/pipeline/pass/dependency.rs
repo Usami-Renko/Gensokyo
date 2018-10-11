@@ -148,9 +148,13 @@ pub enum AccessFlag {
     TransferReadBit,
     /// TransferWriteBit specifies write access to an image or buffer in a clear or copy operation.
     TransferWriteBit,
-    /// HostReadBit specifies read access by a host operation. Accesses of this type are not performed through a resource, but directly on memory.
+    /// HostReadBit specifies read access by a host operation.
+    ///
+    /// Accesses of this type are not performed through a resource, but directly on memory.
     HostReadBit,
-    /// HostWriteBit specifies write access by a host operation. Accesses of this type are not performed through a resource, but directly on memory.
+    /// HostWriteBit specifies write access by a host operation.
+    ///
+    /// Accesses of this type are not performed through a resource, but directly on memory.
     HostWriteBit,
     /// MemoryReadBit specifies read access via non-specific entities.
     ///

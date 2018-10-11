@@ -33,6 +33,9 @@ pub struct DepthProcedure {
     ubo_storage: HaDescriptorRepository,
     ubo_set    : DescriptorSetItem,
 
+    depth_attachment: HaDepthStencilImage,
+    image_storage: HaImageRepository,
+
     command_pool   : HaCommandPool,
     command_buffers: Vec<HaCommandBuffer>,
 
@@ -70,6 +73,9 @@ impl DepthProcedure {
             ubo_item   : BufferSubItem::unset(),
             ubo_storage: HaDescriptorRepository::empty(),
             ubo_set: DescriptorSetItem::unset(),
+
+            depth_attachment: HaDepthStencilImage::uninitialize(),
+            image_storage: HaImageRepository::empty(),
 
             command_pool: HaCommandPool::uninitialize(),
             command_buffers: vec![],
@@ -148,6 +154,13 @@ impl ProgramProc for DepthProcedure {
         self.ubo_storage.update_descriptors(&[ubo_descriptor_item])?;
         self.ubo_set = descriptor_set_item;
 
+        // depth attachment image
+        let depth_attachment_info = DepthStencilImageInfo::new_attachment();
+        let mut image_allocator = kit.image(ImageStorageType::Device);
+        self.depth_attachment = image_allocator.attach_depth_stencil_image(depth_attachment_info, kit.swapchain_dimension())?;
+        self.image_storage = image_allocator.allocate()?;
+        self.image_storage.get_allocated_infos(&mut self.depth_attachment);
+
         Ok(())
     }
 
@@ -175,7 +188,12 @@ impl ProgramProc for DepthProcedure {
         let first_subpass = render_pass_builder.new_subpass(SubpassType::Graphics);
 
         let color_attachment = RenderAttachement::setup(RenderAttachementPrefab::BackColorAttachment, swapchain.format);
-        let _attachment_index = render_pass_builder.add_attachemnt(color_attachment, first_subpass, AttachmentType::Color);
+        let _ = render_pass_builder.add_attachemnt(color_attachment, first_subpass, AttachmentType::Color);
+
+        // TODO: Resign the API about Attachment.
+        let depth_attachment = RenderAttachement::setup(RenderAttachementPrefab::DepthAttachment, self.depth_attachment.get_format());
+        let _ = render_pass_builder.add_attachemnt(depth_attachment, first_subpass, AttachmentType::DepthStencil);
+        render_pass_builder.set_depth_attachment(&self.depth_attachment);
 
         let mut dependency = RenderDependency::setup(RenderDependencyPrefab::Common, SUBPASS_EXTERAL, first_subpass);
         dependency.set_stage(PipelineStageFlag::ColorAttachmentOutputBit, PipelineStageFlag::ColorAttachmentOutputBit);
@@ -187,12 +205,11 @@ impl ProgramProc for DepthProcedure {
 
         let render_pass = render_pass_builder.build(swapchain)?;
         let viewport = HaViewport::setup(swapchain.extent);
-        let mut rasterization = HaRasterizer::setup(RasterizerPrefab::Common);
-        rasterization.set_polygon_mode(PolygonMode::Line);
+        let depth_stencil = HaDepthStencil::setup(HaDepthStencilPrefab::EnableDepth);
 
         let pipeline_config = GraphicsPipelineConfig::new(shader_infos, vertex_input_desc, render_pass)
             .setup_viewport(viewport)
-            .setup_rasterizer(rasterization)
+            .setup_depth_stencil(depth_stencil)
             .add_descriptor_set(self.ubo_storage.set_layout_at(&self.ubo_set))
             .finish_config();
 
@@ -283,6 +300,7 @@ impl ProgramProc for DepthProcedure {
 
         self.graphics_pipeline.cleanup();
         self.command_pool.cleanup();
+        self.image_storage.cleanup();
         self.ubo_storage.cleanup();
         self.ubo_buffer.cleanup();
         self.buffer_storage.cleanup();
