@@ -13,15 +13,15 @@ use utility::dimension::BufferDimension;
 
 use std::ptr;
 
-pub struct FramebufferBuilder<'i> {
+pub struct FramebufferBuilder {
 
-    attachments: Vec<&'i HaImageView>,
+    attachments: Vec<vk::ImageView>,
     dimension  : BufferDimension,
 }
 
-impl<'i> FramebufferBuilder<'i> {
+impl FramebufferBuilder {
 
-    pub fn init(dimension: &BufferDimension) -> FramebufferBuilder<'i> {
+    pub fn init(dimension: &BufferDimension) -> FramebufferBuilder {
         FramebufferBuilder {
             attachments: vec![],
             dimension: dimension.clone(),
@@ -29,8 +29,6 @@ impl<'i> FramebufferBuilder<'i> {
     }
 
     pub fn build(&self, device: &HaDevice, render_pass: vk::RenderPass) -> Result<HaFramebuffer, FramebufferError> {
-        let attachments = self.attachments.iter()
-            .map(|a| a.handle).collect::<Vec<_>>();
 
         let info = vk::FramebufferCreateInfo {
             s_type: vk::StructureType::FramebufferCreateInfo,
@@ -38,8 +36,8 @@ impl<'i> FramebufferBuilder<'i> {
             // flags is reserved for future use in API version 1.1.82.
             flags: vk::FramebufferCreateFlags::empty(),
             render_pass,
-            attachment_count: attachments.len() as uint32_t,
-            p_attachments:    attachments.as_ptr(),
+            attachment_count: self.attachments.len() as uint32_t,
+            p_attachments:    self.attachments.as_ptr(),
             width : self.dimension.extent.width,
             height: self.dimension.extent.height,
             layers: self.dimension.layers,
@@ -57,19 +55,12 @@ impl<'i> FramebufferBuilder<'i> {
     }
 
     #[allow(dead_code)]
-    pub fn set_dimension(&mut self, dimension: BufferDimension) -> &mut FramebufferBuilder<'i> {
+    pub fn set_dimension(&mut self, dimension: BufferDimension) -> &mut FramebufferBuilder {
         self.dimension = dimension;
         self
     }
-    pub(crate) fn add_attachment_inner(&mut self, attachment: &'i HaImageView) -> &mut FramebufferBuilder<'i> {
-        self.attachments.push(attachment);
+    pub(crate) fn add_attachment(&mut self, attachment: &vk::ImageView) -> &mut FramebufferBuilder {
+        self.attachments.push(attachment.clone());
         self
     }
-
-//    #[allow(dead_code)]
-//    pub fn add_attachment(&mut self, repository: &'i HaImageRepository, item: &ImageViewItem) -> &mut FramebufferBuilder<'i> {
-//        let view = repository.view_at(item);
-//        self.attachments.push(view);
-//        self
-//    }
 }

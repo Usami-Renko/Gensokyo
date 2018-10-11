@@ -77,6 +77,21 @@ impl ImageViewDescInfo {
             ..Default::default()
         }
     }
+
+    pub(crate) fn reset_depth_image_aspect_mask(&mut self, format: vk::Format) {
+
+        self.subrange.aspect_mask = match format {
+            | vk::Format::D32Sfloat => [
+                ImageAspectFlag::DepthBit
+            ].flags(),
+            | vk::Format::D24UnormS8Uint
+            | vk::Format::D32SfloatS8Uint => [
+                ImageAspectFlag::DepthBit,
+                ImageAspectFlag::StencilBit,
+            ].flags(),
+            | _ => panic!("This format is not available for DepthStencil Image.")
+        };
+    }
 }
 
 impl Default for ImageViewDescInfo {

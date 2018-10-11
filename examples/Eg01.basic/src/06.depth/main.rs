@@ -26,7 +26,10 @@ fn main() {
         height: WINDOW_HEIGHT,
     };
     config.window.title = String::from(WINDOW_TITLE);
-    config.core.device.features.push(PhysicalFeatureType::FillModeNonSolid);
+
+    // feature FillModeNonSolid is need when render triangle in line mode.
+    // config.core.device.features.push(PhysicalFeatureType::FillModeNonSolid);
+
     // specify the format of depth buffer in all pipeline or leave it default value.
     config.pipeline.depth_stencil.prefer_depth_stencil_formats = vec![Format::D32Sfloat];
 

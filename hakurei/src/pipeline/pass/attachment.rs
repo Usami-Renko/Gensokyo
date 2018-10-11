@@ -8,13 +8,20 @@ use utility::marker::{ VulkanFlags, VulkanEnum };
 #[derive(Debug, Clone, Copy, Eq, PartialEq)]
 pub enum RenderAttachementPrefab {
     BackColorAttachment,
+    DepthAttachment,
 }
 impl RenderAttachementPrefab {
     fn generate(&self) -> RenderAttachement {
         match *self {
             | RenderAttachementPrefab::BackColorAttachment => RenderAttachement {
                 ..Default::default()
-            }
+            },
+            | RenderAttachementPrefab::DepthAttachment => RenderAttachement {
+                store_op: AttachmentStoreOp::DontCare,
+                layout: ImageLayout::DepthStencilAttachmentOptimal,
+                clear_value: vk::ClearValue { depth: vk::ClearDepthStencilValue { depth: 1.0, stencil: 0, } },
+                ..Default::default()
+            },
         }
     }
 }
@@ -44,6 +51,9 @@ pub struct RenderAttachement {
     final_layout     : ImageLayout,
     /// layout specifying the layout the attachment uses during the subpass.
     pub(super) layout: ImageLayout,
+    // TODO: Currently clear_value is not configuratable.
+    /// the clear value for each attachment.
+    pub(super) clear_value: vk::ClearValue,
 }
 
 impl RenderAttachement {
@@ -107,6 +117,7 @@ impl Default for RenderAttachement {
             initial_layout   : ImageLayout::Undefined,
             final_layout     : ImageLayout::PresentSrcKHR,
             layout           : ImageLayout::ColorAttachmentOptimal,
+            clear_value      : vk::ClearValue { color: vk::ClearColorValue { float32: [0.0, 0.0, 0.0, 1.0], } }
         }
     }
 }

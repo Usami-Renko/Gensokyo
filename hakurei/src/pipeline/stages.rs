@@ -6,6 +6,7 @@ use utility::marker::Handles;
 
 use utility::marker::VulkanEnum;
 
+// TODO: Make PipelineStageFlag be private API.
 #[derive(Debug, Clone, Copy, Eq, PartialEq)]
 pub enum PipelineStageFlag {
     /// TopOfPipeBit specifies the stage of the pipeline where any commands are initially received by the queue

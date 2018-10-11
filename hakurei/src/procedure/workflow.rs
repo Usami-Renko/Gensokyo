@@ -88,7 +88,7 @@ impl<'win, T> ProgramEnv<T> where T: ProgramProc {
 
         let inner_resource = self.create_inner_resources(core, None)?;
 
-        self.procedure.assets(AllocatorKit::init(&core.physical, &core.device))?;
+        self.procedure.assets(AllocatorKit::init(&core.physical, &core.device, &inner_resource.swapchain))?;
         self.procedure.pipelines(PipelineKit::init(&core.device), &inner_resource.swapchain)?;
         self.procedure.subresources(&core.device)?;
         self.procedure.commands(CommandKit::init(&core.device))?;

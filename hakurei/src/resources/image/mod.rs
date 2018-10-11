@@ -1,19 +1,29 @@
 
 pub use self::flag::ImageLayout;
-pub use self::enums::{ ImageTiling, Filter, MipmapMode, CompareOp, BorderColor };
-pub use self::variety::{ SampleImageInfo, HaSampleImage };
+pub use self::enums::{
+    ImagePipelineStage, DepthStencilImageFormat,
+    ImageTiling, Filter, MipmapMode, CompareOp, BorderColor
+};
+pub use self::variety::{
+    SampleImageInfo, HaSampleImage, // sample
+    DepthStencilImageInfo, HaDepthStencilImage, // depth
+};
 
 pub(crate) use self::image::{ HaImage, ImageDescInfo };
 pub(crate) use self::view::{ HaImageView, ImageViewDescInfo };
 pub(crate) use self::item::{ HaImageVarietyAbs, ImageViewItem };
 pub(crate) use self::flag::{ ImageUsageFlag, ImageAspectFlag };
-pub(crate) use self::io::{ load_texture, ImageStorageInfo };
-pub(crate) use self::enums::{ ImageType, ImageViewType };
+pub(crate) use self::io::{ ImageStorageInfo, ImageSource };
+pub(crate) use self::enums::{ ImageVarietyType, ImageType, ImageViewType, DepthImageUsage };
 
 pub(crate) use self::variety::{
     HaImageDescAbs, HaImageViewDescAbs, // traits
     HaSamplerDescAbs, HaSampler, SamplerDescInfo, // sample
 };
+
+
+#[macro_use]
+mod macros;
 
 mod image;
 mod view;

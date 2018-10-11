@@ -29,8 +29,9 @@ pub use resources::descriptor::{
 pub use resources::framebuffer::{};
 
 pub use resources::image::{
+    ImagePipelineStage, DepthStencilImageFormat, // enums
     ImageTiling, Filter, MipmapMode, CompareOp, BorderColor, // enums
-    SampleImageInfo, HaSampleImage, // variety
+    SampleImageInfo, HaSampleImage, DepthStencilImageInfo, HaDepthStencilImage, // variety
 };
 
 // currently no memory API is public,

@@ -23,21 +23,17 @@ impl PhysicalFormatProperties {
             config.pipeline.depth_stencil.prefer_image_tiling
         );
 
-        if optimal_depth_stencil_format == None {
-            return Err(PhysicalDeviceError::FormatUsageNotSupport(PhysicalFormatUsage::DepthStencil))
-        }
-
-
         let format_properties = PhysicalFormatProperties {
 
-            depth_stencil_format: optimal_depth_stencil_format.unwrap().clone(),
+            depth_stencil_format: optimal_depth_stencil_format
+                .ok_or(PhysicalDeviceError::FormatUsageNotSupport(PhysicalFormatUsage::DepthStencil))?,
         };
 
         Ok(format_properties)
     }
 }
 
-fn check_depth_stencil_format(instance: &HaInstance, physical_device: vk::PhysicalDevice, prefer_formats: &Vec<vk::Format>, prefer_image_tiling: vk::ImageTiling) -> Option<vk::Format> {
+fn check_depth_stencil_format(instance: &HaInstance, physical_device: vk::PhysicalDevice, prefer_formats: &[vk::Format], prefer_image_tiling: vk::ImageTiling) -> Option<vk::Format> {
 
     prefer_formats.iter().find(|&candidate_format| {
 

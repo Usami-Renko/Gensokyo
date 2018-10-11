@@ -97,7 +97,7 @@ impl ProgramProc for TextureMappingProcedure {
             .done()?;
 
         // image
-        let image_info = SampleImageInfo::new(0, 1);
+        let image_info = SampleImageInfo::new(0, 1, ImagePipelineStage::FragmentStage);
 
         let mut image_allocator = kit.image(ImageStorageType::Device);
         self.sample_image = image_allocator.attach_sample_image(Path::new(TEXTURE_PATH), image_info)?;

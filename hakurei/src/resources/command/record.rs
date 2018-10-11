@@ -9,10 +9,9 @@ use resources::command::buffer::HaCommandBuffer;
 use resources::error::CommandError;
 
 use pipeline::graphics::HaGraphicsPipeline;
-use pipeline::stages::PipelineStageFlag;
 use pipeline::pass::DependencyFlag;
 use resources::repository::{ CmdVertexBindingInfos, CmdIndexBindingInfo, CmdDescriptorBindingInfos };
-use utility::marker::{ VulkanFlags, VulkanEnum };
+use utility::marker::VulkanFlags;
 
 use std::ptr;
 
@@ -138,9 +137,9 @@ impl<'buffer> HaCommandRecorder<'buffer> {
 //        self
 //    }
 
-    pub(crate) fn pipeline_barrrier(&self, src_stage: PipelineStageFlag, dst_stage: PipelineStageFlag, dependencies: &[DependencyFlag], memory_barries: &[vk::MemoryBarrier], buffer_memory_barries: &[vk::BufferMemoryBarrier], image_memory_barries: &[vk::ImageMemoryBarrier], ) -> &HaCommandRecorder<'buffer> {
+    pub(crate) fn pipeline_barrrier(&self, src_stage: vk::PipelineStageFlags, dst_stage: vk::PipelineStageFlags, dependencies: &[DependencyFlag], memory_barries: &[vk::MemoryBarrier], buffer_memory_barries: &[vk::BufferMemoryBarrier], image_memory_barries: &[vk::ImageMemoryBarrier], ) -> &HaCommandRecorder<'buffer> {
         unsafe {
-            self.device.handle.cmd_pipeline_barrier(self.buffer.handle, src_stage.value(), dst_stage.value(), dependencies.flags(), memory_barries, buffer_memory_barries, image_memory_barries)
+            self.device.handle.cmd_pipeline_barrier(self.buffer.handle, src_stage, dst_stage, dependencies.flags(), memory_barries, buffer_memory_barries, image_memory_barries)
         };
         self
     }
