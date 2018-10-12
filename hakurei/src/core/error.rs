@@ -139,6 +139,8 @@ pub enum LogicalDeviceError {
 
     DeviceCreationError,
     WaitIdleError,
+    QueueOpsUnsupport,
+    QueueCountNotEnough,
     Command(CommandError),
 }
 
@@ -149,6 +151,8 @@ impl fmt::Display for LogicalDeviceError {
         match self {
             | LogicalDeviceError::DeviceCreationError  => write!(f, "Failed to create Logical Device."),
             | LogicalDeviceError::WaitIdleError        => write!(f, "Device failed to wait idle."),
+            | LogicalDeviceError::QueueOpsUnsupport    => write!(f, "Not all the operations is support for Device Queues."),
+            | LogicalDeviceError::QueueCountNotEnough  => write!(f, "No enough queue available on this Device."),
             | LogicalDeviceError::Command(ref e)       => write!(f, "{}", e.to_string()),
         }
     }

@@ -1,11 +1,13 @@
 
-use config::core::CoreConfig;
+use config::core::DeviceConfig;
 use core::DeviceV1;
 use core::device::DeviceQueueIdentifier;
 use core::device::queue::{ HaQueue, QueueUsage };
 use core::device::queue::{ HaQueueAbstract, HaGraphicsQueue, HaPresentQueue, HaTransferQueue };
 
 use core::error::LogicalDeviceError;
+
+use std::rc::Rc;
 
 pub struct QueueContainer {
 
@@ -24,9 +26,9 @@ impl QueueContainer {
         }
     }
 
-    pub fn add_queue(&mut self, device: &DeviceV1, queue: HaQueue, config: &CoreConfig) -> Result<(), LogicalDeviceError> {
+    pub fn add_queue(&mut self, device: &DeviceV1, usage: QueueUsage, queue: &Rc<HaQueue>, config: &DeviceConfig) -> Result<(), LogicalDeviceError> {
 
-        match queue.usage {
+        match usage {
             | QueueUsage::Graphics => {
                 let graphics_queue = HaGraphicsQueue::new(device, queue, config)?;
                 self.graphics.push(graphics_queue);
@@ -51,7 +53,17 @@ impl QueueContainer {
     #[allow(dead_code)]
     pub fn transfer_queue(&self, index: usize) -> &HaTransferQueue { &self.transfers[index] }
 
-    pub fn queue(&self, ident: DeviceQueueIdentifier, index: usize) -> &HaQueue {
+    pub fn take_last_graphics_queue(&mut self) -> HaGraphicsQueue {
+        self.graphics.pop().unwrap()
+    }
+    pub fn take_last_present_queue(&mut self) -> HaPresentQueue {
+        self.presents.pop().unwrap()
+    }
+    pub fn take_last_transfer_queue(&mut self) -> HaTransferQueue {
+        self.transfers.pop().unwrap()
+    }
+
+    pub fn queue(&self, ident: DeviceQueueIdentifier, index: usize) -> &Rc<HaQueue> {
         match ident {
             | DeviceQueueIdentifier::Graphics => &self.graphics[index].queue,
             | DeviceQueueIdentifier::Present  => &self.presents[index].queue,

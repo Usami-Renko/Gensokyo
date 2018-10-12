@@ -1,15 +1,22 @@
 
-use core::physical::PhysicalDeviceType;
-use core::physical::PhysicalFeatureType;
-use core::physical::DeviceExtensionType;
 use core::physical::QueueOperationType;
+use core::physical::{ PhysicalDeviceType, PhysicalFeatureType, DeviceExtensionType };
 
+use core::device::QueueRequestStrategy;
+use core::platforms::QUEUE_REQUEST_STRATEGY;
+
+use utility::time::TimePeriod;
+
+#[derive(Debug, Clone)]
 pub struct DeviceConfig {
 
     pub device_types: Vec<PhysicalDeviceType>,
     pub features    : Vec<PhysicalFeatureType>,
     pub extensions  : Vec<DeviceExtensionType>,
     pub queue_operations: Vec<QueueOperationType>,
+
+    pub transfer_wait_time: TimePeriod,
+    pub queue_request_strategy: QueueRequestStrategy,
 }
 
 impl Default for DeviceConfig {
@@ -27,6 +34,9 @@ impl Default for DeviceConfig {
                 DeviceExtensionType::Swapchain,
             ],
             queue_operations: vec![],
+
+            transfer_wait_time: TimePeriod::Infinte,
+            queue_request_strategy: QUEUE_REQUEST_STRATEGY,
         }
     }
 }
