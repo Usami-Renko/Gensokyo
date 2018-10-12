@@ -5,11 +5,9 @@ use config::core::{ DeviceConfig, SwapchainConfig };
 use core::debug::{ ValidationInfo, DebugReportFlag };
 use core::physical::PhysicalRequirement;
 
-use utility::time::TimePeriod;
-
 pub const APPLICATION_VERSION: uint32_t = vk_make_version!(1, 0, 0);
 pub const ENGINE_VERSION:      uint32_t = vk_make_version!(1, 0, 0);
-pub const API_VERSION:         uint32_t = vk_make_version!(1, 0, 82);
+pub const API_VERSION:         uint32_t = vk_make_version!(1, 0, 85);
 
 pub const APPLICATION_NAME: &'static str = "Hakurei Program";
 pub const ENGINE_NAME:      &'static str = "Hakurei Rendering Engine";
@@ -19,8 +17,6 @@ pub struct CoreConfig {
     pub validation: ValidationInfo,
     pub device    : DeviceConfig,
     pub swapchain : SwapchainConfig,
-
-    pub transfer_wait_time: TimePeriod,
 }
 
 impl Default for CoreConfig {
@@ -43,8 +39,6 @@ impl Default for CoreConfig {
             device: DeviceConfig::default(),
 
             swapchain: SwapchainConfig::default(),
-
-            transfer_wait_time: TimePeriod::Infinte,
         }
     }
 }

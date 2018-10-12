@@ -17,6 +17,7 @@ use sync::error::SyncError;
 use utility::time::TimePeriod;
 use utility::marker::Handles;
 
+use std::rc::Rc;
 use std::ptr;
 
 pub struct HaLogicalDevice {
@@ -125,7 +126,7 @@ impl HaLogicalDevice {
         }
     }
 
-    pub(crate) fn queue_handle_by_identifier(&self, identifier: DeviceQueueIdentifier) -> &HaQueue {
+    pub(crate) fn queue_handle_by_identifier(&self, identifier: DeviceQueueIdentifier) -> &Rc<HaQueue> {
         match identifier {
             | DeviceQueueIdentifier::Graphics => &self.graphics_queue.queue,
             | DeviceQueueIdentifier::Present  => &self.present_queue.queue,

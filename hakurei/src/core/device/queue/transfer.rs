@@ -3,7 +3,7 @@ use ash::vk;
 use ash::vk::uint32_t;
 use ash::version::DeviceV1_0;
 
-use config::core::CoreConfig;
+use config::core::DeviceConfig;
 use core::DeviceV1;
 use core::device::{ HaLogicalDevice, HaDevice, HaQueue };
 use core::device::queue::HaQueueAbstract;
@@ -17,11 +17,12 @@ use sync::fence::HaFence;
 use utility::marker::{ VulkanFlags, Handles };
 use utility::time::TimePeriod;
 
+use std::rc::Rc;
 use std::ptr;
 
 pub struct HaTransferQueue {
 
-    pub queue: HaQueue,
+    pub queue: Rc<HaQueue>,
     pool : TransferCommandPool,
 
     transfer_wait_time: TimePeriod,
@@ -29,11 +30,15 @@ pub struct HaTransferQueue {
 
 impl HaQueueAbstract for HaTransferQueue {
 
-    fn new(device: &DeviceV1, queue: HaQueue, config: &CoreConfig) -> Result<Self, LogicalDeviceError> {
+    fn new(device: &DeviceV1, queue: &Rc<HaQueue>, config: &DeviceConfig) -> Result<Self, LogicalDeviceError> {
 
-        let pool = TransferCommandPool::setup(device, &queue)?;
+        let pool = TransferCommandPool::setup(device, queue)?;
 
-        let transfer_queue = HaTransferQueue { queue, pool, transfer_wait_time: config.transfer_wait_time, };
+        let transfer_queue = HaTransferQueue {
+            queue: queue.clone(),
+            pool,
+            transfer_wait_time: config.transfer_wait_time,
+        };
         Ok(transfer_queue)
     }
 
