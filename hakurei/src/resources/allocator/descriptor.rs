@@ -65,9 +65,9 @@ impl HaDescriptorAllocator {
 
         // descriptor layout
         let mut layouts = vec![];
-        for (i, config) in self.set_configs.iter().enumerate() {
+        for config in self.set_configs.iter() {
             let mut layout_info = DescriptorSetLayoutInfo::setup(config.layout_flags);
-            for info in config.bindings.iter() {
+            for (i, info) in config.bindings.iter().enumerate() {
                 layout_info.add_binding(info, config.stage_flags[i]);
             }
             let layout = layout_info.build(&self.device)?;
@@ -93,8 +93,7 @@ impl HaDescriptorAllocator {
             }
         }
 
-
-        let result = map.drain().collect();
+        let result = map.into_iter().collect();
         result
     }
 

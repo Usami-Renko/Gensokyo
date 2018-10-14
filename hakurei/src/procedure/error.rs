@@ -7,11 +7,12 @@ use pipeline::error::PipelineError;
 use resources::error::CommandError;
 use resources::error::AllocatorError;
 use sync::error::SyncError;
+use utility::model::ModelLoadingErr;
 
 use std::fmt;
 use std::error::Error;
 
-#[derive(Debug, Clone)]
+#[derive(Debug)]
 pub enum RuntimeError {
 
     Window(winit::CreationError),
@@ -38,7 +39,7 @@ impl fmt::Display for RuntimeError {
 }
 
 
-#[derive(Debug, Clone, Eq, PartialEq)]
+#[derive(Debug)]
 pub enum ProcedureError {
 
     Instance(InstanceError),
@@ -51,6 +52,7 @@ pub enum ProcedureError {
     Command(CommandError),
     Sync(SyncError),
     Allocator(AllocatorError),
+    Model(ModelLoadingErr),
 
     SwapchainRecreate,
 }
@@ -68,6 +70,7 @@ impl Error for ProcedureError {
             | ProcedureError::Command(ref e)        => Some(e),
             | ProcedureError::Sync(ref e)           => Some(e),
             | ProcedureError::Allocator(ref e)      => Some(e),
+            | ProcedureError::Model(ref e)          => Some(e),
 
             | ProcedureError::SwapchainRecreate     => None,
         }
@@ -85,6 +88,7 @@ impl_from_err!(Pipeline(PipelineError)             -> ProcedureError);
 impl_from_err!(Command(CommandError)               -> ProcedureError);
 impl_from_err!(Sync(SyncError)                     -> ProcedureError);
 impl_from_err!(Allocator(AllocatorError)           -> ProcedureError);
+impl_from_err!(Model(ModelLoadingErr)              -> ProcedureError);
 
 impl fmt::Display for ProcedureError {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {

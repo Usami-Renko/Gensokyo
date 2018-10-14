@@ -17,6 +17,7 @@ memoffset = "0.2"
 smallvec  = "0.6.5"
 cgmath    = "0.16.1"
 shaderc   = "0.3.10"
+tobj      = "0.1.6"
 # rayon = "1.0.2" // Rayon is a data-parallelism library for Rust.
 
 [target.'cfg(target_os = "macos")'.dependencies]

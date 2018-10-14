@@ -80,7 +80,7 @@ impl HaSwapchain {
             p_wait_semaphores   : semaphores.as_ptr(),
             // Currently just support a single swapchain.
             swapchain_count: 1,
-            p_swapchains   : [self.handle].as_ptr(),
+            p_swapchains   : &self.handle,
             p_image_indices: &image_index,
             // VKResult of each swapchain
             p_results: ptr::null_mut(),

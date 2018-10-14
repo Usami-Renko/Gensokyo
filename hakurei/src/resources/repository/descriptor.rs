@@ -44,21 +44,26 @@ impl HaDescriptorRepository {
         }
     }
 
-    // TODO: Currently only support descriptors in the same Buffer Repository.
+    // TODO: Currently only support descriptors in the same HaDescriptorRepository.
     // TODO: Redesign the API, if items is not buffer items, the function will crash.
     pub fn update_descriptors(&self, items: &[DescriptorItem]) -> Result<(), AllocatorError> {
 
-        let mut write_sets = vec![];
+        let mut write_infos = Vec::with_capacity(items.len());
 
         for item in items.iter() {
 
             let binding_info = &self.configs[item.set_index].bindings[item.binding_index];
-            let write_set = binding_info.write_set(&self.sets[item.set_index])?;
-            write_sets.push(write_set);
+            let write_info = binding_info.write_set(&self.sets[item.set_index])?;
+
+            write_infos.push(write_info);
         }
 
+        let write_sets = write_infos.into_iter()
+            .map(|info| info.set).collect::<Vec<_>>();
+
         unsafe {
-            self.device.as_ref().unwrap().handle.update_descriptor_sets(&write_sets, &[]);
+            self.device.as_ref().unwrap().handle
+                .update_descriptor_sets(&write_sets, &[]);
         }
 
         Ok(())

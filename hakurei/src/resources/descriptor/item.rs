@@ -21,8 +21,16 @@ pub(crate) trait DescriptorBindingInfo {
     fn descriptor_type(&self)  -> vk::DescriptorType;
     fn descritpor_count(&self) -> uint32_t;
 
-    fn write_set(&self, set: &HaDescriptorSet) -> Result<vk::WriteDescriptorSet, DescriptorError>;
+    fn write_set(&self, set: &HaDescriptorSet) -> Result<DescriptorWriteInfo, DescriptorError>;
 }
+
+pub(crate) struct DescriptorWriteInfo {
+
+    _content: Box<DescriptorWriteContent>,
+    pub(crate) set: vk::WriteDescriptorSet,
+}
+
+trait DescriptorWriteContent {}
 
 // TODO: Make this struct to pub(crate)
 pub struct DescriptorBufferBindingInfo {
@@ -40,13 +48,16 @@ pub struct DescriptorBufferBindingInfo {
     pub buffer : BufferSubItem,
 }
 
+struct DescriptorWriteBufferContent(Vec<vk::DescriptorBufferInfo>);
+impl DescriptorWriteContent for DescriptorWriteBufferContent {}
+
 impl DescriptorBindingInfo for DescriptorBufferBindingInfo {
 
     fn binding_value(&self)    -> uint32_t { self.binding }
     fn descriptor_type(&self)  -> vk::DescriptorType { self.type_.value() }
     fn descritpor_count(&self) -> uint32_t { self.count }
 
-    fn write_set(&self, set: &HaDescriptorSet) -> Result<vk::WriteDescriptorSet, DescriptorError> {
+    fn write_set(&self, set: &HaDescriptorSet) -> Result<DescriptorWriteInfo, DescriptorError> {
 
         let mut buffer_infos = vec![];
         for i in 0..(self.count as vk::DeviceSize) {
@@ -76,7 +87,12 @@ impl DescriptorBindingInfo for DescriptorBufferBindingInfo {
             p_texel_buffer_view : ptr::null(),
         };
 
-        Ok(write_set)
+        let info = DescriptorWriteInfo {
+            _content: Box::new(DescriptorWriteBufferContent(buffer_infos)),
+            set: write_set,
+        };
+
+        Ok(info)
     }
 }
 
@@ -99,13 +115,16 @@ pub struct DescriptorImageBindingInfo {
     pub(crate) view_item: ImageViewItem,
 }
 
+struct DescriptorWriteImageContent(Vec<vk::DescriptorImageInfo>);
+impl DescriptorWriteContent for DescriptorWriteImageContent {}
+
 impl DescriptorBindingInfo for DescriptorImageBindingInfo {
 
     fn binding_value(&self)    -> uint32_t { self.binding }
     fn descriptor_type(&self)  -> vk::DescriptorType { self.type_.value() }
     fn descritpor_count(&self) -> uint32_t { self.count }
 
-    fn write_set(&self, set: &HaDescriptorSet) -> Result<vk::WriteDescriptorSet, DescriptorError> {
+    fn write_set(&self, set: &HaDescriptorSet) -> Result<DescriptorWriteInfo, DescriptorError> {
 
         let mut image_infos = vec![];
         for _ in 0..(self.count as vk::DeviceSize) {
@@ -135,7 +154,12 @@ impl DescriptorBindingInfo for DescriptorImageBindingInfo {
             p_texel_buffer_view: ptr::null(),
         };
 
-        Ok(write_set)
+        let info = DescriptorWriteInfo {
+            _content: Box::new(DescriptorWriteImageContent(image_infos)),
+            set: write_set,
+        };
+
+        Ok(info)
     }
 }
 
