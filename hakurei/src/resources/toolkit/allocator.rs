@@ -8,6 +8,7 @@ use resources::allocator::HaDescriptorAllocator;
 use resources::allocator::{ HaImageAllocator, ImageStorageType };
 use resources::descriptor::DescriptorPoolFlag;
 
+use utility::model::ModelObjLoader;
 use utility::dimension::Dimension2D;
 
 pub struct AllocatorKit {
@@ -43,5 +44,9 @@ impl AllocatorKit {
 
     pub fn swapchain_dimension(&self) -> Dimension2D {
         self.dimension
+    }
+
+    pub fn obj_loader(&self) -> ModelObjLoader {
+        ModelObjLoader::new()
     }
 }

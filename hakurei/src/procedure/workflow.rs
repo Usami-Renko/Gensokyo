@@ -121,8 +121,8 @@ impl<'win, T> ProgramEnv<T> where T: ProgramProc {
                     | SwapchainRuntimeError::SurfaceOutOfDateError
                     | SwapchainRuntimeError::SurfaceSubOptimalError => {
                         return Err(ProcedureError::SwapchainRecreate)
-                    }
-                    | _ => return Err(ProcedureError::Swapchain(SwapchainError::Runtime(e)))
+                    },
+                    | _ => return Err(ProcedureError::Swapchain(SwapchainError::Runtime(e))),
                 }
         };
 
@@ -143,8 +143,8 @@ impl<'win, T> ProgramEnv<T> where T: ProgramProc {
                 | SwapchainRuntimeError::SurfaceOutOfDateError
                 | SwapchainRuntimeError::SurfaceSubOptimalError => {
                     return Err(ProcedureError::SwapchainRecreate)
-                }
-                | _ => return Err(ProcedureError::Swapchain(SwapchainError::Runtime(e)))
+                },
+                | _ => return Err(ProcedureError::Swapchain(SwapchainError::Runtime(e))),
             }
         }
 

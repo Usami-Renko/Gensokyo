@@ -32,3 +32,7 @@ path = "src/05.cube/main.rs"
 [[bin]]
 name = "06"
 path = "src/06.depth/main.rs"
+
+[[bin]]
+name = "07"
+path = "src/07.model/main.rs"
