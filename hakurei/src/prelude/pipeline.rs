@@ -25,7 +25,7 @@ pub use pipeline::shader::{
 pub use pipeline::state::{
     HaVertexInput, // vertex_input
     HaInputAssembly, PrimitiveTopology, // input_assembly
-    HaViewport, // viewport
+    HaViewport, ViewportInfo, // viewport
     HaRasterizer, RasterizerPrefab, PolygonMode, CullModeType, FrontFaceType, DepthBias, // rasterizer
     HaMultisample, MultisamplePrefab, SampleCountType, SampleShading, // multisample
     HaDepthStencil, HaDepthStencilPrefab, DepthTest, StencilTest, StencilOpState, // depth_stencil

@@ -32,7 +32,7 @@ impl SampleImageInfo {
     pub fn new(binding: uint32_t, count: uint32_t, pipeline_stage: ImagePipelineStage) -> SampleImageInfo {
 
         let image_desc = ImageDescInfo::init(
-            // TODO: Currently HaSampleImage only support
+            // TODO: Currently HaSampleImage only support 2D image.
             ImageType::Type2d,
             ImageTiling::Optimal,
             &[

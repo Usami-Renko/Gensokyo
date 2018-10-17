@@ -25,10 +25,10 @@ pub struct ValidationInfo {
     pub flags: Vec<DebugReportFlag>,
 }
 
-/// Wrapper class for vk::DebugReport object.
+/// Wrapper class for `vk::DebugReport` object.
 pub struct HaDebugger {
 
-    /// the handle of vk::DebugReport object.
+    /// the handle of `vk::DebugReport` object.
     loader: DebugReport,
     /// the handle of callback function used in Validation Layer.
     callback: vk::DebugReportCallbackEXT,
@@ -36,7 +36,7 @@ pub struct HaDebugger {
 
 impl HaDebugger {
 
-    /// initialize debug extension loader and vk::DebugReport object.
+    /// Initialize debug extension loader and `vk::DebugReport` object.
     pub fn setup(instance: &HaInstance, flags: &[DebugReportFlag]) -> Result<HaDebugger, ValidationError> {
 
         // load the debug extension
@@ -68,7 +68,7 @@ impl HaDebugger {
 
     /// Some cleaning operations before this object was uninitialized.
     ///
-    /// For HaDebugger, it destroy the vk::DebugReport object.
+    /// For HaDebugger, it destroy the `vk::DebugReport` object.
     pub fn cleanup(&self) {
         unsafe {
             self.loader.destroy_debug_report_callback_ext(self.callback, None);

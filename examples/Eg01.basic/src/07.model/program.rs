@@ -27,9 +27,9 @@ pub struct ModelProcedure {
 
     graphics_pipeline: HaGraphicsPipeline,
 
-    ubo_data   : Vec<UboObject>,
-    ubo_buffer : HaBufferRepository,
-    ubo_item   : BufferSubItem,
+    ubo_data  : Vec<UboObject>,
+    ubo_buffer: HaBufferRepository,
+    ubo_item  : BufferSubItem,
 
     depth_attachment: HaDepthStencilImage,
     model_texture: HaSampleImage,
@@ -70,8 +70,8 @@ impl ModelProcedure {
                     model     : Matrix4::identity(),
                 },
             ],
-            ubo_buffer : HaBufferRepository::empty(),
-            ubo_item   : BufferSubItem::unset(),
+            ubo_buffer: HaBufferRepository::empty(),
+            ubo_item  : BufferSubItem::unset(),
             descriptor_storage: HaDescriptorRepository::empty(),
             descriptor_sets: DescriptorSetItem::unset(),
 
@@ -224,7 +224,7 @@ impl ProgramProc for ModelProcedure {
         render_pass_builder.add_dependenty(dependency);
 
         let render_pass = render_pass_builder.build(swapchain)?;
-        let viewport = HaViewport::setup(swapchain.extent);
+        let viewport = HaViewport::single(ViewportInfo::new(swapchain.extent));
         let depth_stencil = HaDepthStencil::setup(HaDepthStencilPrefab::EnableDepth);
 
         let pipeline_config = GraphicsPipelineConfig::new(shader_infos, vertex_input_desc, render_pass)
