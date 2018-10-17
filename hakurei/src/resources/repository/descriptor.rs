@@ -1,5 +1,4 @@
 
-use ash::vk;
 use ash::version::DeviceV1_0;
 
 use core::device::HaDevice;
@@ -8,13 +7,8 @@ use resources::descriptor::HaDescriptorPool;
 use resources::descriptor::{ DescriptorItem, DescriptorSetItem };
 use resources::descriptor::HaDescriptorSetLayout;
 use resources::descriptor::{ DescriptorSetConfig, HaDescriptorSet };
+pub use resources::command::CmdDescriptorBindingInfos;
 use resources::error::AllocatorError;
-
-pub struct CmdDescriptorBindingInfos {
-
-    pub(crate) handles: Vec<vk::DescriptorSet>,
-}
-
 
 pub struct HaDescriptorRepository {
 
@@ -77,9 +71,8 @@ impl HaDescriptorRepository {
 
         let handles = sets.iter()
             .map(|set_item| self.sets[set_item.set_index].handle).collect();
-        CmdDescriptorBindingInfos {
-            handles,
-        }
+
+        CmdDescriptorBindingInfos { handles, }
     }
 
     pub fn cleanup(&mut self) {

@@ -16,20 +16,20 @@ use utility::cast;
 use std::ptr;
 use std::ffi::CString;
 
-/// Wrapper class for vk::Instance object.
+/// Wrapper class for `vk::Instance` object.
 pub struct HaInstance {
 
     /// the object used in instance creation define in ash crate.
     pub entry:  EntryV1,
-    /// handle of vk::Instance.
+    /// handle of `vk::Instance`.
     pub handle: InstanceV1,
-    /// save the names of vulkan layers enabled in instance creation.
+    /// an array to store the names of vulkan layers enabled in instance creation.
     pub enable_layer_names: Vec<CString>,
 }
 
 impl HaInstance {
 
-    /// initialize vk::Instance object
+    /// Initialize `vk::Instance` object
     pub fn new(config: &EngineConfig) -> Result<HaInstance, InstanceError> {
 
         let entry = EntryV1::new()
@@ -84,7 +84,7 @@ impl HaInstance {
 
     /// Some cleaning operations before this object was uninitialized.
     ///
-    /// For HaInstance, it destroy the vk::Instance object.
+    /// For HaInstance, it destroy the `vk::Instance` object.
     pub fn clenaup(&self) {
         unsafe {
             self.handle.destroy_instance(None);

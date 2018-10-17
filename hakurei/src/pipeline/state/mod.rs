@@ -1,7 +1,7 @@
 
 pub use self::vertex_input::HaVertexInput;
 pub use self::input_assembly::{ HaInputAssembly, PrimitiveTopology };
-pub use self::viewport::HaViewport;
+pub use self::viewport::{ HaViewport, ViewportInfo };
 pub use self::rasterizer::{ HaRasterizer, RasterizerPrefab, PolygonMode, CullModeType, FrontFaceType, DepthBias };
 pub use self::multisample::{ HaMultisample, MultisamplePrefab, SampleCountType, SampleShading };
 pub use self::depth_stencil::{

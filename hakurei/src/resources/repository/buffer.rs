@@ -7,6 +7,7 @@ use core::physical::HaPhyDevice;
 use resources::allocator::BufferAllocateInfos;
 use resources::buffer::{ HaBuffer, BufferSubItem };
 use resources::command::CommandBufferUsageFlag;
+use resources::command::{ CmdVertexBindingInfos, CmdIndexBindingInfo };
 use resources::memory::{ HaMemoryAbstract, HaMemoryType };
 use resources::repository::{ BufferDataUploader, BufferDataUpdater };
 use resources::error::{ AllocatorError, MemoryError };
@@ -24,17 +25,6 @@ pub struct HaBufferRepository {
     offsets: Vec<vk::DeviceSize>,
 
     allocate_infos: Option<BufferAllocateInfos>,
-}
-
-pub struct CmdVertexBindingInfos {
-
-    pub(crate) handles: Vec<vk::Buffer>,
-    pub(crate) offsets: Vec<vk::DeviceSize>,
-}
-pub struct CmdIndexBindingInfo {
-
-    pub(crate) handle: vk::Buffer,
-    pub(crate) offset: vk::DeviceSize,
 }
 
 impl HaBufferRepository {

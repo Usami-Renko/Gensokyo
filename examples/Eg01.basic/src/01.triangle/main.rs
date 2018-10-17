@@ -119,7 +119,7 @@ impl ProgramProc for TriangleProcedure {
         render_pass_builder.add_dependenty(dependency);
 
         let render_pass = render_pass_builder.build(swapchain)?;
-        let viewport = HaViewport::setup(swapchain.extent);
+        let viewport = HaViewport::single(ViewportInfo::new(swapchain.extent));
         let pipeline_config = GraphicsPipelineConfig::new(shader_infos, vertex_input_desc, render_pass)
             .setup_viewport(viewport)
             .finish_config();

@@ -6,11 +6,13 @@ use ash::version::DeviceV1_0;
 use core::device::HaDevice;
 
 use resources::command::buffer::HaCommandBuffer;
+use resources::command::infos::CmdDescriptorBindingInfos;
+use resources::command::{ CmdVertexBindingInfos, CmdIndexBindingInfo };
+use resources::command::{ CmdViewportInfo, CmdScissorInfo };
 use resources::error::CommandError;
 
 use pipeline::graphics::HaGraphicsPipeline;
 use pipeline::pass::DependencyFlag;
-use resources::repository::{ CmdVertexBindingInfos, CmdIndexBindingInfo, CmdDescriptorBindingInfos };
 use utility::marker::VulkanFlags;
 
 use std::ptr;
@@ -66,6 +68,38 @@ impl<'buffer> HaCommandRecorder<'buffer> {
                 &begin_info,
                 self.buffer.usage.usage());
         }
+        self
+    }
+
+    /// Set the viewport dynamically.
+    /// Before using this function, the vk::DYNAMIC_STATE_VIEWPORT must be enabled in pipeline creation.
+    ///
+    /// `first_viewport` is the index of the first viewport whose parameters are updated by the command.
+    ///
+    /// ``viewports` specifies the new viewports to update.
+    pub fn set_viewport(&self, first_viewport: uint32_t, viewports: &[CmdViewportInfo]) -> &HaCommandRecorder<'buffer> {
+
+        let ports = viewports.iter()
+            .map(|p| p.viewport).collect::<Vec<_>>();
+        unsafe {
+            self.device.handle.cmd_set_viewport(self.buffer.handle, first_viewport, &ports)
+        };
+        self
+    }
+
+    /// Set the scissor rectangles dynamically.
+    /// Before using this function, the vk::DYNAMIC_STATE_SCISSOR must be enabled in pipeline creation.
+    ///
+    /// `first_scissor` is the index of the first scissor whose state is updated by the command.
+    ///
+    /// `scissors` specifies the new scissor rectangles to update.
+    pub fn set_scissor(&self, first_scissor: uint32_t, scissors: &[CmdScissorInfo]) -> &HaCommandRecorder<'buffer> {
+
+        let scissors = scissors.iter()
+            .map(|s| s.scissor).collect::<Vec<_>>();
+        unsafe {
+            self.device.handle.cmd_set_scissor(self.buffer.handle, first_scissor, &scissors)
+        };
         self
     }
 
@@ -145,7 +179,10 @@ impl<'buffer> HaCommandRecorder<'buffer> {
     }
 
     pub fn end_render_pass(&self) -> &HaCommandRecorder<'buffer> {
-        unsafe { self.device.handle.cmd_end_render_pass(self.buffer.handle) };
+        unsafe {
+            // Ending the render pass will add an implicit barrier transitioning the frame buffer color attachment vk::IMAGE_LAYOUT_PRESENT_SRC_KHR for presenting it to the windowing system.
+            self.device.handle.cmd_end_render_pass(self.buffer.handle)
+        };
         self
     }
 

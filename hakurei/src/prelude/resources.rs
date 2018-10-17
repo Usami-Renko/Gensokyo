@@ -16,6 +16,7 @@ pub use resources::command::{
     HaCommandBuffer, CommandBufferUsage,       // buffer
     HaCommandPool, CommandPoolFlag,            // pool
     HaCommandRecorder, CommandBufferUsageFlag, // record
+    CmdDescriptorBindingInfos, CmdVertexBindingInfos, CmdIndexBindingInfo, CmdViewportInfo, CmdScissorInfo, // infos
 };
 
 pub use resources::descriptor::{
@@ -38,8 +39,8 @@ pub use resources::image::{
 pub use resources::memory::{};
 
 pub use resources::repository::{
-    HaBufferRepository, CmdVertexBindingInfos, CmdIndexBindingInfo, // buffer
-    HaDescriptorRepository, CmdDescriptorBindingInfos, // descriptor
+    HaBufferRepository, // buffer
+    HaDescriptorRepository, // descriptor
     HaImageRepository, // image
     BufferDataUploader, BufferDataUpdater, // transfer
 };
