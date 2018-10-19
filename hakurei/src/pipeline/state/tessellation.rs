@@ -4,7 +4,7 @@ use ash::vk::uint32_t;
 
 use std::ptr;
 
-pub struct HaTessellation {
+pub struct HaTessellationState {
 
     /// points_count is number of control points per patch.
     ///
@@ -12,10 +12,10 @@ pub struct HaTessellation {
     points_count: uint32_t,
 }
 
-impl HaTessellation {
+impl HaTessellationState {
 
-    pub fn setup(points_count: uint32_t) -> HaTessellation {
-        HaTessellation {
+    pub fn setup(points_count: uint32_t) -> HaTessellationState {
+        HaTessellationState {
             points_count,
         }
     }
@@ -30,3 +30,4 @@ impl HaTessellation {
         }
     }
 }
+

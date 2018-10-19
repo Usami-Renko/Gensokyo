@@ -75,4 +75,3 @@ impl fmt::Display for RenderPassError {
         }
     }
 }
-

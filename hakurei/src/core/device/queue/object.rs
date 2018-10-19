@@ -39,8 +39,12 @@ impl HaQueue {
 
 pub struct QueueSubmitBundle<'vec, 're: 'vec> {
 
+    /// semaphore(s) to wait upon before the submitted command buffer starts executing.
     pub wait_semaphores: &'vec [&'re HaSemaphore],
+    /// semaphore(s) to be signaled when command buffers have completed.
     pub sign_semaphores: &'vec [&'re HaSemaphore],
+    /// list of pipeline stages that the semaphore waits will occur at.
     pub wait_stages    : &'vec [PipelineStageFlag],
+    /// command buffers(s) to execute in this batch (submission).
     pub commands       : &'vec [&'re HaCommandBuffer],
 }

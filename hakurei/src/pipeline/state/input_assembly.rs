@@ -5,16 +5,16 @@ use utility::marker::VulkanEnum;
 
 use std::ptr;
 
-pub struct HaInputAssembly {
+pub struct HaInputAssemblyState {
 
     topology: vk::PrimitiveTopology,
     primitive_restart_enable: bool,
 }
 
-impl HaInputAssembly {
+impl HaInputAssemblyState {
 
-    pub fn setup(topology: PrimitiveTopology, primitive_restart_enable: bool) -> HaInputAssembly {
-        HaInputAssembly {
+    pub fn setup(topology: PrimitiveTopology, primitive_restart_enable: bool) -> HaInputAssemblyState {
+        HaInputAssemblyState {
             topology: topology.value(),
             primitive_restart_enable,
         }
@@ -32,10 +32,10 @@ impl HaInputAssembly {
     }
 }
 
-impl Default for HaInputAssembly {
+impl Default for HaInputAssemblyState {
 
-    fn default() -> HaInputAssembly {
-        HaInputAssembly {
+    fn default() -> HaInputAssemblyState {
+        HaInputAssemblyState {
             topology: vk::PrimitiveTopology::TriangleList,
             primitive_restart_enable: false,
         }
@@ -44,9 +44,11 @@ impl Default for HaInputAssembly {
 
 
 // TODO: Add description for PrimitiveTopology.
-/// Primitive topology determines how consecutive vertices are organized into primitives, and determines the type of primitive that is used at the beginning of the graphics pipeline.
+/// Primitive topology determines how consecutive vertices are organized into primitives,
+/// and determines the type of primitive that is used at the beginning of the graphics pipeline.
 ///
-/// The effective topology for later stages of the pipeline is altered by tessellation or geometry shading (if either is in use) and depends on the execution modes of those shaders.
+/// The effective topology for later stages of the pipeline is altered by tessellation or geometry shading
+/// (if either is in use) and depends on the execution modes of those shaders.
 #[derive(Debug, Clone, Copy, Eq, PartialEq)]
 pub enum PrimitiveTopology {
     PointList,

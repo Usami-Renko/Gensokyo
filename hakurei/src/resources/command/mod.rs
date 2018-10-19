@@ -5,7 +5,7 @@ pub use self::record::{ HaCommandRecorder, CommandBufferUsageFlag };
 pub use self::infos::{
     CmdVertexBindingInfos, CmdIndexBindingInfo,
     CmdDescriptorBindingInfos,
-    CmdViewportInfo, CmdScissorInfo,
+    CmdViewportInfo, CmdScissorInfo, CmdDepthBiasInfo, CmdDepthBoundInfo,
 };
 
 mod pool;

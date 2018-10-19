@@ -16,16 +16,16 @@ pub enum MultisamplePrefab {
 }
 
 impl Prefab for MultisamplePrefab {
-    type PrefabType = HaMultisample;
+    type PrefabType = HaMultisampleState;
 
     fn generate(&self) -> Self::PrefabType {
         match *self {
-            | MultisamplePrefab::Disable => HaMultisample { ..Default::default() },
+            | MultisamplePrefab::Disable => HaMultisampleState { ..Default::default() },
         }
     }
 }
 
-pub struct HaMultisample {
+pub struct HaMultisampleState {
 
     /// The number of samples per pixel used in rasterization.
     sample_count  : SampleCountType,
@@ -37,9 +37,9 @@ pub struct HaMultisample {
     alpha_to_one_enalbe     : Bool32,
 }
 
-impl HaMultisample {
+impl HaMultisampleState {
 
-    pub fn setup(prefab: MultisamplePrefab) -> HaMultisample {
+    pub fn setup(prefab: MultisamplePrefab) -> HaMultisampleState {
         prefab.generate()
     }
 
@@ -73,10 +73,10 @@ impl HaMultisample {
     }
 }
 
-impl Default for HaMultisample {
+impl Default for HaMultisampleState {
 
-    fn default() -> HaMultisample {
-        HaMultisample {
+    fn default() -> HaMultisampleState {
+        HaMultisampleState {
             sample_count   : SampleCountType::Count1Bit,
             sample_shading : SampleShading::disable(),
             alpha_to_coverage_enable : vk::VK_FALSE,
@@ -87,9 +87,9 @@ impl Default for HaMultisample {
 
 
 pub struct SampleShading {
-    enable       : Bool32,
-    min_sample   : c_float,
-    sample_masks : uint32_t,
+    enable      : Bool32,
+    min_sample  : c_float,
+    sample_masks: uint32_t,
 }
 
 impl SampleShading {
