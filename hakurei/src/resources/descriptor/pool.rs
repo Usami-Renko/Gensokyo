@@ -30,9 +30,11 @@ impl DescriptorPoolInfo {
         }
     }
 
-    pub fn _set_pool_size_max(&mut self, max_size: uint32_t) {
+    #[allow(dead_code)]
+    pub fn set_pool_size_max(&mut self, max_size: uint32_t) {
         self.max_sets = max_size;
     }
+
     pub fn add_pool_size(&mut self, desc_type: vk::DescriptorType, count: uint32_t) {
         self.pool_sizes.push(vk::DescriptorPoolSize {
             typ: desc_type,

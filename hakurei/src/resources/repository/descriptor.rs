@@ -7,7 +7,7 @@ use resources::descriptor::HaDescriptorPool;
 use resources::descriptor::{ DescriptorItem, DescriptorSetItem };
 use resources::descriptor::HaDescriptorSetLayout;
 use resources::descriptor::{ DescriptorSetConfig, HaDescriptorSet };
-pub use resources::command::CmdDescriptorBindingInfos;
+use resources::command::CmdDescriptorBindingInfos;
 use resources::error::AllocatorError;
 
 pub struct HaDescriptorRepository {

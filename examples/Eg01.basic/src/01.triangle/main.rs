@@ -119,9 +119,9 @@ impl ProgramProc for TriangleProcedure {
         render_pass_builder.add_dependenty(dependency);
 
         let render_pass = render_pass_builder.build(swapchain)?;
-        let viewport = HaViewport::single(ViewportInfo::new(swapchain.extent));
+        let viewport = HaViewportState::single(ViewportStateInfo::new(swapchain.extent));
         let pipeline_config = GraphicsPipelineConfig::new(shader_infos, vertex_input_desc, render_pass)
-            .setup_viewport(viewport)
+            .setup_viewport(ViewportStateType::Fixed { state: viewport })
             .finish_config();
 
         let mut pipeline_builder = kit.graphics_pipeline_builder()?;

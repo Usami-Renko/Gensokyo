@@ -224,11 +224,11 @@ impl ProgramProc for ModelProcedure {
         render_pass_builder.add_dependenty(dependency);
 
         let render_pass = render_pass_builder.build(swapchain)?;
-        let viewport = HaViewport::single(ViewportInfo::new(swapchain.extent));
-        let depth_stencil = HaDepthStencil::setup(HaDepthStencilPrefab::EnableDepth);
+        let viewport = HaViewportState::single(ViewportStateInfo::new(swapchain.extent));
+        let depth_stencil = HaDepthStencilState::setup(HaDepthStencilPrefab::EnableDepth);
 
         let pipeline_config = GraphicsPipelineConfig::new(shader_infos, vertex_input_desc, render_pass)
-            .setup_viewport(viewport)
+            .setup_viewport(ViewportStateType::Fixed { state: viewport })
             .setup_depth_stencil(depth_stencil)
             .add_descriptor_set(self.descriptor_storage.set_layout_at(&self.descriptor_sets))
             .finish_config();

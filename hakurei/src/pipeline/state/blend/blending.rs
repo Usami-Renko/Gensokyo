@@ -4,6 +4,7 @@ use ash::vk::uint32_t;
 
 use pipeline::state::blend::attachment::BlendAttachemnt;
 use pipeline::state::blend::ops::LogicalOp;
+use pipeline::state::DynamicableValue;
 
 use utility::marker::{ VulkanEnum, Prefab };
 
@@ -17,29 +18,29 @@ pub enum HaBlendPrefab {
 }
 
 impl Prefab for HaBlendPrefab {
-    type PrefabType = HaBlend;
+    type PrefabType = HaBlendState;
 
     fn generate(&self) -> Self::PrefabType {
         match *self {
-            | HaBlendPrefab::Default => HaBlend {
+            | HaBlendPrefab::Default => HaBlendState {
                 logic_op_enable: false,
                 logic_op: LogicalOp::Copy.value(),
                 attachments: vec![
                     BlendAttachemnt::default(),
                 ],
-                blend_constants: [0.0, 0.0, 0.0, 0.0],
+                blend_constants: DynamicableValue::Fixed { value: [0.0; 4] },
             },
-            | HaBlendPrefab::Unset => HaBlend {
+            | HaBlendPrefab::Unset => HaBlendState {
                 logic_op_enable: false,
                 logic_op: LogicalOp::NoOp.value(),
                 attachments: vec![],
-                blend_constants: [0.0, 0.0, 0.0, 0.0],
+                blend_constants: DynamicableValue::Fixed { value: [0.0; 4] },
             },
         }
     }
 }
 
-pub struct HaBlend {
+pub struct HaBlendState {
 
     /// logic_op_enable indicate if use logical operation in blending.
     logic_op_enable: bool,
@@ -48,12 +49,12 @@ pub struct HaBlend {
     /// attachments is array of per target attachment states.
     attachments: Vec<BlendAttachemnt>,
     /// Blend constants is an array of four values used as the R, G, B, and A components of the blend constant that are used in blending, depending on the blend factor.
-    blend_constants: [c_float; 4],
+    blend_constants: DynamicableValue<[c_float; 4]>,
 }
 
-impl HaBlend {
+impl HaBlendState {
 
-    pub fn setup(prefab: HaBlendPrefab) -> HaBlend {
+    pub fn setup(prefab: HaBlendPrefab) -> HaBlendState {
         prefab.generate()
     }
 
@@ -70,7 +71,7 @@ impl HaBlend {
             logic_op         : self.logic_op,
             attachment_count : attchement_infos.len() as uint32_t,
             p_attachments    : attchement_infos.as_ptr(),
-            blend_constants  : self.blend_constants,
+            blend_constants  : self.blend_constants.to_blend_contents(),
         }
     }
 
@@ -80,14 +81,28 @@ impl HaBlend {
     pub fn add_attachment(&mut self, attachment: BlendAttachemnt) {
         self.attachments.push(attachment);
     }
-    pub fn set_blend_constants(&mut self, constants: [c_float; 4]) {
+    pub fn set_blend_constants(&mut self, constants: DynamicableValue<[c_float; 4]>) {
         self.blend_constants = constants;
+    }
+
+    pub(crate) fn is_dynamic_blend_constants(&self) -> bool {
+        self.blend_constants.is_dynamic()
     }
 }
 
-impl Default for HaBlend {
+impl Default for HaBlendState {
 
-    fn default() -> HaBlend {
+    fn default() -> HaBlendState {
         HaBlendPrefab::Default.generate()
+    }
+}
+
+impl DynamicableValue<[c_float; 4]> {
+
+    fn to_blend_contents(&self) -> [c_float; 4] {
+        match self {
+            | DynamicableValue::Fixed { value } => value.clone(),
+            | DynamicableValue::Dynamic => [0.0; 4],
+        }
     }
 }

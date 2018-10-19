@@ -21,7 +21,8 @@ impl RenderDependencyPrefab {
     }
 }
 
-
+/// Using sub pass dependencies also adds implicit layout transitions for the attachment used.
+/// So we don't need to add explicit image memory barriers to transform them
 pub struct RenderDependency {
 
     flags: Vec<DependencyFlag>,

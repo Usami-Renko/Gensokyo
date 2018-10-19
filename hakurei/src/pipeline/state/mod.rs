@@ -1,21 +1,25 @@
 
-pub use self::vertex_input::HaVertexInput;
-pub use self::input_assembly::{ HaInputAssembly, PrimitiveTopology };
-pub use self::viewport::{ HaViewport, ViewportInfo };
-pub use self::rasterizer::{ HaRasterizer, RasterizerPrefab, PolygonMode, CullModeType, FrontFaceType, DepthBias };
-pub use self::multisample::{ HaMultisample, MultisamplePrefab, SampleCountType, SampleShading };
+pub use self::vertex_input::HaVertexInputState;
+pub use self::input_assembly::{ HaInputAssemblyState, PrimitiveTopology };
+pub use self::viewport::{ ViewportStateType, HaViewportState, ViewportStateInfo, ViewportInfo, ScissorInfo };
+pub use self::rasterizer::{
+    HaRasterizerState, RasterizerPrefab,
+    PolygonMode, CullModeType, FrontFaceType, DepthBiasInfo,
+};
+pub use self::multisample::{ HaMultisampleState, MultisamplePrefab, SampleCountType, SampleShading };
 pub use self::depth_stencil::{
-    HaDepthStencil, HaDepthStencilPrefab,
-    DepthTest, // depth
-    StencilTest, StencilOpState, // stencil
+    HaDepthStencilState, HaDepthStencilPrefab,
+    DepthTest, DepthBoundInfo, // depth
+    StencilTest, StencilOpState, StencilFaceFlag, // stencil
 };
 pub use self::blend::{
-    HaBlend, HaBlendPrefab, // blending
+    HaBlendState, HaBlendPrefab, // blending
     BlendAttachemnt, BlendAttachmentPrefab, ColorComponentFlag, BlendFactor, BlendOp, // attachment
     LogicalOp, CompareOp, // ops
 };
-pub use self::tessellation::HaTessellation;
-pub use self::dynamic::HaDynamicState;
+pub use self::tessellation::HaTessellationState;
+
+pub(crate) use self::dynamic::{ HaDynamicState, DynamicState, DynamicableValue };
 
 mod vertex_input;
 mod input_assembly;
@@ -29,15 +33,15 @@ mod dynamic;
 
 pub(crate) struct PipelineStates {
 
-    pub(super) vertex_input  : HaVertexInput,
-    pub(super) input_assembly: HaInputAssembly,
-    pub(super) viewport      : HaViewport,
-    pub(super) rasterizer    : HaRasterizer,
-    pub(super) multisample   : HaMultisample,
-    pub(super) depth_stencil : HaDepthStencil,
-    pub(super) blend         : HaBlend,
-    pub(super) tessellation  : Option<HaTessellation>,
-    pub(super) dynamic       : Option<HaDynamicState>,
+    pub(super) vertex_input  : HaVertexInputState,
+    pub(super) input_assembly: HaInputAssemblyState,
+    pub(super) viewport      : HaViewportState,
+    pub(super) rasterizer    : HaRasterizerState,
+    pub(super) multisample   : HaMultisampleState,
+    pub(super) depth_stencil : HaDepthStencilState,
+    pub(super) blend         : HaBlendState,
+    pub(super) tessellation  : Option<HaTessellationState>,
+    pub(super) dynamic       : HaDynamicState,
 }
 
 use pipeline::shader::VertexInputDescription;
@@ -46,14 +50,14 @@ impl PipelineStates {
     pub(crate) fn setup(input: VertexInputDescription) -> PipelineStates {
         PipelineStates {
             vertex_input  : input.desc(),
-            input_assembly: HaInputAssembly::default(),
-            viewport      : HaViewport::default(),
-            rasterizer    : HaRasterizer::default(),
-            multisample   : HaMultisample::default(),
-            depth_stencil : HaDepthStencil::default(),
-            blend         : HaBlend::default(),
+            input_assembly: HaInputAssemblyState::default(),
+            viewport      : HaViewportState::default(),
+            rasterizer    : HaRasterizerState::default(),
+            multisample   : HaMultisampleState::default(),
+            depth_stencil : HaDepthStencilState::default(),
+            blend         : HaBlendState::default(),
             tessellation  : None,
-            dynamic       : None,
+            dynamic       : HaDynamicState::default(),
         }
     }
 }

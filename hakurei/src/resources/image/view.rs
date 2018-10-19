@@ -10,6 +10,11 @@ use utility::marker::{ VulkanFlags, VulkanEnum };
 
 use std::ptr;
 
+/// Wrapper class for vk::ImageView.
+///
+/// Images aren't directly accessed in Vulkan, but rather through views described by a subresource range.
+///
+/// This allows for multiple views of one image with differing ranges (e.g. for different layers).
 pub(crate) struct HaImageView {
 
     pub handle: vk::ImageView,

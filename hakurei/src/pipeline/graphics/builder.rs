@@ -11,15 +11,15 @@ use pipeline::{
     shader::{ HaShaderModule, HaShaderInfo },
     shader::VertexInputDescription,
     state::PipelineStates,
-    state::HaVertexInput,
-    state::HaInputAssembly,
-    state::HaViewport,
-    state::HaRasterizer,
-    state::HaMultisample,
-    state::HaDepthStencil,
-    state::HaBlend,
-    state::HaTessellation,
-    state::HaDynamicState,
+    state::HaVertexInputState,
+    state::HaInputAssemblyState,
+    state::ViewportStateType,
+    state::HaRasterizerState,
+    state::HaMultisampleState,
+    state::HaDepthStencilState,
+    state::HaBlendState,
+    state::HaTessellationState,
+    state::DynamicState,
     pass::HaRenderPass,
     layout::PipelineLayoutBuilder,
     error::PipelineError,
@@ -160,8 +160,8 @@ impl GraphicsPipelineBuilder {
                 .map(|m| m.info().clone()).collect::<Vec<_>>();
             let tessellation_info = config.states.tessellation.as_ref()
                 .map_or(ptr::null(), |t| &t.info());
-            let dynamic_info = config.states.dynamic.as_ref()
-                .map_or(ptr::null(), |d| &d.info());
+            let dynamic_info = if config.states.dynamic.is_contain_state() {
+                &config.states.dynamic.info() } else { ptr::null() };
 
             let pipeline_layout = config.layout_builder.build(&self.device)?;
             layouts.push(pipeline_layout);
@@ -228,42 +228,89 @@ impl GraphicsPipelineConfig {
         self.shaders = shaders;
         self
     }
-    pub fn setup_input_vertex(mut self, vertex_infos: HaVertexInput) -> GraphicsPipelineConfig {
-        self.states.vertex_input = vertex_infos;
+
+    pub fn setup_input_vertex(mut self, state: HaVertexInputState) -> GraphicsPipelineConfig {
+        self.states.vertex_input = state;
         self
     }
-    pub fn setup_input_assembly(mut self, assembly: HaInputAssembly) -> GraphicsPipelineConfig {
-        self.states.input_assembly = assembly;
+
+    pub fn setup_input_assembly(mut self, state: HaInputAssemblyState) -> GraphicsPipelineConfig {
+        self.states.input_assembly = state;
         self
     }
-    pub fn setup_viewport(mut self, viewport: HaViewport) -> GraphicsPipelineConfig {
-        self.states.viewport = viewport;
+
+    pub fn setup_viewport(mut self, state: ViewportStateType) -> GraphicsPipelineConfig {
+
+        match state {
+            | ViewportStateType::Fixed { .. } => {},
+            | ViewportStateType::Dynamic { .. } => {
+                self.states.dynamic.add_state(DynamicState::Viewport);
+                self.states.dynamic.add_state(DynamicState::Scissor);
+            },
+            | ViewportStateType::DynamicViewportFixedScissor { .. } => {
+                self.states.dynamic.add_state(DynamicState::Viewport);
+            },
+            | ViewportStateType::FixedViewportDynamicScissor { .. } => {
+                self.states.dynamic.add_state(DynamicState::Scissor);
+            },
+        }
+
+        self.states.viewport = state.into_viewport_state();
         self
     }
-    pub fn setup_rasterizer(mut self, rasterizer: HaRasterizer) -> GraphicsPipelineConfig {
-        self.states.rasterizer = rasterizer;
+
+    pub fn setup_rasterizer(mut self, state: HaRasterizerState) -> GraphicsPipelineConfig {
+
+        if state.is_dynamic_lindwidth() {
+            self.states.dynamic.add_state(DynamicState::LineWidth);
+        }
+        if state.is_dynamic_depthbias() {
+            self.states.dynamic.add_state(DynamicState::DepthBias);
+        }
+
+        self.states.rasterizer = state;
         self
     }
-    pub fn setup_multisample(mut self, multisample: HaMultisample) -> GraphicsPipelineConfig {
-        self.states.multisample = multisample;
+
+    pub fn setup_multisample(mut self, state: HaMultisampleState) -> GraphicsPipelineConfig {
+        self.states.multisample = state;
         self
     }
-    pub fn setup_depth_stencil(mut self, depth_stencil: HaDepthStencil) -> GraphicsPipelineConfig {
-        self.states.depth_stencil = depth_stencil;
+
+    pub fn setup_depth_stencil(mut self, state: HaDepthStencilState) -> GraphicsPipelineConfig {
+
+        if state.depth.is_dynamic_depthbound() {
+            self.states.dynamic.add_state(DynamicState::DepthBounds);
+        }
+        if state.stencil.is_dynamic_compare_mask() {
+            self.states.dynamic.add_state(DynamicState::StencilCompareMask);
+        }
+        if state.stencil.is_dynamic_write_mask() {
+            self.states.dynamic.add_state(DynamicState::StencilWriteMask);
+        }
+        if state.stencil.is_dynamic_reference() {
+            self.states.dynamic.add_state(DynamicState::StencilReference);
+        }
+
+        self.states.depth_stencil = state;
         self
     }
-    pub fn setup_blend(mut self, blend: HaBlend) -> GraphicsPipelineConfig {
-        self.states.blend = blend;
+
+    pub fn setup_blend(mut self, state: HaBlendState) -> GraphicsPipelineConfig {
+
+        if state.is_dynamic_blend_constants() {
+            self.states.dynamic.add_state(DynamicState::BlendConstants);
+        }
+
+        self.states.blend = state;
         self
     }
-    pub fn setup_tessllation(mut self, tessellation: HaTessellation) -> GraphicsPipelineConfig {
+
+    pub fn setup_tessllation(mut self, tessellation: HaTessellationState) -> GraphicsPipelineConfig {
         self.states.tessellation = Some(tessellation);
         self
     }
-    pub fn setup_dynamic(mut self, dynamic_state: HaDynamicState) -> GraphicsPipelineConfig {
-        self.states.dynamic = Some(dynamic_state);
-        self
-    }
+
     pub fn add_descriptor_set(mut self, set_layout: &HaDescriptorSetLayout) -> GraphicsPipelineConfig {
         self.layout_builder.add_descriptor_layout(set_layout.handle);
         self

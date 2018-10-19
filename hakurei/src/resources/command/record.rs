@@ -1,6 +1,6 @@
 
 use ash::vk;
-use ash::vk::{ uint32_t, int32_t };
+use ash::vk::{ uint32_t, int32_t, c_float };
 use ash::version::DeviceV1_0;
 
 use core::device::HaDevice;
@@ -8,12 +8,13 @@ use core::device::HaDevice;
 use resources::command::buffer::HaCommandBuffer;
 use resources::command::infos::CmdDescriptorBindingInfos;
 use resources::command::{ CmdVertexBindingInfos, CmdIndexBindingInfo };
-use resources::command::{ CmdViewportInfo, CmdScissorInfo };
+use resources::command::{ CmdViewportInfo, CmdScissorInfo, CmdDepthBiasInfo, CmdDepthBoundInfo };
 use resources::error::CommandError;
 
 use pipeline::graphics::HaGraphicsPipeline;
+use pipeline::state::StencilFaceFlag;
 use pipeline::pass::DependencyFlag;
-use utility::marker::VulkanFlags;
+use utility::marker::{ VulkanFlags, VulkanEnum };
 
 use std::ptr;
 
@@ -72,15 +73,15 @@ impl<'buffer> HaCommandRecorder<'buffer> {
     }
 
     /// Set the viewport dynamically.
-    /// Before using this function, the vk::DYNAMIC_STATE_VIEWPORT must be enabled in pipeline creation.
+    /// Before using this function, the `ViewportStateType::Dynamic` or `ViewportStateType::DynamicViewportFixedScissor` must be set to ViewportState in pipeline creation(by calling `GraphicsPipelineConfig::setup_viewport()`).
     ///
     /// `first_viewport` is the index of the first viewport whose parameters are updated by the command.
     ///
-    /// ``viewports` specifies the new viewports to update.
+    /// `viewports` specifies the new value to use as viewports.
     pub fn set_viewport(&self, first_viewport: uint32_t, viewports: &[CmdViewportInfo]) -> &HaCommandRecorder<'buffer> {
 
         let ports = viewports.iter()
-            .map(|p| p.viewport).collect::<Vec<_>>();
+            .map(|p| p.content).collect::<Vec<_>>();
         unsafe {
             self.device.handle.cmd_set_viewport(self.buffer.handle, first_viewport, &ports)
         };
@@ -88,17 +89,100 @@ impl<'buffer> HaCommandRecorder<'buffer> {
     }
 
     /// Set the scissor rectangles dynamically.
-    /// Before using this function, the vk::DYNAMIC_STATE_SCISSOR must be enabled in pipeline creation.
+    /// Before using this function, the `ViewportStateType::Dynamic` or `ViewportStateType::FixedViewportDynamicScissor` must be set to ViewportState in pipeline creation(by calling `GraphicsPipelineConfig::setup_viewport()`).
     ///
     /// `first_scissor` is the index of the first scissor whose state is updated by the command.
     ///
-    /// `scissors` specifies the new scissor rectangles to update.
+    /// `scissors` specifies the new value to use as scissor rectangles.
     pub fn set_scissor(&self, first_scissor: uint32_t, scissors: &[CmdScissorInfo]) -> &HaCommandRecorder<'buffer> {
 
         let scissors = scissors.iter()
-            .map(|s| s.scissor).collect::<Vec<_>>();
+            .map(|s| s.content).collect::<Vec<_>>();
         unsafe {
             self.device.handle.cmd_set_scissor(self.buffer.handle, first_scissor, &scissors)
+        };
+        self
+    }
+
+    /// Set the line width dynamically.
+    /// Before using this function, the `DynamicableValue::Dynamic` must be set in function `HaRasterizerState::set_line_width()` on RasterizerState during pipeline creation.
+    ///
+    /// `width` specifies the new value to use as the width of rasterized line segments.
+    pub fn set_line_width(&self, width: c_float) -> &HaCommandRecorder<'buffer> {
+        unsafe {
+            self.device.handle.cmd_set_line_width(self.buffer.handle, width)
+        };
+        self
+    }
+
+    /// Set the depth bias dynamically.
+    /// Before using this function, the `DynamicableValue::Dynamic` must be set in function `HaRasterizerState::set_depth_bias()` on RasterizerState during pipeline creation.
+    ///
+    /// `bias` specifies the new value to use as depth bias.
+    pub fn set_depth_bias(&self, bias: CmdDepthBiasInfo) -> &HaCommandRecorder<'buffer> {
+        unsafe {
+            self.device.handle.cmd_set_depth_bias(self.buffer.handle, bias.constant_factor, bias.clamp, bias.slope_factor)
+        };
+        self
+    }
+
+    /// Set the blend constants dynamically.
+    /// Before using this function, the `DynamicableValue::Dynamic` must be set in function `HaBlendState::set_blend_constants()` on BlendState during pipeline creation.
+    ///
+    /// `constants` specifies the new value to use as blend constants.
+    pub fn set_blend_constants(&self, constants: [c_float; 4]) -> &HaCommandRecorder<'buffer> {
+        unsafe {
+            self.device.handle.cmd_set_blend_constants(self.buffer.handle, constants)
+        };
+        self
+    }
+
+    /// Set the depth bound dynamically.
+    /// Before using this function, the `DynamicableValue::Dynamic` must be set in function `DepthTest::set_depth_bound()` on DepthStencilState during pipeline creation.
+    ///
+    /// `bound` specifies the new value to use as depth bound.
+    pub fn set_depth_bound(&self, bound: CmdDepthBoundInfo) -> &HaCommandRecorder<'buffer> {
+        unsafe {
+            self.device.handle.cmd_set_depth_bounds(self.buffer.handle, bound.min_bound, bound.max_bound)
+        };
+        self
+    }
+
+    /// Set the stencil compare mask dynamically.
+    /// Before using this function, the `DynamicableValue::Dynamic` must be set in function `StencilTest::set_compare_mask()` on DepthStencilState during pipeline creation.
+    ///
+    /// `face` specifies the set of stencil state for which to update the compare mask.
+    ///
+    /// `mask` specifies the new value to use as the stencil compare mask.
+    pub fn set_stencil_compare_mask(&self, face: StencilFaceFlag, mask: uint32_t) -> &HaCommandRecorder<'buffer> {
+        unsafe {
+            self.device.handle.cmd_set_stencil_compare_mask(self.buffer.handle, face.value(), mask)
+        };
+        self
+    }
+
+    /// Set the stencil write mask dynamically.
+    /// Before using this function, the `DynamicableValue::Dynamic` must be set in function `StencilTest::set_write_mask()` on DepthStencilState during pipeline creation.
+    ///
+    /// `face` specifies the set of stencil state for which to update the write mask.
+    ///
+    /// `mask` specifies the new value to use as the stencil write mask.
+    pub fn set_stencil_write_mask(&self, face: StencilFaceFlag, mask: uint32_t) -> &HaCommandRecorder<'buffer> {
+        unsafe {
+            self.device.handle.cmd_set_stencil_write_mask(self.buffer.handle, face.value(), mask)
+        };
+        self
+    }
+
+    /// Set the stencil reference dynamically.
+    /// Before using this function, the `DynamicableValue::Dynamic` must be set in function `StencilTest::set_reference()` on DepthStencilState during pipeline creation.
+    ///
+    /// `face` specifies the set of stencil state for which to update the reference value.
+    ///
+    /// `reference` specifies the set of stencil state for which to update the reference value.
+    pub fn set_stencil_reference(&self, face: StencilFaceFlag, reference: uint32_t) -> &HaCommandRecorder<'buffer> {
+        unsafe {
+            self.device.handle.cmd_set_stencil_reference(self.buffer.handle, face.value(), reference)
         };
         self
     }
