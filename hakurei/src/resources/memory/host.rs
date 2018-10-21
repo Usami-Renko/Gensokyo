@@ -96,7 +96,8 @@ impl MemoryDataUploadable for HaHostMemory {
         Ok((writer, range))
     }
 
-    fn terminate_transfer(&mut self, device: &HaDevice, _: &Option<UploadStagingResource>, ranges_to_flush: &Vec<MemoryRange>) -> Result<(), MemoryError> {
+    fn terminate_transfer(&mut self, device: &HaDevice, _: &Option<UploadStagingResource>, ranges_to_flush: &Vec<MemoryRange>)
+        -> Result<(), MemoryError> {
 
         if !self.is_coherent_memroy() {
             // FIXME: the VkPhysicalDeviceLimits::nonCoherentAtomSize is not satified for flushing range.

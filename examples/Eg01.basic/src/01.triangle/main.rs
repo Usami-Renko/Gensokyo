@@ -37,9 +37,9 @@ const VERTEX_DATA: [Vertex; 3] = [
 
 struct TriangleProcedure {
 
-    vertex_data  : Vec<Vertex>,
-    vertex_buffer: HaBufferRepository,
-    vertex_item  : BufferSubItem,
+    vertex_data: Vec<Vertex>,
+    vertex_storage: HaBufferRepository,
+    vertex_buffer : HaVertexBlock,
 
     graphics_pipeline: HaGraphicsPipeline,
 
@@ -53,9 +53,9 @@ impl TriangleProcedure {
 
     fn new() -> TriangleProcedure {
         TriangleProcedure {
-            vertex_data  : VERTEX_DATA.to_vec(),
-            vertex_buffer: HaBufferRepository::empty(),
-            vertex_item  : BufferSubItem::unset(),
+            vertex_data: VERTEX_DATA.to_vec(),
+            vertex_storage: HaBufferRepository::empty(),
+            vertex_buffer : HaVertexBlock::uninitialize(),
 
             graphics_pipeline: HaGraphicsPipeline::uninitialize(),
 
@@ -74,14 +74,13 @@ impl ProgramProc for TriangleProcedure {
         // vertex buffer
         let mut vertex_allocator = kit.buffer(BufferStorageType::Cached);
 
-        let mut vertex_buffer_config = CachedBufferConfig::new(CachedBufferUsage::VertexBuffer);
-        vertex_buffer_config.add_item(data_size!(self.vertex_data, Vertex));
+        let vertex_info = VertexBlockInfo::new(data_size!(self.vertex_data, Vertex));
+        self.vertex_buffer = vertex_allocator.append_vertex(vertex_info)?;
 
-        self.vertex_item = vertex_allocator.attach_cached_buffer(vertex_buffer_config)?.pop().unwrap();
-        self.vertex_buffer = vertex_allocator.allocate()?;
+        self.vertex_storage = vertex_allocator.allocate()?;
 
-        self.vertex_buffer.data_uploader()?
-            .upload(&self.vertex_item, &self.vertex_data)?
+        self.vertex_storage.data_uploader()?
+            .upload(&self.vertex_buffer, &self.vertex_data)?
             .done()?;
 
         Ok(())
@@ -105,7 +104,7 @@ impl ProgramProc for TriangleProcedure {
 
         // pipeline
         let mut render_pass_builder = kit.pass_builder();
-        let first_subpass = render_pass_builder.new_subpass(SubpassType::Graphics);
+        let first_subpass = render_pass_builder.new_subpass(PipelineType::Graphics);
 
         let color_attachment = RenderAttachement::setup(RenderAttachementPrefab::BackColorAttachment, swapchain.format);
         let _attachment_index = render_pass_builder.add_attachemnt(color_attachment, first_subpass, AttachmentType::Color);
@@ -124,7 +123,7 @@ impl ProgramProc for TriangleProcedure {
             .setup_viewport(ViewportStateType::Fixed { state: viewport })
             .finish_config();
 
-        let mut pipeline_builder = kit.graphics_pipeline_builder()?;
+        let mut pipeline_builder = kit.pipeline_builder(PipelineType::Graphics)?;
         pipeline_builder.add_config(pipeline_config);
 
         let mut graphics_pipelines = pipeline_builder.build()?;
@@ -143,26 +142,24 @@ impl ProgramProc for TriangleProcedure {
     }
 
     fn commands(&mut self, kit: CommandKit) -> Result<(), ProcedureError> {
-        // command buffer
-        let command_pool = kit.pool(DeviceQueueIdentifier::Graphics)?;
+
+        self.command_pool = kit.pool(DeviceQueueIdentifier::Graphics)?;
 
         let command_buffer_count = self.graphics_pipeline.frame_count();
-        let command_buffers = command_pool
+        self.command_buffers = self.command_pool
             .allocate(CommandBufferUsage::UnitaryCommand, command_buffer_count)?;
 
-        for (frame_index, command_buffer) in command_buffers.iter().enumerate() {
+        for (frame_index, command_buffer) in self.command_buffers.iter().enumerate() {
             let recorder = command_buffer.setup_record();
 
             recorder.begin_record(&[CommandBufferUsageFlag::SimultaneousUseBit])?
                 .begin_render_pass(&self.graphics_pipeline, frame_index)
                 .bind_pipeline(&self.graphics_pipeline)
-                .bind_vertex_buffers(0, &self.vertex_buffer.vertex_binding_infos(&[&self.vertex_item]))
+                .bind_vertex_buffers(0, &[&self.vertex_buffer])
                 .draw(self.vertex_data.len() as uint32_t, 1, 0, 0)
                 .end_render_pass()
                 .end_record()?;
         }
-        self.command_pool    = command_pool;
-        self.command_buffers = command_buffers;
 
         Ok(())
     }
@@ -205,7 +202,7 @@ impl ProgramProc for TriangleProcedure {
 
         self.graphics_pipeline.cleanup();
         self.command_pool.cleanup();
-        self.vertex_buffer.cleanup();
+        self.vertex_storage.cleanup();
     }
 
     fn react_input(&mut self, inputer: &ActionNerve, _: f32) -> SceneAction {

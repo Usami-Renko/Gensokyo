@@ -1,17 +1,17 @@
 
 use ash::vk;
 
-use resources::buffer::BufferConfigAbstract;
+use resources::allocator::BufferInfosAllocatable;
 
 pub(crate) struct BufferAllocateInfos {
 
-    pub configs: Vec<Box<BufferConfigAbstract>>,
-    pub spaces : Vec<vk::DeviceSize>,
+    pub infos: Vec<Box<BufferInfosAllocatable>>,
+    pub spaces: Vec<vk::DeviceSize>,
 }
 
 impl BufferAllocateInfos {
     
     pub fn new() -> BufferAllocateInfos {
-        BufferAllocateInfos { configs: vec![], spaces: vec![], }
+        BufferAllocateInfos { infos: vec![], spaces: vec![], }
     }
 }

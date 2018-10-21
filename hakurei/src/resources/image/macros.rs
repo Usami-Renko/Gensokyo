@@ -38,7 +38,7 @@ macro_rules! impl_image_desc_info_abs {
     };
 }
 
-macro_rules! impl_image_variety_abs {
+macro_rules! impl_image_branch_abs {
     ($ImageVariety:ty) => {
         impl HaImageVarietyAbs for $ImageVariety {
 

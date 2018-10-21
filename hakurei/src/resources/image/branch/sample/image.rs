@@ -9,8 +9,8 @@ use resources::image::{ ImageDescInfo, ImageViewDescInfo, ImageViewItem };
 use resources::image::{ HaImageDescAbs, HaImageViewDescAbs, HaImageVarietyAbs };
 use resources::image::ImagePipelineStage;
 use resources::image::{ HaSamplerDescAbs, HaSampler, SamplerDescInfo };
-use resources::descriptor::{ DescriptorImageBindingInfo, ImageDescriptorType };
-use resources::error::{ ImageError, AllocatorError };
+use resources::descriptor::{ DescriptorImageBindingInfo, ImageDescriptorType, DescriptorImageBindableTarget };
+use resources::error::{ DescriptorError, DescriptorResourceError };
 
 use pipeline::state::SampleCountType;
 use utility::marker::VulkanEnum;
@@ -84,13 +84,20 @@ impl HaSampleImage {
         }
     }
 
-    pub fn binding_info(&self) -> Result<DescriptorImageBindingInfo, AllocatorError> {
+    pub fn cleanup(&self, device: &HaDevice) {
+        self.sampler.cleanup(device);
+    }
+}
+
+impl DescriptorImageBindableTarget for HaSampleImage {
+
+    fn binding_info(&self) -> Result<DescriptorImageBindingInfo, DescriptorError> {
 
         if let Some(_) = self.item.handles {
             let info = DescriptorImageBindingInfo {
+                type_    : ImageDescriptorType::CombinedImageSampler,
                 binding  : self.binding,
                 count    : self.count,
-                type_    : ImageDescriptorType::CombinedImageSampler,
                 sampler  : self.sampler.handle,
                 dst_layout: ImageLayout::ShaderReadOnlyOptimal,
                 view_item: self.item.clone(),
@@ -99,16 +106,12 @@ impl HaSampleImage {
             Ok(info)
         } else {
 
-            Err(ImageError::NotYetAllocateError)?
+            Err(DescriptorError::Resource(DescriptorResourceError::ImageNotAllocated))?
         }
-    }
-
-    pub fn cleanup(&self, device: &HaDevice) {
-        self.sampler.cleanup(device);
     }
 }
 
-impl_image_variety_abs!(HaSampleImage);
+impl_image_branch_abs!(HaSampleImage);
 impl_image_desc_info_abs!(SampleImageInfo);
 
 impl HaSamplerDescAbs for SampleImageInfo {

@@ -8,8 +8,7 @@ use pipeline::stages::PipelineStageFlag;
 use pipeline::pass::AccessFlag;
 
 use resources::allocator::{ HaBufferAllocator, BufferStorageType, ImageAllocateInfo };
-use resources::buffer::{ BufferSubItem, StagingBufferConfig, StagingBufferUsage };
-use resources::buffer::BufferConfigModifiable;
+use resources::buffer::{ BufferSubItem, HaImgsrcBlock, ImgsrcBlockInfo, BufferBlockEntity };
 use resources::image::ImagePipelineStage;
 use resources::image::{ ImageSource, ImageLayout };
 use resources::image::ImageBarrierBundleAbs;
@@ -35,9 +34,9 @@ impl ImageBarrierBundleAbs for SampleImageBarrierBundle {
     fn make_transfermation(&mut self, recorder: &HaCommandRecorder, infos: &Vec<ImageAllocateInfo>) -> Result<(), AllocatorError> {
 
         // create staging buffer and memories
-        let (mut staging_repository, buffer_items) = self.create_staging_repository(infos)?;
+        let (mut staging_repository, buffer_blocks) = self.create_staging_repository(infos)?;
         // send textures to the staging buffer
-        self.upload_staging_data(&mut staging_repository, &buffer_items, infos)?;
+        self.upload_staging_data(&mut staging_repository, &buffer_blocks, infos)?;
 
         // make image barrier transition for data transfer.
         let transfer_barriers = self.info_indices.iter()
@@ -53,7 +52,7 @@ impl ImageBarrierBundleAbs for SampleImageBarrierBundle {
 
         // copy buffer to image.
         for (i, &index) in self.info_indices.iter().enumerate() {
-            copy_buffer_to_image(recorder, &buffer_items[i], &infos[index])?;
+            copy_buffer_to_image(recorder, buffer_blocks[i].get_buffer_item(), &infos[index])?;
         }
 
         // make image barrier transition for final layout.
@@ -90,30 +89,28 @@ impl SampleImageBarrierBundle {
         }
     }
 
-    fn create_staging_repository(&mut self, infos: &Vec<ImageAllocateInfo>) -> Result<(HaBufferRepository, Vec<BufferSubItem>), AllocatorError> {
+    fn create_staging_repository(&mut self, infos: &Vec<ImageAllocateInfo>) -> Result<(HaBufferRepository, Vec<HaImgsrcBlock>), AllocatorError> {
 
-        let staging_buffer_config = StagingBufferConfig::new(StagingBufferUsage::ImageCopySrc);
-        let mut staging_buffer_items = vec![];
+        let mut staging_buffers = vec![];
 
         for &index in self.info_indices.iter() {
-            let mut config = staging_buffer_config.clone();
-            let _ = config.add_item(infos[index].space);
-            let item = self.staging_allocator.attach_staging_buffer(config)?.pop().unwrap();
-            staging_buffer_items.push(item);
+            let img_info = ImgsrcBlockInfo::new(infos[index].space);
+            let staging_buffer = self.staging_allocator.append_imgsrc(img_info)?;
+            staging_buffers.push(staging_buffer);
         }
 
-        Ok((self.staging_allocator.allocate()?, staging_buffer_items))
+        Ok((self.staging_allocator.allocate()?, staging_buffers))
     }
 
-    fn upload_staging_data(&self, staging_repository: &mut HaBufferRepository, items: &[BufferSubItem], infos: &Vec<ImageAllocateInfo>) -> Result<(), AllocatorError> {
+    fn upload_staging_data(&self, staging_repository: &mut HaBufferRepository, img_data_blocks: &[HaImgsrcBlock], infos: &Vec<ImageAllocateInfo>) -> Result<(), AllocatorError> {
 
         let mut uploader = staging_repository.data_uploader()?;
 
-        for (&info_index, buffer_item) in self.info_indices.iter().zip(items.iter()) {
+        for (&info_index, img_block) in self.info_indices.iter().zip(img_data_blocks.iter()) {
 
             match infos[info_index].storage.source {
                 | ImageSource::UploadData(ref source) => {
-                    uploader.upload(buffer_item, &source.data)?;
+                    uploader.upload(img_block, &source.data)?;
                 },
                 | _ => panic!(),
             }

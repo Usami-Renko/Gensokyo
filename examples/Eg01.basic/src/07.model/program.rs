@@ -22,14 +22,14 @@ pub struct ModelProcedure {
     model_data: ModelData,
 
     buffer_storage: HaBufferRepository,
-    vertex_item   : BufferSubItem,
-    index_item    : BufferSubItem,
+    vertex_buffer : HaVertexBlock,
+    index_buffer  : HaIndexBlock,
 
     graphics_pipeline: HaGraphicsPipeline,
 
-    ubo_data  : Vec<UboObject>,
-    ubo_buffer: HaBufferRepository,
-    ubo_item  : BufferSubItem,
+    ubo_data: Vec<UboObject>,
+    ubo_storage: HaBufferRepository,
+    ubo_buffer : HaUniformBlock,
 
     depth_attachment: HaDepthStencilImage,
     model_texture: HaSampleImage,
@@ -58,8 +58,8 @@ impl ModelProcedure {
             model_data: ModelData::empty(),
 
             buffer_storage: HaBufferRepository::empty(),
-            vertex_item   : BufferSubItem::unset(),
-            index_item    : BufferSubItem::unset(),
+            vertex_buffer : HaVertexBlock::uninitialize(),
+            index_buffer  : HaIndexBlock::uninitialize(),
 
             graphics_pipeline: HaGraphicsPipeline::uninitialize(),
 
@@ -70,8 +70,8 @@ impl ModelProcedure {
                     model     : Matrix4::identity(),
                 },
             ],
-            ubo_buffer: HaBufferRepository::empty(),
-            ubo_item  : BufferSubItem::unset(),
+            ubo_storage: HaBufferRepository::empty(),
+            ubo_buffer : HaUniformBlock::uninitialize(),
             descriptor_storage: HaDescriptorRepository::empty(),
             descriptor_sets: DescriptorSetItem::unset(),
 
@@ -92,8 +92,8 @@ impl ModelProcedure {
 
         self.ubo_data[0].view  = self.camera.view_matrix();
 
-        self.ubo_buffer.data_updater()?
-            .update(&self.ubo_item, &self.ubo_data)?
+        self.ubo_storage.data_updater()?
+            .update(&self.ubo_buffer, &self.ubo_data)?
             .done()?;
 
         Ok(())
@@ -111,32 +111,27 @@ impl ProgramProc for ModelProcedure {
         // vertex, index buffer
         let mut device_buffer_allocator = kit.buffer(BufferStorageType::Device);
 
-        let mut vertex_buffer_config = DeviceBufferConfig::new(DeviceBufferUsage::VertexBuffer);
-        vertex_buffer_config.add_item(data_size!(self.model_data.vertices, Vertex));
+        let vertex_info = VertexBlockInfo::new(data_size!(self.model_data.vertices, Vertex));
+        self.vertex_buffer = device_buffer_allocator.append_vertex(vertex_info)?;
 
-        let mut index_buffer_config = DeviceBufferConfig::new(DeviceBufferUsage::IndexBuffer);
-        index_buffer_config.add_item(data_size!(self.model_data.indices, uint32_t));
-
-        self.vertex_item = device_buffer_allocator.attach_device_buffer(vertex_buffer_config)?.pop().unwrap();
-        self.index_item  = device_buffer_allocator.attach_device_buffer(index_buffer_config)?.pop().unwrap();
+        let index_info = IndexBlockInfo::new(data_size!(self.model_data.indices, uint32_t));
+        self.index_buffer = device_buffer_allocator.append_index(index_info)?;
 
         self.buffer_storage = device_buffer_allocator.allocate()?;
         self.buffer_storage.data_uploader()?
-            .upload(&self.vertex_item, &self.model_data.vertices)?
-            .upload(&self.index_item, &self.model_data.indices)?
+            .upload(&self.vertex_buffer, &self.model_data.vertices)?
+            .upload(&self.index_buffer, &self.model_data.indices)?
             .done()?;
 
         // uniform buffer
         let mut host_buffer_allocator = kit.buffer(BufferStorageType::Host);
 
-        let mut uniform_buffer_config = HostBufferConfig::new(HostBufferUsage::UniformBuffer);
-        uniform_buffer_config.add_item(data_size!(self.ubo_data, UboObject));
+        let ubo_info = UniformBlockInfo::new(0, 1, data_size!(self.ubo_data, UboObject));
+        self.ubo_buffer = host_buffer_allocator.append_uniform(ubo_info)?;
+        self.ubo_storage = host_buffer_allocator.allocate()?;
 
-        self.ubo_item = host_buffer_allocator.attach_host_buffer(uniform_buffer_config)?.pop().unwrap();
-        self.ubo_buffer = host_buffer_allocator.allocate()?;
-
-        self.ubo_buffer.data_uploader()?
-            .upload(&self.ubo_item, &self.ubo_data)?
+        self.ubo_storage.data_uploader()?
+            .upload(&self.ubo_buffer, &self.ubo_data)?
             .done()?;
 
         // depth attachment image and model texture image
@@ -153,22 +148,15 @@ impl ProgramProc for ModelProcedure {
         self.image_storage.get_allocated_infos(&mut self.model_texture);
 
         // descriptor
-        let ubo_info = DescriptorBufferBindingInfo {
-            binding: 0,
-            type_: BufferDescriptorType::UniformBuffer,
-            count: 1,
-            element_size: data_size!(self.ubo_data, UboObject),
-            buffer: self.ubo_item.clone(),
-        };
         let mut descriptor_set_config = DescriptorSetConfig::init(&[]);
         let ubo_binding_index = descriptor_set_config.add_buffer_binding(
-            ubo_info,
+            &self.ubo_buffer,
             &[ShaderStageFlag::VertexStage]
-        );
+        )?;
         let sampler_bining_index = descriptor_set_config.add_image_binding(
-            self.model_texture.binding_info()?,
+            &self.model_texture,
             &[ShaderStageFlag::FragmentStage]
-        );
+        )?;
 
         let mut descriptor_allocator = kit.descriptor(&[]);
         let (descriptor_set_item, descriptor_binding_items) =
@@ -205,7 +193,7 @@ impl ProgramProc for ModelProcedure {
 
         // pipeline
         let mut render_pass_builder = kit.pass_builder();
-        let first_subpass = render_pass_builder.new_subpass(SubpassType::Graphics);
+        let first_subpass = render_pass_builder.new_subpass(PipelineType::Graphics);
 
         let color_attachment = RenderAttachement::setup(RenderAttachementPrefab::BackColorAttachment, swapchain.format);
         let _ = render_pass_builder.add_attachemnt(color_attachment, first_subpass, AttachmentType::Color);
@@ -233,7 +221,7 @@ impl ProgramProc for ModelProcedure {
             .add_descriptor_set(self.descriptor_storage.set_layout_at(&self.descriptor_sets))
             .finish_config();
 
-        let mut pipeline_builder = kit.graphics_pipeline_builder()?;
+        let mut pipeline_builder = kit.pipeline_builder(PipelineType::Graphics)?;
         pipeline_builder.add_config(pipeline_config);
 
         let mut graphics_pipelines = pipeline_builder.build()?;
@@ -255,29 +243,26 @@ impl ProgramProc for ModelProcedure {
 
     fn commands(&mut self, kit: CommandKit) -> Result<(), ProcedureError> {
 
-        // command buffer
-        let command_pool = kit.pool(DeviceQueueIdentifier::Graphics)?;
+        self.command_pool = kit.pool(DeviceQueueIdentifier::Graphics)?;
 
         let command_buffer_count = self.graphics_pipeline.frame_count();
-        let command_buffers = command_pool
+        self.command_buffers = self.command_pool
             .allocate(CommandBufferUsage::UnitaryCommand, command_buffer_count)?;
 
-        for (frame_index, command_buffer) in command_buffers.iter().enumerate() {
+        for (frame_index, command_buffer) in self.command_buffers.iter().enumerate() {
             let recorder = command_buffer.setup_record();
 
             recorder.begin_record(&[CommandBufferUsageFlag::SimultaneousUseBit])?
                 .begin_render_pass(&self.graphics_pipeline, frame_index)
                 .bind_pipeline(&self.graphics_pipeline)
-                .bind_vertex_buffers(0, &self.buffer_storage.vertex_binding_infos(&[&self.vertex_item]))
-                .bind_index_buffers(&self.buffer_storage.index_binding_info(&self.index_item))
-                .bind_descriptor_sets(&self.graphics_pipeline, 0, &self.descriptor_storage.descriptor_binding_infos(
+                .bind_vertex_buffers(0, &[&self.vertex_buffer])
+                .bind_index_buffer(&self.index_buffer)
+                .bind_descriptor_sets(&self.graphics_pipeline, 0, self.descriptor_storage.descriptor_binding_infos(
                     &[&self.descriptor_sets]))
                 .draw_indexed(self.model_data.indices.len() as uint32_t, 1, 0, 0, 0)
                 .end_render_pass()
                 .end_record()?;
         }
-        self.command_pool    = command_pool;
-        self.command_buffers = command_buffers;
 
         Ok(())
     }
@@ -324,7 +309,7 @@ impl ProgramProc for ModelProcedure {
         self.model_texture.cleanup(device);
         self.image_storage.cleanup();
         self.descriptor_storage.cleanup();
-        self.ubo_buffer.cleanup();
+        self.ubo_storage.cleanup();
         self.buffer_storage.cleanup();
     }
 

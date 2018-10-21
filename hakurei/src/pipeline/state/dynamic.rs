@@ -48,6 +48,7 @@ impl Default for HaDynamicState {
 // TODO: Add configuration for Other Dynamic States.
 #[derive(Debug, Clone, Copy, Eq, PartialEq)]
 pub enum DynamicState {
+
     /// `Viewport` specifies that the pViewports state in vk::PipelineViewportStateCreateInfo will be ignored and must be set dynamically with vk::CmdSetViewport before any draw commands.
     ///
     /// The number of viewports used by a pipeline is still specified by the viewportCount member of vk::PipelineViewportStateCreateInfo.

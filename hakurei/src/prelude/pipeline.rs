@@ -8,7 +8,7 @@ pub use pipeline::pass::{
     HaRenderPass, // render
     RenderAttachement, RenderAttachementPrefab, // attachment
     AttachmentDescFlag, AttachmentLoadOp, AttachmentStoreOp, // attachment
-    AttachmentType, SubpassType, // subpass
+    AttachmentType, // subpass
     RenderDependency, RenderDependencyPrefab, // dependency
     AccessFlag, DependencyFlag, // dependency
     RenderPassBuilder, // builder
@@ -34,5 +34,5 @@ pub use pipeline::state::{
 };
 
 pub use pipeline::layout::{ HaPipelineLayout, PipelineLayoutBuilder };
-pub use pipeline::stages::PipelineStageFlag;
+pub use pipeline::stages::{ PipelineStageFlag, PipelineType };
 

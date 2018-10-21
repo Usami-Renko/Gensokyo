@@ -7,7 +7,7 @@ pub(crate) use self::device::DeviceBufMemAllocator;
 pub(crate) use self::staging::StagingBufMemAllocator;
 
 pub(crate) use self::infos::BufferAllocateInfos;
-pub(crate) use self::traits::{ BufferConfigsAllocatable, BufMemAlloAbstract };
+pub(crate) use self::traits::{BufferInfosAllocatable, BufMemAlloAbstract };
 
 mod base;
 mod host;

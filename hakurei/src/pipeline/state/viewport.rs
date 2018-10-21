@@ -76,6 +76,7 @@ impl Default for HaViewportState {
 }
 
 pub enum ViewportStateType {
+
     /// `Fixed` specifies that viewports and scissors is set to fixed value during the whole pipeline.
     ///
     /// `state` specifies all the information of fixed viewport and scissor properties.

@@ -4,7 +4,7 @@ use ash::vk;
 use core::device::HaDevice;
 use core::physical::HaPhyDevice;
 
-use resources::buffer::BufferSubItem;
+use resources::buffer::BufferBlockEntity;
 use resources::memory::{ HaMemoryAbstract, MemoryRange, UploadStagingResource };
 use resources::allocator::BufferAllocateInfos;
 use resources::error::AllocatorError;
@@ -34,8 +34,9 @@ impl<'a> BufferDataUploader<'a> {
         Ok(uploader)
     }
 
-    pub fn upload<D: Copy>(&mut self, item: &BufferSubItem, data: &Vec<D>) -> Result<&mut BufferDataUploader<'a>, AllocatorError> {
+    pub fn upload<D: Copy>(&mut self, block: &impl BufferBlockEntity, data: &Vec<D>) -> Result<&mut BufferDataUploader<'a>, AllocatorError> {
 
+        let item = block.get_buffer_item();
         let offset = self.offsets[item.buffer_index] + item.offset;
 
         let (writer, range) = self.dst_memory.map_memory_ptr(&mut self.staging, item, offset)?;
@@ -81,8 +82,9 @@ impl<'a> BufferDataUpdater<'a> {
         }
     }
 
-    pub fn update<D: Copy>(&mut self, item: &BufferSubItem, data: &Vec<D>) -> Result<&mut BufferDataUpdater<'a>, AllocatorError> {
+    pub fn update<D: Copy>(&mut self, block: &impl BufferBlockEntity, data: &Vec<D>) -> Result<&mut BufferDataUpdater<'a>, AllocatorError> {
 
+        let item = block.get_buffer_item();
         let offset = self.offsets[item.buffer_index] + item.offset;
 
         let (writer, range) = self.memory.map_memory_ptr(&mut None, item, offset)?;

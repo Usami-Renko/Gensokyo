@@ -6,13 +6,16 @@ use resources::descriptor::layout::{ BufferDescriptorType, ImageDescriptorType, 
 use resources::descriptor::HaDescriptorSet;
 use resources::buffer::BufferSubItem;
 use resources::image::{ ImageViewItem, ImageLayout };
-use resources::error::{ DescriptorError, DescriptorResourceError };
+use resources::error::{ AllocatorError, DescriptorError, DescriptorResourceError };
 
 use pipeline::shader::ShaderStageFlag;
 
+use utility::wrapper::VKWrapperInfo;
 use utility::marker::{ VulkanFlags, VulkanEnum };
 
 use std::ptr;
+
+pub(crate) type DescriptorWriteInfo = VKWrapperInfo<DescriptorWriteContent, vk::WriteDescriptorSet>;
 
 pub(crate) trait DescriptorBindingInfo {
 
@@ -24,24 +27,23 @@ pub(crate) trait DescriptorBindingInfo {
     fn write_set(&self, set: &HaDescriptorSet) -> Result<DescriptorWriteInfo, DescriptorError>;
 }
 
-pub(crate) struct DescriptorWriteInfo {
+pub(crate) trait DescriptorWriteContent {}
 
-    _content: Box<DescriptorWriteContent>,
-    pub(crate) set: vk::WriteDescriptorSet,
+pub trait DescriptorBufferBindableTarget {
+    fn binding_info(&self) -> Result<DescriptorBufferBindingInfo, DescriptorError>;
+}
+pub trait DescriptorImageBindableTarget {
+    fn binding_info(&self) -> Result<DescriptorImageBindingInfo, DescriptorError>;
 }
 
-trait DescriptorWriteContent {}
-
-// TODO: Make this struct to pub(crate)
 pub struct DescriptorBufferBindingInfo {
 
+    /// the type of descriptor.
+    pub type_  : BufferDescriptorType,
     /// the binding index used in shader for the descriptor.
     pub binding: uint32_t,
     /// the element count of each descriptor.
     pub count  : uint32_t,
-    // TODO: Limit to specific buffer type
-    /// the type of descriptor.
-    pub type_  : BufferDescriptorType,
     /// the size of each element of descriptor.
     pub element_size: vk::DeviceSize,
     /// the reference to buffer where the descriptor data stores.
@@ -67,7 +69,7 @@ impl DescriptorBindingInfo for DescriptorBufferBindingInfo {
                 // offset is the offset in bytes from the start of buffer.
                 // Access to buffer memory via this descriptor uses addressing that is relative to this starting offset.
                 offset: self.buffer.offset + i * self.element_size,
-                // range is the size in bytes that is used for this descriptor update, or VK_WHOLE_SIZE to use the range from offset to the end of the buffer.
+                // range is the size in bytes that is used for this descriptor update, or vk::WHOLE_SIZE to use the range from offset to the end of the buffer.
                 range : self.element_size,
             };
             buffer_infos.push(buffer_info);
@@ -88,8 +90,8 @@ impl DescriptorBindingInfo for DescriptorBufferBindingInfo {
         };
 
         let info = DescriptorWriteInfo {
-            _content: Box::new(DescriptorWriteBufferContent(buffer_infos)),
-            set: write_set,
+            content: Box::new(DescriptorWriteBufferContent(buffer_infos)),
+            info: write_set,
         };
 
         Ok(info)
@@ -97,16 +99,14 @@ impl DescriptorBindingInfo for DescriptorBufferBindingInfo {
 }
 
 
-// TODO: Make this struct to pub(crate)
 pub struct DescriptorImageBindingInfo {
 
+    /// the type of descritpor.
+    pub(crate) type_  : ImageDescriptorType,
     /// the binding index used in shader for the descriptor.
     pub(crate) binding: uint32_t,
     /// the element count of each descriptor.
     pub(crate) count  : uint32_t,
-    // TODO: Limit to specific buffer type
-    /// the type of descritpor.
-    pub(crate) type_  : ImageDescriptorType,
     /// sampler information.
     pub(crate) sampler: vk::Sampler,
     /// what the layout is for this descriptor in shader.
@@ -155,8 +155,8 @@ impl DescriptorBindingInfo for DescriptorImageBindingInfo {
         };
 
         let info = DescriptorWriteInfo {
-            _content: Box::new(DescriptorWriteImageContent(image_infos)),
-            set: write_set,
+            content: Box::new(DescriptorWriteImageContent(image_infos)),
+            info: write_set,
         };
 
         Ok(info)
@@ -181,12 +181,28 @@ impl DescriptorSetConfig {
         }
     }
 
-    pub fn add_buffer_binding(&mut self, binding_info: DescriptorBufferBindingInfo, stages: &[ShaderStageFlag]) -> usize {
-        self.add_binding(Box::new(binding_info), stages)
+    pub fn add_buffer_binding(&mut self, bind_target: &impl DescriptorBufferBindableTarget, stages: &[ShaderStageFlag]) -> Result<usize, AllocatorError> {
+
+        let binding_info = bind_target.binding_info()
+            .map_err(|e| AllocatorError::Descriptor(e))?;
+        let descriptor_index = self.add_binding(
+            Box::new(binding_info),
+            stages
+        );
+
+        Ok(descriptor_index)
     }
 
-    pub fn add_image_binding(&mut self, binding_info: DescriptorImageBindingInfo, stages: &[ShaderStageFlag]) -> usize {
-        self.add_binding(Box::new(binding_info), stages)
+    pub fn add_image_binding(&mut self, bind_target: &impl DescriptorImageBindableTarget, stages: &[ShaderStageFlag]) -> Result<usize, AllocatorError> {
+
+        let binding_info = bind_target.binding_info()
+            .map_err(|e| AllocatorError::Descriptor(e))?;
+        let descriptor_index = self.add_binding(
+            Box::new(binding_info),
+            stages
+        );
+
+        Ok(descriptor_index)
     }
 
     fn add_binding(&mut self, binding: Box<DescriptorBindingInfo>, stages: &[ShaderStageFlag]) -> usize {
