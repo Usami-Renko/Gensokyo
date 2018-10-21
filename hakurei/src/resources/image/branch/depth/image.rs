@@ -6,8 +6,8 @@ use resources::image::{ ImageType, ImageViewType, ImageTiling, ImageUsageFlag, I
 use resources::image::{ ImageDescInfo, ImageViewDescInfo, ImageViewItem };
 use resources::image::{ HaImageDescAbs, HaImageViewDescAbs, HaImageVarietyAbs };
 use resources::image::{ DepthImageUsage, ImagePipelineStage, DepthStencilImageFormat };
-use resources::descriptor::DescriptorImageBindingInfo;
-use resources::error::AllocatorError;
+use resources::descriptor::{ DescriptorImageBindingInfo, DescriptorImageBindableTarget };
+use resources::error::DescriptorError;
 
 use pipeline::state::SampleCountType;
 use utility::marker::VulkanEnum;
@@ -93,14 +93,16 @@ impl HaDepthStencilImage {
     pub(crate) fn get_view_handle(&self) -> Option<vk::ImageView> {
         self.item.get_view_handle()
     }
+}
 
-    pub fn binding_info(&self) -> Result<DescriptorImageBindingInfo, AllocatorError> {
+impl DescriptorImageBindableTarget for HaDepthStencilImage {
 
+    fn binding_info(&self) -> Result<DescriptorImageBindingInfo, DescriptorError> {
         // implement binding info for DepthImageUsage::ShaderRead(DepthStencilImageFormat, ImagePipelineStage)
         unimplemented!()
     }
 }
 
 
-impl_image_variety_abs!(HaDepthStencilImage);
+impl_image_branch_abs!(HaDepthStencilImage);
 impl_image_desc_info_abs!(DepthStencilImageInfo);

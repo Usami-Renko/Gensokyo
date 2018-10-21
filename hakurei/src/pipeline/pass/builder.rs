@@ -8,8 +8,9 @@ use core::swapchain::HaSwapchain;
 
 use pipeline::pass::render::HaRenderPass;
 use pipeline::pass::attachment::RenderAttachement;
-use pipeline::pass::subpass::{ RenderSubpass, AttachmentType, SubpassType };
+use pipeline::pass::subpass::{ RenderSubpass, AttachmentType };
 use pipeline::pass::dependency::RenderDependency;
+use pipeline::stages::PipelineType;
 use pipeline::error::{ RenderPassError, PipelineError };
 
 use resources::image::HaDepthStencilImage;
@@ -45,9 +46,9 @@ impl RenderPassBuilder {
     }
 
     /// create a new subpass in the RenderPass, return the index of the subpass.
-    pub fn new_subpass(&mut self, type_: SubpassType) -> uint32_t {
+    pub fn new_subpass(&mut self, type_: PipelineType) -> uint32_t {
         let mut subpass = RenderSubpass::empty();
-        subpass.set_bind_point(type_.bind_point());
+        subpass.set_bind_point(type_.to_bind_point());
 
         self.subpasses.push(subpass);
         (self.subpasses.len() - 1) as uint32_t

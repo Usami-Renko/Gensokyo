@@ -12,19 +12,6 @@ pub enum AttachmentType {
     DepthStencil,
 }
 
-pub enum SubpassType {
-    Graphics,
-    Compute,
-}
-impl SubpassType {
-    pub(super) fn bind_point(&self) -> vk::PipelineBindPoint {
-        match *self {
-            SubpassType::Graphics => vk::PipelineBindPoint::Graphics,
-            SubpassType::Compute  => vk::PipelineBindPoint::Compute,
-        }
-    }
-}
-
 pub(super) struct RenderSubpass {
 
     /// bind_point specifies whether this is a compute or graphics subpass.

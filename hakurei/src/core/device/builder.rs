@@ -24,8 +24,8 @@ use std::ptr;
 
 pub struct LogicalDeviceBuilder<'a, 'b> {
 
-    instance            : &'a HaInstance,
-    physical_device     : &'b HaPhysicalDevice,
+    instance: &'a HaInstance,
+    physical: &'b HaPhysicalDevice,
 
     queue_request: QueueRequestInfo,
     config: DeviceConfig,
@@ -38,11 +38,7 @@ impl<'a, 'b> LogicalDeviceBuilder<'a, 'b> {
         let queue_request = QueueRequestInfo::new(physical, config.queue_request_strategy)?;
 
         let builder = LogicalDeviceBuilder {
-
-            instance,
-            physical_device: physical,
-
-            queue_request,
+            instance, physical, queue_request,
             config: config.clone(),
         };
         Ok(builder)
@@ -53,33 +49,44 @@ impl<'a, 'b> LogicalDeviceBuilder<'a, 'b> {
         let queue_index = self.setup_queue(usage);
 
         match usage {
-            | QueueUsage::Graphics => DeviceQueueIdentifier::Custom(Box::new(DeviceQueueIdentifier::Graphics), queue_index),
-            | QueueUsage::Present  => DeviceQueueIdentifier::Custom(Box::new(DeviceQueueIdentifier::Present),  queue_index),
-            | QueueUsage::Transfer => DeviceQueueIdentifier::Custom(Box::new(DeviceQueueIdentifier::Transfer), queue_index),
+            | QueueUsage::Graphics => DeviceQueueIdentifier::Custom {
+                identifier: Box::new(DeviceQueueIdentifier::Graphics),
+                queue_index,
+            },
+            | QueueUsage::Present  => DeviceQueueIdentifier::Custom {
+                identifier: Box::new(DeviceQueueIdentifier::Present),
+                queue_index,
+            },
+            | QueueUsage::Transfer => DeviceQueueIdentifier::Custom {
+                identifier: Box::new(DeviceQueueIdentifier::Transfer),
+                queue_index,
+            },
         }
     }
 
     // TODO: Currently queue Priority is not configuratable.
     fn setup_queue(&mut self, usage: QueueUsage) -> usize {
 
-        match self.queue_request {
-            | QueueRequestInfo::Queue(_, ref mut logic_queues) => {
+        let queue_index = match self.queue_request {
+            | QueueRequestInfo::Queue { entity: _, ref mut logics } => {
                 let logic_queue = LogicQueueInfo {
                     usage, entity_index: LogicQueueEntityIndex::SingleQueue,
                 };
-                logic_queues.push(logic_queue);
-                logic_queues.len() - 1
+                logics.push(logic_queue);
+                logics.len() - 1
             },
-            | QueueRequestInfo::Queues(ref entity_queues, ref mut logic_queues, ref index_map) => {
-                let entity_queue_index = index_map.get(&usage).unwrap().clone();
-                let entity_queue = &entity_queues[entity_queue_index];
+            | QueueRequestInfo::Queues { ref entities, ref mut logics, ref usage_indices } => {
+                let entity_queue_index = usage_indices.get(&usage).unwrap().clone();
+                let entity_queue = &entities[entity_queue_index];
                 let logic_queue = LogicQueueInfo {
                     usage, entity_index: LogicQueueEntityIndex::MultiQueues(entity_queue.queue_index),
                 };
-                logic_queues.push(logic_queue);
-                logic_queues.len() - 1
+                logics.push(logic_queue);
+                logics.len() - 1
             },
-        }
+        };
+
+        queue_index
     }
 
     pub fn build(&mut self) -> Result<HaLogicalDevice, LogicalDeviceError> {
@@ -105,9 +112,9 @@ impl<'a, 'b> LogicalDeviceBuilder<'a, 'b> {
             }).collect::<Vec<_>>();
 
         // Configurate device features, layers and extensions.
-        let enable_features = self.physical_device.features.get_enable_features();
+        let enable_features = self.physical.features.get_enable_features();
         let enable_layer_names = cast::to_array_ptr(&self.instance.enable_layer_names);
-        let enable_extension_names = cast::to_array_ptr(&self.physical_device.extensions.enables);
+        let enable_extension_names = cast::to_array_ptr(&self.physical.extensions.enables);
 
         // Create the logical device.
         let device_create_info = vk::DeviceCreateInfo {
@@ -125,7 +132,7 @@ impl<'a, 'b> LogicalDeviceBuilder<'a, 'b> {
         };
 
         let handle = unsafe {
-            self.instance.handle.create_device(self.physical_device.handle, &device_create_info, None)
+            self.instance.handle.create_device(self.physical.handle, &device_create_info, None)
                 .or(Err(LogicalDeviceError::DeviceCreationError))?
         };
 
@@ -157,8 +164,8 @@ pub enum QueueRequestStrategy {
 
 enum QueueRequestInfo {
 
-    Queue(EntityQueueInfo, Vec<LogicQueueInfo>),
-    Queues(Vec<EntityQueueInfo>, Vec<LogicQueueInfo>, HashMap<QueueUsage, usize>),
+    Queue { entity: EntityQueueInfo, logics: Vec<LogicQueueInfo> },
+    Queues { entities: Vec<EntityQueueInfo>, logics: Vec<LogicQueueInfo>, usage_indices: HashMap<QueueUsage, usize> },
 }
 
 impl QueueRequestInfo {
@@ -195,7 +202,7 @@ impl QueueRequestInfo {
                         family_index: optimal_index.clone(),
                         queue_index : 0,
                     };
-                    let request_info = QueueRequestInfo::Queue(entity_info, vec![]);
+                    let request_info = QueueRequestInfo::Queue { entity: entity_info, logics: vec![] };
                     Ok(request_info)
                 } else {
 
@@ -234,23 +241,27 @@ impl QueueRequestInfo {
                     queue_info_mapping.insert(QueueUsage::Present,  1);
                     queue_info_mapping.insert(QueueUsage::Transfer, 2);
 
-                    let request_info = QueueRequestInfo::Queues(vec![
-                        EntityQueueInfo {
-                            priority: PrefabQueuePriority::Highest,
-                            family_index: physical.families.family_indices.graphics_index,
-                            queue_index : 0,
-                        },
-                        EntityQueueInfo {
-                            priority: PrefabQueuePriority::Highest,
-                            family_index: physical.families.family_indices.present_index,
-                            queue_index : 1,
-                        },
-                        EntityQueueInfo {
-                            priority: PrefabQueuePriority::Highest,
-                            family_index: physical.families.family_indices.transfer_index,
-                            queue_index : 2,
-                        },
-                    ], vec![], queue_info_mapping);
+                    let request_info = QueueRequestInfo::Queues {
+                        entities: vec![
+                            EntityQueueInfo {
+                                priority: PrefabQueuePriority::Highest,
+                                family_index: physical.families.family_indices.graphics_index,
+                                queue_index : 0,
+                            },
+                            EntityQueueInfo {
+                                priority: PrefabQueuePriority::Highest,
+                                family_index: physical.families.family_indices.present_index,
+                                queue_index : 1,
+                            },
+                            EntityQueueInfo {
+                                priority: PrefabQueuePriority::Highest,
+                                family_index: physical.families.family_indices.transfer_index,
+                                queue_index : 2,
+                            },
+                        ],
+                        logics: vec![],
+                        usage_indices: queue_info_mapping,
+                    };
                     Ok(request_info)
                 } else {
 
@@ -263,15 +274,15 @@ impl QueueRequestInfo {
     fn queue_infos(&self) -> Vec<(uint32_t, Vec<f32>)> {
 
         match self {
-            | QueueRequestInfo::Queue(entity_queue, _) => {
+            | QueueRequestInfo::Queue { entity, .. } => {
                 vec![(
-                    entity_queue.family_index,
-                    vec![entity_queue.priority.value()]
+                    entity.family_index,
+                    vec![entity.priority.value()]
                 )]
             },
-            | QueueRequestInfo::Queues(entity_queues, _, _) => {
+            | QueueRequestInfo::Queues { entities, .. } => {
                 let mut family_indices: HashMap<uint32_t, Vec<f32>> = HashMap::new();
-                for entity_queue in entity_queues.iter() {
+                for entity_queue in entities.iter() {
                     if family_indices.contains_key(&entity_queue.family_index) {
                         let priorities = family_indices.get_mut(&entity_queue.family_index).unwrap();
                         priorities.push(entity_queue.priority.value());
@@ -289,18 +300,20 @@ impl QueueRequestInfo {
     fn collect_queues(&self, device: &ash::Device<V1_0>, config: &DeviceConfig) -> Result<QueueContainer, LogicalDeviceError> {
 
         match self {
-            | QueueRequestInfo::Queue(entity_queue, logic_queues) => {
+            | QueueRequestInfo::Queue { entity, logics } => {
                 let unique_queue = unsafe {
-                    let handle = device.get_device_queue(entity_queue.family_index, entity_queue.queue_index);
-                    HaQueue::new(handle, entity_queue.priority, entity_queue.family_index, entity_queue.queue_index)
+                    let handle = device.get_device_queue(entity.family_index, entity.queue_index);
+                    HaQueue::new(handle, entity.priority, entity.family_index, entity.queue_index)
                 };
                 let unique_queue = Rc::new(unique_queue);
 
-                let queue_container = collect_to_container(device, logic_queues, config, Some(&unique_queue), None)?;
+                let queue_container = collect_to_container(
+                    device, logics, config, Some(&unique_queue), None
+                )?;
                 Ok(queue_container)
             },
-            | QueueRequestInfo::Queues(entity_queues, logic_queues, _) => {
-                let multiqueues = entity_queues.iter()
+            | QueueRequestInfo::Queues { entities, logics, .. } => {
+                let multiqueues = entities.iter()
                     .map(|entity_queue_info| {
                         let handle = unsafe {
                             device.get_device_queue(entity_queue_info.family_index, entity_queue_info.queue_index)
@@ -309,7 +322,7 @@ impl QueueRequestInfo {
                         Rc::new(queue)
                     }).collect::<Vec<_>>();
 
-                let queue_container = collect_to_container(device, logic_queues, config, None, Some(&multiqueues))?;
+                let queue_container = collect_to_container(device, logics, config, None, Some(&multiqueues))?;
                 Ok(queue_container)
             },
         }
@@ -381,32 +394,32 @@ fn collect_to_container(device: &ash::Device<V1_0>, logic_queues: &Vec<LogicQueu
 fn print_queue_infos(queue_request: &QueueRequestInfo) {
 
     match queue_request {
-        | QueueRequestInfo::Queue(entity_queue, logic_queues) => {
+        | QueueRequestInfo::Queue { entity, logics } => {
             println!("[Info] Generate Queue Family: Single Queue");
             println!("\tfamily index | queue count | priorities");
-            println!("\t{:12} | {:11} | {:?}", entity_queue.family_index, logic_queues.len(), entity_queue.priority);
+            println!("\t{:12} | {:11} | {:?}", entity.family_index, logics.len(), entity.priority);
 
-            println!("[Info] Generate Queue: {}", logic_queues.len());
+            println!("[Info] Generate Queue: {}", logics.len());
             println!("\tpriority | family index | queue index | usage");
-            for logic_queue_info in logic_queues.iter() {
-                println!("\t{:8?} | {:12} | {:11} | {:?}", entity_queue.priority, entity_queue.family_index, 0, logic_queue_info.usage);
+            for logic_queue_info in logics.iter() {
+                println!("\t{:8?} | {:12} | {:11} | {:?}", entity.priority, entity.family_index, 0, logic_queue_info.usage);
             }
         },
-        | QueueRequestInfo::Queues(entity_queues, logic_queues, _) => {
+        | QueueRequestInfo::Queues { entities, logics, .. } => {
 
             println!("[Info] Generate Queue Family: Multi Queues");
             println!("\tfamily index | queue count | priorities");
-            for entity_queue in entity_queues.iter() {
-                println!("\t{:12} | {:11} | {:?}", entity_queue.family_index, logic_queues.len(), entity_queue.priority);
+            for entity_queue in entities.iter() {
+                println!("\t{:12} | {:11} | {:?}", entity_queue.family_index, logics.len(), entity_queue.priority);
             }
 
-            println!("[Info] Generate Queue: {}", logic_queues.len());
+            println!("[Info] Generate Queue: {}", logics.len());
             println!("\tpriority | family index | queue index | usage");
-            for logic_queue_info in logic_queues.iter() {
+            for logic_queue_info in logics.iter() {
                 match logic_queue_info.entity_index {
                     | LogicQueueEntityIndex::SingleQueue => panic!(),
                     | LogicQueueEntityIndex::MultiQueues(queue_index) => {
-                        let entity_queue = &entity_queues[queue_index as usize];
+                        let entity_queue = &entities[queue_index as usize];
                         println!("\t{:8?} | {:12} | {:11} | {:?}", entity_queue.priority, entity_queue.family_index, queue_index, logic_queue_info.usage);
                     }
                 }

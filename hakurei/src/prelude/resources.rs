@@ -6,22 +6,22 @@ pub use resources::allocator::{
 };
 
 pub use resources::buffer::{
-    BufferCreateFlag, HostBufferUsage, CachedBufferUsage, DeviceBufferUsage, StagingBufferUsage, // flag
+    BufferCreateFlag, // flag
     BufferItem, BufferSubItem, // item
-    HostBufferConfig, CachedBufferConfig, DeviceBufferConfig, StagingBufferConfig, // config
-    BufferConfigModifiable, // traits
+    HaVertexBlock, VertexBlockInfo, // block
+    HaIndexBlock, IndexBlockInfo, // block
+    HaUniformBlock, UniformBlockInfo, // block
 };
 
 pub use resources::command::{
     HaCommandBuffer, CommandBufferUsage,       // buffer
     HaCommandPool, CommandPoolFlag,            // pool
     HaCommandRecorder, CommandBufferUsageFlag, // record
-    CmdDescriptorBindingInfos, CmdVertexBindingInfos, CmdIndexBindingInfo, CmdViewportInfo, CmdScissorInfo, // infos
+    CmdViewportInfo, CmdScissorInfo, // infos
 };
 
 pub use resources::descriptor::{
     DescriptorSetConfig, DescriptorItem, DescriptorSetItem,  // item
-    DescriptorBufferBindingInfo, DescriptorImageBindingInfo, // item
     DescriptorPoolFlag, // pool
     HaDescriptorSetLayout, DescriptorSetLayoutFlag, BufferDescriptorType, ImageDescriptorType, // layout
 };
@@ -32,7 +32,7 @@ pub use resources::framebuffer::{};
 pub use resources::image::{
     ImagePipelineStage, DepthStencilImageFormat, // enums
     ImageTiling, Filter, MipmapMode, CompareOp, BorderColor, // enums
-    SampleImageInfo, HaSampleImage, DepthStencilImageInfo, HaDepthStencilImage, // variety
+    SampleImageInfo, HaSampleImage, DepthStencilImageInfo, HaDepthStencilImage, // branch
 };
 
 // currently no memory API is public,

@@ -79,8 +79,7 @@ impl HaDescriptorPool {
         }
     }
 
-    pub fn allocator(&self, device: &HaDevice, layouts: Vec<HaDescriptorSetLayout>)
-        -> Result<Vec<HaDescriptorSet>, DescriptorError> {
+    pub fn allocate(&self, device: &HaDevice, layouts: Vec<HaDescriptorSetLayout>) -> Result<Vec<HaDescriptorSet>, DescriptorError> {
         let handles = layouts.handles();
 
         let allocate_info = vk::DescriptorSetAllocateInfo {
@@ -132,7 +131,7 @@ impl VulkanFlags for [DescriptorPoolFlag] {
 
     fn flags(&self) -> Self::FlagType {
         self.iter().fold(vk::DescriptorPoolCreateFlags::empty(), |acc, flag| {
-            match *flag {
+            match flag {
                 | DescriptorPoolFlag::FreeDescriptorSetBit => acc | vk::DESCRIPTOR_POOL_CREATE_FREE_DESCRIPTOR_SET_BIT,
             }
         })

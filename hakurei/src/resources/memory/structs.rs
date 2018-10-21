@@ -4,10 +4,10 @@ use ash::vk;
 use core::device::HaDevice;
 use core::physical::{ HaPhyDevice, MemorySelector };
 
-use resources::buffer::{HaBuffer, BufferSubItem, BufferGeneratable};
+use resources::buffer::{ HaBuffer, BufferSubItem };
 use resources::memory::{ HaMemoryAbstract, MemoryDataUploadable, MemoryPropertyFlag, MemPtr };
 use resources::memory::HaStagingMemory;
-use resources::allocator::BufferAllocateInfos;
+use resources::allocator::{ BufferAllocateInfos, BufferStorageType };
 use resources::repository::HaBufferRepository;
 use resources::error::{ MemoryError, AllocatorError };
 
@@ -101,15 +101,15 @@ impl UploadStagingResource {
 
     pub fn new(physical: &HaPhyDevice, device: &HaDevice, allocate_infos: &Option<BufferAllocateInfos>) -> Result<UploadStagingResource, MemoryError> {
 
-        if let Some(infos) = allocate_infos {
+        if let Some(allo_infos) = allocate_infos {
 
             let mut memory_selector = MemorySelector::init(physical);
 
             // generate buffers
             let mut buffers = vec![];
-            for config in infos.configs.iter() {
-                let staging_config = config.to_staging_config().unwrap();
-                let buffer = staging_config.generate(device, None)
+            for config in allo_infos.infos.iter() {
+                let staging_config = config.to_staging_info().unwrap();
+                let buffer = staging_config.build(device, None, BufferStorageType::Staging)
                     .or(Err(MemoryError::AllocateMemoryError))?;
 
                 memory_selector.try(buffer.requirement.memory_type_bits, HaMemoryType::StagingMemory.property_flags())?;
@@ -121,14 +121,14 @@ impl UploadStagingResource {
             let mem_type = physical.memory.memory_type(memory_index);
 
             let mut src_memory = HaStagingMemory::allocate(
-                device, infos.spaces.iter().sum(), memory_index, Some(mem_type)
+                device, allo_infos.spaces.iter().sum(), memory_index, Some(mem_type)
             )?;
 
             // bind buffers to memory
             let mut offset = 0;
             for (i, buffer) in buffers.iter().enumerate() {
                 src_memory.bind_to_buffer(device, &buffer, offset)?;
-                offset += infos.spaces[i];
+                offset += allo_infos.spaces[i];
             }
 
             src_memory.prepare_data_transfer(physical, device, &None)?;
@@ -136,7 +136,7 @@ impl UploadStagingResource {
             let resource = UploadStagingResource {
                 buffers,
                 src_memory, src_items: vec![], dst_items: vec![],
-                src_offsets: spaces_to_offsets(&infos.spaces),
+                src_offsets: spaces_to_offsets(&allo_infos.spaces),
             };
 
             Ok(resource)

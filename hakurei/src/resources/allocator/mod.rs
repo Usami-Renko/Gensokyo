@@ -4,7 +4,7 @@ pub use self::image::{ HaImageAllocator, ImageStorageType };
 
 pub use self::descriptor::HaDescriptorAllocator;
 
-pub(crate) use self::buffer::{ BufMemAlloAbstract, BufferAllocateInfos, BufferConfigsAllocatable };
+pub(crate) use self::buffer::{ BufMemAlloAbstract, BufferAllocateInfos, BufferInfosAllocatable };
 pub(crate) use self::buffer::{
     HostBufMemAllocator,
     CachedBufMemAllocator,

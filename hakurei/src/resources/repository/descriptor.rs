@@ -53,7 +53,7 @@ impl HaDescriptorRepository {
         }
 
         let write_sets = write_infos.into_iter()
-            .map(|info| info.set).collect::<Vec<_>>();
+            .map(|info| info.info).collect::<Vec<_>>();
 
         unsafe {
             self.device.as_ref().unwrap().handle
@@ -72,7 +72,7 @@ impl HaDescriptorRepository {
         let handles = sets.iter()
             .map(|set_item| self.sets[set_item.set_index].handle).collect();
 
-        CmdDescriptorBindingInfos { handles, }
+        CmdDescriptorBindingInfos { handles }
     }
 
     pub fn cleanup(&mut self) {

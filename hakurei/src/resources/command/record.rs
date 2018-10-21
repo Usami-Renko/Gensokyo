@@ -6,9 +6,9 @@ use ash::version::DeviceV1_0;
 use core::device::HaDevice;
 
 use resources::command::buffer::HaCommandBuffer;
-use resources::command::infos::CmdDescriptorBindingInfos;
-use resources::command::{ CmdVertexBindingInfos, CmdIndexBindingInfo };
+use resources::command::CmdDescriptorBindingInfos;
 use resources::command::{ CmdViewportInfo, CmdScissorInfo, CmdDepthBiasInfo, CmdDepthBoundInfo };
+use resources::buffer::BufferBlockEntity;
 use resources::error::CommandError;
 
 use pipeline::graphics::HaGraphicsPipeline;
@@ -194,20 +194,33 @@ impl<'buffer> HaCommandRecorder<'buffer> {
         self
     }
 
-    pub fn bind_vertex_buffers(&self, first_binding: uint32_t, binding_infos: &CmdVertexBindingInfos) -> &HaCommandRecorder<'buffer> {
+    pub fn bind_vertex_buffers(&self, first_binding: uint32_t, blocks: &[&impl BufferBlockEntity]) -> &HaCommandRecorder<'buffer> {
+
+        let mut handles = vec![];
+        let mut offsets  = vec![];
+        for &block in blocks.iter() {
+            let item = block.get_buffer_item();
+            handles.push(item.handle);
+            offsets.push(item.offset);
+        }
+
         unsafe {
-            self.device.handle.cmd_bind_vertex_buffers(self.buffer.handle, first_binding, &binding_infos.handles, &binding_infos.offsets)
+            self.device.handle.cmd_bind_vertex_buffers(self.buffer.handle, first_binding, &handles, &offsets)
         };
         self
     }
-    pub fn bind_index_buffers(&self, index_info: &CmdIndexBindingInfo) -> &HaCommandRecorder<'buffer> {
+
+    pub fn bind_index_buffer(&self, index_info: &impl BufferBlockEntity) -> &HaCommandRecorder<'buffer> {
+
+        let item = index_info.get_buffer_item();
         unsafe {
             // TODO: Add configuration for IndexType.
-            self.device.handle.cmd_bind_index_buffer(self.buffer.handle, index_info.handle, index_info.offset, vk::IndexType::Uint32)
+            self.device.handle.cmd_bind_index_buffer(self.buffer.handle, item.handle, item.offset, vk::IndexType::Uint32)
         };
         self
     }
-    pub fn bind_descriptor_sets(&self, pipeline: &HaGraphicsPipeline, first_set: uint32_t, binding_infos: &CmdDescriptorBindingInfos) -> &HaCommandRecorder<'buffer> {
+
+    pub fn bind_descriptor_sets(&self, pipeline: &HaGraphicsPipeline, first_set: uint32_t, binding_infos: CmdDescriptorBindingInfos) -> &HaCommandRecorder<'buffer> {
         unsafe {
             // TODO: Currently dynamic_offsets field is not configuration.
             self.device.handle.cmd_bind_descriptor_sets(self.buffer.handle, pipeline.bind_point, pipeline.layout.handle, first_set, &binding_infos.handles, &[])
@@ -221,6 +234,7 @@ impl<'buffer> HaCommandRecorder<'buffer> {
         };
         self
     }
+
     pub(crate) fn copy_buffer_to_image(&self, src_handle: vk::Buffer, dst_handle: vk::Image, dst_layout: vk::ImageLayout, regions: &[vk::BufferImageCopy])
         -> &HaCommandRecorder<'buffer> {
         unsafe {
@@ -235,6 +249,7 @@ impl<'buffer> HaCommandRecorder<'buffer> {
         };
         self
     }
+
     pub fn draw_indexed(&self, index_count: uint32_t, instance_count: uint32_t, first_index: uint32_t, vertex_offset: int32_t, first_instance: uint32_t) -> &HaCommandRecorder<'buffer> {
         unsafe {
             self.device.handle

@@ -44,6 +44,7 @@ impl HaDescriptorAllocator {
                 binding_index: i
             });
         }
+
         let set = DescriptorSetItem {
             set_index,
         };
@@ -75,7 +76,7 @@ impl HaDescriptorAllocator {
         }
 
         // descriptor sets
-        let sets = pool.allocator(&self.device, layouts)?;
+        let sets = pool.allocate(&self.device, layouts)?;
         let configs = self.set_configs.drain(..).collect();
 
         let repository = HaDescriptorRepository::store(&self.device, pool, sets, configs);

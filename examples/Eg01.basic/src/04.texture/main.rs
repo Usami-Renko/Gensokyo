@@ -34,7 +34,7 @@ struct TextureMappingProcedure {
 
     vertex_data   : Vec<Vertex>,
     vertex_storage: HaBufferRepository,
-    vertex_item   : BufferSubItem,
+    vertex_buffer : HaVertexBlock,
 
     descriptor_repository: HaDescriptorRepository,
     sampler_set          : DescriptorSetItem,
@@ -62,7 +62,7 @@ impl TextureMappingProcedure {
                 Vertex { pos: [-0.75, -0.75], tex_coord: [1.0, 0.0], },
             ],
             vertex_storage: HaBufferRepository::empty(),
-            vertex_item: BufferSubItem::unset(),
+            vertex_buffer : HaVertexBlock::uninitialize(),
 
             descriptor_repository: HaDescriptorRepository::empty(),
             sampler_set       : DescriptorSetItem::unset(),
@@ -84,16 +84,15 @@ impl ProgramProc for TextureMappingProcedure {
     fn assets(&mut self, kit: AllocatorKit) -> Result<(), ProcedureError> {
 
         // vertex buffer
-        let mut vertex_allocator = kit.buffer(BufferStorageType::Cached);
+        let mut buffer_allocator = kit.buffer(BufferStorageType::Cached);
 
-        let mut vertex_buffer_config = CachedBufferConfig::new(CachedBufferUsage::VertexBuffer);
-        vertex_buffer_config.add_item(data_size!(self.vertex_data, Vertex));
+        let vertex_info = VertexBlockInfo::new(data_size!(self.vertex_data, Vertex));
 
-        self.vertex_item = vertex_allocator.attach_cached_buffer(vertex_buffer_config)?.pop().unwrap();
-        self.vertex_storage = vertex_allocator.allocate()?;
+        self.vertex_buffer = buffer_allocator.append_vertex(vertex_info)?;
+        self.vertex_storage = buffer_allocator.allocate()?;
 
         self.vertex_storage.data_uploader()?
-            .upload(&self.vertex_item, &self.vertex_data)?
+            .upload(&self.vertex_buffer, &self.vertex_data)?
             .done()?;
 
         // image
@@ -106,7 +105,7 @@ impl ProgramProc for TextureMappingProcedure {
 
         // descriptor
         let mut descriptor_set_config = DescriptorSetConfig::init(&[]);
-        let _ = descriptor_set_config.add_image_binding(self.sample_image.binding_info()?, &[
+        let _ = descriptor_set_config.add_image_binding(&self.sample_image, &[
             ShaderStageFlag::FragmentStage,
         ]);
 
@@ -141,7 +140,7 @@ impl ProgramProc for TextureMappingProcedure {
 
         // pipeline
         let mut render_pass_builder = kit.pass_builder();
-        let first_subpass = render_pass_builder.new_subpass(SubpassType::Graphics);
+        let first_subpass = render_pass_builder.new_subpass(PipelineType::Graphics);
 
         let color_attachment = RenderAttachement::setup(RenderAttachementPrefab::BackColorAttachment, swapchain.format);
         let _attachment_index = render_pass_builder.add_attachemnt(color_attachment, first_subpass, AttachmentType::Color);
@@ -162,7 +161,7 @@ impl ProgramProc for TextureMappingProcedure {
             .add_descriptor_set(self.descriptor_repository.set_layout_at(&self.sampler_set))
             .finish_config();
 
-        let mut pipeline_builder = kit.graphics_pipeline_builder()?;
+        let mut pipeline_builder = kit.pipeline_builder(PipelineType::Graphics)?;
         pipeline_builder.add_config(pipeline_config);
 
         let mut graphics_pipelines = pipeline_builder.build()?;
@@ -182,27 +181,24 @@ impl ProgramProc for TextureMappingProcedure {
 
     fn commands(&mut self, kit: CommandKit) -> Result<(), ProcedureError> {
 
-        // command buffer
-        let command_pool = kit.pool(DeviceQueueIdentifier::Graphics)?;
+        self.command_pool = kit.pool(DeviceQueueIdentifier::Graphics)?;
 
         let command_buffer_count = self.graphics_pipeline.frame_count();
-        let command_buffers = command_pool
+        self.command_buffers = self.command_pool
             .allocate(CommandBufferUsage::UnitaryCommand, command_buffer_count)?;
 
-        for (frame_index, command_buffer) in command_buffers.iter().enumerate() {
+        for (frame_index, command_buffer) in self.command_buffers.iter().enumerate() {
             let recorder = command_buffer.setup_record();
 
             recorder.begin_record(&[CommandBufferUsageFlag::SimultaneousUseBit])?
                 .begin_render_pass(&self.graphics_pipeline, frame_index)
                 .bind_pipeline(&self.graphics_pipeline)
-                .bind_vertex_buffers(0, &self.vertex_storage.vertex_binding_infos(&[&self.vertex_item]))
-                .bind_descriptor_sets(&self.graphics_pipeline, 0, &self.descriptor_repository.descriptor_binding_infos(&[&self.sampler_set]))
+                .bind_vertex_buffers(0, &[&self.vertex_buffer])
+                .bind_descriptor_sets(&self.graphics_pipeline, 0, self.descriptor_repository.descriptor_binding_infos(&[&self.sampler_set]))
                 .draw(self.vertex_data.len() as uint32_t, 1, 0, 0)
                 .end_render_pass()
                 .end_record()?;
         }
-        self.command_pool    = command_pool;
-        self.command_buffers = command_buffers;
 
         Ok(())
     }

@@ -45,8 +45,8 @@ struct DrawIndexProcedure {
     index_data    : Vec<uint32_t>,
 
     buffer_storage: HaBufferRepository,
-    vertex_item   : BufferSubItem,
-    index_item    : BufferSubItem,
+    vertex_buffer : HaVertexBlock,
+    index_buffer  : HaIndexBlock,
 
     graphics_pipeline: HaGraphicsPipeline,
 
@@ -64,8 +64,8 @@ impl DrawIndexProcedure {
             index_data    : INDEX_DATA.to_vec(),
 
             buffer_storage: HaBufferRepository::empty(),
-            vertex_item   : BufferSubItem::unset(),
-            index_item    : BufferSubItem::unset(),
+            vertex_buffer : HaVertexBlock::uninitialize(),
+            index_buffer  : HaIndexBlock::uninitialize(),
 
             graphics_pipeline: HaGraphicsPipeline::uninitialize(),
 
@@ -84,19 +84,17 @@ impl ProgramProc for DrawIndexProcedure {
         // vertex & index buffer
         let mut buffer_allocator = kit.buffer(BufferStorageType::Cached);
 
-        let mut vertex_buffer_config = CachedBufferConfig::new(CachedBufferUsage::VertexBuffer);
-        vertex_buffer_config.add_item(data_size!(self.vertex_data, Vertex));
+        let vertex_info = VertexBlockInfo::new(data_size!(self.vertex_data, Vertex));
+        self.vertex_buffer = buffer_allocator.append_vertex(vertex_info)?;
 
-        let mut index_buffer_config  = CachedBufferConfig::new(CachedBufferUsage::IndexBuffer);
-        index_buffer_config.add_item(data_size!(self.index_data, uint32_t));
+        let index_info = IndexBlockInfo::new(data_size!(self.index_data, uint32_t));
+        self.index_buffer = buffer_allocator.append_index(index_info)?;
 
-        self.vertex_item = buffer_allocator.attach_cached_buffer(vertex_buffer_config)?.pop().unwrap();
-        self.index_item  = buffer_allocator.attach_cached_buffer(index_buffer_config)?.pop().unwrap();
         self.buffer_storage = buffer_allocator.allocate()?;
 
         self.buffer_storage.data_uploader()?
-            .upload(&self.vertex_item, &self.vertex_data)?
-            .upload(&self.index_item, &self.index_data)?
+            .upload(&self.vertex_buffer, &self.vertex_data)?
+            .upload(&self.index_buffer, &self.index_data)?
             .done()?;
 
         Ok(())
@@ -122,7 +120,7 @@ impl ProgramProc for DrawIndexProcedure {
 
         // pipeline
         let mut render_pass_builder = kit.pass_builder();
-        let first_subpass = render_pass_builder.new_subpass(SubpassType::Graphics);
+        let first_subpass = render_pass_builder.new_subpass(PipelineType::Graphics);
 
         let color_attachment = RenderAttachement::setup(RenderAttachementPrefab::BackColorAttachment, swapchain.format);
         let _attachment_index = render_pass_builder.add_attachemnt(color_attachment, first_subpass, AttachmentType::Color);
@@ -141,7 +139,7 @@ impl ProgramProc for DrawIndexProcedure {
             .setup_viewport(ViewportStateType::Fixed { state: viewport })
             .finish_config();
 
-            let mut pipeline_builder = kit.graphics_pipeline_builder()?;
+            let mut pipeline_builder = kit.pipeline_builder(PipelineType::Graphics)?;
         pipeline_builder.add_config(pipeline_config);
 
         let mut graphics_pipelines = pipeline_builder.build()?;
@@ -162,27 +160,25 @@ impl ProgramProc for DrawIndexProcedure {
     }
 
     fn commands(&mut self, kit: CommandKit) -> Result<(), ProcedureError> {
-        // command buffer
-        let command_pool = kit.pool(DeviceQueueIdentifier::Graphics)?;
+
+        self.command_pool = kit.pool(DeviceQueueIdentifier::Graphics)?;
 
         let command_buffer_count = self.graphics_pipeline.frame_count();
-        let command_buffers = command_pool
+        self.command_buffers = self.command_pool
             .allocate(CommandBufferUsage::UnitaryCommand, command_buffer_count)?;
 
-        for (frame_index, command_buffer) in command_buffers.iter().enumerate() {
+        for (frame_index, command_buffer) in self.command_buffers.iter().enumerate() {
             let recorder = command_buffer.setup_record();
 
             recorder.begin_record(&[CommandBufferUsageFlag::SimultaneousUseBit])?
                 .begin_render_pass(&self.graphics_pipeline, frame_index)
                 .bind_pipeline(&self.graphics_pipeline)
-                .bind_vertex_buffers(0, &self.buffer_storage.vertex_binding_infos(&[&self.vertex_item]))
-                .bind_index_buffers(&self.buffer_storage.index_binding_info(&self.index_item))
+                .bind_vertex_buffers(0, &[&self.vertex_buffer])
+                .bind_index_buffer(&self.index_buffer)
                 .draw_indexed(self.index_data.len() as uint32_t, 1, 0, 0, 0)
                 .end_render_pass()
                 .end_record()?;
         }
-        self.command_pool    = command_pool;
-        self.command_buffers = command_buffers;
 
         Ok(())
     }

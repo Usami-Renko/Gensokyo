@@ -201,7 +201,7 @@ impl GraphicsPipelineBuilder {
 
         let mut pipelines = vec![];
         for (i, config) in self.configs.iter_mut().enumerate() {
-            let render_pass = config.render_pass.take().unwrap(); // transfer ownership of HaRenderPass.
+            let render_pass = config.render_pass.take().unwrap(); // take ownership of HaRenderPass.
             let pipeline = HaGraphicsPipeline::new(&self.device, handles[i], layouts[i], render_pass);
             pipelines.push(pipeline);
 

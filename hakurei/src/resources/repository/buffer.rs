@@ -7,7 +7,6 @@ use core::physical::HaPhyDevice;
 use resources::allocator::BufferAllocateInfos;
 use resources::buffer::{ HaBuffer, BufferSubItem };
 use resources::command::CommandBufferUsageFlag;
-use resources::command::{ CmdVertexBindingInfos, CmdIndexBindingInfo };
 use resources::memory::{ HaMemoryAbstract, HaMemoryType };
 use resources::repository::{ BufferDataUploader, BufferDataUpdater };
 use resources::error::{ AllocatorError, MemoryError };
@@ -84,29 +83,6 @@ impl HaBufferRepository {
             Ok(updater)
         } else {
             Err(AllocatorError::Memory(MemoryError::MemoryNotYetAllocateError))
-        }
-    }
-
-    pub fn vertex_binding_infos(&self, items: &[&BufferSubItem]) -> CmdVertexBindingInfos {
-
-        let mut handles = vec![];
-        let mut offsets  = vec![];
-        for item in items.iter() {
-            handles.push(item.handle);
-            offsets.push(item.offset);
-        }
-
-        CmdVertexBindingInfos {
-            handles,
-            offsets,
-        }
-    }
-
-    pub fn index_binding_info(&self, item: &BufferSubItem) -> CmdIndexBindingInfo {
-
-        CmdIndexBindingInfo {
-            handle: item.handle,
-            offset: item.offset,
         }
     }
 

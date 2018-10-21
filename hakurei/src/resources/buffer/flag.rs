@@ -11,7 +11,8 @@ pub enum BufferCreateFlag {
     ///
     /// Buffers created with this flag must also be created with the VK_BUFFER_CREATE_SPARSE_BINDING_BIT flag.
     SparseResidency,
-    /// SparseAliased specifies that the buffer will be backed using sparse memory binding with memory ranges that might also simultaneously be backing another buffer (or another portion of the same buffer).
+    /// SparseAliased specifies that the buffer will be backed using sparse memory binding with memory ranges
+    /// that might also simultaneously be backing another buffer (or another portion of the same buffer).
     ///
     /// Buffers created with this flag must also be created with the VK_BUFFER_CREATE_SPARSE_BINDING_BIT flag.
     SparseAliased,
@@ -76,84 +77,6 @@ impl VulkanEnum for BufferUsageFlag {
             | BufferUsageFlag::IndexBufferBit        => vk::BUFFER_USAGE_INDEX_BUFFER_BIT,
             | BufferUsageFlag::VertexBufferBit       => vk::BUFFER_USAGE_VERTEX_BUFFER_BIT,
             | BufferUsageFlag::IndirectBufferBit     => vk::BUFFER_USAGE_INDIRECT_BUFFER_BIT,
-        }
-    }
-}
-
-
-// TODO: Currently not all usages is cover as shown in BufferUsageFlag.
-
-#[derive(Debug, Clone, Copy, Eq, PartialEq)]
-pub enum HostBufferUsage {
-    VertexBuffer,
-    IndexBuffer,
-    UniformBuffer,
-}
-
-impl VulkanEnum for HostBufferUsage {
-    type EnumType = vk::BufferUsageFlags;
-
-    fn value(&self) -> Self::EnumType {
-        match self {
-            | HostBufferUsage::VertexBuffer  => vk::BUFFER_USAGE_VERTEX_BUFFER_BIT,
-            | HostBufferUsage::IndexBuffer   => vk::BUFFER_USAGE_INDEX_BUFFER_BIT,
-            | HostBufferUsage::UniformBuffer => vk::BUFFER_USAGE_UNIFORM_BUFFER_BIT,
-        }
-    }
-}
-
-
-#[derive(Debug, Clone, Copy, Eq, PartialEq)]
-pub enum CachedBufferUsage {
-    VertexBuffer,
-    IndexBuffer,
-}
-
-impl VulkanEnum for CachedBufferUsage {
-    type EnumType = vk::BufferUsageFlags;
-
-    fn value(&self) -> Self::EnumType {
-        match self {
-            | CachedBufferUsage::VertexBuffer  => vk::BUFFER_USAGE_VERTEX_BUFFER_BIT,
-            | CachedBufferUsage::IndexBuffer   => vk::BUFFER_USAGE_INDEX_BUFFER_BIT,
-        }
-    }
-}
-
-#[derive(Debug, Clone, Copy, Eq, PartialEq)]
-pub enum DeviceBufferUsage {
-    VertexBuffer,
-    IndexBuffer,
-}
-
-impl VulkanEnum for DeviceBufferUsage {
-    type EnumType = vk::BufferUsageFlags;
-
-    fn value(&self) -> Self::EnumType {
-        match self {
-            | DeviceBufferUsage::VertexBuffer => vk::BUFFER_USAGE_VERTEX_BUFFER_BIT,
-            | DeviceBufferUsage::IndexBuffer  => vk::BUFFER_USAGE_INDEX_BUFFER_BIT,
-        }
-    }
-}
-
-#[derive(Debug, Clone, Copy, Eq, PartialEq)]
-pub enum StagingBufferUsage {
-    VertexCopySrc,
-    IndexCopySrc,
-    UniformCopySrc,
-    ImageCopySrc,
-}
-
-impl VulkanEnum for StagingBufferUsage {
-    type EnumType = vk::BufferUsageFlags;
-
-    fn value(&self) -> Self::EnumType {
-        match self {
-            | StagingBufferUsage::VertexCopySrc  => vk::BUFFER_USAGE_VERTEX_BUFFER_BIT,
-            | StagingBufferUsage::IndexCopySrc   => vk::BUFFER_USAGE_INDEX_BUFFER_BIT,
-            | StagingBufferUsage::UniformCopySrc => vk::BUFFER_USAGE_UNIFORM_BUFFER_BIT,
-            | StagingBufferUsage::ImageCopySrc   => vk::BufferUsageFlags::empty(),
         }
     }
 }

@@ -22,15 +22,16 @@ pub struct DepthProcedure {
     index_data : Vec<uint32_t>,
 
     buffer_storage: HaBufferRepository,
-    vertex_item   : BufferSubItem,
-    index_item    : BufferSubItem,
+    vertex_buffer : HaVertexBlock,
+    index_buffer  : HaIndexBlock,
 
     graphics_pipeline: HaGraphicsPipeline,
 
     ubo_data   : Vec<UboObject>,
-    ubo_buffer : HaBufferRepository,
-    ubo_item   : BufferSubItem,
-    ubo_storage: HaDescriptorRepository,
+    ubo_storage: HaBufferRepository,
+    ubo_buffer : HaUniformBlock,
+
+    desc_storage: HaDescriptorRepository,
     ubo_set    : DescriptorSetItem,
 
     depth_attachment: HaDepthStencilImage,
@@ -53,12 +54,13 @@ impl DepthProcedure {
             .for_flight_camera();
 
         DepthProcedure {
+
             vertex_data: VERTEX_DATA.to_vec(),
             index_data : INDEX_DATA.to_vec(),
 
             buffer_storage: HaBufferRepository::empty(),
-            vertex_item   : BufferSubItem::unset(),
-            index_item    : BufferSubItem::unset(),
+            vertex_buffer : HaVertexBlock::uninitialize(),
+            index_buffer  : HaIndexBlock::uninitialize(),
 
             graphics_pipeline: HaGraphicsPipeline::uninitialize(),
 
@@ -69,9 +71,10 @@ impl DepthProcedure {
                     model     : Matrix4::identity(),
                 },
             ],
-            ubo_buffer : HaBufferRepository::empty(),
-            ubo_item   : BufferSubItem::unset(),
-            ubo_storage: HaDescriptorRepository::empty(),
+            ubo_storage: HaBufferRepository::empty(),
+            ubo_buffer: HaUniformBlock::uninitialize(),
+
+            desc_storage: HaDescriptorRepository::empty(),
             ubo_set: DescriptorSetItem::unset(),
 
             depth_attachment: HaDepthStencilImage::uninitialize(),
@@ -90,8 +93,8 @@ impl DepthProcedure {
 
         self.ubo_data[0].view  = self.camera.view_matrix();
 
-        self.ubo_buffer.data_updater()?
-            .update(&self.ubo_item, &self.ubo_data)?
+        self.ubo_storage.data_updater()?
+            .update(&self.ubo_buffer, &self.ubo_data)?
             .done()?;
 
         Ok(())
@@ -105,53 +108,42 @@ impl ProgramProc for DepthProcedure {
         // vertex, index buffer
         let mut device_buffer_allocator = kit.buffer(BufferStorageType::Device);
 
-        let mut vertex_buffer_config = DeviceBufferConfig::new(DeviceBufferUsage::VertexBuffer);
-        vertex_buffer_config.add_item(data_size!(self.vertex_data, Vertex));
+        let vertex_info = VertexBlockInfo::new(data_size!(self.vertex_data, Vertex));
+        self.vertex_buffer = device_buffer_allocator.append_vertex(vertex_info)?;
 
-        let mut index_buffer_config = DeviceBufferConfig::new(DeviceBufferUsage::IndexBuffer);
-        index_buffer_config.add_item(data_size!(self.index_data, uint32_t));
-
-        self.vertex_item = device_buffer_allocator.attach_device_buffer(vertex_buffer_config)?.pop().unwrap();
-        self.index_item  = device_buffer_allocator.attach_device_buffer(index_buffer_config)?.pop().unwrap();
+        let index_info = IndexBlockInfo::new(data_size!(self.index_data, uint32_t));
+        self.index_buffer = device_buffer_allocator.append_index(index_info)?;
 
         self.buffer_storage = device_buffer_allocator.allocate()?;
         self.buffer_storage.data_uploader()?
-            .upload(&self.vertex_item, &self.vertex_data)?
-            .upload(&self.index_item, &self.index_data)?
+            .upload(&self.vertex_buffer, &self.vertex_data)?
+            .upload(&self.index_buffer, &self.index_data)?
             .done()?;
 
         // uniform buffer
         let mut host_buffer_allocator = kit.buffer(BufferStorageType::Host);
 
-        let mut uniform_buffer_config = HostBufferConfig::new(HostBufferUsage::UniformBuffer);
-        uniform_buffer_config.add_item(data_size!(self.ubo_data, UboObject));
+        let uniform_info = UniformBlockInfo::new(0, 1, data_size!(self.ubo_data, UboObject));
+        self.ubo_buffer = host_buffer_allocator.append_uniform(uniform_info)?;
 
-        self.ubo_item = host_buffer_allocator.attach_host_buffer(uniform_buffer_config)?.pop().unwrap();
-        self.ubo_buffer = host_buffer_allocator.allocate()?;
+        self.ubo_storage = host_buffer_allocator.allocate()?;
 
-        self.ubo_buffer.data_uploader()?
-            .upload(&self.ubo_item, &self.ubo_data)?
+        self.ubo_storage.data_uploader()?
+            .upload(&self.ubo_buffer, &self.ubo_data)?
             .done()?;
 
         // descriptor
-        let ubo_info = DescriptorBufferBindingInfo {
-            binding: 0,
-            type_: BufferDescriptorType::UniformBuffer,
-            count: 1,
-            element_size: data_size!(self.ubo_data, UboObject),
-            buffer: self.ubo_item.clone(),
-        };
         let mut descriptor_set_config = DescriptorSetConfig::init(&[]);
-        let ubo_binding_index = descriptor_set_config.add_buffer_binding(ubo_info, &[
+        let ubo_binding_index = descriptor_set_config.add_buffer_binding(&self.ubo_buffer, &[
             ShaderStageFlag::VertexStage,
-        ]);
+        ])?;
 
         let mut descriptor_allocator = kit.descriptor(&[]);
         let (descriptor_set_item, descriptor_binding_items) = descriptor_allocator.attach_descriptor_set(descriptor_set_config);
         let ubo_descriptor_item = descriptor_binding_items[ubo_binding_index].clone();
 
-        self.ubo_storage = descriptor_allocator.allocate()?;
-        self.ubo_storage.update_descriptors(&[ubo_descriptor_item])?;
+        self.desc_storage = descriptor_allocator.allocate()?;
+        self.desc_storage.update_descriptors(&[ubo_descriptor_item])?;
         self.ubo_set = descriptor_set_item;
 
         // depth attachment image
@@ -185,7 +177,7 @@ impl ProgramProc for DepthProcedure {
 
         // pipeline
         let mut render_pass_builder = kit.pass_builder();
-        let first_subpass = render_pass_builder.new_subpass(SubpassType::Graphics);
+        let first_subpass = render_pass_builder.new_subpass(PipelineType::Graphics);
 
         let color_attachment = RenderAttachement::setup(RenderAttachementPrefab::BackColorAttachment, swapchain.format);
         let _ = render_pass_builder.add_attachemnt(color_attachment, first_subpass, AttachmentType::Color);
@@ -210,10 +202,10 @@ impl ProgramProc for DepthProcedure {
         let pipeline_config = GraphicsPipelineConfig::new(shader_infos, vertex_input_desc, render_pass)
             .setup_viewport(ViewportStateType::Fixed { state: viewport })
             .setup_depth_stencil(depth_stencil)
-            .add_descriptor_set(self.ubo_storage.set_layout_at(&self.ubo_set))
+            .add_descriptor_set(self.desc_storage.set_layout_at(&self.ubo_set))
             .finish_config();
 
-        let mut pipeline_builder = kit.graphics_pipeline_builder()?;
+        let mut pipeline_builder = kit.pipeline_builder(PipelineType::Graphics)?;
         pipeline_builder.add_config(pipeline_config);
 
         let mut graphics_pipelines = pipeline_builder.build()?;
@@ -235,28 +227,25 @@ impl ProgramProc for DepthProcedure {
 
     fn commands(&mut self, kit: CommandKit) -> Result<(), ProcedureError> {
 
-        // command buffer
-        let command_pool = kit.pool(DeviceQueueIdentifier::Graphics)?;
+        self.command_pool = kit.pool(DeviceQueueIdentifier::Graphics)?;
 
         let command_buffer_count = self.graphics_pipeline.frame_count();
-        let command_buffers = command_pool
+        self.command_buffers = self.command_pool
             .allocate(CommandBufferUsage::UnitaryCommand, command_buffer_count)?;
 
-        for (frame_index, command_buffer) in command_buffers.iter().enumerate() {
+        for (frame_index, command_buffer) in self.command_buffers.iter().enumerate() {
             let recorder = command_buffer.setup_record();
 
             recorder.begin_record(&[CommandBufferUsageFlag::SimultaneousUseBit])?
                 .begin_render_pass(&self.graphics_pipeline, frame_index)
                 .bind_pipeline(&self.graphics_pipeline)
-                .bind_vertex_buffers(0, &self.buffer_storage.vertex_binding_infos(&[&self.vertex_item]))
-                .bind_index_buffers(&self.buffer_storage.index_binding_info(&self.index_item))
-                .bind_descriptor_sets(&self.graphics_pipeline, 0, &self.ubo_storage.descriptor_binding_infos(&[&self.ubo_set]))
+                .bind_vertex_buffers(0, &[&self.vertex_buffer])
+                .bind_index_buffer(&self.index_buffer)
+                .bind_descriptor_sets(&self.graphics_pipeline, 0, self.desc_storage.descriptor_binding_infos(&[&self.ubo_set]))
                 .draw_indexed(self.index_data.len() as uint32_t, 1, 0, 0, 0)
                 .end_render_pass()
                 .end_record()?;
         }
-        self.command_pool    = command_pool;
-        self.command_buffers = command_buffers;
 
         Ok(())
     }
@@ -281,9 +270,8 @@ impl ProgramProc for DepthProcedure {
 
     fn clean_resources(&mut self, _: &HaDevice) -> Result<(), ProcedureError> {
 
-        for semaphore in self.present_availables.iter() {
-            semaphore.cleanup();
-        }
+        self.present_availables.iter()
+            .for_each(|semaphore| semaphore.cleanup());
         self.present_availables.clear();
         self.command_buffers.clear();
 
@@ -301,8 +289,8 @@ impl ProgramProc for DepthProcedure {
         self.graphics_pipeline.cleanup();
         self.command_pool.cleanup();
         self.image_storage.cleanup();
+        self.desc_storage.cleanup();
         self.ubo_storage.cleanup();
-        self.ubo_buffer.cleanup();
         self.buffer_storage.cleanup();
     }
 

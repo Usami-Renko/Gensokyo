@@ -34,7 +34,7 @@ pub enum DeviceQueueIdentifier {
     Graphics,
     Present,
     Transfer,
-    Custom(Box<DeviceQueueIdentifier>, usize),
+    Custom { identifier: Box<DeviceQueueIdentifier>, queue_index: usize },
 }
 
 impl HaLogicalDevice {
@@ -131,8 +131,8 @@ impl HaLogicalDevice {
             | DeviceQueueIdentifier::Graphics => &self.graphics_queue.queue,
             | DeviceQueueIdentifier::Present  => &self.present_queue.queue,
             | DeviceQueueIdentifier::Transfer => &self.transfer_queue.queue,
-            | DeviceQueueIdentifier::Custom(ident, queue_index) => {
-                self.queue_container.queue(*ident, queue_index)
+            | DeviceQueueIdentifier::Custom { identifier, queue_index } => {
+                self.queue_container.queue(*identifier, queue_index)
             },
         }
     }

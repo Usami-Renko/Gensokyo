@@ -4,7 +4,7 @@ pub use self::enums::{
     ImagePipelineStage, DepthStencilImageFormat,
     ImageTiling, Filter, MipmapMode, CompareOp, BorderColor
 };
-pub use self::variety::{
+pub use self::branch::{
     SampleImageInfo, HaSampleImage, // sample
     DepthStencilImageInfo, HaDepthStencilImage, // depth
 };
@@ -16,7 +16,7 @@ pub(crate) use self::flag::{ ImageUsageFlag, ImageAspectFlag };
 pub(crate) use self::io::{ ImageStorageInfo, ImageSource };
 pub(crate) use self::enums::{ ImageVarietyType, ImageType, ImageViewType, DepthImageUsage };
 
-pub(crate) use self::variety::{
+pub(crate) use self::branch::{
     HaImageDescAbs, HaImageViewDescAbs, ImageBarrierBundleAbs, // traits
     HaSamplerDescAbs, HaSampler, SamplerDescInfo, SampleImageBarrierBundle, // sample
     DepSteImageBarrierBundle, // depth
@@ -32,4 +32,4 @@ mod flag;
 mod io;
 mod item;
 mod enums;
-mod variety;
+mod branch;
