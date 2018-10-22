@@ -8,7 +8,7 @@ use pipeline::stages::PipelineStageFlag;
 use pipeline::pass::AccessFlag;
 
 use resources::allocator::{ HaBufferAllocator, BufferStorageType, ImageAllocateInfo };
-use resources::buffer::{ BufferSubItem, HaImgsrcBlock, ImgsrcBlockInfo, BufferBlockEntity };
+use resources::buffer::{ BufferItem, HaImgsrcBlock, ImgsrcBlockInfo, BufferBlockEntity };
 use resources::image::ImagePipelineStage;
 use resources::image::{ ImageSource, ImageLayout };
 use resources::image::ImageBarrierBundleAbs;
@@ -155,14 +155,15 @@ impl SampleImageBarrierBundle {
 }
 
 
-fn copy_buffer_to_image(recorder: &HaCommandRecorder, from_buffer: &BufferSubItem, to_image: &ImageAllocateInfo) -> Result<(), AllocatorError> {
+fn copy_buffer_to_image(recorder: &HaCommandRecorder, from_buffer: &BufferItem, to_image: &ImageAllocateInfo) -> Result<(), AllocatorError> {
 
     let subsource = &to_image.view_desc.subrange;
     let dimension = to_image.storage.dimension;
     // TODO: Only support one region.
     let copy_regions = [
         vk::BufferImageCopy {
-            buffer_offset: from_buffer.offset,
+            // the image data must start at the beginning of buffer to be copied from.
+            buffer_offset: 0,
             // TODO: the following options are not configurable.
             buffer_row_length  : 0,
             buffer_image_height: 0,

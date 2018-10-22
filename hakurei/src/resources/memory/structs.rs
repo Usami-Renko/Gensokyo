@@ -4,7 +4,7 @@ use ash::vk;
 use core::device::HaDevice;
 use core::physical::{ HaPhyDevice, MemorySelector };
 
-use resources::buffer::{ HaBuffer, BufferSubItem };
+use resources::buffer::{ HaBuffer, BufferItem };
 use resources::memory::{ HaMemoryAbstract, MemoryDataUploadable, MemoryPropertyFlag, MemPtr };
 use resources::memory::HaStagingMemory;
 use resources::allocator::{ BufferAllocateInfos, BufferStorageType };
@@ -92,8 +92,8 @@ pub(crate) struct UploadStagingResource {
     buffers   : Vec<HaBuffer>,
     src_memory: HaStagingMemory,
 
-    src_items: Vec<BufferSubItem>,
-    dst_items: Vec<BufferSubItem>,
+    src_items: Vec<BufferItem>,
+    dst_items: Vec<BufferItem>,
     src_offsets: Vec<vk::DeviceSize>,
 }
 
@@ -146,18 +146,17 @@ impl UploadStagingResource {
         }
     }
 
-    pub fn append_dst_item(&mut self, dst: &BufferSubItem) -> Result<(MemoryWritePtr, MemoryRange), MemoryError> {
+    pub fn append_dst_item(&mut self, dst: &BufferItem) -> Result<(MemoryWritePtr, MemoryRange), MemoryError> {
 
         let dst_item = dst.clone();
-        let src_item = BufferSubItem {
+        let src_item = BufferItem {
             handle: self.buffers[dst.buffer_index].handle,
             buffer_index: dst.buffer_index,
-            size  : dst.size,
-            offset: dst.offset,
+            size: dst.size,
         };
 
         // get memory wirte pointer of staging buffer.
-        let offset = self.src_offsets[dst.buffer_index] + dst.offset;
+        let offset = self.src_offsets[dst.buffer_index];
         let (writer, range) = self.src_memory.map_memory_ptr(&mut None, &src_item, offset)?;
 
         self.src_items.push(src_item);
@@ -180,7 +179,8 @@ impl UploadStagingResource {
 
     pub fn cleanup(&self, device: &HaDevice) {
 
-        self.buffers.iter().for_each(|buffer| buffer.cleanup(device));
+        self.buffers.iter()
+            .for_each(|buffer| buffer.cleanup(device));
         self.src_memory.cleanup(device);
     }
 }

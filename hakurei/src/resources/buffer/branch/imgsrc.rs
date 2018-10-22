@@ -1,7 +1,7 @@
 
 use ash::vk;
 
-use resources::buffer::{ BufferSubItem, BufferUsageFlag };
+use resources::buffer::{ BufferItem, BufferUsageFlag };
 use resources::buffer::{ BufferBlockInfo, BufferBlockEntity };
 use resources::allocator::BufferInfosAllocatable;
 
@@ -43,12 +43,12 @@ impl BufferInfosAllocatable for ImgsrcBlockInfo {}
 
 pub(crate) struct HaImgsrcBlock {
 
-    item: BufferSubItem,
+    item: BufferItem,
 }
 
 impl HaImgsrcBlock {
 
-    pub(crate) fn from(item: BufferSubItem) -> HaImgsrcBlock {
+    pub(crate) fn from(item: BufferItem) -> HaImgsrcBlock {
         HaImgsrcBlock {
             item,
         }
@@ -57,7 +57,11 @@ impl HaImgsrcBlock {
 
 impl BufferBlockEntity for HaImgsrcBlock {
 
-    fn get_buffer_item(&self) -> &BufferSubItem {
+    fn get_buffer_item(&self) -> &BufferItem {
         &self.item
+    }
+
+    fn offset(&self, _sub_index: usize) -> vk::DeviceSize {
+        unimplemented!()
     }
 }

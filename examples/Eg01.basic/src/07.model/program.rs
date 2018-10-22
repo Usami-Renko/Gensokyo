@@ -255,8 +255,8 @@ impl ProgramProc for ModelProcedure {
             recorder.begin_record(&[CommandBufferUsageFlag::SimultaneousUseBit])?
                 .begin_render_pass(&self.graphics_pipeline, frame_index)
                 .bind_pipeline(&self.graphics_pipeline)
-                .bind_vertex_buffers(0, &[&self.vertex_buffer])
-                .bind_index_buffer(&self.index_buffer)
+                .bind_vertex_buffers(0, &[CmdVertexBindingInfo { block: &self.vertex_buffer, sub_block_index: None }])
+                .bind_index_buffer(CmdIndexBindingInfo { block: &self.index_buffer, sub_block_index: None })
                 .bind_descriptor_sets(&self.graphics_pipeline, 0, self.descriptor_storage.descriptor_binding_infos(
                     &[&self.descriptor_sets]))
                 .draw_indexed(self.model_data.indices.len() as uint32_t, 1, 0, 0, 0)
@@ -287,9 +287,8 @@ impl ProgramProc for ModelProcedure {
 
     fn clean_resources(&mut self, _: &HaDevice) -> Result<(), ProcedureError> {
 
-        for semaphore in self.present_availables.iter() {
-            semaphore.cleanup();
-        }
+        self.present_availables.iter()
+            .for_each(|semaphore| semaphore.cleanup());
         self.present_availables.clear();
         self.command_buffers.clear();
 

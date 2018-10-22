@@ -5,7 +5,7 @@ use core::device::{ HaDevice, HaLogicalDevice };
 use core::physical::HaPhyDevice;
 
 use resources::allocator::BufferAllocateInfos;
-use resources::buffer::{ HaBuffer, BufferSubItem };
+use resources::buffer::{ HaBuffer, BufferItem };
 use resources::command::CommandBufferUsageFlag;
 use resources::memory::{ HaMemoryAbstract, HaMemoryType };
 use resources::repository::{ BufferDataUploader, BufferDataUpdater };
@@ -102,8 +102,7 @@ impl HaBufferRepository {
 
 impl HaBufferRepository {
 
-    pub fn copy_buffers_to_buffers(device: &HaDevice, from_items: &[BufferSubItem], to_items: &[BufferSubItem])
-        -> Result<(), AllocatorError> {
+    pub fn copy_buffers_to_buffers(device: &HaDevice, from_items: &[BufferItem], to_items: &[BufferItem]) -> Result<(), AllocatorError> {
 
         let mut transfer = HaLogicalDevice::transfer(device);
         {
@@ -116,9 +115,10 @@ impl HaBufferRepository {
                 // TODO: Only support one region.
                 let copy_region = [
                     vk::BufferCopy {
-                        src_offset: from.offset,
-                        dst_offset: to.offset,
-                        size      : to.size,
+                        // TODO: Only support copy buffer from beginning.
+                        src_offset: 0,
+                        dst_offset: 0,
+                        size: to.size,
                     },
                 ];
 
