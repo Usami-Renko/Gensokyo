@@ -7,7 +7,7 @@ pub use resources::allocator::{
 
 pub use resources::buffer::{
     BufferCreateFlag, // flag
-    BufferItem, BufferSubItem, // item
+    BufferItem, // item
     HaVertexBlock, VertexBlockInfo, // block
     HaIndexBlock, IndexBlockInfo, // block
     HaUniformBlock, UniformBlockInfo, // block
@@ -18,6 +18,7 @@ pub use resources::command::{
     HaCommandPool, CommandPoolFlag,            // pool
     HaCommandRecorder, CommandBufferUsageFlag, // record
     CmdViewportInfo, CmdScissorInfo, // infos
+    CmdVertexBindingInfo, CmdIndexBindingInfo, // infos
 };
 
 pub use resources::descriptor::{

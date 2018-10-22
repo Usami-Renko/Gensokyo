@@ -5,7 +5,7 @@ use ash::version::DeviceV1_0;
 use core::device::HaDevice;
 use core::physical::HaPhyDevice;
 
-use resources::buffer::{ HaBuffer, BufferSubItem };
+use resources::buffer::{ HaBuffer, BufferItem };
 use resources::memory::{ HaMemoryType, MemPtr, MemoryRange, UploadStagingResource };
 use resources::allocator::BufferAllocateInfos;
 use resources::image::HaImage;
@@ -113,7 +113,7 @@ pub(crate) trait MemoryDataUploadable {
         Ok(Some(staging))
     }
 
-    fn map_memory_ptr(&mut self, staging: &mut Option<UploadStagingResource>, item: &BufferSubItem, _offset: vk::DeviceSize) -> Result<(MemoryWritePtr, MemoryRange), MemoryError> {
+    fn map_memory_ptr(&mut self, staging: &mut Option<UploadStagingResource>, item: &BufferItem, _offset: vk::DeviceSize) -> Result<(MemoryWritePtr, MemoryRange), MemoryError> {
 
         if let Some(ref mut staging) = staging {
 

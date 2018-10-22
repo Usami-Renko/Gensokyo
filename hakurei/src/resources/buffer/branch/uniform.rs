@@ -2,7 +2,7 @@
 use ash::vk;
 use ash::vk::uint32_t;
 
-use resources::buffer::{ BufferSubItem, BufferUsageFlag };
+use resources::buffer::{ BufferItem, BufferUsageFlag };
 use resources::buffer::{ BufferBlockInfo, BufferBlockEntity };
 use resources::allocator::BufferInfosAllocatable;
 use resources::descriptor::{ DescriptorBufferBindingInfo, DescriptorBufferBindableTarget };
@@ -19,14 +19,15 @@ pub struct UniformBlockInfo {
 
     flags: vk::BufferCreateFlags,
 
-    estimate_size: vk::DeviceSize,
+    element_size: vk::DeviceSize,
 }
 
 impl UniformBlockInfo {
 
-    pub fn new(binding: uint32_t, count: uint32_t, estimate_size: vk::DeviceSize) -> UniformBlockInfo {
+    pub fn new(binding: uint32_t, count: uint32_t, element_size: vk::DeviceSize) -> UniformBlockInfo {
         UniformBlockInfo {
-            binding, count, estimate_size,
+            binding, count,
+            element_size,
             flags: vk::BufferCreateFlags::empty(),
         }
     }
@@ -43,7 +44,7 @@ impl BufferBlockInfo for UniformBlockInfo {
     }
 
     fn total_size(&self) -> vk::DeviceSize {
-        self.estimate_size
+        self.element_size * (self.count as vk::DeviceSize)
     }
 }
 
@@ -54,7 +55,8 @@ pub struct HaUniformBlock {
     binding: uint32_t,
     count  : uint32_t,
 
-    item: BufferSubItem,
+    item: BufferItem,
+    element_size: vk::DeviceSize,
 }
 
 impl HaUniformBlock {
@@ -63,15 +65,17 @@ impl HaUniformBlock {
         HaUniformBlock {
             binding: 0,
             count  : 0,
-            item: BufferSubItem::unset(),
+            item: BufferItem::unset(),
+            element_size: 0,
         }
     }
 
-    pub(crate) fn from(info: &UniformBlockInfo, item: BufferSubItem) -> HaUniformBlock {
+    pub(crate) fn from(info: &UniformBlockInfo, item: BufferItem) -> HaUniformBlock {
 
         HaUniformBlock {
             binding: info.binding,
             count  : info.count,
+            element_size: info.element_size,
             item,
         }
     }
@@ -79,13 +83,14 @@ impl HaUniformBlock {
 
 impl DescriptorBufferBindableTarget for HaUniformBlock {
 
-    fn binding_info(&self) -> Result<DescriptorBufferBindingInfo, DescriptorError> {
+    fn binding_info(&self, sub_block_indices: Option<Vec<uint32_t>>) -> Result<DescriptorBufferBindingInfo, DescriptorError> {
 
         let info = DescriptorBufferBindingInfo {
             type_  : BufferDescriptorType::UniformBuffer,
             binding: self.binding,
             count  : self.count,
-            element_size: self.item.size,
+            element_indices: sub_block_indices.unwrap_or(vec![0]),
+            element_size: self.element_size,
             buffer: self.item.clone(),
         };
 
@@ -95,7 +100,11 @@ impl DescriptorBufferBindableTarget for HaUniformBlock {
 
 impl BufferBlockEntity for HaUniformBlock {
 
-    fn get_buffer_item(&self) -> &BufferSubItem {
+    fn get_buffer_item(&self) -> &BufferItem {
         &self.item
+    }
+
+    fn offset(&self, sub_index: usize) -> vk::DeviceSize {
+        self.element_size * (sub_index as vk::DeviceSize)
     }
 }

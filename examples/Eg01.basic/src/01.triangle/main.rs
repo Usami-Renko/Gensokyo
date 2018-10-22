@@ -155,7 +155,7 @@ impl ProgramProc for TriangleProcedure {
             recorder.begin_record(&[CommandBufferUsageFlag::SimultaneousUseBit])?
                 .begin_render_pass(&self.graphics_pipeline, frame_index)
                 .bind_pipeline(&self.graphics_pipeline)
-                .bind_vertex_buffers(0, &[&self.vertex_buffer])
+                .bind_vertex_buffers(0, &[CmdVertexBindingInfo { block: &self.vertex_buffer, sub_block_index: None }])
                 .draw(self.vertex_data.len() as uint32_t, 1, 0, 0)
                 .end_render_pass()
                 .end_record()?;

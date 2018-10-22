@@ -1,6 +1,6 @@
 
 pub use self::flag::BufferCreateFlag;
-pub use self::item::{ BufferItem, BufferSubItem };
+pub use self::item::BufferItem;
 pub use self::branch::{
     HaVertexBlock, VertexBlockInfo,
     HaIndexBlock, IndexBlockInfo,

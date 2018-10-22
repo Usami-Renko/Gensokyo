@@ -6,7 +6,7 @@ use ash::version::DeviceV1_0;
 use core::device::HaDevice;
 
 use resources::command::buffer::HaCommandBuffer;
-use resources::command::CmdDescriptorBindingInfos;
+use resources::command::{ CmdVertexBindingInfo, CmdIndexBindingInfo, CmdDescriptorBindingInfos };
 use resources::command::{ CmdViewportInfo, CmdScissorInfo, CmdDepthBiasInfo, CmdDepthBoundInfo };
 use resources::buffer::BufferBlockEntity;
 use resources::error::CommandError;
@@ -194,14 +194,19 @@ impl<'buffer> HaCommandRecorder<'buffer> {
         self
     }
 
-    pub fn bind_vertex_buffers(&self, first_binding: uint32_t, blocks: &[&impl BufferBlockEntity]) -> &HaCommandRecorder<'buffer> {
+    pub fn bind_vertex_buffers(&self, first_binding: uint32_t, infos: &[CmdVertexBindingInfo]) -> &HaCommandRecorder<'buffer> {
 
         let mut handles = vec![];
         let mut offsets  = vec![];
-        for &block in blocks.iter() {
-            let item = block.get_buffer_item();
+
+        for info in infos.into_iter() {
+            let item = info.block.get_buffer_item();
             handles.push(item.handle);
-            offsets.push(item.offset);
+
+            let starting_offset = info.sub_block_index
+                .map(|i| info.block.offset(i))
+                .unwrap_or(0);
+            offsets.push(starting_offset);
         }
 
         unsafe {
@@ -210,12 +215,16 @@ impl<'buffer> HaCommandRecorder<'buffer> {
         self
     }
 
-    pub fn bind_index_buffer(&self, index_info: &impl BufferBlockEntity) -> &HaCommandRecorder<'buffer> {
+    pub fn bind_index_buffer(&self, info: CmdIndexBindingInfo) -> &HaCommandRecorder<'buffer> {
 
-        let item = index_info.get_buffer_item();
+        let item = info.block.get_buffer_item();
+        let starting_offset = info.sub_block_index
+            .map(|i| info.block.offset(i))
+            .unwrap_or(0);
+
         unsafe {
             // TODO: Add configuration for IndexType.
-            self.device.handle.cmd_bind_index_buffer(self.buffer.handle, item.handle, item.offset, vk::IndexType::Uint32)
+            self.device.handle.cmd_bind_index_buffer(self.buffer.handle, item.handle, starting_offset, vk::IndexType::Uint32)
         };
         self
     }

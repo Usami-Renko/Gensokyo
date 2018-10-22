@@ -5,7 +5,7 @@ use ash::version::DeviceV1_0;
 
 use core::device::HaDevice;
 
-use resources::buffer::{ HaBuffer, BufferSubItem, BufferUsageFlag };
+use resources::buffer::{ HaBuffer, BufferItem, BufferUsageFlag };
 use resources::allocator::BufferStorageType;
 use resources::error::BufferError;
 use utility::marker::VulkanEnum;
@@ -56,7 +56,8 @@ pub(crate) trait BufferBlockInfo {
 
 pub trait BufferBlockEntity {
 
-    fn get_buffer_item(&self) -> &BufferSubItem;
+    fn get_buffer_item(&self) -> &BufferItem;
+    fn offset(&self, sub_index: usize) -> vk::DeviceSize;
 }
 
 fn complement_buffer_usage(origin: vk::BufferUsageFlags, storage_type: BufferStorageType) -> vk::BufferUsageFlags {

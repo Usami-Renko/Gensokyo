@@ -1,7 +1,7 @@
 
 use ash::vk;
 
-use resources::buffer::{ BufferSubItem, BufferUsageFlag };
+use resources::buffer::{ BufferItem, BufferUsageFlag };
 use resources::buffer::{ BufferBlockInfo, BufferBlockEntity };
 use resources::allocator::BufferInfosAllocatable;
 
@@ -56,9 +56,8 @@ impl BufferInfosAllocatable for IndexBlockInfo {
 
 pub struct HaIndexBlock {
 
-    #[allow(dead_code)]
     offsets: Vec<vk::DeviceSize>,
-    item: BufferSubItem,
+    item: BufferItem,
 }
 
 impl HaIndexBlock {
@@ -66,11 +65,11 @@ impl HaIndexBlock {
     pub fn uninitialize() -> HaIndexBlock {
         HaIndexBlock {
             offsets: vec![],
-            item: BufferSubItem::unset(),
+            item: BufferItem::unset(),
         }
     }
 
-    pub(crate) fn from(info: &IndexBlockInfo, item: BufferSubItem) -> HaIndexBlock {
+    pub(crate) fn from(info: &IndexBlockInfo, item: BufferItem) -> HaIndexBlock {
 
         HaIndexBlock {
             offsets: info.offsets.clone(),
@@ -81,7 +80,11 @@ impl HaIndexBlock {
 
 impl BufferBlockEntity for HaIndexBlock {
 
-    fn get_buffer_item(&self) -> &BufferSubItem {
+    fn get_buffer_item(&self) -> &BufferItem {
         &self.item
+    }
+
+    fn offset(&self, sub_index: usize) -> vk::DeviceSize {
+        self.offsets[sub_index]
     }
 }

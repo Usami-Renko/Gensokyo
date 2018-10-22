@@ -14,6 +14,7 @@ pub struct BufferDataUploader<'a> {
     device  : HaDevice,
     dst_memory: &'a mut Box<HaMemoryAbstract>,
 
+    /// the offset of each buffer in `dst_memory`.
     offsets: &'a Vec<vk::DeviceSize>,
     ranges : Vec<MemoryRange>,
     
@@ -37,7 +38,8 @@ impl<'a> BufferDataUploader<'a> {
     pub fn upload<D: Copy>(&mut self, block: &impl BufferBlockEntity, data: &Vec<D>) -> Result<&mut BufferDataUploader<'a>, AllocatorError> {
 
         let item = block.get_buffer_item();
-        let offset = self.offsets[item.buffer_index] + item.offset;
+        // offset is a zero-based byte offset of the buffer from the beginning of the memory object.
+        let offset = self.offsets[item.buffer_index];
 
         let (writer, range) = self.dst_memory.map_memory_ptr(&mut self.staging, item, offset)?;
         writer.write_data(data);
@@ -85,7 +87,7 @@ impl<'a> BufferDataUpdater<'a> {
     pub fn update<D: Copy>(&mut self, block: &impl BufferBlockEntity, data: &Vec<D>) -> Result<&mut BufferDataUpdater<'a>, AllocatorError> {
 
         let item = block.get_buffer_item();
-        let offset = self.offsets[item.buffer_index] + item.offset;
+        let offset = self.offsets[item.buffer_index];
 
         let (writer, range) = self.memory.map_memory_ptr(&mut None, item, offset)?;
         writer.write_data(data);

@@ -6,7 +6,7 @@ use ash::version::DeviceV1_0;
 use core::device::HaDevice;
 use core::physical::HaPhyDevice;
 
-use resources::buffer::BufferSubItem;
+use resources::buffer::BufferItem;
 use resources::memory::{ HaMemoryAbstract, MemoryDataUploadable, MemoryMapable };
 use resources::memory::{ HaMemoryType, UploadStagingResource };
 use resources::memory::{ MemoryRange, MemoryMapStatus };
@@ -85,7 +85,7 @@ impl MemoryDataUploadable for HaHostMemory {
         Ok(None)
     }
 
-    fn map_memory_ptr(&mut self, _: &mut Option<UploadStagingResource>, item: &BufferSubItem, offset: vk::DeviceSize) -> Result<(MemoryWritePtr, MemoryRange), MemoryError> {
+    fn map_memory_ptr(&mut self, _: &mut Option<UploadStagingResource>, item: &BufferItem, offset: vk::DeviceSize) -> Result<(MemoryWritePtr, MemoryRange), MemoryError> {
 
         let ptr = unsafe {
             self.map_status.data_ptr.offset(offset as isize)

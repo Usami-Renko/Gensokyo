@@ -6,7 +6,7 @@ use core::physical::{ HaPhyDevice, MemorySelector };
 
 use resources::allocator::{ BufMemAlloAbstract, BufferInfosAllocatable };
 use resources::allocator::{ HostBufMemAllocator, CachedBufMemAllocator, DeviceBufMemAllocator, StagingBufMemAllocator };
-use resources::buffer::{ HaBuffer, BufferBlockInfo, BufferSubItem };
+use resources::buffer::{ HaBuffer, BufferBlockInfo, BufferItem };
 use resources::buffer::{
     HaVertexBlock, VertexBlockInfo,
     HaIndexBlock, IndexBlockInfo,
@@ -101,10 +101,9 @@ impl  HaBufferAllocator {
         use utility::memory::bind_to_alignment;
         let aligment_space = bind_to_alignment(buffer.requirement.size, buffer.requirement.alignment);
 
-        let item = BufferSubItem {
+        let item = BufferItem {
             handle: buffer.handle,
             buffer_index: self.buffers.len(),
-            offset: 0,
             size: info.total_size(),
         };
 
@@ -218,19 +217,19 @@ impl BufferStorageType {
                     BufferBranch::Vertex,
                     BufferBranch::Index,
                     BufferBranch::Uniform,
-                ].iter().find(|&b| *b == branch).is_some()
+                ].contains(&branch)
             },
             | BufferStorageType::Cached  => {
                 [
                     BufferBranch::Vertex,
                     BufferBranch::Index,
-                ].iter().find(|&b| *b == branch).is_some()
+                ].contains(&branch)
             },
             | BufferStorageType::Device  => {
                 [
                     BufferBranch::Vertex,
                     BufferBranch::Index,
-                ].iter().find(|&b| *b == branch).is_some()
+                ].contains(&branch)
             },
             | BufferStorageType::Staging => {
                 [
@@ -238,7 +237,7 @@ impl BufferStorageType {
                     BufferBranch::Index,
                     BufferBranch::Uniform,
                     BufferBranch::ImageSrc,
-                ].iter().find(|&b| *b == branch).is_some()
+                ].contains(&branch)
             },
         }
     }
@@ -256,5 +255,5 @@ struct BufferGenInfo {
 
     buffer: HaBuffer,
     aligment_space: vk::DeviceSize,
-    item: BufferSubItem,
+    item: BufferItem,
 }
