@@ -1,6 +1,6 @@
 
 pub use pipeline::graphics::{
-    HaGraphicsPipeline, // pipeline
+    HaGraphicsPipeline, GraphicsPipelineContainer, // pipeline
     GraphicsPipelineBuilder, GraphicsPipelineConfig, PipelineCreateFlag, // builder
 };
 

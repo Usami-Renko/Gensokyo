@@ -8,8 +8,6 @@ extern crate hakurei;
 extern crate cgmath;
 
 use hakurei::prelude::*;
-use hakurei::prelude::config::*;
-
 
 const WINDOW_TITLE: &'static str = "05.Cube";
 
@@ -20,16 +18,9 @@ use self::program::CubeProcedure;
 
 fn main() {
 
-    let mut config = EngineConfig::default();
-    config.window.dimension = Dimension2D {
-        width : WINDOW_WIDTH,
-        height: WINDOW_HEIGHT,
-    };
-    config.window.title = String::from(WINDOW_TITLE);
-
     let procecure = CubeProcedure::new();
 
-    let mut program = ProgramEnv::new(config, procecure);
+    let mut program = ProgramEnv::new(procecure).unwrap();
 
     match program.launch() {
         | Ok(_) => (),

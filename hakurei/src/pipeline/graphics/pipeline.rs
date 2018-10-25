@@ -6,6 +6,7 @@ use core::device::HaDevice;
 
 use pipeline::layout::HaPipelineLayout;
 use pipeline::pass::HaRenderPass;
+use pipeline::error::PipelineError;
 
 pub struct HaGraphicsPipeline {
 
@@ -52,5 +53,18 @@ impl HaGraphicsPipeline {
             self.layout.cleanup(device);
             self.pass.cleanup(device);
         }
+    }
+}
+
+pub struct GraphicsPipelineContainer {
+
+    pub(super) pipelines: Vec<Option<HaGraphicsPipeline>>,
+}
+
+impl GraphicsPipelineContainer {
+
+    pub fn take_at(&mut self, pipeline_index: usize) -> Result<HaGraphicsPipeline, PipelineError> {
+        self.pipelines[pipeline_index].take()
+            .ok_or(PipelineError::PipelineTakeError)
     }
 }

@@ -22,7 +22,7 @@ use std::ptr;
 
 // TODO: The generation step hasn't been well test.
 
-pub struct LogicalDeviceBuilder<'a, 'b> {
+pub(crate) struct LogicalDeviceBuilder<'a, 'b> {
 
     instance: &'a HaInstance,
     physical: &'b HaPhysicalDevice,
@@ -156,9 +156,9 @@ impl<'a, 'b> LogicalDeviceBuilder<'a, 'b> {
 
 /// The strategy used when request for create device queues.
 #[derive(Debug, Clone, Copy, Eq, PartialEq)]
-pub enum QueueRequestStrategy {
+pub(crate) enum QueueRequestStrategy {
 
-    SingleFamilyDifferentQueues,
+    SingleFamilyMultiQueues,
     SingleFamilySingleQueue,
 }
 
@@ -209,7 +209,7 @@ impl QueueRequestInfo {
                     Err(LogicalDeviceError::QueueOpsUnsupport)
                 }
             },
-            | QueueRequestStrategy::SingleFamilyDifferentQueues => {
+            | QueueRequestStrategy::SingleFamilyMultiQueues => {
 
                 // check if there are enough queues for each queue family. ---------------- //
                 let mut family_queue_counts = HashMap::new();

@@ -5,6 +5,7 @@ use utility::marker::{ VulkanFlags, VulkanEnum };
 
 #[derive(Debug, Clone, Copy, Eq, PartialEq)]
 pub enum BufferCreateFlag {
+
     /// SparseBindingBit specifies that the buffer will be backed using sparse memory binding.
     SparseBindingBit,
     /// SparseResidency specifies that the buffer can be partially backed using sparse memory binding.
@@ -17,6 +18,7 @@ pub enum BufferCreateFlag {
     /// Buffers created with this flag must also be created with the VK_BUFFER_CREATE_SPARSE_BINDING_BIT flag.
     SparseAliased,
 }
+
 impl VulkanFlags for [BufferCreateFlag] {
     type FlagType = vk::BufferCreateFlags;
 
@@ -30,6 +32,19 @@ impl VulkanFlags for [BufferCreateFlag] {
         })
     }
 }
+
+impl VulkanEnum for BufferCreateFlag {
+    type EnumType = vk::BufferCreateFlags;
+
+    fn value(&self) -> Self::EnumType {
+        match self {
+            | BufferCreateFlag::SparseBindingBit => vk::BUFFER_CREATE_SPARSE_BINDING_BIT,
+            | BufferCreateFlag::SparseResidency  => vk::BUFFER_CREATE_SPARSE_RESIDENCY_BIT,
+            | BufferCreateFlag::SparseAliased    => vk::BUFFER_CREATE_SPARSE_ALIASED_BIT,
+        }
+    }
+}
+
 
 #[derive(Debug, Clone, Copy, Eq, PartialEq)]
 #[allow(dead_code)]

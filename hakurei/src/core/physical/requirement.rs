@@ -6,7 +6,7 @@ use core::physical::PhysicalDeviceType;
 use core::physical::family::QueueOperationType;
 use core::physical::extension::DeviceExtensionType;
 
-pub struct PhysicalRequirement {
+pub(crate) struct PhysicalRequirement {
 
     pub device_types     : Vec<PhysicalDeviceType>,
     pub features         : Vec<PhysicalFeatureType>,

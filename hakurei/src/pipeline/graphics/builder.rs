@@ -6,7 +6,7 @@ use ash::version::DeviceV1_0;
 use core::device::HaDevice;
 
 use pipeline::{
-    graphics::pipeline::HaGraphicsPipeline,
+    graphics::pipeline::{ HaGraphicsPipeline, GraphicsPipelineContainer },
 
     shader::{ HaShaderModule, HaShaderInfo },
     shader::VertexInputDescription,
@@ -131,16 +131,22 @@ impl GraphicsPipelineBuilder {
     }
 
     pub fn set_shaderc(&mut self, configuration: ShadercConfiguration) -> Result<(), PipelineError> {
+
         self.shaderc = HaShaderCompiler::setup_from_configuration(configuration)
             .map_err(|e| PipelineError::Shaderc(e))?;
+
         Ok(())
     }
 
-    pub fn add_config(&mut self, config: GraphicsPipelineConfig) {
+    pub fn add_config(&mut self, config: GraphicsPipelineConfig) -> usize {
+
+        let pipeline_index = self.configs.len();
         self.configs.push(config);
+
+        pipeline_index
     }
 
-    pub fn build(&mut self) -> Result<Vec<HaGraphicsPipeline>, PipelineError> {
+    pub fn build(&mut self) -> Result<GraphicsPipelineContainer, PipelineError> {
 
         for config in self.configs.iter_mut() {
             let mut shader_modules = vec![];
@@ -203,13 +209,16 @@ impl GraphicsPipelineBuilder {
         for (i, config) in self.configs.iter_mut().enumerate() {
             let render_pass = config.render_pass.take().unwrap(); // take ownership of HaRenderPass.
             let pipeline = HaGraphicsPipeline::new(&self.device, handles[i], layouts[i], render_pass);
-            pipelines.push(pipeline);
-
+            pipelines.push(Some(pipeline));
         }
 
         self.clean_shader_modules();
 
-        Ok(pipelines)
+        let container = GraphicsPipelineContainer {
+            pipelines,
+        };
+
+        Ok(container)
     }
 
     fn clean_shader_modules(&self) {

@@ -1,7 +1,7 @@
 
 use ash::vk;
 
-use resources::buffer::{ BufferItem, BufferUsageFlag };
+use resources::buffer::{ BufferItem, BufferUsageFlag, BufferCreateFlag };
 use resources::buffer::{ BufferBlockInfo, BufferBlockEntity };
 use resources::allocator::BufferInfosAllocatable;
 
@@ -28,6 +28,10 @@ impl IndexBlockInfo {
 
     pub fn split_block(&mut self, offsets: Vec<vk::DeviceSize>) {
         self.offsets = offsets;
+    }
+
+    pub fn add_flag(&mut self, flag: BufferCreateFlag) {
+        self.flags |= flag.value()
     }
 }
 

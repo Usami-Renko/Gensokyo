@@ -1,5 +1,8 @@
 
-pub struct VKWrapperInfo<C: ?Sized, I: Sized> {
+pub struct VKWrapperInfo<C, I>
+    where C: ?Sized,
+          I: Sized {
+
     pub content: Box<C>,
     pub info: I,
 }

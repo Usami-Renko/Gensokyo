@@ -18,7 +18,7 @@ use utility::marker::VulkanEnum;
 
 use std::fmt;
 
-pub struct HaPhysicalDevice {
+pub(crate) struct HaPhysicalDevice {
 
     pub(crate) handle     : vk::PhysicalDevice,
     pub(super) properties : PhysicalProperties,
@@ -101,8 +101,8 @@ impl HaPhysicalDevice {
 
 
 #[derive(Debug, Clone, Copy, Eq, PartialEq)]
-pub enum PhysicalDeviceType {
-    Known,
+pub(crate) enum PhysicalDeviceType {
+    Unknown,
     IntegratedGPU,
     DiscreteGPU,
     VirtualGPU,
@@ -114,7 +114,7 @@ impl VulkanEnum for PhysicalDeviceType {
 
     fn value(&self) -> Self::EnumType {
         match *self {
-            | PhysicalDeviceType::Known         => vk::PhysicalDeviceType::Other,
+            | PhysicalDeviceType::Unknown       => vk::PhysicalDeviceType::Other,
             | PhysicalDeviceType::IntegratedGPU => vk::PhysicalDeviceType::IntegratedGpu,
             | PhysicalDeviceType::DiscreteGPU   => vk::PhysicalDeviceType::DiscreteGpu,
             | PhysicalDeviceType::VirtualGPU    => vk::PhysicalDeviceType::VirtualGpu,
@@ -131,7 +131,7 @@ impl From<vk::PhysicalDeviceType> for PhysicalDeviceType {
             | vk::PhysicalDeviceType::IntegratedGpu => PhysicalDeviceType::VirtualGPU,
             | vk::PhysicalDeviceType::DiscreteGpu   => PhysicalDeviceType::DiscreteGPU,
             | vk::PhysicalDeviceType::VirtualGpu    => PhysicalDeviceType::IntegratedGPU,
-            | vk::PhysicalDeviceType::Other         => PhysicalDeviceType::Known,
+            | vk::PhysicalDeviceType::Other         => PhysicalDeviceType::Unknown,
         }
     }
 }
@@ -145,7 +145,7 @@ impl fmt::Display for PhysicalDeviceType {
             | PhysicalDeviceType::IntegratedGPU => "Integrated GPU",
             | PhysicalDeviceType::DiscreteGPU   => "Discrate GPU",
             | PhysicalDeviceType::VirtualGPU    => "Virtual GPU",
-            | PhysicalDeviceType::Known         => "Unknown",
+            | PhysicalDeviceType::Unknown => "Unknown",
         };
 
         write!(f, "{}", description)

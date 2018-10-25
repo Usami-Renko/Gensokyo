@@ -4,9 +4,8 @@ use ash::vk;
 use image;
 use image::GenericImage;
 
+use config::resources::ImageLoadConfig;
 use utility::dimension::{ Dimension2D, Dimension3D };
-
-use config::resources::{ IMAGE_FLIP_VERTICAL, IMAGE_FLIP_HORIZONTAL, BYTE_PER_PIXEL, FORCE_RGBA };
 use resources::error::ImageError;
 
 use std::path::Path;
@@ -40,23 +39,23 @@ impl ImageData {
 
 impl ImageStorageInfo {
 
-    pub fn from_load2d(path: &Path) -> Result<ImageStorageInfo, ImageError> {
+    pub fn from_load2d(path: &Path, config: &ImageLoadConfig) -> Result<ImageStorageInfo, ImageError> {
 
         let mut image_obj = image::open(path)
             .or(Err(ImageError::SourceLoadError))?;
 
-        if IMAGE_FLIP_VERTICAL {
+        if config.flip_vertical {
             image_obj = image_obj.flipv();
         }
-        if IMAGE_FLIP_HORIZONTAL {
+        if config.flip_horizontal {
             image_obj = image_obj.fliph();
         }
 
         let width  = image_obj.width();
         let height = image_obj.height();
 
-        let image_size = ((mem::size_of::<u8>() as u32) * width * height * BYTE_PER_PIXEL) as vk::DeviceSize;
-        let data = if FORCE_RGBA {
+        let image_size = ((mem::size_of::<u8>() as u32) * width * height * config.byte_per_pixel) as vk::DeviceSize;
+        let data = if config.force_rgba {
             match &image_obj {
                 | image::DynamicImage::ImageLuma8(_)
                 | image::DynamicImage::ImageRgb8(_) => image_obj.to_rgba().into_raw(),

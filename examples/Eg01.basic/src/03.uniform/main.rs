@@ -7,7 +7,6 @@ extern crate cgmath;
 use cgmath::{ Matrix4, Vector3, Deg };
 
 use hakurei::prelude::*;
-use hakurei::prelude::config::*;
 use hakurei::prelude::queue::*;
 use hakurei::prelude::pipeline::*;
 use hakurei::prelude::resources::*;
@@ -169,10 +168,10 @@ impl ProgramProc for UniformBufferProcedure {
             .finish_config();
 
         let mut pipeline_builder = kit.pipeline_builder(PipelineType::Graphics)?;
-        pipeline_builder.add_config(pipeline_config);
+        let pipeline_index = pipeline_builder.add_config(pipeline_config);
 
-        let mut graphics_pipelines = pipeline_builder.build()?;
-        self.graphics_pipeline = graphics_pipelines.pop().unwrap();
+        let mut pipelines = pipeline_builder.build()?;
+        self.graphics_pipeline = pipelines.take_at(pipeline_index)?;
 
         Ok(())
     }
@@ -264,14 +263,8 @@ impl ProgramProc for UniformBufferProcedure {
 fn main() {
 
     let procecure = UniformBufferProcedure::new();
-    let mut config = EngineConfig::default();
-    config.window.dimension = Dimension2D {
-        width : WINDOW_WIDTH,
-        height: WINDOW_HEIGHT,
-    };
-    config.window.title = String::from(WINDOW_TITLE);
 
-    let mut program = ProgramEnv::new(config, procecure);
+    let mut program = ProgramEnv::new(procecure).unwrap();
 
     match program.launch() {
         | Ok(_) => (),

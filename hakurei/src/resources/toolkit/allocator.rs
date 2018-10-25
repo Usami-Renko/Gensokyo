@@ -1,4 +1,5 @@
 
+use config::resources::ResourceConfig;
 use core::physical::HaPhyDevice;
 use core::device::HaDevice;
 use core::swapchain::HaSwapchain;
@@ -17,16 +18,18 @@ pub struct AllocatorKit {
     device  : HaDevice,
 
     dimension: Dimension2D,
+    config: ResourceConfig,
 }
 
 impl AllocatorKit {
 
-    pub fn init(physical: &HaPhyDevice, device: &HaDevice, swapchain: &HaSwapchain) -> AllocatorKit {
+    pub(crate) fn init(physical: &HaPhyDevice, device: &HaDevice, swapchain: &HaSwapchain, config: ResourceConfig) -> AllocatorKit {
         AllocatorKit {
             physical: physical.clone(),
             device  : device.clone(),
 
             dimension: swapchain.extent,
+            config,
         }
     }
 
@@ -39,7 +42,7 @@ impl AllocatorKit {
     }
 
     pub fn image(&self, ty: ImageStorageType) -> HaImageAllocator {
-        HaImageAllocator::new(&self.physical, &self.device, ty)
+        HaImageAllocator::new(&self.physical, &self.device, ty, self.config.image_load.clone())
     }
 
     pub fn swapchain_dimension(&self) -> Dimension2D {

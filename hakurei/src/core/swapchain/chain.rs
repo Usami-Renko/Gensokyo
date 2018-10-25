@@ -45,7 +45,7 @@ impl HaSwapchain {
     /// `sign_semaphore` is the semaphore to signal during this function, or None for no semaphore to signal.
     ///
     /// `sign_fence` is the fence to signal during this function, or None for no fence to signal.
-    pub fn next_image(&self, sign_semaphore: Option<&HaSemaphore>, sign_fence: Option<&HaFence>)
+    pub(crate) fn next_image(&self, sign_semaphore: Option<&HaSemaphore>, sign_fence: Option<&HaFence>)
         -> Result<uint32_t, SwapchainRuntimeError> {
 
         // the the handle of semaphore and fence
@@ -93,7 +93,7 @@ impl HaSwapchain {
     /// Generally it's a `vk::Queue` that is support `vk::QUEUE_GRAPHICS_BIT`.
     ///
     /// `image_index` is the index of swapchain’s presentable images.
-    pub fn present(&self, wait_semaphores: &[&HaSemaphore], image_index: uint32_t, queue: &HaGraphicsQueue)
+    pub(crate) fn present(&self, wait_semaphores: &[&HaSemaphore], image_index: uint32_t, queue: &HaGraphicsQueue)
         -> Result<(), SwapchainRuntimeError> {
 
         let semaphores = wait_semaphores.handles();
@@ -129,7 +129,7 @@ impl HaSwapchain {
     }
 
     /// Some cleaning operations before this object was uninitialized.
-    pub fn cleanup(&self, device: &HaDevice) {
+    pub(crate) fn cleanup(&self, device: &HaDevice) {
 
         // destroy all the presentable images created by this swapchain.
         self.views.iter().for_each(|v| v.cleanup(device));

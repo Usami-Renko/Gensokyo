@@ -20,8 +20,6 @@ use cocoa::appkit::{ NSView, NSWindow };
 #[cfg(target_os = "macos")]
 use objc::runtime::YES;
 
-use core::device::QueueRequestStrategy;
-
 /// get the names of required extension used in macOS.
 #[cfg(target_os = "macos")]
 pub fn required_extension_names() -> Vec<*const i8> {
@@ -143,8 +141,3 @@ pub unsafe fn generate_surface<E: EntryV1_0, I: InstanceV1_0>(
     win32_surface_loader.create_win32_surface_khr(&win32_create_info, None)
 }
 // ------------------------------------------------------------------------
-
-#[cfg(target_os = "macos")]
-pub const QUEUE_REQUEST_STRATEGY: QueueRequestStrategy = QueueRequestStrategy::SingleFamilySingleQueue;
-#[cfg(not(target_os = "macos"))]
-pub const QUEUE_REQUEST_STRATEGY: QueueRequestStrategy = QueueRequestStrategy::SingleFamilyDifferentQueues;

@@ -8,7 +8,7 @@ use core::error::{ PhysicalDeviceError, PhysicalFormatUsage };
 
 const DEPTH_STENCIL_REQUIRE_FLAG: vk::FormatFeatureFlags = vk::FORMAT_FEATURE_DEPTH_STENCIL_ATTACHMENT_BIT;
 
-pub struct PhysicalFormatProperties {
+pub(crate) struct PhysicalFormatProperties {
 
     pub(crate) depth_stencil_format: vk::Format,
 }

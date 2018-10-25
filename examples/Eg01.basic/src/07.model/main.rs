@@ -8,7 +8,6 @@ extern crate hakurei;
 extern crate cgmath;
 
 use hakurei::prelude::*;
-use hakurei::prelude::config::*;
 
 const WINDOW_TITLE: &'static str = "07.Model";
 
@@ -19,16 +18,9 @@ use self::program::ModelProcedure;
 
 fn main() {
 
-    let mut config = EngineConfig::default();
-    config.window.dimension = Dimension2D {
-        width : WINDOW_WIDTH,
-        height: WINDOW_HEIGHT,
-    };
-    config.window.title = String::from(WINDOW_TITLE);
-
     let procecure = ModelProcedure::new();
 
-    let mut program = ProgramEnv::new(config, procecure);
+    let mut program = ProgramEnv::new( procecure).unwrap();
 
     match program.launch() {
         | Ok(_) => (),

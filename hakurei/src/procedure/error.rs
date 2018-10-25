@@ -1,6 +1,7 @@
 
 use winit;
 
+use config::error::ConfigError;
 use core::error::{ InstanceError, ValidationError, PhysicalDeviceError, SurfaceError, LogicalDeviceError };
 use core::swapchain::SwapchainError;
 use pipeline::error::PipelineError;
@@ -15,6 +16,7 @@ use std::error::Error;
 #[derive(Debug)]
 pub enum RuntimeError {
 
+    Config(ConfigError),
     Window(winit::CreationError),
     Procedure(ProcedureError),
 }
@@ -22,6 +24,7 @@ pub enum RuntimeError {
 impl Error for RuntimeError {
     fn cause(&self) -> Option<&Error> {
         match *self {
+            | RuntimeError::Config(ref e)    => Some(e),
             | RuntimeError::Window(ref e)    => Some(e),
             | RuntimeError::Procedure(ref e) => Some(e),
         }
@@ -31,6 +34,7 @@ impl Error for RuntimeError {
 impl fmt::Display for RuntimeError {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
         let description = match *self {
+            | RuntimeError::Config(ref e)    => e.to_string(),
             | RuntimeError::Window(ref e)    => e.to_string(),
             | RuntimeError::Procedure(ref e) => e.to_string(),
         };
@@ -38,6 +42,7 @@ impl fmt::Display for RuntimeError {
     }
 }
 
+impl_from_err!(Config(ConfigError) -> RuntimeError);
 
 #[derive(Debug)]
 pub enum ProcedureError {

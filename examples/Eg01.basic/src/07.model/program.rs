@@ -49,12 +49,14 @@ pub struct ModelProcedure {
 impl ModelProcedure {
 
     pub fn new() -> ModelProcedure {
+
         let camera = CameraConfigurator::config()
             .place_at(Point3::new(0.0, 0.0, 3.0))
             .screen_dimension(super::WINDOW_WIDTH, super::WINDOW_HEIGHT)
             .for_flight_camera();
 
         ModelProcedure {
+
             model_data: ModelData::empty(),
 
             buffer_storage: HaBufferRepository::empty(),
@@ -222,11 +224,11 @@ impl ProgramProc for ModelProcedure {
             .finish_config();
 
         let mut pipeline_builder = kit.pipeline_builder(PipelineType::Graphics)?;
-        pipeline_builder.add_config(pipeline_config);
+        let pipeline_index = pipeline_builder.add_config(pipeline_config);
 
-        let mut graphics_pipelines = pipeline_builder.build()?;
-        self.graphics_pipeline = graphics_pipelines.pop().unwrap();
-
+        let mut pipelines = pipeline_builder.build()?;
+        self.graphics_pipeline = pipelines.take_at(pipeline_index)?;
+        
         Ok(())
     }
 

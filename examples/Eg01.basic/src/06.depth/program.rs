@@ -206,10 +206,10 @@ impl ProgramProc for DepthProcedure {
             .finish_config();
 
         let mut pipeline_builder = kit.pipeline_builder(PipelineType::Graphics)?;
-        pipeline_builder.add_config(pipeline_config);
+        let pipeline_index = pipeline_builder.add_config(pipeline_config);
 
-        let mut graphics_pipelines = pipeline_builder.build()?;
-        self.graphics_pipeline = graphics_pipelines.pop().unwrap();
+        let mut pipelines = pipeline_builder.build()?;
+        self.graphics_pipeline = pipelines.take_at(pipeline_index)?;
 
         Ok(())
     }

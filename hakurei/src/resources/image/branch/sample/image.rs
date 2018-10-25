@@ -6,7 +6,7 @@ use core::device::HaDevice;
 
 use resources::image::{ ImageType, ImageViewType, ImageTiling, ImageUsageFlag, ImageLayout, ImageAspectFlag };
 use resources::image::{ ImageDescInfo, ImageViewDescInfo, ImageViewItem };
-use resources::image::{ HaImageDescAbs, HaImageViewDescAbs, HaImageVarietyAbs };
+use resources::image::{HaImageDescAbs, HaImageViewDescAbs, HaImageBranchAbs};
 use resources::image::ImagePipelineStage;
 use resources::image::{ HaSamplerDescAbs, HaSampler, SamplerDescInfo };
 use resources::descriptor::{ DescriptorImageBindingInfo, ImageDescriptorType, DescriptorImageBindableTarget };

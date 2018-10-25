@@ -41,7 +41,7 @@ impl VulkanFlags for [SwapchainCreateFlag] {
     }
 }
 
-pub struct SwapchainBuilder<'vk, 'win: 'vk> {
+pub(crate) struct SwapchainBuilder<'vk, 'win: 'vk> {
 
     device:  HaDevice,
     surface: &'vk HaSurface<'win>,

@@ -2,6 +2,7 @@
 use ash::vk;
 use ash::version::DeviceV1_0;
 
+use config::resources::ImageLoadConfig;
 use core::device::{ HaDevice, HaLogicalDevice };
 use core::physical::{ HaPhyDevice, MemorySelector };
 
@@ -31,6 +32,7 @@ pub struct HaImageAllocator {
     physical: HaPhyDevice,
     device  : HaDevice,
 
+    image_config: ImageLoadConfig,
     image_infos: Vec<ImageAllocateInfo>,
 
     storage_type: ImageStorageType,
@@ -41,13 +43,14 @@ pub struct HaImageAllocator {
 
 impl HaImageAllocator {
 
-    pub(crate) fn new(physical: &HaPhyDevice, device: &HaDevice, ty: ImageStorageType) -> HaImageAllocator {
+    pub(crate) fn new(physical: &HaPhyDevice, device: &HaDevice, ty: ImageStorageType, image_config: ImageLoadConfig) -> HaImageAllocator {
 
         HaImageAllocator {
 
             physical: physical.clone(),
             device  : device.clone(),
 
+            image_config,
             image_infos: vec![],
 
             storage_type: ty,
@@ -59,7 +62,7 @@ impl HaImageAllocator {
 
     pub fn attach_sample_image(&mut self, path: &Path, info: SampleImageInfo) -> Result<HaSampleImage, AllocatorError> {
 
-        let storage = ImageStorageInfo::from_load2d(path)?;
+        let storage = ImageStorageInfo::from_load2d(path, &self.image_config)?;
         let image = HaImage::config(&self.device, &info.image_desc, storage.dimension, storage.format)?;
         self.memory_selector.try(image.requirement.memory_type_bits, self.require_mem_flag)?;
 

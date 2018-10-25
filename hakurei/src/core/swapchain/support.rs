@@ -9,7 +9,7 @@ use config::core::SwapchainConfig;
 use core::surface::HaSurface;
 use core::error::SurfaceError;
 
-pub struct SwapchainSupport {
+pub(crate) struct SwapchainSupport {
 
     capabilities:  vk::SurfaceCapabilitiesKHR,
     formats:       Vec<vk::SurfaceFormatKHR>,

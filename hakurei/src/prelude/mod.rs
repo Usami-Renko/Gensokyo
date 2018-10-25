@@ -18,7 +18,6 @@ pub use procedure::error::ProcedureError;
 pub use utility::dimension::{ Dimension2D, Dimension3D };
 
 // sub modules
-pub mod config;
 pub mod queue;
 pub mod input;
 pub mod pipeline;

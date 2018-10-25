@@ -37,7 +37,9 @@ pub struct ProgramEnv<T: ProgramProc> {
 
 impl<T> ProgramEnv<T> where T: ProgramProc {
 
-    pub fn new(config: EngineConfig, procedure: T) -> ProgramEnv<T> {
+    pub fn new(procedure: T) -> Result<ProgramEnv<T>, RuntimeError> {
+
+        let config = EngineConfig::init()?;
 
         let window_info = WindowInfo {
             window_size:  config.window.dimension,
@@ -46,7 +48,8 @@ impl<T> ProgramEnv<T> where T: ProgramProc {
         let event_loop = winit::EventsLoop::new();
         let frame_in_flights = config.core.swapchain.image_count as usize;
 
-        ProgramEnv { config, event_loop, window_info, procedure, frame_in_flights }
+        let program = ProgramEnv { config, event_loop, window_info, procedure, frame_in_flights };
+        Ok(program)
     }
 
     pub fn launch(&mut self) -> Result<(), RuntimeError> {

@@ -9,7 +9,7 @@ use core::error::LogicalDeviceError;
 
 use std::rc::Rc;
 
-pub struct HaGraphicsQueue {
+pub(crate) struct HaGraphicsQueue {
 
     pub queue: Rc<HaQueue>,
 }
