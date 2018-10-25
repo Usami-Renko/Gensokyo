@@ -1,8 +1,6 @@
 
-pub use self::config::ResourceConfig;
-
-pub(crate) use self::image::ImageLoadConfig;
-pub(crate) use self::image::{ IMAGE_FLIP_VERTICAL, IMAGE_FLIP_HORIZONTAL, BYTE_PER_PIXEL, FORCE_RGBA };
+pub(crate) use self::config::{ ResourceConfig, ResourceConfigMirror };
+pub(crate) use self::image::{ ImageLoadConfig, ImageLoadConfigMirror };
 
 mod config;
 mod image;

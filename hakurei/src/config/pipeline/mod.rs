@@ -1,6 +1,6 @@
 
-pub(crate) use self::config::PipelineConfig;
-pub(crate) use self::depth::DepthStencilConfig;
+pub(crate) use self::config::{ PipelineConfig, PipelineConfigMirror };
+pub(crate) use self::depth::{ DepthStencilConfig, DepthStencilConfigMirror };
 
 mod config;
 mod shaderc;

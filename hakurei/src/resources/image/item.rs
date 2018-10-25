@@ -37,7 +37,7 @@ impl ImageViewItem {
     }
 }
 
-pub trait HaImageVarietyAbs {
+pub trait HaImageBranchAbs {
 
     fn view_index(&self) -> usize;
     fn fill_handles(&mut self, image: vk::Image, view: vk::ImageView);

@@ -1,8 +1,8 @@
 
 macro_rules! impl_image_desc_info_abs {
-    ($ImageVarietyInfo:ty) => {
+    ($ImageBranchInfo:ty) => {
 
-        impl HaImageDescAbs for $ImageVarietyInfo {
+        impl HaImageDescAbs for $ImageBranchInfo {
 
             fn set_tiling(&mut self, tiling: ImageTiling) {
                 self.image_desc.tiling = tiling.value();
@@ -21,7 +21,7 @@ macro_rules! impl_image_desc_info_abs {
             }
         }
 
-        impl HaImageViewDescAbs for $ImageVarietyInfo {
+        impl HaImageViewDescAbs for $ImageBranchInfo {
 
             // image view property.
             fn set_mapping_component(&mut self, r: vk::ComponentSwizzle, g: vk::ComponentSwizzle, b: vk::ComponentSwizzle, a: vk::ComponentSwizzle) {
@@ -39,8 +39,8 @@ macro_rules! impl_image_desc_info_abs {
 }
 
 macro_rules! impl_image_branch_abs {
-    ($ImageVariety:ty) => {
-        impl HaImageVarietyAbs for $ImageVariety {
+    ($ImageBranch:ty) => {
+        impl HaImageBranchAbs for $ImageBranch {
 
             fn view_index(&self) -> usize {
                 self.item.view_index

@@ -4,10 +4,9 @@ use ash::version::{ EntryV1_0, InstanceV1_0 };
 
 use core::{ EntryV1, InstanceV1 };
 
-use config::core;
 use config::engine::EngineConfig;
+use config::core::ValidationConfig;
 use core::error::InstanceError;
-use core::debug::ValidationInfo;
 use core::platforms;
 use core::debug;
 
@@ -17,7 +16,7 @@ use std::ptr;
 use std::ffi::CString;
 
 /// Wrapper class for `vk::Instance` object.
-pub struct HaInstance {
+pub(crate) struct HaInstance {
 
     /// the object used in instance creation define in ash crate.
     pub entry:  EntryV1,
@@ -35,17 +34,17 @@ impl HaInstance {
         let entry = EntryV1::new()
             .or(Err(InstanceError::EntryCreationError))?;
 
-        let app_name    = CString::new(core::APPLICATION_NAME).unwrap();
-        let engine_name = CString::new(core::ENGINE_NAME).unwrap();
+        let app_name    = CString::new(config.core.name_application.clone()).unwrap();
+        let engine_name = CString::new(config.core.name_engine.clone()).unwrap();
 
         let app_info = vk::ApplicationInfo {
             s_type              : vk::StructureType::ApplicationInfo,
             p_next              : ptr::null(),
             p_application_name  : app_name.as_ptr(),
-            application_version : core::APPLICATION_VERSION,
+            application_version : config.core.version_application,
             p_engine_name       : engine_name.as_ptr(),
-            engine_version      : core::ENGINE_VERSION,
-            api_version         : core::API_VERSION,
+            engine_version      : config.core.version_engine,
+            api_version         : config.core.version_api,
         };
 
         // get the names of required vulkan layers.
@@ -95,7 +94,7 @@ impl HaInstance {
 /// Convenient function to get the names of required vulkan layers.
 ///
 /// Return an vector of CString if succeeds, or an error explan the detail.
-fn required_layers(entry: &EntryV1, validation: &ValidationInfo) -> Result<Vec<CString>, InstanceError> {
+fn required_layers(entry: &EntryV1, validation: &ValidationConfig) -> Result<Vec<CString>, InstanceError> {
 
     // required validation layer name if need  ---------------------------
     let mut enable_layer_names = vec![];

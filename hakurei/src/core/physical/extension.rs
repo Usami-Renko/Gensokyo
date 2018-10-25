@@ -11,7 +11,7 @@ use utility::cast;
 use std::ffi::CString;
 
 #[derive(Debug, Clone, Copy, Eq, PartialEq)]
-pub enum DeviceExtensionType {
+pub(crate) enum DeviceExtensionType {
     Swapchain,
 }
 
@@ -24,7 +24,7 @@ impl DeviceExtensionType {
     }
 }
 
-pub struct PhysicalExtension {
+pub(crate) struct PhysicalExtension {
 
     handles: Vec<vk::ExtensionProperties>,
     pub enables: Vec<CString>,

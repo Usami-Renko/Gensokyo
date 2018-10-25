@@ -25,7 +25,7 @@ struct QueueOperationIndices {
 }
 
 #[derive(Debug, Clone, Copy, Eq, PartialEq)]
-pub enum QueueOperationType {
+pub(crate) enum QueueOperationType {
     Graphics,
     Compute,
     Transfer,
@@ -61,7 +61,7 @@ impl VulkanFlags for [QueueOperationType] {
     }
 }
 
-pub struct PhysicalQueueFamilies {
+pub(crate) struct PhysicalQueueFamilies {
 
     families           : Vec<vk::QueueFamilyProperties>,
     pub family_indices : QueueFamilyIndices,

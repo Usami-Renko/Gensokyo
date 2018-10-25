@@ -14,7 +14,7 @@ impl ModelObjLoader {
         ModelObjLoader {}
     }
 
-    pub fn load_model<T: ObjDataEntity>(&self, from: &Path, data_entity: &mut T) -> Result<(), ModelLoadingErr> {
+    pub fn load_model(&self, from: &Path, data_entity: &mut impl ObjDataEntity) -> Result<(), ModelLoadingErr> {
 
         let (models, _materials) = tobj::load_obj(from)
             .map_err(|e| ModelLoadingErr::Obj(ModelObjLoadingError::Loading(e)))?;

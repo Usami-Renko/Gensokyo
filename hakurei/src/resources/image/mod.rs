@@ -11,7 +11,7 @@ pub use self::branch::{
 
 pub(crate) use self::image::{ HaImage, ImageDescInfo };
 pub(crate) use self::view::{ HaImageView, ImageViewDescInfo };
-pub(crate) use self::item::{ HaImageVarietyAbs, ImageViewItem };
+pub(crate) use self::item::{HaImageBranchAbs, ImageViewItem };
 pub(crate) use self::flag::{ ImageUsageFlag, ImageAspectFlag };
 pub(crate) use self::io::{ ImageStorageInfo, ImageSource };
 pub(crate) use self::enums::{ ImageVarietyType, ImageType, ImageViewType, DepthImageUsage };

@@ -4,7 +4,7 @@ use ash::vk::uint32_t;
 
 use resources::image::{ ImageType, ImageViewType, ImageTiling, ImageUsageFlag, ImageLayout, ImageAspectFlag };
 use resources::image::{ ImageDescInfo, ImageViewDescInfo, ImageViewItem };
-use resources::image::{ HaImageDescAbs, HaImageViewDescAbs, HaImageVarietyAbs };
+use resources::image::{HaImageDescAbs, HaImageViewDescAbs, HaImageBranchAbs };
 use resources::image::{ DepthImageUsage, ImagePipelineStage, DepthStencilImageFormat };
 use resources::descriptor::{ DescriptorImageBindingInfo, DescriptorImageBindableTarget };
 use resources::error::DescriptorError;

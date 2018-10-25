@@ -11,7 +11,7 @@ use core::error::SurfaceError;
 use utility::dimension::Dimension2D;
 
 /// Wrapper class for `vk::Surface`.
-pub struct HaSurface<'win> {
+pub(crate) struct HaSurface<'win> {
 
     /// the handle of `vk::SurfaceKHR`.
     pub handle: vk::SurfaceKHR,

@@ -2,7 +2,7 @@
 use ash::vk;
 use ash::vk::uint32_t;
 
-use resources::buffer::{ BufferItem, BufferUsageFlag };
+use resources::buffer::{ BufferItem, BufferUsageFlag, BufferCreateFlag };
 use resources::buffer::{ BufferBlockInfo, BufferBlockEntity };
 use resources::allocator::BufferInfosAllocatable;
 use resources::descriptor::{ DescriptorBufferBindingInfo, DescriptorBufferBindableTarget };
@@ -30,6 +30,10 @@ impl UniformBlockInfo {
             element_size,
             flags: vk::BufferCreateFlags::empty(),
         }
+    }
+
+    pub fn add_flag(&mut self, flag: BufferCreateFlag) {
+        self.flags |= flag.value()
     }
 }
 

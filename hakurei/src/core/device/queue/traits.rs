@@ -8,7 +8,7 @@ use core::error::LogicalDeviceError;
 
 use std::rc::Rc;
 
-pub trait HaQueueAbstract {
+pub(crate) trait HaQueueAbstract {
 
     fn new(device: &DeviceV1, queue: &Rc<HaQueue>, config: &DeviceConfig) -> Result<Self, LogicalDeviceError> where Self: Sized;
 

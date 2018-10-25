@@ -1,7 +1,12 @@
 
+use toml;
 use ash::vk;
 
-pub struct DepthStencilConfig {
+use config::engine::ConfigMirror;
+use config::macros::vk_string_to_format;
+use config::error::{ ConfigError, MappingError };
+
+pub(crate) struct DepthStencilConfig {
 
     /// The prefer format for depth or stencil buffer.
     ///
@@ -13,18 +18,62 @@ pub struct DepthStencilConfig {
     pub prefer_image_tiling: vk::ImageTiling,
 }
 
-impl Default for DepthStencilConfig {
+#[derive(Deserialize, Default)]
+pub(crate) struct DepthStencilConfigMirror {
+    prefer_depth_stencil_formats: Vec<String>,
+    prefer_image_tiling: String,
+}
 
-    fn default() -> DepthStencilConfig {
+impl ConfigMirror for DepthStencilConfigMirror {
+    type ConfigType = DepthStencilConfig;
 
-        DepthStencilConfig {
+    fn into_config(self) -> Result<Self::ConfigType, ConfigError> {
 
-            prefer_depth_stencil_formats: vec![
-                vk::Format::D32Sfloat,
-                vk::Format::D32SfloatS8Uint,
-                vk::Format::D24UnormS8Uint,
-            ],
-            prefer_image_tiling: vk::ImageTiling::Optimal,
+        let mut prefer_depth_stencil_formats = vec![];
+        for raw_format in self.prefer_depth_stencil_formats.iter() {
+            prefer_depth_stencil_formats.push(vk_string_to_format(raw_format)?);
         }
+
+        let config = DepthStencilConfig {
+            prefer_depth_stencil_formats,
+            prefer_image_tiling: vk_raw2image_tiling(&self.prefer_image_tiling)?,
+        };
+
+        Ok(config)
     }
+
+    fn parse(&mut self, toml: &toml::Value) -> Result<(), ConfigError> {
+
+        if let Some(v) = toml.get("prefer_depth_stencil_formats") {
+            if let Some(formats) = v.as_array() {
+                if formats.len() > 0 {
+                    self.prefer_depth_stencil_formats.clear();
+
+                    for format in formats {
+                        let value = format.as_str().ok_or(ConfigError::ParseError)?;
+                        self.prefer_depth_stencil_formats.push(value.to_owned());
+                    }
+                }
+            } else {
+                return Err(ConfigError::ParseError);
+            }
+        }
+
+        if let Some(v) = toml.get("prefer_image_tiling") {
+            self.prefer_image_tiling = v.as_str().ok_or(ConfigError::ParseError)?.to_owned();
+        }
+
+        Ok(())
+    }
+}
+
+fn vk_raw2image_tiling(raw: &String) -> Result<vk::ImageTiling, ConfigError> {
+
+    let tiling = match raw.as_str() {
+        | "Optimal" => vk::ImageTiling::Optimal,
+        | "Linear"  => vk::ImageTiling::Linear,
+        | _ => return Err(ConfigError::Mapping(MappingError::ImgTilingMappingError)),
+    };
+
+    Ok(tiling)
 }

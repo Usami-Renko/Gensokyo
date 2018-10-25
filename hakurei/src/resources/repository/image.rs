@@ -2,7 +2,7 @@
 use core::device::HaDevice;
 
 use resources::memory::HaMemoryAbstract;
-use resources::image::{ HaImage, HaImageView, HaImageVarietyAbs };
+use resources::image::{HaImage, HaImageView, HaImageBranchAbs};
 
 pub struct HaImageRepository {
 
@@ -33,7 +33,7 @@ impl HaImageRepository {
         }
     }
 
-    pub fn get_allocated_infos<T: HaImageVarietyAbs>(&self, for_image_variety: &mut T) {
+    pub fn get_allocated_infos<T: HaImageBranchAbs>(&self, for_image_variety: &mut T) {
 
         let view_index = for_image_variety.view_index();
         for_image_variety.fill_handles(self.images[view_index].handle, self.views[view_index].handle);

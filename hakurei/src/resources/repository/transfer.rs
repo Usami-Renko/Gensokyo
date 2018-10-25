@@ -28,7 +28,7 @@ impl<'a> BufferDataUploader<'a> {
         let staging = memory.prepare_data_transfer(physical, device, &allocate_infos)?;
 
         let uploader = BufferDataUploader {
-            device  : device.clone(),
+            device: device.clone(),
             dst_memory: memory,
             offsets, ranges: vec![], staging,
         };

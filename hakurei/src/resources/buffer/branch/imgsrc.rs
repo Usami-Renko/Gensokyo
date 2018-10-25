@@ -1,7 +1,7 @@
 
 use ash::vk;
 
-use resources::buffer::{ BufferItem, BufferUsageFlag };
+use resources::buffer::{ BufferItem, BufferUsageFlag, BufferCreateFlag };
 use resources::buffer::{ BufferBlockInfo, BufferBlockEntity };
 use resources::allocator::BufferInfosAllocatable;
 
@@ -20,6 +20,11 @@ impl ImgsrcBlockInfo {
             flags: vk::BufferCreateFlags::empty(),
             estimate_size,
         }
+    }
+
+    #[allow(dead_code)]
+    pub fn add_flag(&mut self, flag: BufferCreateFlag) {
+        self.flags |= flag.value()
     }
 }
 
