@@ -2,6 +2,7 @@
 use winit;
 
 use config::engine::EngineConfig;
+use config::env::{ HaEnv, EnvWindow };
 
 use procedure::workflow::{ CoreInfrastructure, HaResources, ProgramProc };
 use procedure::error::{ RuntimeError, ProcedureError };
@@ -10,6 +11,8 @@ use utility::dimension::Dimension2D;
 use utility::fps::HaFpsTimer;
 
 use input::{ ActionNerve, SceneReaction };
+
+use std::path::PathBuf;
 
 struct WindowInfo {
     window_size : Dimension2D,
@@ -37,12 +40,12 @@ pub struct ProgramEnv<T: ProgramProc> {
 
 impl<T> ProgramEnv<T> where T: ProgramProc {
 
-    pub fn new(procedure: T) -> Result<ProgramEnv<T>, RuntimeError> {
+    pub fn new(manifest: Option<PathBuf>, procedure: T) -> Result<ProgramEnv<T>, RuntimeError> {
 
-        let config = EngineConfig::init()?;
+        let config = EngineConfig::init(manifest)?;
 
         let window_info = WindowInfo {
-            window_size:  config.window.dimension,
+            window_size : config.window.dimension,
             window_title: config.window.title.to_owned(),
         };
         let event_loop = winit::EventsLoop::new();
@@ -140,5 +143,18 @@ impl<T> ProgramEnv<T> where T: ProgramProc {
         }
 
         Ok(())
+    }
+
+    fn get_env(&self) -> HaEnv {
+
+
+        HaEnv {
+            window: EnvWindow {
+                title: self.config.window.title.clone(),
+                dimension: Dimension2D {
+
+                }
+            }
+        }
     }
 }

@@ -1,12 +1,16 @@
 
+use toml::de::Error as TomlError;
 use std::fmt;
 use std::error::Error;
 
 /// possible error may occur during the creation of vk::Instance.
-#[derive(Debug, Clone, Copy, Eq, PartialEq)]
+#[derive(Debug, Clone)]
 pub enum ConfigError {
 
     ParseError,
+    UserConfigSyntaxError(TomlError),
+    DirectoryAccessError,
+    IoError,
     Mapping(MappingError),
 }
 
@@ -17,6 +21,9 @@ impl fmt::Display for ConfigError {
 
         let description = match self {
             | ConfigError::ParseError => String::from("Failed to parse toml file."),
+            | ConfigError::UserConfigSyntaxError(ref e) => format!("Failed to read user manifest, syntax error: {}", e),
+            | ConfigError::DirectoryAccessError => String::from("Failed to access the current working directory."),
+            | ConfigError::IoError => String::from("Failed to perform I/O operation."),
             | ConfigError::Mapping(ref e) => e.to_string(),
         };
 

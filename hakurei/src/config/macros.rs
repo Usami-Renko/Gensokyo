@@ -17,6 +17,11 @@ use core::physical::PhysicalFeatureType::*;
 //                .ok_or(ConfigError::ParseError)?
 //        }
 //    };
+//    ($variable:tt) => {
+//        if let Some(v) = toml.get(stringify!($variable)) {
+//            self.$variable.parse(v)?;
+//        }
+//    };
 //}
 
 macro_rules! raw_str2vk_types {

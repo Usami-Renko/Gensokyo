@@ -5,6 +5,9 @@ pub use ash::vk::DeviceSize;
 pub use ash::vk::Format;
 pub use ash::vk::VertexInputRate;
 
+// config module
+pub use config::env::HaEnv;
+
 // core module
 pub use core::swapchain::HaSwapchain;
 pub use core::device::HaDevice;

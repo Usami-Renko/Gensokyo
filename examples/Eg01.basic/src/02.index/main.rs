@@ -10,11 +10,9 @@ use hakurei::prelude::resources::*;
 use hakurei::prelude::sync::*;
 use hakurei::prelude::input::*;
 
-use std::path::Path;
+use std::path::{ Path, PathBuf };
 
-const WINDOW_TITLE: &'static str = "02.Index";
-const WINDOW_WIDTH:  u32 = 800;
-const WINDOW_HEIGHT: u32 = 600;
+const MANIFEST_PATH: &'static str = "src/02.index/hakurei.toml";
 const VERTEX_SHADER_SOURCE_PATH  : &'static str = "src/02.index/index.vert";
 const FRAGMENT_SHADER_SOURCE_PATH: &'static str = "src/02.index/index.frag";
 
@@ -237,7 +235,8 @@ fn main() {
 
     let procecure = DrawIndexProcedure::new();
 
-    let mut program = ProgramEnv::new(procecure).unwrap();
+    let manifest = PathBuf::from(MANIFEST_PATH);
+    let mut program = ProgramEnv::new(Some(manifest), procecure).unwrap();
 
     match program.launch() {
         | Ok(_) => (),

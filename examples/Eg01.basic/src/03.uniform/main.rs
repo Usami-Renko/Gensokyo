@@ -13,11 +13,9 @@ use hakurei::prelude::resources::*;
 use hakurei::prelude::sync::*;
 use hakurei::prelude::input::*;
 
-use std::path::Path;
+use std::path::{ Path, PathBuf };
 
-const WINDOW_TITLE: &'static str = "03.Unifrom";
-const WINDOW_WIDTH:  u32 = 800;
-const WINDOW_HEIGHT: u32 = 600;
+const MANIFEST_PATH: &'static str = "src/03.uniform/hakurei.toml";
 const VERTEX_SHADER_SOURCE_PATH  : &'static str = "src/03.uniform/uniform.vert";
 const FRAGMENT_SHADER_SOURCE_PATH: &'static str = "src/03.uniform/uniform.frag";
 
@@ -264,7 +262,8 @@ fn main() {
 
     let procecure = UniformBufferProcedure::new();
 
-    let mut program = ProgramEnv::new(procecure).unwrap();
+    let manifest = PathBuf::from(MANIFEST_PATH);
+    let mut program = ProgramEnv::new(Some(manifest), procecure).unwrap();
 
     match program.launch() {
         | Ok(_) => (),

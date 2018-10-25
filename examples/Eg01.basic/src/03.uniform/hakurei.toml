@@ -1,0 +1,7 @@
+
+[window]
+title = "03.uniform"
+
+[window.dimension]
+width  = 800
+height = 600
