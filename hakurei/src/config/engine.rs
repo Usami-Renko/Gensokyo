@@ -2,11 +2,18 @@
 use toml;
 
 use config::core::{ CoreConfig, CoreConfigMirror };
-use config::default::defalut_config_toml;
+use config::manifest::manifest_toml;
 use config::window::{ WindowConfig, WindowConfigMirror };
 use config::pipeline::{ PipelineConfig, PipelineConfigMirror };
 use config::resources::{ ResourceConfig, ResourceConfigMirror };
 use config::error::ConfigError;
+
+use std::env;
+use std::fs;
+use std::path::PathBuf;
+use std::io::Read;
+
+const MANIFEST_CONFIG_NAME: &'static str = "hakurei.toml";
 
 pub(crate) trait ConfigMirror {
     type ConfigType;
@@ -73,14 +80,69 @@ impl ConfigMirror for EngineConfigMirror {
 
 impl EngineConfig {
 
-    pub fn init() -> Result<EngineConfig, ConfigError> {
+    pub fn init(manifest: Option<PathBuf>) -> Result<EngineConfig, ConfigError> {
 
-        let mut unset_configs = EngineConfigMirror::default();
-        let toml_configs = defalut_config_toml();
+        let mut program_config = EngineConfigMirror::default();
+        let toml_configs = manifest_toml();
 
-        unset_configs.parse(&toml_configs)?;
-        let final_configs = unset_configs.into_config()?;
+        // initialize configuration with default setting.
+        program_config.parse(&toml_configs)?;
+
+        // try to search for user's configuration setting.
+        let user_config_path = if let Some(_) = manifest {
+            manifest
+        } else {
+            EngineConfig::search_manifest()?
+        };
+
+        if let Some(config_path) = user_config_path {
+
+            let config_content = EngineConfig::read_manifest(config_path)?;
+            let user_config = config_content.parse::<toml::Value>()
+                .map_err(|e| ConfigError::UserConfigSyntaxError(e))?;
+            // override original configurations.
+            program_config.parse(&user_config)?;
+        }
+
+        let final_configs = program_config.into_config()?;
 
         Ok(final_configs)
+    }
+
+    /// Iteratively search for `MANIFEST_CONFIG_NAME` starting at the current working directory and working up through its parents.
+    ///
+    /// Returns the path to the file or an None if the file couldn't be found.
+    fn search_manifest() -> Result<Option<PathBuf>, ConfigError> {
+
+        let cwd = env::current_dir()
+            .map_err(|_| ConfigError::DirectoryAccessError)?;
+        let mut current = cwd.as_path();
+
+        loop {
+            let manifest = current.join(MANIFEST_CONFIG_NAME);
+            if fs::metadata(&manifest).is_ok() {
+                // succeed to find manifest configuration file.
+                return Ok(Some(manifest))
+            }
+
+            // continute search its parent directory.
+            match current.parent() {
+                Some(p) => current = p,
+                None => break,
+            }
+        }
+
+        Ok(None)
+    }
+
+    fn read_manifest(at_path: PathBuf) -> Result<String, ConfigError> {
+
+        let mut file_handle = fs::File::open(at_path)
+            .map_err(|_| ConfigError::IoError)?;
+        let mut contents = String::new();
+        file_handle.read_to_string(&mut contents)
+            .map_err(|_| ConfigError::IoError)?;
+
+        return Ok(contents)
     }
 }

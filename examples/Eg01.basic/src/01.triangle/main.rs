@@ -10,11 +10,9 @@ use hakurei::prelude::resources::*;
 use hakurei::prelude::sync::*;
 use hakurei::prelude::input::*;
 
-use std::path::Path;
+use std::path::{ Path, PathBuf };
 
-const WINDOW_TITLE: &'static str = "01.Trangle";
-const WINDOW_WIDTH:  u32 = 800;
-const WINDOW_HEIGHT: u32 = 600;
+const MANIFEST_PATH: &'static str = "src/01.triangle/hakurei.toml";
 const VERTEX_SHADER_SPIRV_PATH  : &'static str = "src/01.triangle/triangle.vert.spv";
 const FRAGMENT_SHADER_SPIRV_PATH: &'static str = "src/01.triangle/triangle.frag.spv";
 
@@ -218,7 +216,8 @@ fn main() {
 
     let procecure = TriangleProcedure::new();
 
-    let mut program = ProgramEnv::new(procecure).unwrap();
+    let manifest = PathBuf::from(MANIFEST_PATH);
+    let mut program = ProgramEnv::new(Some(manifest), procecure).unwrap();
 
     match program.launch() {
         | Ok(_) => (),

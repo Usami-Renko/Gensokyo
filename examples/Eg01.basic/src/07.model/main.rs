@@ -9,18 +9,17 @@ extern crate cgmath;
 
 use hakurei::prelude::*;
 
-const WINDOW_TITLE: &'static str = "07.Model";
-
-pub const WINDOW_WIDTH:  u32 = 800;
-pub const WINDOW_HEIGHT: u32 = 600;
+const MANIFEST_PATH: &'static str = "src/01.triangle/hakurei.toml";
 
 use self::program::ModelProcedure;
+use std::path::PathBuf;
 
 fn main() {
 
     let procecure = ModelProcedure::new();
 
-    let mut program = ProgramEnv::new( procecure).unwrap();
+    let manifest = PathBuf::from(MANIFEST_PATH);
+    let mut program = ProgramEnv::new(Some(manifest), procecure).unwrap();
 
     match program.launch() {
         | Ok(_) => (),

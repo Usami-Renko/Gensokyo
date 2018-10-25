@@ -9,18 +9,17 @@ extern crate cgmath;
 
 use hakurei::prelude::*;
 
-const WINDOW_TITLE: &'static str = "05.Cube";
-
-pub const WINDOW_WIDTH:  u32 = 800;
-pub const WINDOW_HEIGHT: u32 = 600;
+const MANIFEST_PATH: &'static str = "src/05.cube/hakurei.toml";
 
 use self::program::CubeProcedure;
+use std::path::PathBuf;
 
 fn main() {
 
     let procecure = CubeProcedure::new();
 
-    let mut program = ProgramEnv::new(procecure).unwrap();
+    let manifest = PathBuf::from(MANIFEST_PATH);
+    let mut program = ProgramEnv::new(Some(manifest), procecure).unwrap();
 
     match program.launch() {
         | Ok(_) => (),

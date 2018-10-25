@@ -10,11 +10,9 @@ use hakurei::prelude::resources::*;
 use hakurei::prelude::sync::*;
 use hakurei::prelude::input::*;
 
-use std::path::Path;
+use std::path::{ Path, PathBuf };
 
-const WINDOW_TITLE: &'static str = "04.Texture";
-const WINDOW_WIDTH:  u32 = 800;
-const WINDOW_HEIGHT: u32 = 800;
+const MANIFEST_PATH: &'static str = "src/04.texture/hakurei.toml";
 const VERTEX_SHADER_SOURCE_PATH  : &'static str = "src/04.texture/texture.vert";
 const FRAGMENT_SHADER_SOURCE_PATH: &'static str = "src/04.texture/texture.frag";
 const TEXTURE_PATH: &'static str = "textures/texture.jpg";
@@ -260,7 +258,8 @@ fn main() {
 
     let procecure = TextureMappingProcedure::new();
 
-    let mut program = ProgramEnv::new(procecure).unwrap();
+    let manifest = PathBuf::from(MANIFEST_PATH);
+    let mut program = ProgramEnv::new(Some(manifest), procecure).unwrap();
 
     match program.launch() {
         | Ok(_) => (),

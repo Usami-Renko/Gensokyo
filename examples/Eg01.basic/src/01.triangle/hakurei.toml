@@ -1,0 +1,7 @@
+
+[window]
+title = "01.Trangle"
+
+[window.dimension]
+width  = 800
+height = 600

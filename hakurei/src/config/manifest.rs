@@ -1,7 +1,7 @@
 
 use toml;
 
-pub(super) fn defalut_config_toml() -> toml::Value {
+pub(super) fn manifest_toml() -> toml::Value {
 
     toml! {
         [core]
