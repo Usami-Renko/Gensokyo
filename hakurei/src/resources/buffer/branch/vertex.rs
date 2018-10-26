@@ -58,6 +58,7 @@ impl BufferInfosAllocatable for VertexBlockInfo {
 }
 
 
+#[derive(Default)]
 pub struct HaVertexBlock {
 
     offsets: Vec<vk::DeviceSize>,
@@ -67,10 +68,7 @@ pub struct HaVertexBlock {
 impl HaVertexBlock {
 
     pub fn uninitialize() -> HaVertexBlock {
-        HaVertexBlock {
-            offsets: vec![],
-            item: BufferItem::unset(),
-        }
+        HaVertexBlock::default()
     }
 
     pub(crate) fn from(info: &VertexBlockInfo, item: BufferItem) -> HaVertexBlock {

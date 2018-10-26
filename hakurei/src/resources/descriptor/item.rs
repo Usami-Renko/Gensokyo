@@ -39,7 +39,7 @@ pub trait DescriptorImageBindableTarget {
 pub struct DescriptorBufferBindingInfo {
 
     /// the type of descriptor.
-    pub type_  : BufferDescriptorType,
+    pub typ: BufferDescriptorType,
     /// the binding index used in shader for the descriptor.
     pub binding: uint32_t,
     /// the total element count of each descriptor.
@@ -49,7 +49,7 @@ pub struct DescriptorBufferBindingInfo {
     /// the size of each element of descriptor.
     pub element_size: vk::DeviceSize,
     /// the reference to buffer where the descriptor data stores.
-    pub buffer : BufferItem,
+    pub buffer: BufferItem,
 }
 
 struct DescriptorWriteBufferContent(Vec<vk::DescriptorBufferInfo>);
@@ -58,7 +58,7 @@ impl DescriptorWriteContent for DescriptorWriteBufferContent {}
 impl DescriptorBindingInfo for DescriptorBufferBindingInfo {
 
     fn binding_value(&self)    -> uint32_t { self.binding }
-    fn descriptor_type(&self)  -> vk::DescriptorType { self.type_.value() }
+    fn descriptor_type(&self)  -> vk::DescriptorType { self.typ.value() }
     fn descritpor_count(&self) -> uint32_t { self.count }
 
     fn write_set(&self, set: &HaDescriptorSet) -> Result<DescriptorWriteInfo, DescriptorError> {
@@ -86,7 +86,7 @@ impl DescriptorBindingInfo for DescriptorBufferBindingInfo {
             // TODO: Currently dst_array_element filed is not configurable
             dst_array_element  : 0,
             descriptor_count   : buffer_infos.len() as uint32_t,
-            descriptor_type    : self.type_.value(),
+            descriptor_type    : self.typ.value(),
             p_image_info       : ptr::null(),
             p_buffer_info      : buffer_infos.as_ptr(),
             p_texel_buffer_view: ptr::null(),
@@ -105,11 +105,11 @@ impl DescriptorBindingInfo for DescriptorBufferBindingInfo {
 pub struct DescriptorImageBindingInfo {
 
     /// the type of descritpor.
-    pub(crate) type_  : ImageDescriptorType,
+    pub(crate) type_: ImageDescriptorType,
     /// the binding index used in shader for the descriptor.
     pub(crate) binding: uint32_t,
     /// the element count of each descriptor.
-    pub(crate) count  : uint32_t,
+    pub(crate) count: uint32_t,
     /// sampler information.
     pub(crate) sampler: vk::Sampler,
     /// what the layout is for this descriptor in shader.
@@ -209,15 +209,17 @@ impl DescriptorSetConfig {
     }
 
     fn add_binding(&mut self, binding: Box<DescriptorBindingInfo>, stages: &[ShaderStageFlag]) -> usize {
+
         let descriptor_index = self.bindings.len();
         self.bindings.push(binding);
         self.stage_flags.push(stages.flags());
+
         descriptor_index
     }
 }
 
 
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, Default)]
 pub struct DescriptorItem {
 
     pub(crate) set_index    : usize,
@@ -227,14 +229,11 @@ pub struct DescriptorItem {
 impl DescriptorItem {
 
     pub fn unset() -> DescriptorItem {
-        DescriptorItem {
-            set_index    : 0,
-            binding_index: 0,
-        }
+        DescriptorItem::default()
     }
 }
 
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, Default)]
 pub struct DescriptorSetItem {
 
     pub(crate) set_index: usize,
@@ -243,8 +242,6 @@ pub struct DescriptorSetItem {
 impl DescriptorSetItem {
 
     pub fn unset() -> DescriptorSetItem {
-        DescriptorSetItem {
-            set_index: 0,
-        }
+        DescriptorSetItem::default()
     }
 }

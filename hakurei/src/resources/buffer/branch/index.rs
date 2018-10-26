@@ -58,6 +58,7 @@ impl BufferInfosAllocatable for IndexBlockInfo {
 }
 
 
+#[derive(Default)]
 pub struct HaIndexBlock {
 
     offsets: Vec<vk::DeviceSize>,
@@ -67,10 +68,7 @@ pub struct HaIndexBlock {
 impl HaIndexBlock {
 
     pub fn uninitialize() -> HaIndexBlock {
-        HaIndexBlock {
-            offsets: vec![],
-            item: BufferItem::unset(),
-        }
+        HaIndexBlock::default()
     }
 
     pub(crate) fn from(info: &IndexBlockInfo, item: BufferItem) -> HaIndexBlock {

@@ -16,8 +16,8 @@ use std::ptr;
 pub(crate) struct DescriptorPoolInfo {
 
     flags     : vk::DescriptorPoolCreateFlags,
-    max_sets  : uint32_t,
     pool_sizes: Vec<vk::DescriptorPoolSize>,
+    max_sets  : uint32_t,
 }
 
 impl DescriptorPoolInfo {
@@ -25,8 +25,8 @@ impl DescriptorPoolInfo {
     pub fn new(flags: vk::DescriptorPoolCreateFlags) -> DescriptorPoolInfo {
         DescriptorPoolInfo {
             flags,
-            max_sets  : 0,
             pool_sizes: vec![],
+            max_sets  : 0,
         }
     }
 
@@ -36,6 +36,7 @@ impl DescriptorPoolInfo {
     }
 
     pub fn add_pool_size(&mut self, desc_type: vk::DescriptorType, count: uint32_t) {
+
         self.pool_sizes.push(vk::DescriptorPoolSize {
             typ: desc_type,
             descriptor_count: count,
@@ -43,6 +44,7 @@ impl DescriptorPoolInfo {
     }
 
     pub fn build(&self, device: &HaDevice) -> Result<HaDescriptorPool, DescriptorError> {
+
         let max_sets = if self.max_sets == 0 { self.pool_sizes.len() as uint32_t } else { self.max_sets };
 
         let info = vk::DescriptorPoolCreateInfo {
@@ -62,6 +64,7 @@ impl DescriptorPoolInfo {
         let descriptor_pool = HaDescriptorPool {
             handle,
         };
+
         Ok(descriptor_pool)
     }
 }
@@ -80,14 +83,15 @@ impl HaDescriptorPool {
     }
 
     pub fn allocate(&self, device: &HaDevice, layouts: Vec<HaDescriptorSetLayout>) -> Result<Vec<HaDescriptorSet>, DescriptorError> {
-        let handles = layouts.handles();
+
+        let layout_handles = layouts.handles();
 
         let allocate_info = vk::DescriptorSetAllocateInfo {
             s_type: vk::StructureType::DescriptorSetAllocateInfo,
             p_next: ptr::null(),
             descriptor_pool: self.handle,
-            descriptor_set_count: handles.len() as uint32_t,
-            p_set_layouts       : handles.as_ptr(),
+            descriptor_set_count: layout_handles.len() as uint32_t,
+            p_set_layouts       : layout_handles.as_ptr(),
         };
 
         let handles = unsafe {
@@ -95,19 +99,16 @@ impl HaDescriptorPool {
                 .or(Err(DescriptorError::SetAllocateError))?
         };
 
-        let mut sets = vec![];
+        let sets = layouts.into_iter().zip(handles.into_iter())
+            .map(|(layout, handle)|
+                HaDescriptorSet { handle, layout, }
+        ).collect();
 
-        for (index, layout) in layouts.into_iter().enumerate() {
-            let set = HaDescriptorSet {
-                handle: handles[index],
-                layout,
-            };
-            sets.push(set);
-        }
         Ok(sets)
     }
 
     pub fn cleanup(&self, device: &HaDevice) {
+
         unsafe {
             device.handle.destroy_descriptor_pool(self.handle, None);
         }

@@ -7,6 +7,7 @@ use std::ptr;
 
 use utility::dimension::Dimension2D;
 
+#[derive(Default)]
 pub struct HaViewportState {
 
     ports   : Vec<vk::Viewport>,
@@ -60,17 +61,6 @@ impl HaViewportState {
             p_viewports   : self.ports.as_ptr(),
             scissor_count : self.length as uint32_t,
             p_scissors    : self.scissors.as_ptr(),
-        }
-    }
-}
-
-impl Default for HaViewportState {
-
-    fn default() -> HaViewportState {
-        HaViewportState {
-            ports   : vec![],
-            scissors: vec![],
-            length  : 0,
         }
     }
 }

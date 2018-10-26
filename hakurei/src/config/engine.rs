@@ -1,8 +1,8 @@
 
 use toml;
 
+use config::manifest;
 use config::core::{ CoreConfig, CoreConfigMirror };
-use config::manifest::manifest_toml;
 use config::window::{ WindowConfig, WindowConfigMirror };
 use config::pipeline::{ PipelineConfig, PipelineConfigMirror };
 use config::resources::{ ResourceConfig, ResourceConfigMirror };
@@ -13,7 +13,7 @@ use std::fs;
 use std::path::PathBuf;
 use std::io::Read;
 
-const MANIFEST_CONFIG_NAME: &'static str = "hakurei.toml";
+const MANIFEST_CONFIG_NAME: &str = "hakurei.toml";
 
 pub(crate) trait ConfigMirror {
     type ConfigType;
@@ -83,7 +83,7 @@ impl EngineConfig {
     pub fn init(manifest: Option<PathBuf>) -> Result<EngineConfig, ConfigError> {
 
         let mut program_config = EngineConfigMirror::default();
-        let toml_configs = manifest_toml();
+        let toml_configs = manifest::manifest_toml();
 
         // initialize configuration with default setting.
         program_config.parse(&toml_configs)?;
@@ -119,6 +119,7 @@ impl EngineConfig {
         let mut current = cwd.as_path();
 
         loop {
+
             let manifest = current.join(MANIFEST_CONFIG_NAME);
             if fs::metadata(&manifest).is_ok() {
                 // succeed to find manifest configuration file.
@@ -135,6 +136,7 @@ impl EngineConfig {
         Ok(None)
     }
 
+    /// Read the manifest file content to string.
     fn read_manifest(at_path: PathBuf) -> Result<String, ConfigError> {
 
         let mut file_handle = fs::File::open(at_path)

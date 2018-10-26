@@ -14,6 +14,13 @@ pub struct BufferItem {
 impl BufferItem {
 
     pub fn unset() -> BufferItem {
+        BufferItem::default()
+    }
+}
+
+impl Default for BufferItem {
+
+    fn default() -> BufferItem {
         BufferItem {
             handle      : vk::Buffer::null(),
             buffer_index: 0,

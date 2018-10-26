@@ -15,9 +15,9 @@ use hakurei::prelude::input::*;
 
 use std::path::{ Path, PathBuf };
 
-const MANIFEST_PATH: &'static str = "src/03.uniform/hakurei.toml";
-const VERTEX_SHADER_SOURCE_PATH  : &'static str = "src/03.uniform/uniform.vert";
-const FRAGMENT_SHADER_SOURCE_PATH: &'static str = "src/03.uniform/uniform.frag";
+const MANIFEST_PATH: &str = "src/03.uniform/hakurei.toml";
+const VERTEX_SHADER_SOURCE_PATH  : &str = "src/03.uniform/uniform.vert";
+const FRAGMENT_SHADER_SOURCE_PATH: &str = "src/03.uniform/uniform.frag";
 
 define_input! {
     #[binding = 0, rate = vertex]

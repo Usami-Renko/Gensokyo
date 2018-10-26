@@ -106,35 +106,14 @@ pub(crate) trait MemoryMapable: HaMemoryAbstract {
 
 pub(crate) trait MemoryDataUploadable {
 
-    fn prepare_data_transfer(&mut self, physical: &HaPhyDevice, device: &HaDevice, allocate_infos: &Option<BufferAllocateInfos>) -> Result<Option<UploadStagingResource>, MemoryError> {
+    fn prepare_data_transfer(&mut self, physical: &HaPhyDevice, device: &HaDevice, allocate_infos: &Option<BufferAllocateInfos>)
+        -> Result<Option<UploadStagingResource>, MemoryError>;
 
-        let staging = UploadStagingResource::new(physical, device, allocate_infos)?;
+    fn map_memory_ptr(&mut self, staging: &mut Option<UploadStagingResource>, item: &BufferItem, offset: vk::DeviceSize)
+        -> Result<(MemoryWritePtr, MemoryRange), MemoryError>;
 
-        Ok(Some(staging))
-    }
-
-    fn map_memory_ptr(&mut self, staging: &mut Option<UploadStagingResource>, item: &BufferItem, _offset: vk::DeviceSize) -> Result<(MemoryWritePtr, MemoryRange), MemoryError> {
-
-        if let Some(ref mut staging) = staging {
-
-            let result = staging.append_dst_item(item)?;
-            Ok(result)
-        } else {
-            Err(MemoryError::AllocateInfoMissing)
-        }
-    }
-
-    fn terminate_transfer(&mut self, device: &HaDevice, staging: &Option<UploadStagingResource>, _ranges_to_flush: &Vec<MemoryRange>) -> Result<(), MemoryError> {
-
-        if let Some(staging) = staging {
-            staging.transfer(device)
-                .or(Err(MemoryError::BufferToBufferCopyError))?
-        } else {
-            return Err(MemoryError::AllocateInfoMissing)
-        }
-
-        Ok(())
-    }
+    fn terminate_transfer(&mut self, device: &HaDevice, staging: &Option<UploadStagingResource>, ranges_to_flush: &Vec<MemoryRange>)
+        -> Result<(), MemoryError>;
 }
 
 

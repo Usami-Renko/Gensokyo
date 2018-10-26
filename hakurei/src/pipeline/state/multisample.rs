@@ -8,7 +8,6 @@ use std::os::raw::c_float;
 use utility::marker::VulkanEnum;
 use utility::marker::Prefab;
 
-
 #[derive(Debug, Clone, Copy, Eq, PartialEq)]
 pub enum MultisamplePrefab {
     /// Disable multisample configuration.

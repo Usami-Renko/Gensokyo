@@ -54,6 +54,8 @@ impl BufferBlockInfo for UniformBlockInfo {
 
 impl BufferInfosAllocatable for UniformBlockInfo {}
 
+
+#[derive(Default)]
 pub struct HaUniformBlock {
 
     binding: uint32_t,
@@ -66,12 +68,7 @@ pub struct HaUniformBlock {
 impl HaUniformBlock {
 
     pub fn uninitialize() -> HaUniformBlock {
-        HaUniformBlock {
-            binding: 0,
-            count  : 0,
-            item: BufferItem::unset(),
-            element_size: 0,
-        }
+        HaUniformBlock::default()
     }
 
     pub(crate) fn from(info: &UniformBlockInfo, item: BufferItem) -> HaUniformBlock {
@@ -90,7 +87,7 @@ impl DescriptorBufferBindableTarget for HaUniformBlock {
     fn binding_info(&self, sub_block_indices: Option<Vec<uint32_t>>) -> Result<DescriptorBufferBindingInfo, DescriptorError> {
 
         let info = DescriptorBufferBindingInfo {
-            type_  : BufferDescriptorType::UniformBuffer,
+            typ: BufferDescriptorType::UniformBuffer,
             binding: self.binding,
             count  : self.count,
             element_indices: sub_block_indices.unwrap_or(vec![0]),

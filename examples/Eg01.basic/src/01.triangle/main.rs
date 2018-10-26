@@ -12,9 +12,9 @@ use hakurei::prelude::input::*;
 
 use std::path::{ Path, PathBuf };
 
-const MANIFEST_PATH: &'static str = "src/01.triangle/hakurei.toml";
-const VERTEX_SHADER_SPIRV_PATH  : &'static str = "src/01.triangle/triangle.vert.spv";
-const FRAGMENT_SHADER_SPIRV_PATH: &'static str = "src/01.triangle/triangle.frag.spv";
+const MANIFEST_PATH: &str = "src/01.triangle/hakurei.toml";
+const VERTEX_SHADER_SPIRV_PATH  : &str = "src/01.triangle/triangle.vert.spv";
+const FRAGMENT_SHADER_SPIRV_PATH: &str = "src/01.triangle/triangle.frag.spv";
 
 define_input! {
     #[binding = 0, rate = vertex]
@@ -135,6 +135,7 @@ impl ProgramProc for TriangleProcedure {
             let present_available = HaSemaphore::setup(device)?;
             self.present_availables.push(present_available);
         }
+
         Ok(())
     }
 
@@ -193,10 +194,8 @@ impl ProgramProc for TriangleProcedure {
 
     fn cleanup(&mut self, _: &HaDevice) {
 
-        for semaphore in self.present_availables.iter() {
-            semaphore.cleanup();
-        }
-
+        self.present_availables.iter()
+            .for_each(|semaphore| semaphore.cleanup());
         self.graphics_pipeline.cleanup();
         self.command_pool.cleanup();
         self.vertex_storage.cleanup();
@@ -217,6 +216,7 @@ fn main() {
     let procecure = TriangleProcedure::new();
 
     let manifest = PathBuf::from(MANIFEST_PATH);
+    // TODO: handle the Result.
     let mut program = ProgramEnv::new(Some(manifest), procecure).unwrap();
 
     match program.launch() {

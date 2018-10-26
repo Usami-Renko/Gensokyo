@@ -7,6 +7,7 @@ use utility::marker::VulkanEnum;
 use std::ptr;
 
 /// Most states are baked into the pipeline, but there are still a few dynamic states that can be changed within a command buffer.
+#[derive(Default)]
 pub struct HaDynamicState {
 
     /// DynamicState specifies which pieces of pipeline state will use the values from dynamic state commands rather than from pipeline state creation info.
@@ -33,15 +34,6 @@ impl HaDynamicState {
 
     pub fn is_contain_state(&self) -> bool {
         !self.states.is_empty()
-    }
-}
-
-impl Default for HaDynamicState {
-
-    fn default() -> HaDynamicState {
-        HaDynamicState {
-            states: vec![],
-        }
     }
 }
 

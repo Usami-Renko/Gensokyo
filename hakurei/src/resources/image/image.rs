@@ -77,11 +77,11 @@ impl HaImage {
 #[derive(Debug, Clone)]
 pub(crate) struct ImageDescInfo {
 
-    pub flags     : vk::ImageCreateFlags,
+    pub flags: vk::ImageCreateFlags,
     /// tiling specifies the tiling arrangement of the data elements in memory.
-    pub tiling    : vk::ImageTiling,
+    pub tiling: vk::ImageTiling,
     /// usage describes the intended usage of the image.
-    pub usage     : vk::ImageUsageFlags,
+    pub usage: vk::ImageUsageFlags,
     /// sample_count is the number of sub-data element samples in the image used in multisampling.
     pub sample_count: vk::SampleCountFlags,
     /// image_type specifies the basic dimensionality of the image.
@@ -117,7 +117,7 @@ impl Default for ImageDescInfo {
 
     fn default() -> ImageDescInfo {
         ImageDescInfo {
-            flags: vk::ImageCreateFlags::empty(),
+            flags : vk::ImageCreateFlags::empty(),
             tiling: vk::ImageTiling::Optimal,
             usage : vk::IMAGE_USAGE_COLOR_ATTACHMENT_BIT,
             sample_count: vk::SAMPLE_COUNT_1_BIT,
