@@ -13,6 +13,7 @@ use resources::error::{ AllocatorError, MemoryError };
 
 use utility::memory::spaces_to_offsets;
 
+#[derive(Default)]
 pub struct HaBufferRepository {
 
     device  : Option<HaDevice>,
@@ -29,16 +30,7 @@ pub struct HaBufferRepository {
 impl HaBufferRepository {
 
     pub fn empty() -> HaBufferRepository {
-        HaBufferRepository {
-
-            device  : None,
-            physical: None,
-            buffers : vec![],
-            memory  : None,
-
-            offsets: vec![],
-            allocate_infos: None,
-        }
+        HaBufferRepository::default()
     }
 
     pub(crate) fn store(device: &HaDevice, physical: &HaPhyDevice, buffers: Vec<HaBuffer>, memory: Box<HaMemoryAbstract>, allocate_infos: BufferAllocateInfos) -> HaBufferRepository {
@@ -102,6 +94,7 @@ impl HaBufferRepository {
 
 impl HaBufferRepository {
 
+    // TODO: Make this function independent to BufferRepository.
     pub fn copy_buffers_to_buffers(device: &HaDevice, from_items: &[BufferItem], to_items: &[BufferItem]) -> Result<(), AllocatorError> {
 
         let mut transfer = HaLogicalDevice::transfer(device);

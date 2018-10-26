@@ -4,6 +4,7 @@ use ash::vk::uint32_t;
 
 use std::ptr;
 
+#[derive(Default)]
 pub struct HaVertexInputState {
 
     bindings:   Vec<vk::VertexInputBindingDescription>,
@@ -41,12 +42,3 @@ impl HaVertexInputState {
     }
 }
 
-impl Default for HaVertexInputState {
-
-    fn default() -> HaVertexInputState {
-        HaVertexInputState {
-            bindings:   vec![],
-            attributes: vec![],
-        }
-    }
-}

@@ -12,10 +12,10 @@ use super::data::{ Vertex, UboObject, ModelData };
 use cgmath::{ Matrix4, SquareMatrix, Point3 };
 use std::path::Path;
 
-const VERTEX_SHADER_SOURCE_PATH  : &'static str = "src/07.model/model.vert";
-const FRAGMENT_SHADER_SOURCE_PATH: &'static str = "src/07.model/model.frag";
-const MODEL_TEXTURE_PATH: &'static str = "textures/chalet.jpg";
-const MODEL_OBJ_PATH    : &'static str = "textures/chalet.obj";
+const VERTEX_SHADER_SOURCE_PATH  : &str = "src/07.model/model.vert";
+const FRAGMENT_SHADER_SOURCE_PATH: &str = "src/07.model/model.frag";
+const MODEL_TEXTURE_PATH: &str = "textures/chalet.jpg";
+const MODEL_OBJ_PATH    : &str = "textures/chalet.obj";
 
 pub struct ModelProcedure {
 
@@ -48,11 +48,11 @@ pub struct ModelProcedure {
 
 impl ModelProcedure {
 
-    pub fn new() -> ModelProcedure {
+    pub fn new(dimension: Dimension2D) -> ModelProcedure {
 
         let camera = CameraConfigurator::config()
             .place_at(Point3::new(0.0, 0.0, 3.0))
-            .screen_dimension(super::WINDOW_WIDTH, super::WINDOW_HEIGHT)
+            .screen_dimension(dimension.width, dimension.height)
             .for_flight_camera();
 
         ModelProcedure {

@@ -3,6 +3,7 @@ use winit;
 
 use config::engine::EngineConfig;
 use config::env::{ HaEnv, EnvWindow };
+use config::error::ConfigError;
 
 use procedure::workflow::{ CoreInfrastructure, HaResources, ProgramProc };
 use procedure::error::{ RuntimeError, ProcedureError };
@@ -40,7 +41,7 @@ pub struct ProgramEnv<T: ProgramProc> {
 
 impl<T> ProgramEnv<T> where T: ProgramProc {
 
-    pub fn new(manifest: Option<PathBuf>, procedure: T) -> Result<ProgramEnv<T>, RuntimeError> {
+    pub fn new(manifest: Option<PathBuf>, procedure: T) -> Result<ProgramEnv<T>, ConfigError> {
 
         let config = EngineConfig::init(manifest)?;
 
@@ -76,6 +77,9 @@ impl<T> ProgramEnv<T> where T: ProgramProc {
                         resources.clear();
 
                         resources = new_resources;
+
+                        // update current window size.
+                        self.window_info.window_size = core.surface.window_size();
 
                         continue
                     },
@@ -145,15 +149,12 @@ impl<T> ProgramEnv<T> where T: ProgramProc {
         Ok(())
     }
 
-    fn get_env(&self) -> HaEnv {
-
+    pub fn get_env(&self) -> HaEnv {
 
         HaEnv {
             window: EnvWindow {
-                title: self.config.window.title.clone(),
-                dimension: Dimension2D {
-
-                }
+                title: self.window_info.window_title.clone(),
+                dimension: self.window_info.window_size,
             }
         }
     }

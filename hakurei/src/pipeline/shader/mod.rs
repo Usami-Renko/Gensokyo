@@ -1,5 +1,5 @@
 
-pub use self::input::{ HaVertexInputBinding, HaVertexInputAttribute, VertexInputDescription };
+pub use self::input::{ HaVertexInputBinding, HaVertexInputAttribute, VertexInputDescription, VertexInputRate };
 pub use self::module::HaShaderInfo;
 pub use self::flag::ShaderStageFlag;
 

@@ -3,7 +3,7 @@ pub(crate) use self::flag::MemoryPropertyFlag;
 pub(crate) use self::host::HaHostMemory;
 pub(crate) use self::cached::HaCachedMemory;
 pub(crate) use self::device::HaDeviceMemory;
-pub(crate) use self::staging::HaStagingMemory;
+pub(crate) use self::staging::{ HaStagingMemory, StagingUploader };
 pub(crate) use self::traits::{ HaMemoryAbstract, MemoryDataUploadable, MemoryMapable };
 pub(crate) use self::structs::{ HaMemoryType, MemoryRange, MemoryMapStatus, UploadStagingResource };
 

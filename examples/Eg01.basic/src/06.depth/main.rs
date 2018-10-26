@@ -9,14 +9,14 @@ extern crate cgmath;
 
 use hakurei::prelude::*;
 
-const MANIFEST_PATH: &'static str = "src/06.depth/hakurei.toml";
+const MANIFEST_PATH: &str = "src/06.depth/hakurei.toml";
 
 use self::program::DepthProcedure;
 use std::path::PathBuf;
 
 fn main() {
 
-    let procecure = DepthProcedure::new();
+    let procecure = DepthProcedure::new(Dimension2D { width: 800, height: 600 });
 
     let manifest = PathBuf::from(MANIFEST_PATH);
     let mut program = ProgramEnv::new(Some(manifest), procecure).unwrap();

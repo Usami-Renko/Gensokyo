@@ -323,7 +323,7 @@ impl VulkanFlags for [CommandBufferUsageFlag] {
 
     fn flags(&self) -> Self::FlagType {
         self.iter().fold(vk::CommandBufferUsageFlags::empty(), |acc, flag| {
-            match *flag {
+            match flag {
                 | CommandBufferUsageFlag::OneTimeSubmitBit      => acc | vk::COMMAND_BUFFER_USAGE_ONE_TIME_SUBMIT_BIT,
                 | CommandBufferUsageFlag::RenderPassContinueBit => acc | vk::COMMAND_BUFFER_USAGE_RENDER_PASS_CONTINUE_BIT,
                 | CommandBufferUsageFlag::SimultaneousUseBit    => acc | vk::COMMAND_BUFFER_USAGE_SIMULTANEOUS_USE_BIT,

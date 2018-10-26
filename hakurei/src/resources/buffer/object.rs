@@ -6,8 +6,8 @@ use core::device::HaDevice;
 
 pub(crate) struct HaBuffer {
 
-    pub(crate) handle : vk::Buffer,
-    pub(crate) requirement : vk::MemoryRequirements,
+    pub(crate) handle: vk::Buffer,
+    pub(crate) requirement: vk::MemoryRequirements,
 }
 
 impl HaBuffer {

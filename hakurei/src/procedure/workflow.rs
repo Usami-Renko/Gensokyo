@@ -41,8 +41,8 @@ pub struct CoreInfrastructure<'win> {
 
     instance  : HaInstance,
     debugger  : Option<HaDebugger>,
-    surface   : HaSurface<'win>,
 
+    pub(crate) surface : HaSurface<'win>,
     pub(crate) physical: Rc<HaPhysicalDevice>,
     pub(crate) device  : Rc<HaLogicalDevice>,
 }

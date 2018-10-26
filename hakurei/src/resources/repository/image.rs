@@ -4,6 +4,7 @@ use core::device::HaDevice;
 use resources::memory::HaMemoryAbstract;
 use resources::image::{HaImage, HaImageView, HaImageBranchAbs};
 
+#[derive(Default)]
 pub struct HaImageRepository {
 
     device : Option<HaDevice>,
@@ -15,13 +16,7 @@ pub struct HaImageRepository {
 impl HaImageRepository {
 
     pub fn empty() -> HaImageRepository {
-        HaImageRepository {
-
-            device: None,
-            images: vec![],
-            views : vec![],
-            memory: None,
-        }
+        HaImageRepository::default()
     }
 
     pub(crate) fn store(device: &HaDevice, images: Vec<HaImage>, views: Vec<HaImageView>, memory: Box<HaMemoryAbstract>) -> HaImageRepository {

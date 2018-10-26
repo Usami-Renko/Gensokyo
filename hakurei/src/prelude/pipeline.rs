@@ -17,7 +17,7 @@ pub use pipeline::pass::{
 };
 
 pub use pipeline::shader::{
-    HaVertexInputBinding, HaVertexInputAttribute, VertexInputDescription, // input
+    HaVertexInputBinding, HaVertexInputAttribute, VertexInputDescription, VertexInputRate, // input
     HaShaderInfo, // module
     ShaderStageFlag, // flag
 };

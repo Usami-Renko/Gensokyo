@@ -13,8 +13,8 @@ use super::data::{ VERTEX_DATA, INDEX_DATA };
 use cgmath::{ Matrix4, SquareMatrix, Point3 };
 use std::path::Path;
 
-const VERTEX_SHADER_SOURCE_PATH  : &'static str = "src/06.depth/depth.vert";
-const FRAGMENT_SHADER_SOURCE_PATH: &'static str = "src/06.depth/depth.frag";
+const VERTEX_SHADER_SOURCE_PATH  : &str = "src/06.depth/depth.vert";
+const FRAGMENT_SHADER_SOURCE_PATH: &str = "src/06.depth/depth.frag";
 
 pub struct DepthProcedure {
 
@@ -47,10 +47,10 @@ pub struct DepthProcedure {
 
 impl DepthProcedure {
 
-    pub fn new() -> DepthProcedure {
+    pub fn new(dimension: Dimension2D) -> DepthProcedure {
         let camera = CameraConfigurator::config()
             .place_at(Point3::new(0.0, 0.0, 3.0))
-            .screen_dimension(super::WINDOW_WIDTH, super::WINDOW_HEIGHT)
+            .screen_dimension(dimension.width, dimension.height)
             .for_flight_camera();
 
         DepthProcedure {

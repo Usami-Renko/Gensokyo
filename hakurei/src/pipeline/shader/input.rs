@@ -3,16 +3,19 @@ use ash::vk;
 use ash::vk::uint32_t;
 
 use pipeline::state::HaVertexInputState;
+use utility::marker::VulkanEnum;
 
 #[derive(Debug)]
 pub struct HaVertexInputBinding {
+
     pub binding: uint32_t,
     pub stride : uint32_t,
-    pub rate   : vk::VertexInputRate,
+    pub rate   : VertexInputRate,
 }
 
 #[derive(Debug)]
 pub struct HaVertexInputAttribute {
+
     pub binding : uint32_t,
     pub location: uint32_t,
     pub format  : vk::Format,
@@ -35,7 +38,7 @@ impl VertexInputDescription {
                 vk::VertexInputBindingDescription {
                     binding   : b.binding,
                     stride    : b.stride,
-                    input_rate: b.rate,
+                    input_rate: b.rate.value(),
                 }
         ).collect::<Vec<_>>();
         let attributes = self.attributes.iter()
@@ -49,5 +52,22 @@ impl VertexInputDescription {
         ).collect::<Vec<_>>();
 
         HaVertexInputState::setup(bindings, attributes)
+    }
+}
+
+#[derive(Debug, Clone, Eq, PartialEq)]
+pub enum VertexInputRate {
+    Vertex,
+    Instance,
+}
+
+impl VulkanEnum for VertexInputRate {
+    type EnumType = vk::VertexInputRate;
+
+    fn value(&self) -> Self::EnumType {
+        match self {
+            | VertexInputRate::Vertex   => vk::VertexInputRate::Vertex,
+            | VertexInputRate::Instance => vk::VertexInputRate::Instance,
+        }
     }
 }

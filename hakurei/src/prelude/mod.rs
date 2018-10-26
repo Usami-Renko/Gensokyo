@@ -3,10 +3,11 @@
 pub use ash::vk::uint32_t;
 pub use ash::vk::DeviceSize;
 pub use ash::vk::Format;
-pub use ash::vk::VertexInputRate;
+pub use pipeline::shader::VertexInputRate;
 
 // config module
 pub use config::env::HaEnv;
+pub use config::error::{ ConfigError, MappingError };
 
 // core module
 pub use core::swapchain::HaSwapchain;

@@ -11,14 +11,14 @@ use resources::error::AllocatorError;
 
 pub struct BufferDataUploader<'a> {
 
-    device  : HaDevice,
+    device: HaDevice,
     dst_memory: &'a mut Box<HaMemoryAbstract>,
 
     /// the offset of each buffer in `dst_memory`.
     offsets: &'a Vec<vk::DeviceSize>,
     ranges : Vec<MemoryRange>,
     
-    staging : Option<UploadStagingResource>,
+    staging: Option<UploadStagingResource>,
 }
 
 impl<'a> BufferDataUploader<'a> {
