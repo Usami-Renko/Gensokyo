@@ -43,7 +43,7 @@ pub use resources::repository::{
     HaBufferRepository, // buffer
     HaDescriptorRepository, // descriptor
     HaImageRepository, // image
-    BufferDataUploader, BufferDataUpdater, // transfer
+    BufferDataUploader, BufferDataUpdater, DataCopyer, // transfer
 };
 
 pub use resources::toolkit::{

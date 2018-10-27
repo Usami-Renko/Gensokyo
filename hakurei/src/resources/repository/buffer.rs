@@ -1,12 +1,11 @@
 
 use ash::vk;
 
-use core::device::{ HaDevice, HaLogicalDevice };
+use core::device::HaDevice;
 use core::physical::HaPhyDevice;
 
 use resources::allocator::BufferAllocateInfos;
-use resources::buffer::{ HaBuffer, BufferItem };
-use resources::command::CommandBufferUsageFlag;
+use resources::buffer::HaBuffer;
 use resources::memory::{ HaMemoryAbstract, HaMemoryType };
 use resources::repository::{ BufferDataUploader, BufferDataUpdater };
 use resources::error::{ AllocatorError, MemoryError };
@@ -89,40 +88,5 @@ impl HaBufferRepository {
 
         self.buffers.clear();
         self.offsets.clear();
-    }
-}
-
-impl HaBufferRepository {
-
-    // TODO: Make this function independent to BufferRepository.
-    pub fn copy_buffers_to_buffers(device: &HaDevice, from_items: &[BufferItem], to_items: &[BufferItem]) -> Result<(), AllocatorError> {
-
-        let mut transfer = HaLogicalDevice::transfer(device);
-        {
-            let command_buffer = transfer.command()?;
-
-            let recorder = command_buffer.setup_record();
-            recorder.begin_record(&[CommandBufferUsageFlag::OneTimeSubmitBit])?;
-
-            for (from, to) in from_items.iter().zip(to_items.iter()) {
-                // TODO: Only support one region.
-                let copy_region = [
-                    vk::BufferCopy {
-                        // TODO: Only support copy buffer from beginning.
-                        src_offset: 0,
-                        dst_offset: 0,
-                        size: to.size,
-                    },
-                ];
-
-                recorder.copy_buffer(from.handle, to.handle, &copy_region);
-            }
-
-            recorder.end_record()?;
-        }
-
-        transfer.excute()?;
-
-        Ok(())
     }
 }

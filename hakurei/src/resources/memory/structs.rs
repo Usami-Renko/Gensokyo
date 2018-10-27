@@ -8,7 +8,7 @@ use resources::buffer::{ HaBuffer, BufferItem };
 use resources::memory::{ HaMemoryAbstract, MemoryDataUploadable, MemoryPropertyFlag, MemPtr };
 use resources::memory::HaStagingMemory;
 use resources::allocator::{ BufferAllocateInfos, BufferStorageType };
-use resources::repository::HaBufferRepository;
+use resources::repository::DataCopyer;
 use resources::error::{ MemoryError, AllocatorError };
 
 use utility::memory::{ MemoryWritePtr, spaces_to_offsets };
@@ -172,7 +172,12 @@ impl UploadStagingResource {
 
     pub fn transfer(&self, device: &HaDevice) -> Result<(), AllocatorError> {
 
-        HaBufferRepository::copy_buffers_to_buffers(device, &self.src_items, &self.dst_items)?;
+        let mut data_copyer = DataCopyer::new(device)?;
+        for (src, dst) in self.src_items.iter().zip(self.dst_items.iter()) {
+            data_copyer.copy_buffer_to_buffer(src, dst)?;
+        }
+
+        data_copyer.done()?;
 
         Ok(())
     }

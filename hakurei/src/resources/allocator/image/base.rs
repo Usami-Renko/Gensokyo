@@ -129,27 +129,22 @@ impl HaImageAllocator {
 
         // 3.create command buffer.
         let mut transfer = HaLogicalDevice::transfer(&self.device);
+        let command_buffer = transfer.command()?;
 
-        let mut barrier_bundles = {
+        let mut recorder = command_buffer.setup_record(&self.device);
+        recorder.begin_record(&[CommandBufferUsageFlag::OneTimeSubmitBit])?;
 
-            let command_buffer = transfer.command()?;
+        // 4. make image barrier transitions.
+        let mut barrier_bundles = collect_barrier_bundle(&self.physical, &self.device, &self.image_infos);
+        for bundle in barrier_bundles.iter_mut() {
+            bundle.make_transfermation(&recorder, &self.image_infos)?;
+        }
 
-            let recorder = command_buffer.setup_record();
-            recorder.begin_record(&[CommandBufferUsageFlag::OneTimeSubmitBit])?;
-
-            // 4. make image barrier transitions.
-            let mut barrier_bundles = collect_barrier_bundle(&self.physical, &self.device, &self.image_infos);
-            for bundle in barrier_bundles.iter_mut() {
-                bundle.make_transfermation(&recorder, &self.image_infos)?;
-            }
-
-            // 5.submit command buffer.
-            recorder.end_record()?;
-
-            barrier_bundles
-        };
+        // 5.submit command buffer.
+        let command = recorder.end_record()?;
 
         // 6.execute the command.
+        transfer.commit(command);
         transfer.excute()?;
 
         barrier_bundles.iter_mut()
