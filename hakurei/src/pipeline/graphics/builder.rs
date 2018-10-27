@@ -85,16 +85,16 @@ pub struct GraphicsPipelineConfig {
 
 impl GraphicsPipelineConfig {
 
-    pub fn new(shaders: Vec<HaShaderInfo>, input: VertexInputDescription, pass: HaRenderPass) -> GraphicsPipelineConfig {
+    pub fn new(shaders: impl Into<Vec<HaShaderInfo>>, input: VertexInputDescription, pass: HaRenderPass) -> GraphicsPipelineConfig {
 
         GraphicsPipelineConfig {
-            shaders,
-            states         : PipelineStates::setup(input),
-            render_pass    : Some(pass),
-            flags          : vk::PipelineCreateFlags::empty(),
+            shaders    : shaders.into(),
+            states     : PipelineStates::setup(input),
+            render_pass: Some(pass),
+            flags      : vk::PipelineCreateFlags::empty(),
 
-            shader_modules : vec![],
-            layout_builder : PipelineLayoutBuilder::default(),
+            shader_modules: vec![],
+            layout_builder: PipelineLayoutBuilder::default(),
         }
     }
 
@@ -158,12 +158,12 @@ impl GraphicsPipelineBuilder {
         }
 
         let mut layouts = vec![];
-        let mut infos   = vec![];
+        let mut infos = vec![];
 
         for config in self.configs.iter() {
 
             let shader_create_infos = config.shader_modules.iter()
-                .map(|m| m.info().clone()).collect::<Vec<_>>();
+                .map(|m| m.info()).collect::<Vec<_>>();
             let tessellation_info = config.states.tessellation.as_ref()
                 .map_or(ptr::null(), |t| &t.info());
             let dynamic_info = if config.states.dynamic.is_contain_state() {
@@ -176,18 +176,18 @@ impl GraphicsPipelineBuilder {
                 s_type: vk::StructureType::GraphicsPipelineCreateInfo,
                 p_next: ptr::null(),
                 // TODO: Add configuration for flags
-                flags: vk::PipelineCreateFlags::empty(),
-                stage_count : shader_create_infos.len() as uint32_t,
-                p_stages    : shader_create_infos.as_ptr(),
-                p_vertex_input_state   : &config.states.vertex_input.info(),
-                p_input_assembly_state : &config.states.input_assembly.info(),
-                p_viewport_state       : &config.states.viewport.info(),
-                p_rasterization_state  : &config.states.rasterizer.info(),
-                p_multisample_state    : &config.states.multisample.info(),
-                p_depth_stencil_state  : &config.states.depth_stencil.info(),
-                p_color_blend_state    : &config.states.blend.info(),
-                p_tessellation_state   : tessellation_info,
-                p_dynamic_state        : dynamic_info,
+                flags : vk::PipelineCreateFlags::empty(),
+                stage_count: shader_create_infos.len() as uint32_t,
+                p_stages   : shader_create_infos.as_ptr(),
+                p_vertex_input_state  : &config.states.vertex_input.info(),
+                p_input_assembly_state: &config.states.input_assembly.info(),
+                p_viewport_state      : &config.states.viewport.info(),
+                p_rasterization_state : &config.states.rasterizer.info(),
+                p_multisample_state   : &config.states.multisample.info(),
+                p_depth_stencil_state : &config.states.depth_stencil.info(),
+                p_color_blend_state   : &config.states.blend.info(),
+                p_tessellation_state  : tessellation_info,
+                p_dynamic_state       : dynamic_info,
                 layout: pipeline_layout,
                 render_pass: config.render_pass.as_ref().unwrap().handle,
                 // TODO: Add configuration for this field.

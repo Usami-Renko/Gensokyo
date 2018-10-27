@@ -1,6 +1,8 @@
 
 use ash::vk;
 
+use resources::buffer::BufferBlockEntity;
+
 #[derive(Debug, Clone)]
 pub struct BufferItem {
     /// the handle of the vk::Buffer object.
@@ -26,6 +28,17 @@ impl Default for BufferItem {
             buffer_index: 0,
             size        : 0,
         }
+    }
+}
+
+impl BufferBlockEntity for BufferItem {
+
+    fn get_buffer_item(&self) -> &BufferItem {
+        &self
+    }
+
+    fn offset(&self, _sub_index: usize) -> vk::DeviceSize {
+        panic!("This function should't be called.")
     }
 }
 

@@ -73,7 +73,7 @@ impl HaCommandPool {
         };
 
         let buffers = handles.iter()
-            .map(|&handle| HaCommandBuffer { device: device.clone(), handle, usage }).collect();
+            .map(|&handle| HaCommandBuffer { handle, usage }).collect();
         Ok(buffers)
     }
 

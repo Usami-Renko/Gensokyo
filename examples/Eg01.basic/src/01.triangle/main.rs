@@ -144,19 +144,21 @@ impl ProgramProc for TriangleProcedure {
         self.command_pool = kit.pool(DeviceQueueIdentifier::Graphics)?;
 
         let command_buffer_count = self.graphics_pipeline.frame_count();
-        self.command_buffers = self.command_pool
+        let raw_commands = self.command_pool
             .allocate(CommandBufferUsage::UnitaryCommand, command_buffer_count)?;
 
-        for (frame_index, command_buffer) in self.command_buffers.iter().enumerate() {
-            let recorder = command_buffer.setup_record();
+        for (frame_index, command) in raw_commands.into_iter().enumerate() {
+            let mut recorder = kit.recorder(command);
 
             recorder.begin_record(&[CommandBufferUsageFlag::SimultaneousUseBit])?
                 .begin_render_pass(&self.graphics_pipeline, frame_index)
                 .bind_pipeline(&self.graphics_pipeline)
                 .bind_vertex_buffers(0, &[CmdVertexBindingInfo { block: &self.vertex_buffer, sub_block_index: None }])
                 .draw(self.vertex_data.len() as uint32_t, 1, 0, 0)
-                .end_render_pass()
-                .end_record()?;
+                .end_render_pass();
+
+            let command_recorded = recorder.end_record()?;
+            self.command_buffers.push(command_recorded);
         }
 
         Ok(())
@@ -183,7 +185,6 @@ impl ProgramProc for TriangleProcedure {
 
         self.present_availables.iter()
             .for_each(|semaphore| semaphore.cleanup());
-
         self.present_availables.clear();
         self.command_buffers.clear();
         self.graphics_pipeline.cleanup();

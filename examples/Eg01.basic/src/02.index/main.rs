@@ -161,11 +161,11 @@ impl ProgramProc for DrawIndexProcedure {
         self.command_pool = kit.pool(DeviceQueueIdentifier::Graphics)?;
 
         let command_buffer_count = self.graphics_pipeline.frame_count();
-        self.command_buffers = self.command_pool
+        let raw_commands = self.command_pool
             .allocate(CommandBufferUsage::UnitaryCommand, command_buffer_count)?;
 
-        for (frame_index, command_buffer) in self.command_buffers.iter().enumerate() {
-            let recorder = command_buffer.setup_record();
+        for (frame_index, command) in raw_commands.into_iter().enumerate() {
+            let mut recorder = kit.recorder(command);
 
             recorder.begin_record(&[CommandBufferUsageFlag::SimultaneousUseBit])?
                 .begin_render_pass(&self.graphics_pipeline, frame_index)
@@ -173,8 +173,10 @@ impl ProgramProc for DrawIndexProcedure {
                 .bind_vertex_buffers(0, &[CmdVertexBindingInfo { block: &self.vertex_buffer, sub_block_index: None }])
                 .bind_index_buffer(CmdIndexBindingInfo { block: &self.index_buffer, sub_block_index: None })
                 .draw_indexed(self.index_data.len() as uint32_t, 1, 0, 0, 0)
-                .end_render_pass()
-                .end_record()?;
+                .end_render_pass();
+
+            let command_recorded = recorder.end_record()?;
+            self.command_buffers.push(command_recorded);
         }
 
         Ok(())

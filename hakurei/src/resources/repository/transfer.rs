@@ -1,12 +1,13 @@
 
 use ash::vk;
 
-use core::device::HaDevice;
+use core::device::{ HaDevice, HaLogicalDevice, HaTransfer };
 use core::physical::HaPhyDevice;
 
 use resources::buffer::BufferBlockEntity;
 use resources::memory::{ HaMemoryAbstract, MemoryRange, UploadStagingResource };
 use resources::allocator::BufferAllocateInfos;
+use resources::command::{ HaCommandRecorder, CommandBufferUsageFlag };
 use resources::error::AllocatorError;
 
 pub struct BufferDataUploader<'a> {
@@ -17,7 +18,7 @@ pub struct BufferDataUploader<'a> {
     /// the offset of each buffer in `dst_memory`.
     offsets: &'a Vec<vk::DeviceSize>,
     ranges : Vec<MemoryRange>,
-    
+
     staging: Option<UploadStagingResource>,
 }
 
@@ -68,10 +69,10 @@ impl<'a> BufferDataUploader<'a> {
 // TODO: Use MemoryDataUpdatable instead of HaMemoryAbstract as bound trait.
 pub struct BufferDataUpdater<'a> {
 
-    device  : HaDevice,
-    memory  : &'a mut Box<HaMemoryAbstract>,
-    offsets : &'a Vec<vk::DeviceSize>,
-    ranges  : Vec<MemoryRange>,
+    device : HaDevice,
+    memory : &'a mut Box<HaMemoryAbstract>,
+    offsets: &'a Vec<vk::DeviceSize>,
+    ranges : Vec<MemoryRange>,
 }
 
 impl<'a> BufferDataUpdater<'a> {
@@ -105,49 +106,56 @@ impl<'a> BufferDataUpdater<'a> {
     }
 }
 
-// TODO: Fix the following code after Make the Rc<Device>.
-//
-//pub struct DataCopyer<'vk, 'buffer> where 'vk: 'buffer {
-//
-//    transfer: HaTransfer<'buffer>,
-//    recorder: HaCommandRecorder<'buffer, 'vk>,
-//}
-//
-//impl<'vk, 'buffer, 'device> DataCopyer<'vk, 'buffer> where 'vk: 'buffer, 'device: 'vk {
-//
-//    pub(crate) fn new(device: &'device HaLogicalDevice) -> Result<DataCopyer<'vk, 'buffer>, AllocatorError> {
-//
-//        let (recorder, transfer) = {
-//            let mut transfer = device.transfer();
-//            let command = transfer.command()?;
-//            let recorder = command.setup_record(device);
-//            let _ = recorder.begin_record(&[CommandBufferUsageFlag::OneTimeSubmitBit])?;
-//            (recorder, transfer)
-//        };
-//
-//        let copyer = DataCopyer { transfer, recorder };
-//        Ok(copyer)
-//    }
 
-//    pub fn copy_buffer_to_buffer(&self, from: &BufferSubItem, to: &BufferSubItem) -> Result<&DataCopyer<'vk, 'buffer>, AllocatorError> {
+pub struct DataCopyer {
 
-//        let copy_region = [
-//            vk::BufferCopy {
-//                src_offset: from.offset,
-//                dst_offset: to.offset,
-//                size      : to.size,
-//            },
-//        ];
-//        self.recorder.copy_buffer(from.handle, to.handle, &copy_region);
-//
-//        Ok(self)
-//    }
-//
-//    pub fn done(&mut self) -> Result<(), AllocatorError> {
-//
-////        self.recorder.finish()?;
-//        self.transfer.excute()?;
-//
-//        Ok(())
-//    }
-//}
+    transfer: HaTransfer,
+    recorder: HaCommandRecorder,
+}
+
+impl DataCopyer {
+
+    pub(crate) fn new(device: &HaDevice) -> Result<DataCopyer, AllocatorError> {
+
+        let transfer = HaLogicalDevice::transfer(device);
+        let command = transfer.command()?;
+        let recorder = command.setup_record(device);
+
+        let _ = recorder.begin_record(&[CommandBufferUsageFlag::OneTimeSubmitBit])?;
+
+        let copyer = DataCopyer {
+            transfer, recorder,
+        };
+
+        Ok(copyer)
+    }
+
+    pub fn copy_buffer_to_buffer(&self, from: &impl BufferBlockEntity, to: &impl BufferBlockEntity) -> Result<&DataCopyer, AllocatorError> {
+
+        let from = from.get_buffer_item();
+        let to   = to.get_buffer_item();
+
+        // TODO: Only support one region.
+        let copy_region = [
+            vk::BufferCopy {
+                // TODO: Only support copy buffer from beginning.
+                src_offset: 0,
+                dst_offset: 0,
+                size: to.size,
+            },
+        ];
+
+        self.recorder.copy_buffer(from.handle, to.handle, &copy_region);
+
+        Ok(self)
+    }
+
+    pub fn done(&mut self) -> Result<(), AllocatorError> {
+
+        let command = self.recorder.end_record()?;
+        self.transfer.commit(command);
+        self.transfer.excute()?;
+
+        Ok(())
+    }
+}

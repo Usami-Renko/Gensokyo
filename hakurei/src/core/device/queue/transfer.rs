@@ -78,22 +78,26 @@ pub struct HaTransfer {
 
 impl HaTransfer {
 
-    pub fn commands(&mut self, count: usize) -> Result<&[HaCommandBuffer], CommandError> {
+    pub fn commands(&self, count: usize) -> Result<Vec<HaCommandBuffer>, CommandError> {
 
         // just use a single primary command buffer for transferation.
-        let mut new_commands = self.device.transfer_queue.pool.allocate(&self.device, count)?;
-        let start_index = self.command_buffers.len();
-        self.command_buffers.append(&mut new_commands);
-
-        let commands = &self.command_buffers[start_index..];
+        let commands = self.device.transfer_queue.pool.allocate(&self.device, count)?;
         Ok(commands)
     }
 
-    pub fn command(&mut self) -> Result<&HaCommandBuffer, CommandError> {
+    pub fn commits(&mut self, commands: Vec<HaCommandBuffer>) {
+        commands.into_iter()
+            .for_each(|command| self.command_buffers.push(command));
+    }
 
-        let mut new_commands = self.device.transfer_queue.pool.allocate(&self.device, 1)?;
-        self.command_buffers.append(&mut new_commands);
-        Ok(&self.command_buffers.last().unwrap())
+    pub fn command(&self) -> Result<HaCommandBuffer, CommandError> {
+
+        let mut commands = self.device.transfer_queue.pool.allocate(&self.device, 1)?;
+        Ok(commands.pop().unwrap())
+    }
+
+    pub fn commit(&mut self, command: HaCommandBuffer) {
+        self.command_buffers.push(command);
     }
 
     pub fn excute(&mut self) -> Result<(), AllocatorError> {
@@ -187,7 +191,7 @@ impl TransferCommandPool {
 
         let buffers = handles.iter()
             .map(|&handle|
-                HaCommandBuffer::new(&device, handle, CommandBufferUsage::UnitaryCommand)
+                HaCommandBuffer::new(handle, CommandBufferUsage::UnitaryCommand)
             ).collect();
 
         Ok(buffers)

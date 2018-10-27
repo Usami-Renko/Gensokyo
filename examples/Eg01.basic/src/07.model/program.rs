@@ -248,11 +248,11 @@ impl ProgramProc for ModelProcedure {
         self.command_pool = kit.pool(DeviceQueueIdentifier::Graphics)?;
 
         let command_buffer_count = self.graphics_pipeline.frame_count();
-        self.command_buffers = self.command_pool
+        let raw_commands = self.command_pool
             .allocate(CommandBufferUsage::UnitaryCommand, command_buffer_count)?;
 
-        for (frame_index, command_buffer) in self.command_buffers.iter().enumerate() {
-            let recorder = command_buffer.setup_record();
+        for (frame_index, command) in raw_commands.into_iter().enumerate() {
+            let mut recorder = kit.recorder(command);
 
             recorder.begin_record(&[CommandBufferUsageFlag::SimultaneousUseBit])?
                 .begin_render_pass(&self.graphics_pipeline, frame_index)
@@ -262,8 +262,10 @@ impl ProgramProc for ModelProcedure {
                 .bind_descriptor_sets(&self.graphics_pipeline, 0, self.descriptor_storage.descriptor_binding_infos(
                     &[&self.descriptor_sets]))
                 .draw_indexed(self.model_data.indices.len() as uint32_t, 1, 0, 0, 0)
-                .end_render_pass()
-                .end_record()?;
+                .end_render_pass();
+
+            let command_recorded = recorder.end_record()?;
+            self.command_buffers.push(command_recorded);
         }
 
         Ok(())

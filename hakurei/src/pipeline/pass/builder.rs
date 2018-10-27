@@ -28,7 +28,7 @@ pub struct RenderPassBuilder {
     subpasses   : Vec<RenderSubpass>,
     dependencies: Vec<RenderDependency>,
 
-    // TODO: Remove the following two fields.
+    // TODO: Remove the following field.
     depth_handle: Option<vk::ImageView>,
 }
 
@@ -46,12 +46,14 @@ impl RenderPassBuilder {
     }
 
     /// create a new subpass in the RenderPass, return the index of the subpass.
-    pub fn new_subpass(&mut self, type_: PipelineType) -> uint32_t {
+    pub fn new_subpass(&mut self, typ: PipelineType) -> uint32_t {
         let mut subpass = RenderSubpass::empty();
-        subpass.set_bind_point(type_.to_bind_point());
+        subpass.set_bind_point(typ.to_bind_point());
 
+        let subpass_index = self.subpasses.len();
         self.subpasses.push(subpass);
-        (self.subpasses.len() - 1) as uint32_t
+
+        subpass_index as uint32_t
     }
 
     /// create a attachment and set its reference to subpass, return the index of this attachment.
