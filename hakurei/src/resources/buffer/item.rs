@@ -2,6 +2,7 @@
 use ash::vk;
 
 use resources::buffer::BufferBlockEntity;
+use resources::buffer::{ BufferCopiable, BufferCopyInfo };
 
 #[derive(Debug, Clone)]
 pub struct BufferItem {
@@ -39,6 +40,17 @@ impl BufferBlockEntity for BufferItem {
 
     fn offset(&self, _sub_index: usize) -> vk::DeviceSize {
         panic!("This function should't be called.")
+    }
+}
+
+impl BufferCopiable for BufferItem {
+
+    fn copy_info(&self) -> BufferCopyInfo {
+        BufferCopyInfo {
+            handle: self.handle,
+            offset: 0,
+            size  : self.size,
+        }
     }
 }
 

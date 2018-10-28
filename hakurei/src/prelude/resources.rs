@@ -33,7 +33,9 @@ pub use resources::framebuffer::{};
 pub use resources::image::{
     ImagePipelineStage, DepthStencilImageFormat, // enums
     ImageTiling, Filter, MipmapMode, CompareOp, BorderColor, // enums
-    SampleImageInfo, HaSampleImage, DepthStencilImageInfo, HaDepthStencilImage, // branch
+    SampleImageInfo, HaSampleImage, // branch/sample
+    DepthStencilImageInfo, HaDepthStencilImage, // branch/depthstencil
+    ImageBlockEntity, ImageCopiable, ImageCopyInfo, // branch/trait
 };
 
 // currently no memory API is public,

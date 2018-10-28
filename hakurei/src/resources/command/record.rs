@@ -232,23 +232,43 @@ impl HaCommandRecorder {
     pub fn bind_descriptor_sets(&self, pipeline: &HaGraphicsPipeline, first_set: uint32_t, binding_infos: CmdDescriptorBindingInfos) -> &HaCommandRecorder {
         unsafe {
             // TODO: Currently dynamic_offsets field is not configuration.
-            self.device.handle.cmd_bind_descriptor_sets(self.handle, pipeline.bind_point, pipeline.layout.handle, first_set, &binding_infos.handles, &[])
+            self.device.handle.cmd_bind_descriptor_sets(
+                self.handle, pipeline.bind_point, pipeline.layout.handle, first_set, &binding_infos.handles, &[])
         };
         self
     }
 
     pub(crate) fn copy_buffer(&self, src_buffer_handle: vk::Buffer, dst_buffer_handle: vk::Buffer, regions: &[vk::BufferCopy]) -> &HaCommandRecorder {
         unsafe {
-            self.device.handle.cmd_copy_buffer(self.handle, src_buffer_handle, dst_buffer_handle, regions)
+            self.device.handle.cmd_copy_buffer(
+                self.handle, src_buffer_handle, dst_buffer_handle, regions)
         };
         self
     }
 
-    pub(crate) fn copy_buffer_to_image(&self, src_handle: vk::Buffer, dst_handle: vk::Image, dst_layout: vk::ImageLayout, regions: &[vk::BufferImageCopy])
-        -> &HaCommandRecorder {
+    pub(crate) fn copy_buffer_to_image(&self, src_handle: vk::Buffer, dst_handle: vk::Image, dst_layout: vk::ImageLayout, regions: &[vk::BufferImageCopy]) -> &HaCommandRecorder {
         unsafe {
-            self.device.handle.cmd_copy_buffer_to_image(self.handle, src_handle, dst_handle, dst_layout, regions)
+            self.device.handle.cmd_copy_buffer_to_image(
+                self.handle, src_handle, dst_handle, dst_layout, regions)
         };
+        self
+    }
+
+    pub(crate) fn copy_image_to_buffer(&self, src_handle: vk::Image, src_layout: vk::ImageLayout, dst_buffer: vk::Buffer, regions: &[vk::BufferImageCopy]) -> &HaCommandRecorder {
+        unsafe {
+            self.device.handle.cmd_copy_image_to_buffer(
+                self.handle, src_handle, src_layout, dst_buffer, regions)
+        };
+
+        self
+    }
+
+    pub(crate) fn copy_image(&self,src_handle: vk::Image, src_layout: vk::ImageLayout, dst_handle: vk::Image, dst_layout: vk::ImageLayout, regions: &[vk::ImageCopy]) -> &HaCommandRecorder {
+        unsafe {
+            self.device.handle.cmd_copy_image(
+                self.handle, src_handle, src_layout, dst_handle, dst_layout, regions)
+        };
+
         self
     }
 

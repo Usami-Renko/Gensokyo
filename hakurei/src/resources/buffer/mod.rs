@@ -4,7 +4,8 @@ pub use self::item::BufferItem;
 pub use self::branch::{
     HaVertexBlock, VertexBlockInfo,
     HaIndexBlock, IndexBlockInfo,
-    HaUniformBlock, UniformBlockInfo
+    HaUniformBlock, UniformBlockInfo,
+    BufferCopiable, BufferCopyInfo,
 };
 
 pub(crate) use self::object::HaBuffer;

@@ -5,6 +5,7 @@ pub use self::enums::{
     ImageTiling, Filter, MipmapMode, CompareOp, BorderColor
 };
 pub use self::branch::{
+    ImageBlockEntity, ImageCopiable, ImageCopyInfo, // traits
     SampleImageInfo, HaSampleImage, // sample
     DepthStencilImageInfo, HaDepthStencilImage, // depth
 };

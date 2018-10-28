@@ -25,9 +25,9 @@ impl PipelineKit {
         RenderPassBuilder::new(&self.device)
     }
 
-    pub fn pipeline_builder(&self, type_: PipelineType) -> Result<GraphicsPipelineBuilder, PipelineError> {
+    pub fn pipeline_builder(&self, typ: PipelineType) -> Result<GraphicsPipelineBuilder, PipelineError> {
 
-        match type_ {
+        match typ {
             | PipelineType::Graphics => GraphicsPipelineBuilder::new(&self.device),
             | PipelineType::Compute  => unimplemented!()
         }

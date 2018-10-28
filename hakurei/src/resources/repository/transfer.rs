@@ -1,13 +1,12 @@
 
 use ash::vk;
 
-use core::device::{ HaDevice, HaLogicalDevice, HaTransfer };
+use core::device::HaDevice;
 use core::physical::HaPhyDevice;
 
 use resources::buffer::BufferBlockEntity;
 use resources::memory::{ HaMemoryAbstract, MemoryRange, UploadStagingResource };
 use resources::allocator::BufferAllocateInfos;
-use resources::command::{ HaCommandRecorder, CommandBufferUsageFlag };
 use resources::error::AllocatorError;
 
 pub struct BufferDataUploader<'a> {
@@ -85,7 +84,7 @@ impl<'a> BufferDataUpdater<'a> {
         }
     }
 
-    pub fn update<D: Copy>(&mut self, block: &impl BufferBlockEntity, data: &Vec<D>) -> Result<&mut BufferDataUpdater<'a>, AllocatorError> {
+    pub fn update(&mut self, block: &impl BufferBlockEntity, data: &Vec<impl Copy>) -> Result<&mut BufferDataUpdater<'a>, AllocatorError> {
 
         let item = block.get_buffer_item();
         let offset = self.offsets[item.buffer_index];
@@ -106,56 +105,3 @@ impl<'a> BufferDataUpdater<'a> {
     }
 }
 
-
-pub struct DataCopyer {
-
-    transfer: HaTransfer,
-    recorder: HaCommandRecorder,
-}
-
-impl DataCopyer {
-
-    pub(crate) fn new(device: &HaDevice) -> Result<DataCopyer, AllocatorError> {
-
-        let transfer = HaLogicalDevice::transfer(device);
-        let command = transfer.command()?;
-        let recorder = command.setup_record(device);
-
-        let _ = recorder.begin_record(&[CommandBufferUsageFlag::OneTimeSubmitBit])?;
-
-        let copyer = DataCopyer {
-            transfer, recorder,
-        };
-
-        Ok(copyer)
-    }
-
-    pub fn copy_buffer_to_buffer(&self, from: &impl BufferBlockEntity, to: &impl BufferBlockEntity) -> Result<&DataCopyer, AllocatorError> {
-
-        let from = from.get_buffer_item();
-        let to   = to.get_buffer_item();
-
-        // TODO: Only support one region.
-        let copy_region = [
-            vk::BufferCopy {
-                // TODO: Only support copy buffer from beginning.
-                src_offset: 0,
-                dst_offset: 0,
-                size: to.size,
-            },
-        ];
-
-        self.recorder.copy_buffer(from.handle, to.handle, &copy_region);
-
-        Ok(self)
-    }
-
-    pub fn done(&mut self) -> Result<(), AllocatorError> {
-
-        let command = self.recorder.end_record()?;
-        self.transfer.commit(command);
-        self.transfer.excute()?;
-
-        Ok(())
-    }
-}

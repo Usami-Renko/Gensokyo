@@ -3,6 +3,7 @@ use ash::vk;
 
 use resources::buffer::{ BufferItem, BufferUsageFlag, BufferCreateFlag };
 use resources::buffer::{ BufferBlockInfo, BufferBlockEntity };
+use resources::buffer::{ BufferCopiable, BufferCopyInfo };
 use resources::allocator::BufferInfosAllocatable;
 
 use utility::marker::VulkanEnum;
@@ -68,5 +69,16 @@ impl BufferBlockEntity for HaImgsrcBlock {
 
     fn offset(&self, _sub_index: usize) -> vk::DeviceSize {
         unimplemented!()
+    }
+}
+
+impl BufferCopiable for HaImgsrcBlock {
+
+    fn copy_info(&self) -> BufferCopyInfo {
+        BufferCopyInfo {
+            handle: self.item.handle,
+            offset: 0,
+            size  : self.item.size,
+        }
     }
 }
