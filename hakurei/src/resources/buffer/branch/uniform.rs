@@ -4,6 +4,7 @@ use ash::vk::uint32_t;
 
 use resources::buffer::{ BufferItem, BufferUsageFlag, BufferCreateFlag };
 use resources::buffer::{ BufferBlockInfo, BufferBlockEntity };
+use resources::buffer::{ BufferCopiable, BufferCopyInfo };
 use resources::allocator::BufferInfosAllocatable;
 use resources::descriptor::{ DescriptorBufferBindingInfo, DescriptorBufferBindableTarget };
 use resources::descriptor::BufferDescriptorType;
@@ -107,5 +108,16 @@ impl BufferBlockEntity for HaUniformBlock {
 
     fn offset(&self, sub_index: usize) -> vk::DeviceSize {
         self.element_size * (sub_index as vk::DeviceSize)
+    }
+}
+
+impl BufferCopiable for HaUniformBlock {
+
+    fn copy_info(&self) -> BufferCopyInfo {
+        BufferCopyInfo {
+            handle: self.item.handle,
+            offset: 0,
+            size  : self.item.size,
+        }
     }
 }

@@ -4,7 +4,7 @@ use ash::vk::uint32_t;
 
 use resources::allocator::ImageAllocateInfo;
 use resources::image::{ ImageTiling, ImageLayout };
-use resources::command::HaCommandRecorder;
+use resources::repository::DataCopyer;
 use resources::error::AllocatorError;
 
 use pipeline::state::SampleCountType;
@@ -38,6 +38,29 @@ pub(crate) trait HaImageViewDescAbs {
 /// Image Barrier Bundle Abstract.
 pub(crate) trait ImageBarrierBundleAbs {
 
-    fn make_transfermation(&mut self, recorder: &HaCommandRecorder, infos: &Vec<ImageAllocateInfo>) -> Result<(), AllocatorError>;
+    fn make_transfermation(&mut self, copyer: &DataCopyer, infos: &Vec<ImageAllocateInfo>) -> Result<(), AllocatorError>;
     fn cleanup(&mut self);
+}
+
+pub trait ImageBlockEntity: ImageCopiable {
+
+}
+
+pub trait ImageCopiable {
+
+    fn copy_info(&self) -> ImageCopyInfo;
+}
+
+pub struct ImageCopyInfo {
+
+    /// `handle` is the handle of image whose data is copied from or copy to.
+    pub(crate) handle: vk::Image,
+    /// `layout` is the destination layout of image, if the image is as the data destination.
+    ///
+    /// `layout` is the current layout of image, if the image is as the data source.
+    pub(crate) layout: vk::ImageLayout,
+    /// `extent` is the dimension of image, if the image is as the data destination, or `extent` will be ignored.
+    pub(crate) extent: vk::Extent3D,
+    /// `sub_resource` is the subresources of the image used for the source or destination image data.
+    pub(crate) sub_resource: vk::ImageSubresourceLayers,
 }

@@ -3,24 +3,25 @@ use ash::vk;
 use ash::version::DeviceV1_0;
 
 use config::resources::ImageLoadConfig;
-use core::device::{ HaDevice, HaLogicalDevice };
+use core::device::HaDevice;
 use core::physical::{ HaPhyDevice, MemorySelector };
 
-use resources::repository::HaImageRepository;
+use resources::repository::{ HaImageRepository, DataCopyer };
 use resources::image::{ ImageDescInfo, ImageViewDescInfo };
-use resources::image::{ HaImage, HaImageView };
+use resources::image::{ HaImage, HaImageView, ImageLayout };
 use resources::image::{ HaSampler, SampleImageInfo, HaSampleImage };
 use resources::image::{ DepthStencilImageInfo, HaDepthStencilImage };
 use resources::image::{ ImageBarrierBundleAbs, SampleImageBarrierBundle, DepSteImageBarrierBundle };
 use resources::image::{ ImageStorageInfo, ImageVarietyType };
+use resources::image::{ ImageBlockEntity, ImageCopiable, ImageCopyInfo };
 use resources::allocator::ImgMemAlloAbstract;
 use resources::allocator::{ DeviceImgMemAllocator, CachedImgMemAllocator };
 use resources::memory::HaMemoryType;
-use resources::command::CommandBufferUsageFlag;
 use resources::error::{ ImageError, AllocatorError };
 
 use utility::memory::bind_to_alignment;
 use utility::dimension::Dimension2D;
+use utility::marker::VulkanEnum;
 
 use std::path::Path;
 use std::collections::hash_map::{ HashMap, RandomState };
@@ -124,29 +125,23 @@ impl HaImageAllocator {
         // 2.create image view for each image.
         let mut views = vec![];
         for image_info in self.image_infos.iter() {
-            views.push(image_info.generate_view(&self.device)?);
+            let image_view = image_info.generate_view(&self.device)?;
+            views.push(image_view);
         }
 
-        // 3.create command buffer.
-        let mut transfer = HaLogicalDevice::transfer(&self.device);
-        let command_buffer = transfer.command()?;
-
-        let mut recorder = command_buffer.setup_record(&self.device);
-        recorder.begin_record(&[CommandBufferUsageFlag::OneTimeSubmitBit])?;
+        // 3.prepare copy data to image.
+        let mut copyer = DataCopyer::new(&self.device)?;
 
         // 4. make image barrier transitions.
         let mut barrier_bundles = collect_barrier_bundle(&self.physical, &self.device, &self.image_infos);
         for bundle in barrier_bundles.iter_mut() {
-            bundle.make_transfermation(&recorder, &self.image_infos)?;
+            bundle.make_transfermation(&copyer, &self.image_infos)?;
         }
 
-        // 5.submit command buffer.
-        let command = recorder.end_record()?;
+        // 5.execute data copy operation.
+        copyer.done()?;
 
-        // 6.execute the command.
-        transfer.commit(command);
-        transfer.excute()?;
-
+        // 6.do some cleaning.
         barrier_bundles.iter_mut()
             .for_each(|bundle| bundle.cleanup());
 
@@ -197,14 +192,14 @@ impl ImageStorageType {
 
 pub(crate) struct ImageAllocateInfo {
 
-    type_: ImageVarietyType,
+    typ: ImageVarietyType,
 
     pub(crate) image: HaImage,
     pub(crate) _image_desc: ImageDescInfo,
     pub(crate) view_desc : ImageViewDescInfo,
 
-    pub(crate) storage   : ImageStorageInfo,
-    pub(crate) space     : vk::DeviceSize,
+    pub(crate) storage: ImageStorageInfo,
+    pub(crate) space  : vk::DeviceSize,
 }
 
 impl ImageAllocateInfo {
@@ -214,7 +209,7 @@ impl ImageAllocateInfo {
         let space = bind_to_alignment(image.requirement.size, image.requirement.alignment);
 
         ImageAllocateInfo {
-            type_, image, _image_desc: image_desc, view_desc, storage, space,
+            typ: type_, image, _image_desc: image_desc, view_desc, storage, space,
         }
     }
 
@@ -231,6 +226,27 @@ impl ImageAllocateInfo {
     }
 }
 
+impl ImageBlockEntity for ImageAllocateInfo {
+
+}
+
+impl ImageCopiable for ImageAllocateInfo {
+
+    fn copy_info(&self) -> ImageCopyInfo {
+        ImageCopyInfo {
+            handle: self.image.handle,
+            layout: ImageLayout::TransferDstOptimal.value(),
+            extent: self.storage.dimension,
+            sub_resource: vk::ImageSubresourceLayers {
+                aspect_mask     : self.view_desc.subrange.aspect_mask,
+                mip_level       : self.view_desc.subrange.base_mip_level,
+                base_array_layer: self.view_desc.subrange.base_array_layer,
+                layer_count     : self.view_desc.subrange.layer_count,
+            }
+        }
+    }
+}
+
 fn collect_barrier_bundle(physical: &HaPhyDevice, device: &HaDevice, image_infos: &[ImageAllocateInfo]) -> Vec<Box<ImageBarrierBundleAbs>> {
 
     let mut barrier_indices: HashMap<ImageVarietyType, Vec<usize>, RandomState> = HashMap::new();
@@ -239,7 +255,7 @@ fn collect_barrier_bundle(physical: &HaPhyDevice, device: &HaDevice, image_infos
 
         // make the logic a little strange to avoid borrow conflict.
         let is_found = {
-            if let Some(indices) = barrier_indices.get_mut(&image_info.type_) {
+            if let Some(indices) = barrier_indices.get_mut(&image_info.typ) {
                 indices.push(index);
                 true
             } else {
@@ -248,7 +264,7 @@ fn collect_barrier_bundle(physical: &HaPhyDevice, device: &HaDevice, image_infos
         };
 
         if is_found == false {
-            barrier_indices.insert(image_info.type_, vec![index]);
+            barrier_indices.insert(image_info.typ, vec![index]);
         }
     };
 

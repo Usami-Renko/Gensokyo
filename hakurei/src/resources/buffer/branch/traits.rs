@@ -50,11 +50,12 @@ pub(crate) trait BufferBlockInfo {
         let buffer = HaBuffer {
             handle, requirement,
         };
+
         Ok(buffer)
     }
 }
 
-pub trait BufferBlockEntity {
+pub trait BufferBlockEntity: BufferCopiable {
 
     fn get_buffer_item(&self) -> &BufferItem;
     fn offset(&self, sub_index: usize) -> vk::DeviceSize;
@@ -62,7 +63,7 @@ pub trait BufferBlockEntity {
 
 fn complement_buffer_usage(origin: vk::BufferUsageFlags, storage_type: BufferStorageType) -> vk::BufferUsageFlags {
     match storage_type {
-        // No other specific flag is needed for Host Buffer
+        // No other specific flag is needed for Host Buffer.
         | BufferStorageType::Host    => origin,
         // Cached Buffer always need to be transfer dst.
         | BufferStorageType::Cached  => origin | BufferUsageFlag::TransferDstBit.value(),
@@ -71,4 +72,21 @@ fn complement_buffer_usage(origin: vk::BufferUsageFlags, storage_type: BufferSto
         // Staging Buffer always need to be transfer src.
         | BufferStorageType::Staging => origin | BufferUsageFlag::TransferSrcBit.value(),
     }
+}
+
+pub trait BufferCopiable {
+
+    fn copy_info(&self) -> BufferCopyInfo;
+}
+
+pub struct BufferCopyInfo {
+
+    /// `handle` the handle of buffer whose data is copied from or copy to.
+    pub(crate) handle: vk::Buffer,
+    /// `offset` the starting offset in bytes from the start of source or destination buffer.
+    pub(crate) offset: vk::DeviceSize,
+    /// If this is the buffer for data source, `size` is the number of bytes to copy.
+    ///
+    /// If this is the buffer for data destination, `size` will be ignored.
+    pub(crate) size: vk::DeviceSize,
 }

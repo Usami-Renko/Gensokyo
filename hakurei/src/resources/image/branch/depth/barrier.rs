@@ -8,7 +8,7 @@ use resources::allocator::ImageAllocateInfo;
 use resources::image::DepthImageUsage;
 use resources::image::ImageLayout;
 use resources::image::ImageBarrierBundleAbs;
-use resources::command::HaCommandRecorder;
+use resources::repository::DataCopyer;
 use resources::error::AllocatorError;
 
 use utility::marker::{ VulkanFlags, VulkanEnum };
@@ -24,12 +24,12 @@ pub(crate) struct DepSteImageBarrierBundle {
 
 impl ImageBarrierBundleAbs for DepSteImageBarrierBundle {
 
-    fn make_transfermation(&mut self, recorder: &HaCommandRecorder, infos: &Vec<ImageAllocateInfo>) -> Result<(), AllocatorError> {
+    fn make_transfermation(&mut self, copyer: &DataCopyer, infos: &Vec<ImageAllocateInfo>) -> Result<(), AllocatorError> {
 
         let final_barriers = self.info_indices.iter()
             .map(|&index| self.final_barrier(&infos[index])).collect::<Vec<_>>();
 
-        let _ = recorder.pipeline_barrrier(
+        let _ = copyer.recorder().pipeline_barrrier(
             PipelineStageFlag::TopOfPipeBit.value(),
             self.usage.dst_stage_flag().value(),
             &[], &[], &[],
