@@ -2,12 +2,27 @@
 use ash::vk;
 use ash::vk::uint32_t;
 
+use config::resources::ImageLoadConfig;
+use core::physical::HaPhyDevice;
+
 use resources::allocator::ImageAllocateInfo;
+use resources::image::HaImage;
 use resources::image::{ ImageTiling, ImageLayout };
+use resources::image::{ ImageDescInfo, ImageStorageInfo };
+use resources::image::ImageCopyInfo;
 use resources::repository::DataCopyer;
-use resources::error::AllocatorError;
+use resources::error::{ AllocatorError, ImageError };
 
 use pipeline::state::SampleCountType;
+
+pub(crate) trait ImageBranchInfoAbs {
+
+    fn storage(&mut self, physical: &HaPhyDevice, config: &ImageLoadConfig) ->  Result<ImageStorageInfo, ImageError>;
+    fn view_desc(&self) -> &ImageDescInfo;
+    fn allocate_index(&self) -> usize;
+    fn set_allocate_index(&mut self, value: usize);
+    fn allocate_info(&self, image: HaImage, storage: ImageStorageInfo) -> ImageAllocateInfo;
+}
 
 pub(crate) trait HaImageDescAbs {
 
@@ -38,7 +53,7 @@ pub(crate) trait HaImageViewDescAbs {
 /// Image Barrier Bundle Abstract.
 pub(crate) trait ImageBarrierBundleAbs {
 
-    fn make_transfermation(&mut self, copyer: &DataCopyer, infos: &Vec<ImageAllocateInfo>) -> Result<(), AllocatorError>;
+    fn make_transfermation(&mut self, copyer: &DataCopyer, infos: &mut Vec<ImageAllocateInfo>) -> Result<(), AllocatorError>;
     fn cleanup(&mut self);
 }
 
@@ -49,18 +64,4 @@ pub trait ImageBlockEntity: ImageCopiable {
 pub trait ImageCopiable {
 
     fn copy_info(&self) -> ImageCopyInfo;
-}
-
-pub struct ImageCopyInfo {
-
-    /// `handle` is the handle of image whose data is copied from or copy to.
-    pub(crate) handle: vk::Image,
-    /// `layout` is the destination layout of image, if the image is as the data destination.
-    ///
-    /// `layout` is the current layout of image, if the image is as the data source.
-    pub(crate) layout: vk::ImageLayout,
-    /// `extent` is the dimension of image, if the image is as the data destination, or `extent` will be ignored.
-    pub(crate) extent: vk::Extent3D,
-    /// `sub_resource` is the subresources of the image used for the source or destination image data.
-    pub(crate) sub_resource: vk::ImageSubresourceLayers,
 }

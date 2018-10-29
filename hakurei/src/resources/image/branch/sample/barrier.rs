@@ -30,7 +30,7 @@ pub(crate) struct SampleImageBarrierBundle {
 
 impl ImageBarrierBundleAbs for SampleImageBarrierBundle {
 
-    fn make_transfermation(&mut self, copyer: &DataCopyer, infos: &Vec<ImageAllocateInfo>) -> Result<(), AllocatorError> {
+    fn make_transfermation(&mut self, copyer: &DataCopyer, infos: &mut Vec<ImageAllocateInfo>) -> Result<(), AllocatorError> {
 
         // create staging buffer and memories
         let (mut staging_repository, buffer_blocks) = self.create_staging_repository(infos)?;
@@ -39,7 +39,7 @@ impl ImageBarrierBundleAbs for SampleImageBarrierBundle {
 
         // make image barrier transition for data transfer.
         let transfer_barriers = self.info_indices.iter()
-            .map(|&index| self.transfer_barrier(&infos[index])).collect::<Vec<_>>();
+            .map(|&index| self.transfer_barrier(&mut infos[index])).collect::<Vec<_>>();
         copyer.recorder().pipeline_barrrier(
             PipelineStageFlag::TopOfPipeBit.value(),
             PipelineStageFlag::TransferBit.value(),
@@ -56,7 +56,7 @@ impl ImageBarrierBundleAbs for SampleImageBarrierBundle {
 
         // make image barrier transition for final layout.
         let final_barriers = self.info_indices.iter()
-            .map(|&index| self.final_barrier(&infos[index])).collect::<Vec<_>>();
+            .map(|&index| self.final_barrier(&mut infos[index])).collect::<Vec<_>>();
         let _ = copyer.recorder().pipeline_barrrier(
             PipelineStageFlag::TransferBit.value(),
             self.dst_stage.to_stage_flag().value(),
@@ -120,14 +120,17 @@ impl SampleImageBarrierBundle {
         Ok(())
     }
 
-    fn transfer_barrier(&self, info: &ImageAllocateInfo) -> vk::ImageMemoryBarrier {
-        vk::ImageMemoryBarrier {
+    fn transfer_barrier(&self, info: &mut ImageAllocateInfo) -> vk::ImageMemoryBarrier {
+
+        let new_layout = ImageLayout::TransferDstOptimal;
+
+        let barrier = vk::ImageMemoryBarrier {
             s_type: vk::StructureType::ImageMemoryBarrier,
             p_next: ptr::null(),
             src_access_mask: vk::AccessFlags::empty(),
             dst_access_mask: [AccessFlag::TransferWriteBit].flags(),
-            old_layout: ImageLayout::Undefined.value(),
-            new_layout: ImageLayout::TransferDstOptimal.value(),
+            old_layout: info.image_desc.initial_layout,
+            new_layout: new_layout.value(),
             // TODO: Current ignore queue family ownership transfer.
             // srcQueueFamilyIndex is the source queue family for a queue family ownership transfer.
             src_queue_family_index: vk::VK_QUEUE_FAMILY_IGNORED,
@@ -135,21 +138,32 @@ impl SampleImageBarrierBundle {
             dst_queue_family_index: vk::VK_QUEUE_FAMILY_IGNORED,
             image: info.image.handle,
             subresource_range: info.view_desc.subrange.clone(),
-        }
+        };
+
+        info.final_layout = new_layout;
+
+        barrier
     }
 
-    fn final_barrier(&self, info: &ImageAllocateInfo) -> vk::ImageMemoryBarrier {
-        vk::ImageMemoryBarrier {
+    fn final_barrier(&self, info: &mut ImageAllocateInfo) -> vk::ImageMemoryBarrier {
+
+        let new_layout = ImageLayout::ShaderReadOnlyOptimal;
+
+        let barrier = vk::ImageMemoryBarrier {
             s_type: vk::StructureType::ImageMemoryBarrier,
             p_next: ptr::null(),
             src_access_mask: [AccessFlag::TransferWriteBit].flags(),
             dst_access_mask: [AccessFlag::ShaderReadBit].flags(),
-            old_layout: ImageLayout::TransferDstOptimal.value(),
-            new_layout: ImageLayout::ShaderReadOnlyOptimal.value(),
+            old_layout: info.final_layout.value(),
+            new_layout: new_layout.value(),
             src_queue_family_index: vk::VK_QUEUE_FAMILY_IGNORED,
             dst_queue_family_index: vk::VK_QUEUE_FAMILY_IGNORED,
             image: info.image.handle,
             subresource_range: info.view_desc.subrange.clone(),
-        }
+        };
+
+        info.final_layout = new_layout;
+
+        barrier
     }
 }

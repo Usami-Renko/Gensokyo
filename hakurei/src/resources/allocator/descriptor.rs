@@ -35,13 +35,14 @@ impl HaDescriptorAllocator {
     }
 
     pub fn attach_descriptor_set(&mut self, config: DescriptorSetConfig) -> (DescriptorSetItem, Vec<DescriptorItem>) {
+
         let set_index = self.set_configs.len();
 
         let mut items = vec![];
         for i in 0..config.bindings.len() {
             items.push(DescriptorItem {
                 set_index,
-                binding_index: i
+                binding_index: i,
             });
         }
 

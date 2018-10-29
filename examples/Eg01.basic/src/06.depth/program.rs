@@ -136,7 +136,7 @@ impl ProgramProc for DepthProcedure {
         let mut descriptor_set_config = DescriptorSetConfig::init(&[]);
         let ubo_binding_index = descriptor_set_config.add_buffer_binding(&self.ubo_buffer, &[
             ShaderStageFlag::VertexStage,
-        ])?;
+        ]);
 
         let mut descriptor_allocator = kit.descriptor(&[]);
         let (descriptor_set_item, descriptor_binding_items) = descriptor_allocator.attach_descriptor_set(descriptor_set_config);
@@ -147,11 +147,14 @@ impl ProgramProc for DepthProcedure {
         self.ubo_set = descriptor_set_item;
 
         // depth attachment image
-        let depth_attachment_info = DepthStencilImageInfo::new_attachment();
         let mut image_allocator = kit.image(ImageStorageType::Device);
-        self.depth_attachment = image_allocator.attach_depth_stencil_image(depth_attachment_info, kit.swapchain_dimension())?;
-        self.image_storage = image_allocator.allocate()?;
-        self.image_storage.get_allocated_infos(&mut self.depth_attachment);
+
+        let mut depth_attachment_info = DepthStencilImageInfo::new_attachment(kit.swapchain_dimension());
+        image_allocator.append_depth_stencil_image(&mut depth_attachment_info)?;
+
+        let image_distributor = image_allocator.allocate()?;
+        self.depth_attachment = image_distributor.acquire_depth_stencil_image(depth_attachment_info)?;
+        self.image_storage = image_distributor.repository();
 
         Ok(())
     }

@@ -8,7 +8,6 @@ use resources::buffer::{ BufferCopiable, BufferCopyInfo };
 use resources::allocator::BufferInfosAllocatable;
 use resources::descriptor::{ DescriptorBufferBindingInfo, DescriptorBufferBindableTarget };
 use resources::descriptor::BufferDescriptorType;
-use resources::error::DescriptorError;
 
 use utility::marker::VulkanEnum;
 
@@ -85,18 +84,16 @@ impl HaUniformBlock {
 
 impl DescriptorBufferBindableTarget for HaUniformBlock {
 
-    fn binding_info(&self, sub_block_indices: Option<Vec<uint32_t>>) -> Result<DescriptorBufferBindingInfo, DescriptorError> {
+    fn binding_info(&self, sub_block_indices: Option<Vec<uint32_t>>) -> DescriptorBufferBindingInfo {
 
-        let info = DescriptorBufferBindingInfo {
+        DescriptorBufferBindingInfo {
             typ: BufferDescriptorType::UniformBuffer,
             binding: self.binding,
             count  : self.count,
             element_indices: sub_block_indices.unwrap_or(vec![0]),
             element_size: self.element_size,
             buffer: self.item.clone(),
-        };
-
-        Ok(info)
+        }
     }
 }
 

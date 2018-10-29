@@ -28,9 +28,9 @@ impl HaImageView {
             s_type: vk::StructureType::ImageViewCreateInfo,
             p_next: ptr::null(),
             // flags is reserved for future use in API version 1.1.82.
-            flags : vk::ImageViewCreateFlags::empty(),
-            image : for_image.handle,
-            view_type : desc.view_type,
+            flags: vk::ImageViewCreateFlags::empty(),
+            image: for_image.handle,
+            view_type: desc.view_type,
             format,
             components: desc.components,
             subresource_range: desc.subrange.clone(),
@@ -83,11 +83,11 @@ impl ImageViewDescInfo {
         }
     }
 
-    pub(crate) fn reset_depth_image_aspect_mask(&mut self, format: vk::Format) {
+    pub fn reset_depth_image_aspect_mask(&mut self, format: vk::Format) {
 
         self.subrange.aspect_mask = match format {
             | vk::Format::D32Sfloat => [
-                ImageAspectFlag::DepthBit
+                ImageAspectFlag::DepthBit,
             ].flags(),
             | vk::Format::D24UnormS8Uint
             | vk::Format::D32SfloatS8Uint => [

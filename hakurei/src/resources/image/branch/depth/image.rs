@@ -2,59 +2,14 @@
 use ash::vk;
 use ash::vk::uint32_t;
 
-use resources::image::{ ImageType, ImageViewType, ImageTiling, ImageUsageFlag, ImageLayout, ImageAspectFlag };
-use resources::image::{ ImageDescInfo, ImageViewDescInfo, ImageViewItem };
-use resources::image::{HaImageDescAbs, HaImageViewDescAbs, HaImageBranchAbs };
-use resources::image::{ DepthImageUsage, ImagePipelineStage, DepthStencilImageFormat };
+use resources::image::ImageViewItem;
+use resources::image::ImageBranchInfoDesc;
+use resources::image::DepthStencilImageInfo;
+use resources::image::{ ImageCopiable, ImageCopyInfo };
 use resources::descriptor::{ DescriptorImageBindingInfo, DescriptorImageBindableTarget };
-use resources::error::DescriptorError;
+use resources::allocator::ImageAllocateInfo;
 
-use pipeline::state::SampleCountType;
 use utility::marker::VulkanEnum;
-
-pub struct DepthStencilImageInfo {
-
-    pub(crate) usage: DepthImageUsage,
-
-    pub(crate) binding: uint32_t,
-    pub(crate) count  : uint32_t,
-
-    pub(crate) image_desc  : ImageDescInfo,
-    pub(crate) view_desc   : ImageViewDescInfo,
-}
-
-impl DepthStencilImageInfo {
-
-    pub fn new_attachment() -> DepthStencilImageInfo {
-        DepthStencilImageInfo::new(0, 0, DepthImageUsage::Attachment)
-    }
-
-    pub fn new_image(binding: uint32_t, count: uint32_t, stage: ImagePipelineStage, format: DepthStencilImageFormat) -> DepthStencilImageInfo {
-        DepthStencilImageInfo::new(binding, count, DepthImageUsage::ShaderRead(format, stage))
-    }
-
-    fn new(binding: uint32_t, count: uint32_t, usage: DepthImageUsage) -> DepthStencilImageInfo {
-
-        let image_desc = ImageDescInfo::init(
-            // TODO: Currently HaSampleImage only support
-            ImageType::Type2d,
-            ImageTiling::Optimal,
-            &[
-                ImageUsageFlag::DepthStencilAttachmentBit,
-            ],
-            ImageLayout::Undefined
-        );
-
-        let view_desc = ImageViewDescInfo::init(
-            ImageViewType::Type2d,
-            &[ImageAspectFlag::DepthBit]
-        );
-
-        DepthStencilImageInfo {
-            usage, binding, count, image_desc, view_desc,
-        }
-    }
-}
 
 pub struct HaDepthStencilImage {
 
@@ -63,26 +18,33 @@ pub struct HaDepthStencilImage {
     _binding: uint32_t,
     _count  : uint32_t,
 
-    item   : ImageViewItem,
+    item: ImageViewItem,
+    desc: ImageBranchInfoDesc,
 }
 
 impl HaDepthStencilImage {
 
     pub fn uninitialize() -> HaDepthStencilImage {
         HaDepthStencilImage {
+
+            format: vk::Format::D32Sfloat,
+
             _binding: 0,
             _count  : 0,
 
-            item: ImageViewItem::from_unallocate(0),
-            format: vk::Format::D32Sfloat,
+            item: ImageViewItem::unset(),
+            desc: ImageBranchInfoDesc::unset(),
         }
     }
 
-    pub(crate) fn setup(binding: uint32_t, count: uint32_t, index: usize, format: vk::Format) -> HaDepthStencilImage {
+    pub(crate) fn setup(info: DepthStencilImageInfo, format: vk::Format, allocate_info: &ImageAllocateInfo, view_handle: vk::ImageView) -> HaDepthStencilImage {
 
         HaDepthStencilImage {
-            _binding: binding, _count: count,format,
-            item: ImageViewItem::from_unallocate(index),
+            format,
+            _binding: info.binding,
+            _count  : info.count,
+            item: ImageViewItem::new(allocate_info.image.handle, view_handle),
+            desc: allocate_info.gen_desc(),
         }
     }
 
@@ -90,19 +52,27 @@ impl HaDepthStencilImage {
         self.format
     }
 
-    pub(crate) fn get_view_handle(&self) -> Option<vk::ImageView> {
-        self.item.get_view_handle()
+    pub(crate) fn get_item(&self) -> &ImageViewItem {
+        &self.item
     }
 }
 
 impl DescriptorImageBindableTarget for HaDepthStencilImage {
 
-    fn binding_info(&self) -> Result<DescriptorImageBindingInfo, DescriptorError> {
+    fn binding_info(&self) -> DescriptorImageBindingInfo {
         // implement binding info for DepthImageUsage::ShaderRead(DepthStencilImageFormat, ImagePipelineStage)
         unimplemented!()
     }
 }
 
+impl ImageCopiable for HaDepthStencilImage {
 
-impl_image_branch_abs!(HaDepthStencilImage);
-impl_image_desc_info_abs!(DepthStencilImageInfo);
+    fn copy_info(&self) -> ImageCopyInfo {
+        ImageCopyInfo {
+            handle: self.item.image_handle,
+            layout: self.desc.current_layout.value(),
+            extent: self.desc.dimension,
+            sub_resource: self.desc.gen_sublayers(),
+        }
+    }
+}

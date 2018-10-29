@@ -6,7 +6,7 @@ use core::swapchain::HaSwapchain;
 
 use resources::allocator::{ HaBufferAllocator, BufferStorageType };
 use resources::allocator::HaDescriptorAllocator;
-use resources::allocator::{ HaImageAllocator, ImageStorageType };
+use resources::allocator::{ HaImagePreAllocator, ImageStorageType };
 use resources::descriptor::DescriptorPoolFlag;
 
 use utility::model::ModelObjLoader;
@@ -41,8 +41,8 @@ impl AllocatorKit {
         HaDescriptorAllocator::new(&self.device, flags)
     }
 
-    pub fn image(&self, ty: ImageStorageType) -> HaImageAllocator {
-        HaImageAllocator::new(&self.physical, &self.device, ty, self.config.image_load.clone())
+    pub fn image(&self, ty: ImageStorageType) -> HaImagePreAllocator {
+        HaImagePreAllocator::new(&self.physical, &self.device, ty, self.config.image_load.clone())
     }
 
     pub fn swapchain_dimension(&self) -> Dimension2D {

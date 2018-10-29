@@ -1,6 +1,6 @@
 
 pub use self::buffer::{ HaBufferAllocator, BufferStorageType };
-pub use self::image::{ HaImageAllocator, ImageStorageType };
+pub use self::image::{ HaImagePreAllocator, HaImageDistributor, ImageStorageType };
 
 pub use self::descriptor::HaDescriptorAllocator;
 

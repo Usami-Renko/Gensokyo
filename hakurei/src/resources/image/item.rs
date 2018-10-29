@@ -2,43 +2,25 @@
 use ash::vk;
 
 #[derive(Debug, Clone)]
-pub struct ImageViewItem {
+pub(crate) struct ImageViewItem {
 
-    pub(crate) handles   : Option<ImageObjHandles>,
-    pub(crate) view_index: usize,
-}
-
-#[derive(Debug, Clone)]
-pub(crate) struct ImageObjHandles {
-
-    image: vk::Image,
-    view : vk::ImageView,
+    pub(crate) image_handle: vk::Image,
+    pub(crate) view_handle : vk::ImageView,
 }
 
 impl ImageViewItem {
 
-    pub fn from_unallocate(index: usize) -> ImageViewItem {
+    pub fn unset() -> ImageViewItem {
         ImageViewItem {
-            handles: None,
-            view_index: index,
+            image_handle: vk::Image::null(),
+            view_handle : vk::ImageView::null(),
         }
     }
 
-    pub fn set_handles(&mut self, image: vk::Image, view: vk::ImageView) {
-        let handles = ImageObjHandles {
-            image, view,
-        };
-        self.handles = Some(handles)
+    pub fn new(image: vk::Image, view: vk::ImageView) -> ImageViewItem {
+        ImageViewItem {
+            image_handle: image,
+            view_handle : view,
+        }
     }
-
-    pub fn get_view_handle(&self) -> Option<vk::ImageView> {
-        self.handles.as_ref()
-            .and_then(|handles| Some(handles.view.clone()))
-    }
-}
-
-pub trait HaImageBranchAbs {
-
-    fn view_index(&self) -> usize;
-    fn fill_handles(&mut self, image: vk::Image, view: vk::ImageView);
 }
