@@ -24,15 +24,15 @@ pub(crate) struct DepSteImageBarrierBundle {
 
 impl ImageBarrierBundleAbs for DepSteImageBarrierBundle {
 
-    fn make_transfermation(&mut self, copyer: &DataCopyer, infos: &Vec<ImageAllocateInfo>) -> Result<(), AllocatorError> {
+    fn make_transfermation(&mut self, copyer: &DataCopyer, infos: &mut Vec<ImageAllocateInfo>) -> Result<(), AllocatorError> {
 
         let final_barriers = self.info_indices.iter()
-            .map(|&index| self.final_barrier(&infos[index])).collect::<Vec<_>>();
+            .map(|&index| self.final_barrier(&mut infos[index])).collect::<Vec<_>>();
 
         let _ = copyer.recorder().pipeline_barrrier(
             PipelineStageFlag::TopOfPipeBit.value(),
             self.usage.dst_stage_flag().value(),
-            &[], &[], &[],
+            &[],&[], &[],
             &final_barriers
         );
 
@@ -52,12 +52,20 @@ impl DepSteImageBarrierBundle {
         }
     }
 
-    fn final_barrier(&self, info: &ImageAllocateInfo) -> vk::ImageMemoryBarrier {
+    fn final_barrier(&self, info: &mut ImageAllocateInfo) -> vk::ImageMemoryBarrier {
+
+        let new_layout = match self.usage {
+            | DepthImageUsage::Attachment       => ImageLayout::DepthStencilAttachmentOptimal,
+            | DepthImageUsage::ShaderRead(_, _) => ImageLayout::DepthStencilReadOnlyOptimal,
+        };
+
+        info.final_layout = new_layout;
+
         vk::ImageMemoryBarrier {
             s_type: vk::StructureType::ImageMemoryBarrier,
             p_next: ptr::null(),
             src_access_mask: vk::AccessFlags::empty(),
-            dst_access_mask: match self.usage {
+            dst_access_mask: match &self.usage {
                 | DepthImageUsage::Attachment => [
                     AccessFlag::DepthStencilAttachmentReadBit,
                     AccessFlag::DepthStencilAttachmentWriteBit,
@@ -67,11 +75,8 @@ impl DepSteImageBarrierBundle {
                     unimplemented!()
                 },
             },
-            old_layout: ImageLayout::Undefined.value(),
-            new_layout: match self.usage {
-                | DepthImageUsage::Attachment       => ImageLayout::DepthStencilAttachmentOptimal.value(),
-                | DepthImageUsage::ShaderRead(_, _) => ImageLayout::DepthStencilReadOnlyOptimal.value(),
-            },
+            old_layout: info.image_desc.initial_layout,
+            new_layout: new_layout.value(),
             src_queue_family_index : vk::VK_QUEUE_FAMILY_IGNORED,
             dst_queue_family_index : vk::VK_QUEUE_FAMILY_IGNORED,
             image: info.image.handle,

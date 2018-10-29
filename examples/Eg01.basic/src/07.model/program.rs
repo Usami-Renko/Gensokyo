@@ -139,26 +139,28 @@ impl ProgramProc for ModelProcedure {
         // depth attachment image and model texture image
         let mut image_allocator = kit.image(ImageStorageType::Device);
 
-        let depth_attachment_info = DepthStencilImageInfo::new_attachment();
-        self.depth_attachment = image_allocator.attach_depth_stencil_image(depth_attachment_info, kit.swapchain_dimension())?;
+        let mut depth_attachment_info = DepthStencilImageInfo::new_attachment(kit.swapchain_dimension());
+        image_allocator.append_depth_stencil_image(&mut depth_attachment_info)?;
 
-        let model_texture_info = SampleImageInfo::new(1, 1, ImagePipelineStage::FragmentStage);
-        self.model_texture = image_allocator.attach_sample_image(Path::new(MODEL_TEXTURE_PATH), model_texture_info)?;
+        let mut model_texture_info = SampleImageInfo::new(1, 1, Path::new(MODEL_TEXTURE_PATH), ImagePipelineStage::FragmentStage);
+        image_allocator.append_sample_image(&mut model_texture_info)?;
 
-        self.image_storage = image_allocator.allocate()?;
-        self.image_storage.get_allocated_infos(&mut self.depth_attachment);
-        self.image_storage.get_allocated_infos(&mut self.model_texture);
+        let image_distributor = image_allocator.allocate()?;
+        self.depth_attachment = image_distributor.acquire_depth_stencil_image(depth_attachment_info)?;
+        self.model_texture = image_distributor.acquire_sample_image(model_texture_info)?;
+
+        self.image_storage = image_distributor.repository();
 
         // descriptor
         let mut descriptor_set_config = DescriptorSetConfig::init(&[]);
         let ubo_binding_index = descriptor_set_config.add_buffer_binding(
             &self.ubo_buffer,
             &[ShaderStageFlag::VertexStage]
-        )?;
+        );
         let sampler_bining_index = descriptor_set_config.add_image_binding(
             &self.model_texture,
             &[ShaderStageFlag::FragmentStage]
-        )?;
+        );
 
         let mut descriptor_allocator = kit.descriptor(&[]);
         let (descriptor_set_item, descriptor_binding_items) =

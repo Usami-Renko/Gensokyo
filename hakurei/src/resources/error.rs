@@ -169,7 +169,6 @@ pub enum DescriptorError {
     PoolCreationError,
     SetLayoutCreationError,
     SetAllocateError,
-    Resource(DescriptorResourceError),
 }
 
 impl Error for DescriptorError {}
@@ -181,33 +180,10 @@ impl fmt::Display for DescriptorError {
             | DescriptorError::PoolCreationError      => "Failed to create Descriptor Pool.",
             | DescriptorError::SetLayoutCreationError => "Failed to create Descriptor Set Layout.",
             | DescriptorError::SetAllocateError       => "Failed to allocate Descriptor Set.",
-            | DescriptorError::Resource(ref e)        => return write!(f, "{}", e.to_string()),
         };
         write!(f, "{}", description)
     }
 }
-
-
-#[derive(Debug, Clone, Copy, Eq, PartialEq)]
-pub enum DescriptorResourceError {
-
-    BufferNotAllocated,
-    ImageNotAllocated,
-}
-
-impl Error for DescriptorResourceError {}
-impl fmt::Display for DescriptorResourceError {
-
-    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
-
-        let description = match self {
-            | DescriptorResourceError::BufferNotAllocated => "Buffer must be allocated before binding it to descriptor.",
-            | DescriptorResourceError::ImageNotAllocated  => "Image must be allocated before binding it to descriptor.",
-        };
-        write!(f, "{}", description)
-    }
-}
-
 
 #[derive(Debug, Clone, Eq, PartialEq)]
 pub enum ImageError {

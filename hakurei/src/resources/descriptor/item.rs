@@ -6,7 +6,6 @@ use resources::descriptor::layout::{ BufferDescriptorType, ImageDescriptorType, 
 use resources::descriptor::HaDescriptorSet;
 use resources::buffer::BufferItem;
 use resources::image::{ ImageViewItem, ImageLayout };
-use resources::error::{ AllocatorError, DescriptorError, DescriptorResourceError };
 
 use pipeline::shader::ShaderStageFlag;
 
@@ -24,16 +23,16 @@ pub(crate) trait DescriptorBindingInfo {
     fn descriptor_type(&self)  -> vk::DescriptorType;
     fn descritpor_count(&self) -> uint32_t;
 
-    fn write_set(&self, set: &HaDescriptorSet) -> Result<DescriptorWriteInfo, DescriptorError>;
+    fn write_set(&self, set: &HaDescriptorSet) -> DescriptorWriteInfo;
 }
 
 pub(crate) trait DescriptorWriteContent {}
 
 pub trait DescriptorBufferBindableTarget {
-    fn binding_info(&self, sub_block_indices: Option<Vec<uint32_t>>) -> Result<DescriptorBufferBindingInfo, DescriptorError>;
+    fn binding_info(&self, sub_block_indices: Option<Vec<uint32_t>>) -> DescriptorBufferBindingInfo;
 }
 pub trait DescriptorImageBindableTarget {
-    fn binding_info(&self) -> Result<DescriptorImageBindingInfo, DescriptorError>;
+    fn binding_info(&self) -> DescriptorImageBindingInfo;
 }
 
 pub struct DescriptorBufferBindingInfo {
@@ -61,7 +60,7 @@ impl DescriptorBindingInfo for DescriptorBufferBindingInfo {
     fn descriptor_type(&self)  -> vk::DescriptorType { self.typ.value() }
     fn descritpor_count(&self) -> uint32_t { self.count }
 
-    fn write_set(&self, set: &HaDescriptorSet) -> Result<DescriptorWriteInfo, DescriptorError> {
+    fn write_set(&self, set: &HaDescriptorSet) -> DescriptorWriteInfo {
 
         let mut buffer_infos = vec![];
         for &element_index in self.element_indices.iter() {
@@ -71,7 +70,8 @@ impl DescriptorBindingInfo for DescriptorBufferBindingInfo {
                 // offset is the offset in bytes from the start of buffer.
                 // Access to buffer memory via this descriptor uses addressing that is relative to this starting offset.
                 offset: (element_index as vk::DeviceSize) * self.element_size,
-                // range is the size in bytes that is used for this descriptor update, or vk::WHOLE_SIZE to use the range from offset to the end of the buffer.
+                // range is the size in bytes that is used for this descriptor update,
+                // or vk::WHOLE_SIZE to use the range from offset to the end of the buffer.
                 // TODO: check maxUniformBufferRange or maxStorageBufferRange in physical device limit.
                 range : self.element_size,
             };
@@ -92,12 +92,10 @@ impl DescriptorBindingInfo for DescriptorBufferBindingInfo {
             p_texel_buffer_view: ptr::null(),
         };
 
-        let info = DescriptorWriteInfo {
+        DescriptorWriteInfo {
             content: Box::new(DescriptorWriteBufferContent(buffer_infos)),
             info: write_set,
-        };
-
-        Ok(info)
+        }
     }
 }
 
@@ -115,7 +113,7 @@ pub struct DescriptorImageBindingInfo {
     /// what the layout is for this descriptor in shader.
     pub(crate) dst_layout: ImageLayout,
     /// the reference to image view where the descriptor data stores.
-    pub(crate) view_item: ImageViewItem,
+    pub(crate) item: ImageViewItem,
 }
 
 struct DescriptorWriteImageContent(Vec<vk::DescriptorImageInfo>);
@@ -127,17 +125,14 @@ impl DescriptorBindingInfo for DescriptorImageBindingInfo {
     fn descriptor_type(&self)  -> vk::DescriptorType { self.type_.value() }
     fn descritpor_count(&self) -> uint32_t { self.count }
 
-    fn write_set(&self, set: &HaDescriptorSet) -> Result<DescriptorWriteInfo, DescriptorError> {
+    fn write_set(&self, set: &HaDescriptorSet) -> DescriptorWriteInfo {
 
         let mut image_infos = vec![];
         for _ in 0..(self.count as vk::DeviceSize) {
 
-            let view_handle = self.view_item.get_view_handle()
-                .ok_or(DescriptorError::Resource(DescriptorResourceError::ImageNotAllocated))?;
-
             let info = vk::DescriptorImageInfo {
                 sampler      : self.sampler,
-                image_view   : view_handle,
+                image_view   : self.item.view_handle,
                 image_layout : self.dst_layout.value(),
             };
             image_infos.push(info);
@@ -157,12 +152,10 @@ impl DescriptorBindingInfo for DescriptorImageBindingInfo {
             p_texel_buffer_view: ptr::null(),
         };
 
-        let info = DescriptorWriteInfo {
+        DescriptorWriteInfo {
             content: Box::new(DescriptorWriteImageContent(image_infos)),
             info: write_set,
-        };
-
-        Ok(info)
+        }
     }
 }
 
@@ -184,28 +177,26 @@ impl DescriptorSetConfig {
         }
     }
 
-    pub fn add_buffer_binding(&mut self, bind_target: &impl DescriptorBufferBindableTarget, stages: &[ShaderStageFlag]) -> Result<usize, AllocatorError> {
+    pub fn add_buffer_binding(&mut self, bind_target: &impl DescriptorBufferBindableTarget, stages: &[ShaderStageFlag]) -> usize {
 
-        let binding_info = bind_target.binding_info(None)
-            .map_err(|e| AllocatorError::Descriptor(e))?;
+        let binding_info = bind_target.binding_info(None);
         let descriptor_index = self.add_binding(
             Box::new(binding_info),
             stages
         );
 
-        Ok(descriptor_index)
+        descriptor_index
     }
 
-    pub fn add_image_binding(&mut self, bind_target: &impl DescriptorImageBindableTarget, stages: &[ShaderStageFlag]) -> Result<usize, AllocatorError> {
+    pub fn add_image_binding(&mut self, bind_target: &impl DescriptorImageBindableTarget, stages: &[ShaderStageFlag]) -> usize {
 
-        let binding_info = bind_target.binding_info()
-            .map_err(|e| AllocatorError::Descriptor(e))?;
+        let binding_info = bind_target.binding_info();
         let descriptor_index = self.add_binding(
             Box::new(binding_info),
             stages
         );
 
-        Ok(descriptor_index)
+        descriptor_index
     }
 
     fn add_binding(&mut self, binding: Box<DescriptorBindingInfo>, stages: &[ShaderStageFlag]) -> usize {

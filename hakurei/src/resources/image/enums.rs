@@ -6,7 +6,7 @@ use pipeline::stages::PipelineStageFlag;
 use utility::marker::VulkanEnum;
 
 /// ImagePipelineStage indicate in which pipeline stage this image is used.
-#[derive(Debug, Clone, Copy, Eq, PartialEq, Hash)]
+#[derive(Debug, Clone, Eq, PartialEq, Hash)]
 pub enum ImagePipelineStage {
     VertexStage,
     FragmentStage,
@@ -22,13 +22,13 @@ impl ImagePipelineStage {
     }
 }
 
-#[derive(Debug, Clone, Copy, Eq, PartialEq, Hash)]
-pub(crate) enum ImageVarietyType {
+#[derive(Debug, Clone, Eq, PartialEq, Hash)]
+pub(crate) enum ImageBranchType {
     SampleImage(ImagePipelineStage),
     DepthStencilImage(DepthImageUsage),
 }
 
-#[derive(Debug, Clone, Copy, Eq, PartialEq, Hash)]
+#[derive(Debug, Clone, Eq, PartialEq, Hash)]
 pub(crate) enum DepthImageUsage {
     Attachment,
     ShaderRead(DepthStencilImageFormat, ImagePipelineStage),

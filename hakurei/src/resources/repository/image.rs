@@ -2,7 +2,7 @@
 use core::device::HaDevice;
 
 use resources::memory::HaMemoryAbstract;
-use resources::image::{HaImage, HaImageView, HaImageBranchAbs};
+use resources::image::{ HaImage, HaImageView };
 
 #[derive(Default)]
 pub struct HaImageRepository {
@@ -19,19 +19,14 @@ impl HaImageRepository {
         HaImageRepository::default()
     }
 
-    pub(crate) fn store(device: &HaDevice, images: Vec<HaImage>, views: Vec<HaImageView>, memory: Box<HaMemoryAbstract>) -> HaImageRepository {
+    pub(crate) fn store(device: HaDevice, images: Vec<HaImage>, views: Vec<HaImageView>, memory: Box<HaMemoryAbstract>)
+        -> HaImageRepository {
 
         HaImageRepository {
-            device: Some(device.clone()),
+            device: Some(device),
             memory: Some(memory),
             images, views,
         }
-    }
-
-    pub fn get_allocated_infos<T: HaImageBranchAbs>(&self, for_image_variety: &mut T) {
-
-        let view_index = for_image_variety.view_index();
-        for_image_variety.fill_handles(self.images[view_index].handle, self.views[view_index].handle);
     }
 
     pub fn cleanup(&mut self) {

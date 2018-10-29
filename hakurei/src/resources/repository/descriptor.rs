@@ -47,7 +47,7 @@ impl HaDescriptorRepository {
         for item in items.iter() {
 
             let binding_info = &self.configs[item.set_index].bindings[item.binding_index];
-            let write_info = binding_info.write_set(&self.sets[item.set_index])?;
+            let write_info = binding_info.write_set(&self.sets[item.set_index]);
 
             write_infos.push(write_info);
         }

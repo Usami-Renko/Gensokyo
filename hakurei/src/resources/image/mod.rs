@@ -12,15 +12,16 @@ pub use self::branch::{
 
 pub(crate) use self::image::{ HaImage, ImageDescInfo };
 pub(crate) use self::view::{ HaImageView, ImageViewDescInfo };
-pub(crate) use self::item::{HaImageBranchAbs, ImageViewItem };
+pub(crate) use self::item::ImageViewItem;
 pub(crate) use self::flag::{ ImageUsageFlag, ImageAspectFlag };
 pub(crate) use self::io::{ ImageStorageInfo, ImageSource };
-pub(crate) use self::enums::{ ImageVarietyType, ImageType, ImageViewType, DepthImageUsage };
+pub(crate) use self::enums::{ ImageBranchType, ImageType, ImageViewType, DepthImageUsage };
 
 pub(crate) use self::branch::{
-    HaImageDescAbs, HaImageViewDescAbs, ImageBarrierBundleAbs, // traits
+    ImageBranchInfoAbs, HaImageDescAbs, HaImageViewDescAbs, ImageBarrierBundleAbs, // traits
     HaSamplerDescAbs, HaSampler, SamplerDescInfo, SampleImageBarrierBundle, // sample
     DepSteImageBarrierBundle, // depth
+    ImageBranchInfoDesc, // infos
 };
 
 

@@ -2,7 +2,7 @@
 pub use resources::allocator::{
     HaBufferAllocator, BufferStorageType, // buffer
     HaDescriptorAllocator, // descriptor
-    HaImageAllocator, ImageStorageType,   // image
+    HaImagePreAllocator, HaImageDistributor, ImageStorageType,   // image
 };
 
 pub use resources::buffer::{

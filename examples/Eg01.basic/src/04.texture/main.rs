@@ -93,12 +93,15 @@ impl ProgramProc for TextureMappingProcedure {
             .done()?;
 
         // image
-        let image_info = SampleImageInfo::new(0, 1, ImagePipelineStage::FragmentStage);
+        let mut image_info = SampleImageInfo::new(0, 1, Path::new(TEXTURE_PATH), ImagePipelineStage::FragmentStage);
 
         let mut image_allocator = kit.image(ImageStorageType::Device);
-        self.sample_image = image_allocator.attach_sample_image(Path::new(TEXTURE_PATH), image_info)?;
-        self.image_storage = image_allocator.allocate()?;
-        self.image_storage.get_allocated_infos(&mut self.sample_image);
+        image_allocator.append_sample_image(&mut image_info)?;
+
+        let image_distributor = image_allocator.allocate()?;
+
+        self.sample_image = image_distributor.acquire_sample_image(image_info)?;
+        self.image_storage = image_distributor.repository();
 
         // descriptor
         let mut descriptor_set_config = DescriptorSetConfig::init(&[]);

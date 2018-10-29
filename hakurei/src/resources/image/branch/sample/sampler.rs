@@ -22,7 +22,7 @@ impl HaSampler {
         }
     }
 
-    pub fn new(device: &HaDevice, desc: SamplerDescInfo) -> Result<HaSampler, ImageError> {
+    pub fn new(device: &HaDevice, desc: &SamplerDescInfo) -> Result<HaSampler, ImageError> {
 
         let info = vk::SamplerCreateInfo {
             s_type: vk::StructureType::SamplerCreateInfo,
@@ -101,7 +101,8 @@ pub(crate) struct SamplerDescInfo {
     pub border_color: vk::BorderColor,
     /// unnormalize_coordinates controls whether to use unnormalized or normalized texel coordinates to address texels of the image.
     ///
-    /// When set to vk::VK_TRUE, the range of the image coordinates used to lookup the texel is in the range of zero to the image dimensions for x, y and z. See specification for more requirement detail.
+    /// When set to vk::VK_TRUE, the range of the image coordinates used to lookup the texel is in the range of zero
+    /// to the image dimensions for x, y and z. See specification for more requirement detail.
     ///
     /// When set to vk::VK_FALSE the range of image coordinates is zero to one.
     pub unnormalize_coordinates: vk::Bool32,

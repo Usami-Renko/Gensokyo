@@ -75,11 +75,13 @@ impl ImageStorageInfo {
             // TODO: Currently only support this specific format.
             format: vk::Format::R8g8b8a8Unorm,
         };
+
         Ok(info)
     }
 
-    pub fn from_unload(dimension: Dimension2D, format: vk::Format) ->ImageStorageInfo {
-        ImageStorageInfo {
+    pub fn from_unload(dimension: Dimension2D, format: vk::Format) -> Result<ImageStorageInfo, ImageError> {
+
+        let info = ImageStorageInfo {
             source: ImageSource::NoSource,
             format,
             // TODO: Currently not support muti-level image.
@@ -88,6 +90,8 @@ impl ImageStorageInfo {
                 height: dimension.height,
                 depth : 1,
             }
-        }
+        };
+
+        Ok(info)
     }
 }

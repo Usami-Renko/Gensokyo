@@ -83,7 +83,7 @@ impl RenderPassBuilder {
     }
 
     pub fn set_depth_attachment(&mut self, depth_view: &HaDepthStencilImage) {
-        self.depth_handle = depth_view.get_view_handle();
+        self.depth_handle = Some(depth_view.get_item().view_handle);
     }
 
     pub fn build(&self, swapchain: &HaSwapchain) -> Result<HaRenderPass, PipelineError> {

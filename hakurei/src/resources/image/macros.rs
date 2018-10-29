@@ -37,17 +37,3 @@ macro_rules! impl_image_desc_info_abs {
         }
     };
 }
-
-macro_rules! impl_image_branch_abs {
-    ($ImageBranch:ty) => {
-        impl HaImageBranchAbs for $ImageBranch {
-
-            fn view_index(&self) -> usize {
-                self.item.view_index
-            }
-            fn fill_handles(&mut self, image: vk::Image, view: vk::ImageView) {
-                self.item.set_handles(image, view);
-            }
-        }
-    };
-}

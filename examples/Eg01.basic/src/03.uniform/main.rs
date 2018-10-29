@@ -111,7 +111,7 @@ impl ProgramProc for UniformBufferProcedure {
             &self.ubo_buffer,
             &[
             ShaderStageFlag::VertexStage,
-        ])?;
+        ]);
 
         let mut descriptor_allocator = kit.descriptor(&[]);
         let (descriptor_set_item, descriptor_binding_items) = descriptor_allocator.attach_descriptor_set(descriptor_set_config);
