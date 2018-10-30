@@ -104,19 +104,18 @@ impl HaImagePreAllocator {
             }
         }
 
-        // 4.prepare copy data to image.
+        // 4.record image barrier transitions(copy data if needed).
         let mut copyer = DataCopyer::new(&self.device)?;
 
-        // 5. record image barrier transitions.
         let mut barrier_bundles = collect_barrier_bundle(&self.physical, &self.device, &self.image_infos);
         for bundle in barrier_bundles.iter_mut() {
             bundle.make_transfermation(&copyer, &mut self.image_infos)?;
         }
 
-        // 6.execute image barrier transition.
+        // 5.execute image barrier transition.
         copyer.done()?;
 
-        // 7.do some cleaning.
+        // 6.do some cleaning.
         barrier_bundles.iter_mut()
             .for_each(|bundle| bundle.cleanup());
 

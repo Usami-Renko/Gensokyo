@@ -72,8 +72,11 @@ impl<'a, 'b> LogicalDeviceBuilder<'a, 'b> {
                 let logic_queue = LogicQueueInfo {
                     usage, entity_index: LogicQueueEntityIndex::SingleQueue,
                 };
+
+                let new_logic_queue_index = logics.len();
                 logics.push(logic_queue);
-                logics.len() - 1
+
+                new_logic_queue_index
             },
             | QueueRequestInfo::Queues { ref entities, ref mut logics, ref usage_indices } => {
                 let entity_queue_index = usage_indices.get(&usage).unwrap().clone();
@@ -81,8 +84,10 @@ impl<'a, 'b> LogicalDeviceBuilder<'a, 'b> {
                 let logic_queue = LogicQueueInfo {
                     usage, entity_index: LogicQueueEntityIndex::MultiQueues(entity_queue.queue_index),
                 };
+
+                let new_logic_queue_index = logics.len();
                 logics.push(logic_queue);
-                logics.len() - 1
+                new_logic_queue_index
             },
         };
 
@@ -118,17 +123,17 @@ impl<'a, 'b> LogicalDeviceBuilder<'a, 'b> {
 
         // Create the logical device.
         let device_create_info = vk::DeviceCreateInfo {
-            s_type                     : vk::StructureType::DeviceCreateInfo,
-            p_next                     : ptr::null(),
+            s_type: vk::StructureType::DeviceCreateInfo,
+            p_next: ptr::null(),
             // flags is reserved for future use in API version 1.1.82.
-            flags                      : vk::DeviceCreateFlags::empty(),
-            queue_create_info_count    : queue_create_infos.len() as uint32_t,
-            p_queue_create_infos       : queue_create_infos.as_ptr(),
-            enabled_layer_count        : enable_layer_names.len() as uint32_t,
-            pp_enabled_layer_names     : enable_layer_names.as_ptr(),
-            enabled_extension_count    : enable_extension_names.len() as uint32_t,
-            pp_enabled_extension_names : enable_extension_names.as_ptr(),
-            p_enabled_features         : &enable_features,
+            flags: vk::DeviceCreateFlags::empty(),
+            queue_create_info_count   : queue_create_infos.len() as uint32_t,
+            p_queue_create_infos      : queue_create_infos.as_ptr(),
+            enabled_layer_count       : enable_layer_names.len() as uint32_t,
+            pp_enabled_layer_names    : enable_layer_names.as_ptr(),
+            enabled_extension_count   : enable_extension_names.len() as uint32_t,
+            pp_enabled_extension_names: enable_extension_names.as_ptr(),
+            p_enabled_features        : &enable_features,
         };
 
         let handle = unsafe {

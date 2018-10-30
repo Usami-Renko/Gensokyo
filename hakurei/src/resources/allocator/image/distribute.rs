@@ -64,7 +64,7 @@ impl HaImageDistributor {
         Ok(image)
     }
 
-    pub fn repository(self) -> HaImageRepository {
+    pub fn into_repository(self) -> HaImageRepository {
 
         let images = self.infos.into_iter()
             .map(|info| info.image).collect();

@@ -101,7 +101,7 @@ impl ProgramProc for TextureMappingProcedure {
         let image_distributor = image_allocator.allocate()?;
 
         self.sample_image = image_distributor.acquire_sample_image(image_info)?;
-        self.image_storage = image_distributor.repository();
+        self.image_storage = image_distributor.into_repository();
 
         // descriptor
         let mut descriptor_set_config = DescriptorSetConfig::init(&[]);

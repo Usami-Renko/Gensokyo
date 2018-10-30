@@ -154,7 +154,7 @@ impl ProgramProc for DepthProcedure {
 
         let image_distributor = image_allocator.allocate()?;
         self.depth_attachment = image_distributor.acquire_depth_stencil_image(depth_attachment_info)?;
-        self.image_storage = image_distributor.repository();
+        self.image_storage = image_distributor.into_repository();
 
         Ok(())
     }

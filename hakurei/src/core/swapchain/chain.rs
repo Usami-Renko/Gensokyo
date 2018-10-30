@@ -25,9 +25,9 @@ pub struct HaSwapchain {
     /// the presentable image objects associated with the swapchain.
     ///
     /// These images are created in `loader.create_swapchain_khr(..)` call.
-    pub(super) _images     : Vec<HaImage>,
+    pub(super) _images: Vec<HaImage>,
     /// the corresponding image views associated with the presentable images created by swapchain.
-    pub(crate) views       : Vec<HaImageView>,
+    pub(crate) views  : Vec<HaImageView>,
 
     /// the format of presentable images.
     pub format: vk::Format,
@@ -49,19 +49,14 @@ impl HaSwapchain {
         -> Result<uint32_t, SwapchainRuntimeError> {
 
         // the the handle of semaphore and fence
-        let semaphore = sign_semaphore
-            .and_then(|s| Some(s.handle))
+        let semaphore = sign_semaphore.and_then(|s| Some(s.handle))
             .unwrap_or(HaSemaphore::null_handle());
-        let fence = sign_fence
-            .and_then(|f| Some(f.handle))
+        let fence = sign_fence.and_then(|f| Some(f.handle))
             .unwrap_or(HaFence::null_handle());
 
         // execute next image acquire operation.
         let result = unsafe {
-            self.loader.acquire_next_image_khr(
-                self.handle,
-                self.image_acquire_time,
-                semaphore, fence)
+            self.loader.acquire_next_image_khr(self.handle, self.image_acquire_time, semaphore, fence)
         };
 
         // handle several specific errors.
@@ -104,9 +99,9 @@ impl HaSwapchain {
             p_next: ptr::null(),
             wait_semaphore_count: semaphores.len() as uint32_t,
             p_wait_semaphores   : semaphores.as_ptr(),
-            swapchain_count: 1,
-            p_swapchains   : &self.handle,
-            p_image_indices: &image_index,
+            swapchain_count     : 1,
+            p_swapchains        : &self.handle,
+            p_image_indices     : &image_index,
             // VKResult of each swapchain
             p_results: ptr::null_mut(),
         };

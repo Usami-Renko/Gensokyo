@@ -14,7 +14,7 @@ use resources::toolkit::{ AllocatorKit, PipelineKit, CommandKit };
 use sync::fence::HaFence;
 use sync::semaphore::HaSemaphore;
 
-use procedure::window::ProgramEnv;
+use procedure::loops::ProgramEnv;
 use procedure::error::ProcedureError;
 
 use input::{ ActionNerve, SceneAction };
@@ -39,8 +39,8 @@ pub trait ProgramProc {
 
 pub struct CoreInfrastructure<'win> {
 
-    instance  : HaInstance,
-    debugger  : Option<HaDebugger>,
+    instance: HaInstance,
+    debugger: Option<HaDebugger>,
 
     pub(crate) surface : HaSurface<'win>,
     pub(crate) physical: Rc<HaPhysicalDevice>,
