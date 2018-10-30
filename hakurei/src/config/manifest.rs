@@ -40,10 +40,21 @@ pub(super) fn manifest_toml() -> toml::Value {
 
         [window]
         title = "hakurei"
+        mode  = "normal"
+        always_on_top = false
+        is_resizable  = true
 
         [window.dimension]
         width  = 800
         height = 600
+        min_width  = 400
+        min_height = 300
+        max_width  = 1280
+        min_width  = 720
+
+        [window.cursor]
+        is_grab = false
+        is_hide = false
 
         [pipeline]
 

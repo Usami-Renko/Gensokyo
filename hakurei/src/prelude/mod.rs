@@ -14,7 +14,7 @@ pub use core::swapchain::HaSwapchain;
 pub use core::device::HaDevice;
 
 // procedure module
-pub use procedure::window::ProgramEnv;
+pub use procedure::loops::ProgramEnv;
 pub use procedure::workflow::ProgramProc;
 pub use procedure::error::ProcedureError;
 

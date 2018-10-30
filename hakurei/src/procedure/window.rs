@@ -1,160 +1,87 @@
 
 use winit;
 
-use config::engine::EngineConfig;
+use config::window::WindowConfig;
 use config::env::{ HaEnv, EnvWindow };
-use config::error::ConfigError;
-
-use procedure::workflow::{ CoreInfrastructure, HaResources, ProgramProc };
-use procedure::error::{ RuntimeError, ProcedureError };
 
 use utility::dimension::Dimension2D;
-use utility::fps::HaFpsTimer;
 
-use input::{ ActionNerve, SceneReaction };
+pub(crate) struct WindowInfo {
 
-use std::path::PathBuf;
-
-struct WindowInfo {
     window_size : Dimension2D,
     window_title: String,
+
+    config: WindowConfig,
 }
 
 impl WindowInfo {
-    fn build(&self, event_loop: &winit::EventsLoop) -> Result<winit::Window, winit::CreationError> {
-        winit::WindowBuilder::new()
+
+    pub fn from(config: WindowConfig) -> WindowInfo {
+
+        let window_size = config.dimension.clone();
+        let window_title = config.title.clone();
+
+        WindowInfo {
+            window_size, window_title, config,
+        }
+    }
+
+    pub fn reset_size(&mut self, dimension: Dimension2D) {
+        self.window_size = dimension;
+    }
+
+    pub fn build(&self, event_loop: &winit::EventsLoop) -> Result<winit::Window, winit::CreationError> {
+
+        let mut builder = winit::WindowBuilder::new()
             .with_title(self.window_title.clone())
-            .with_dimensions((self.window_size.width, self.window_size.height).into())
-            .build(event_loop)
-    }
-}
+            .with_dimensions((self.window_size.width, self.window_size.height).into());
 
-pub struct ProgramEnv<T: ProgramProc> {
+        if self.config.always_on_top {
+            builder = builder.with_always_on_top(true);
+        }
 
-    event_loop: winit::EventsLoop,
-    window_info: WindowInfo,
-    frame_in_flights: usize,
-
-    pub(super) config: EngineConfig,
-    pub(super) procedure: T,
-}
-
-impl<T> ProgramEnv<T> where T: ProgramProc {
-
-    pub fn new(manifest: Option<PathBuf>, procedure: T) -> Result<ProgramEnv<T>, ConfigError> {
-
-        let config = EngineConfig::init(manifest)?;
-
-        let window_info = WindowInfo {
-            window_size : config.window.dimension,
-            window_title: config.window.title.to_owned(),
+        builder = if self.config.is_resizable {
+            builder.with_resizable(true)
+        } else {
+            builder.with_resizable(false)
         };
-        let event_loop = winit::EventsLoop::new();
-        let frame_in_flights = config.core.swapchain.image_count as usize;
 
-        let program = ProgramEnv { config, event_loop, window_info, procedure, frame_in_flights };
-        Ok(program)
-    }
+        builder = match self.config.mode.as_str() {
+            | "normal" => builder,
+            | "maximized" => builder.with_maximized(true),
+            | "fullscreen" => {
+                let primary_monitor = event_loop.get_primary_monitor();
+                builder.with_fullscreen(Some(primary_monitor))
+            },
+            | _ => builder,
+        };
 
-    pub fn launch(&mut self) -> Result<(), RuntimeError> {
-
-        let window = self.window_info.build(&self.event_loop)
-            .map_err(|e| RuntimeError::Window(e))?;
-        let mut core = self.initialize_core(&window, &self.config)?;
-        let mut resources = self.load_resources(&core)?;
-
-        self.procedure.ready(&core.device)?;
-
-        'outer_loop: loop {
-            match self.main_loop(&mut core, &mut resources) {
-                | Ok(_) => break,
-                | Err(error) => match error {
-                    | ProcedureError::SwapchainRecreate => {
-                        self.wait_idle(&core.device)?;
-                        self.procedure.clean_resources(&core.device)?;
-                        let new_resources = self.reload_resources(&core, &resources)?;
-                        resources.cleanup(&core.device);
-                        resources.clear();
-
-                        resources = new_resources;
-
-                        // update current window size.
-                        self.window_info.window_size = core.surface.window_size();
-
-                        continue
-                    },
-                    | _ => return Err(RuntimeError::Procedure(error))
-                }
-            }
+        if let Some(min) = self.config.min_dimension {
+            builder = builder.with_min_dimensions((min.width as f64, min.height as f64).into());
+        }
+        if let Some(max) = self.config.max_dimension {
+            builder = builder.with_max_dimensions((max.width as f64, max.height as f64).into());
         }
 
-        self.procedure.closure(&core.device)?;
+        let window = builder.build(event_loop)?;
 
-        self.wait_idle(&core.device)?;
-
-        self.procedure.cleanup(&core.device);
-        resources.cleanup(&core.device);
-        core.cleanup();
-
-        Ok(())
-    }
-
-    fn main_loop(&mut self, core: &mut CoreInfrastructure, resources: &mut HaResources) -> Result<(), ProcedureError> {
-
-        let mut actioner = ActionNerve::new();
-        let mut current_fame = 0_usize;
-        let mut fps_timer = HaFpsTimer::new();
-
-        'mainloop: loop {
-
-            let delta_time = fps_timer.delta_time();
-
-            self.event_loop.poll_events(|event| {
-                match event {
-                    | winit::Event::WindowEvent { event, .. } => {
-                        actioner.record_event(&event);
-                    },
-                    | _ => (),
-                }
-            });
-
-            let app_action = self.procedure.react_input(&actioner, delta_time);
-            actioner.cover_reaction(app_action);
-
-            match self.draw_frame(current_fame, core, resources, delta_time) {
-                | Ok(_) => (),
-                | Err(error) => match error {
-                    | ProcedureError::SwapchainRecreate => {
-                        actioner.force_reaction(SceneReaction::SwapchainRecreate)
-                    },
-                    | _ => return Err(error)
-                }
-            }
-
-            let reaction = actioner.get_reaction();
-            match reaction {
-                | SceneReaction::Rendering => {},
-                | SceneReaction::SwapchainRecreate => {
-                    return Err(ProcedureError::SwapchainRecreate)
-                },
-                | SceneReaction::Terminate => {
-                    break 'mainloop
-                }
-            }
-
-            current_fame = (current_fame + 1) % self.frame_in_flights;
-            fps_timer.tick_frame();
+        if self.config.is_cursor_grap {
+            window.grab_cursor(true).unwrap();
         }
 
-        Ok(())
+        if self.config.is_cursor_hide {
+            window.hide_cursor(true);
+        }
+
+        Ok(window)
     }
 
-    pub fn get_env(&self) -> HaEnv {
+    pub fn gen_env(&self) -> HaEnv {
 
         HaEnv {
             window: EnvWindow {
-                title: self.window_info.window_title.clone(),
-                dimension: self.window_info.window_size,
+                title: self.window_title.clone(),
+                dimension: self.window_size,
             }
         }
     }

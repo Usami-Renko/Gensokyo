@@ -149,7 +149,7 @@ impl ProgramProc for ModelProcedure {
         self.depth_attachment = image_distributor.acquire_depth_stencil_image(depth_attachment_info)?;
         self.model_texture = image_distributor.acquire_sample_image(model_texture_info)?;
 
-        self.image_storage = image_distributor.repository();
+        self.image_storage = image_distributor.into_repository();
 
         // descriptor
         let mut descriptor_set_config = DescriptorSetConfig::init(&[]);

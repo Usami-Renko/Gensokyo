@@ -72,12 +72,12 @@ impl HaPhysicalDevice {
 
             let formats = PhysicalFormatProperties::inspect(instance, physical_device, config)?;
 
-            optimal_device = Some(
-                HaPhysicalDevice {
-                    handle: physical_device,
-                    properties, features, memory, families, extensions, formats,
-                }
-            );
+            let selected_physical_device = HaPhysicalDevice {
+                handle: physical_device,
+                properties, features, memory, families, extensions, formats,
+            };
+
+            optimal_device = Some(selected_physical_device);
 
             break
         }
