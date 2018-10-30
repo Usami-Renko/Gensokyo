@@ -10,8 +10,6 @@ use resources::memory::{ HaMemoryAbstract, HaMemoryType };
 use resources::repository::{ BufferDataUploader, BufferDataUpdater };
 use resources::error::{ AllocatorError, MemoryError };
 
-use utility::memory::spaces_to_offsets;
-
 #[derive(Default)]
 pub struct HaBufferRepository {
 
@@ -34,6 +32,7 @@ impl HaBufferRepository {
 
     pub(crate) fn store(device: &HaDevice, physical: &HaPhyDevice, buffers: Vec<HaBuffer>, memory: Box<HaMemoryAbstract>, allocate_infos: BufferAllocateInfos) -> HaBufferRepository {
 
+        use utility::memory::spaces_to_offsets;
         let offsets = spaces_to_offsets(&allocate_infos.spaces);
 
         HaBufferRepository {
@@ -68,7 +67,7 @@ impl HaBufferRepository {
                 | HaMemoryType::CachedMemory
                 | HaMemoryType::DeviceMemory => {
                     return Err(AllocatorError::Memory(MemoryError::MemoryUnableToUpdate))
-                }
+                },
             };
 
             Ok(updater)
@@ -78,9 +77,9 @@ impl HaBufferRepository {
     }
 
     pub fn cleanup(&mut self) {
-        for buffer in self.buffers.iter() {
-            buffer.cleanup(&self.device.as_ref().unwrap());
-        }
+
+        self.buffers.iter().for_each(|buffer|
+            buffer.cleanup(&self.device.as_ref().unwrap()));
 
         if let Some(ref memory) = self.memory {
             memory.cleanup(&self.device.as_ref().unwrap());

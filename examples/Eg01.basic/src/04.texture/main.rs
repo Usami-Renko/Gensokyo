@@ -159,7 +159,7 @@ impl ProgramProc for TextureMappingProcedure {
         let pipeline_config = GraphicsPipelineConfig::new(shader_infos, vertex_input_desc, render_pass)
             .setup_viewport(ViewportStateType::Fixed { state: viewport })
             .add_descriptor_set(self.descriptor_storage.set_layout_at(&self.sampler_set))
-            .finish_config();
+            .finish();
 
         let mut pipeline_builder = kit.pipeline_builder(PipelineType::Graphics)?;
         let pipeline_index = pipeline_builder.add_config(pipeline_config);

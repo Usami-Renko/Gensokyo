@@ -1,6 +1,7 @@
 
 use cgmath;
 use cgmath::{ Matrix4, Vector3, Point3, InnerSpace, Zero, Deg };
+use num;
 use winit::VirtualKeyCode;
 
 use config::utility;
@@ -51,7 +52,6 @@ impl HaCameraAbstract for HaFlightCamera {
         self.screen_aspect = (width as f32) / (height as f32);
     }
 
-    // TODO: This method is not complete.
     fn react_input(&mut self, actioner: &ActionNerve, delta_time: f32) {
 
         // keyboard
@@ -69,6 +69,16 @@ impl HaCameraAbstract for HaFlightCamera {
             self.pos += self.right * velocity;
         }
 
+        // mouse motion
+        if actioner.is_mouse_move() {
+            let mut mouse_motion = actioner.mouse_motion();
+            mouse_motion = mouse_motion.scale(0.5);
+            self.yaw += mouse_motion.delta_x;
+            self.pitch = num::clamp(self.pitch - mouse_motion.delta_y, -89.0, 89.0);
+
+            // recalculate front, right or up vector only when mouse move.
+            self.update_vectors();
+        }
     }
 }
 
@@ -88,7 +98,7 @@ impl HaFlightCamera {
     }
 
     fn update_vectors(&mut self) {
-        // calculate the new front vector
+        // calculate the new front vector.
         let front_x = self.yaw.to_radians().cos() * self.pitch.to_radians().cos();
         let front_y = self.pitch.to_radians().sin();
         let front_z = self.yaw.to_radians().sin() * self.pitch.to_radians().cos();

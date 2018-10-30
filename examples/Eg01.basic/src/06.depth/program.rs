@@ -206,7 +206,7 @@ impl ProgramProc for DepthProcedure {
             .setup_viewport(ViewportStateType::Fixed { state: viewport })
             .setup_depth_stencil(depth_stencil)
             .add_descriptor_set(self.desc_storage.set_layout_at(&self.ubo_set))
-            .finish_config();
+            .finish();
 
         let mut pipeline_builder = kit.pipeline_builder(PipelineType::Graphics)?;
         let pipeline_index = pipeline_builder.add_config(pipeline_config);

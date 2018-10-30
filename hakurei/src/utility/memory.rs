@@ -36,7 +36,7 @@ impl MemoryWritePtr {
         MemoryWritePtr { ptr, size }
     }
 
-    pub fn write_data<D: Copy>(&self, data: &Vec<D>) {
+    pub fn write_data<D: Copy>(&self, data: &[D]) {
 
         use ash;
         use std::mem;

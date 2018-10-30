@@ -14,7 +14,7 @@ use resources::allocator::HaImageDistributor;
 use resources::allocator::{ ImageAllocateInfo, ImageStorageType, ImgMemAlloAbstract };
 use resources::error::{ ImageError, AllocatorError };
 
-use std::collections::hash_map::{ HashMap, RandomState };
+use std::collections::HashMap;
 
 // TODO: Currently not support multi imageview for an image.
 
@@ -138,7 +138,7 @@ impl HaImagePreAllocator {
 
 fn collect_barrier_bundle(physical: &HaPhyDevice, device: &HaDevice, image_infos: &[ImageAllocateInfo]) -> Vec<Box<ImageBarrierBundleAbs>> {
 
-    let mut barrier_indices: HashMap<ImageBranchType, Vec<usize>, RandomState> = HashMap::new();
+    let mut barrier_indices: HashMap<ImageBranchType, Vec<usize>, _> = HashMap::new();
 
     for (index, image_info) in image_infos.iter().enumerate() {
 

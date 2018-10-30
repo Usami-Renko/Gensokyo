@@ -62,6 +62,14 @@ impl HaCameraAbstract for HaStageCamera {
         } else if actioner.is_key_pressed_raw(VirtualKeyCode::Left) {
             self.horizontal_rotate += delta_time * self.rotate_sensitive;
         }
+
+        // mouse motion
+        if actioner.is_mouse_move() {
+            let mut mouse_motion = actioner.mouse_motion();
+            mouse_motion = mouse_motion.scale(0.5);
+            self.horizontal_rotate += mouse_motion.delta_x * delta_time * self.rotate_sensitive;
+            self.vertical_rotate   += mouse_motion.delta_y * delta_time * self.rotate_sensitive;
+        }
     }
 }
 

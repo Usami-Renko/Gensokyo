@@ -22,14 +22,14 @@ pub enum CommandBufferUsage {
 
 impl CommandBufferUsage {
     pub(super) fn level(&self) -> vk::CommandBufferLevel {
-        match *self {
+        match self {
             | CommandBufferUsage::UnitaryCommand
             | CommandBufferUsage::PrimaryCommand   => vk::CommandBufferLevel::Primary,
             | CommandBufferUsage::SecondaryCommand => vk::CommandBufferLevel::Secondary,
         }
     }
     pub(super) fn usage(&self) -> vk::SubpassContents {
-        match *self {
+        match self {
             // Inline specifies that the render pass commands will be embedded in the primary command buffer itself and no secondary command buffers will be executed.
             | CommandBufferUsage::UnitaryCommand   => vk::SubpassContents::Inline,
             // SecondaryCommandBuffer specifies that the render pass commands will be executed from secondary command buffers,
