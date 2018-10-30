@@ -102,7 +102,7 @@ impl GraphicsPipelineConfig {
         self.flags = flags.flags();
     }
 
-    pub fn finish_config(self) -> GraphicsPipelineConfig {
+    pub fn finish(self) -> GraphicsPipelineConfig {
         // TODO: Configure layout property here
         // code goes here...
 

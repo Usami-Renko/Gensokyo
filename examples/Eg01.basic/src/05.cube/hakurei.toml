@@ -5,3 +5,7 @@ title = "05.cube"
 [window.dimension]
 width  = 800
 height = 600
+
+[window.cursor]
+is_grab = true
+is_hide = true

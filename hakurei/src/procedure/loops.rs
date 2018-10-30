@@ -93,12 +93,7 @@ impl<T> ProgramEnv<T> where T: ProgramProc {
             let delta_time = fps_timer.delta_time();
 
             self.event_loop.poll_events(|event| {
-                match event {
-                    | winit::Event::WindowEvent { event, .. } => {
-                        actioner.record_event(&event);
-                    },
-                    | _ => (),
-                }
+                actioner.record_event(event);
             });
 
             let app_action = self.procedure.react_input(&actioner, delta_time);
@@ -127,6 +122,7 @@ impl<T> ProgramEnv<T> where T: ProgramProc {
 
             current_fame = (current_fame + 1) % self.frame_in_flights;
             fps_timer.tick_frame();
+            actioner.reset_frame();
         }
 
         Ok(())

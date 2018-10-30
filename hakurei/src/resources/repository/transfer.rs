@@ -84,7 +84,7 @@ impl<'a> BufferDataUpdater<'a> {
         }
     }
 
-    pub fn update(&mut self, block: &impl BufferBlockEntity, data: &Vec<impl Copy>) -> Result<&mut BufferDataUpdater<'a>, AllocatorError> {
+    pub fn update(&mut self, block: &impl BufferBlockEntity, data: &[impl Copy]) -> Result<&mut BufferDataUpdater<'a>, AllocatorError> {
 
         let item = block.get_buffer_item();
         let offset = self.offsets[item.buffer_index];

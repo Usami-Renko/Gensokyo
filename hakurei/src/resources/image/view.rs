@@ -63,7 +63,7 @@ pub(crate) struct ImageViewDescInfo {
     /// components specifies a remapping of color components (or of depth or stencil components after they have been converted into color components).
     pub components: vk::ComponentMapping,
     /// subrange selects the set of mipmap levels and array layers to be accessible to the view.
-    pub subrange: vk::ImageSubresourceRange,
+    pub subrange  : vk::ImageSubresourceRange,
 }
 
 impl ImageViewDescInfo {

@@ -4,7 +4,7 @@ use smallvec::SmallVec;
 
 use config::input::SIMULTANEOUS_KEY_COUNT;
 
-pub struct KeyHeap {
+pub(crate) struct KeyHeap {
 
     keys: SmallVec<[winit::VirtualKeyCode; SIMULTANEOUS_KEY_COUNT]>,
 }
