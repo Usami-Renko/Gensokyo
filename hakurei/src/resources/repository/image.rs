@@ -2,8 +2,9 @@
 use core::device::HaDevice;
 
 use resources::memory::HaMemoryAbstract;
-use resources::image::{ HaImage, HaImageView, ImageViewItem };
+use resources::image::{ HaImage, HaImageView };
 
+#[derive(Default)]
 pub struct HaImageRepository {
 
     device : Option<HaDevice>,
@@ -15,33 +16,16 @@ pub struct HaImageRepository {
 impl HaImageRepository {
 
     pub fn empty() -> HaImageRepository {
-        HaImageRepository {
-
-            device: None,
-            images: vec![],
-            views : vec![],
-            memory: None,
-        }
+        HaImageRepository::default()
     }
 
-    pub(crate) fn store(device: &HaDevice, images: Vec<HaImage>, views: Vec<HaImageView>, memory: Box<HaMemoryAbstract>) -> HaImageRepository {
+    pub(crate) fn store(device: HaDevice, images: Vec<HaImage>, views: Vec<HaImageView>, memory: Box<HaMemoryAbstract>)
+        -> HaImageRepository {
 
         HaImageRepository {
-            device: Some(device.clone()),
+            device: Some(device),
             memory: Some(memory),
             images, views,
-        }
-    }
-
-    pub(crate) fn view_at(&self, item: &ImageViewItem) -> &HaImageView {
-        &self.views[item.view_index]
-    }
-
-    pub fn view_item(&self, view_index: usize) -> ImageViewItem {
-        ImageViewItem {
-            view_index,
-            image_handle: self.images[view_index].handle,
-            view_handle : self.views[view_index].handle,
         }
     }
 

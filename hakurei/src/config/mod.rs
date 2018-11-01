@@ -1,13 +1,15 @@
 
+pub(crate) mod macros;
 pub(crate) mod engine;
+pub(crate) mod manifest;
+pub(crate) mod env;
 pub(crate) mod core;
 pub(crate) mod window;
-pub(crate) mod swapchain;
-pub(crate) mod image;
+pub(crate) mod pipeline;
+pub(crate) mod resources;
+pub(crate) mod utility;
 pub(crate) mod input;
-pub(crate) mod time;
-pub(crate) mod camera;
-pub(crate) mod shaderc;
+pub(crate) mod error;
 
 // TODO: Remove this setting.
 pub(crate) const VERBOSE: bool = false;

@@ -1,12 +1,12 @@
 
 use std::time::Instant;
 
-use config::time::{ SAMPLE_COUNT, SAMPLE_COUNT_FLOAT, DEFAULT_PREFER_FPS };
+use config::utility::{ FPS_SAMPLE_COUNT, FPS_SAMPLE_COUNT_FLOAT, DEFAULT_PREFER_FPS };
 
 pub struct HaFpsTimer {
     counter: Instant,
     frame_time_prefer: u32, // unit microseconds
-    samples: [u32; SAMPLE_COUNT],
+    samples: [u32; FPS_SAMPLE_COUNT],
     current_frame: usize,
     delta_frame: u32,
 }
@@ -18,7 +18,7 @@ impl HaFpsTimer {
         HaFpsTimer {
             counter: Instant::now(),
             frame_time_prefer: (1000_000.0_f32 / DEFAULT_PREFER_FPS) as u32,
-            samples: [0; SAMPLE_COUNT],
+            samples: [0; FPS_SAMPLE_COUNT],
             current_frame: 0,
             delta_frame: 0,
         }
@@ -36,7 +36,7 @@ impl HaFpsTimer {
 
         self.delta_frame = time_elapsed.subsec_micros();
         self.samples[self.current_frame] = self.delta_frame;
-        self.current_frame = (self.current_frame + 1) % SAMPLE_COUNT;
+        self.current_frame = (self.current_frame + 1) % FPS_SAMPLE_COUNT;
     }
 
 //    TODO: this function seems not work.
@@ -59,7 +59,7 @@ impl HaFpsTimer {
             sum += val;
         });
 
-        1000_000.0_f32 / (sum as f32 / SAMPLE_COUNT_FLOAT)
+        1000_000.0_f32 / (sum as f32 / FPS_SAMPLE_COUNT_FLOAT)
     }
 
     /// Return current delta time in seconds

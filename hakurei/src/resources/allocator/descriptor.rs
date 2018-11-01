@@ -8,7 +8,7 @@ use resources::descriptor::{ DescriptorSetConfig, DescriptorItem, DescriptorSetI
 use resources::descriptor::{ DescriptorSetLayoutInfo };
 use resources::descriptor::{ DescriptorPoolInfo, DescriptorPoolFlag };
 use resources::repository::HaDescriptorRepository;
-use resources::error::DescriptorError;
+use resources::error::AllocatorError;
 
 use utility::marker::VulkanFlags;
 
@@ -35,15 +35,17 @@ impl HaDescriptorAllocator {
     }
 
     pub fn attach_descriptor_set(&mut self, config: DescriptorSetConfig) -> (DescriptorSetItem, Vec<DescriptorItem>) {
+
         let set_index = self.set_configs.len();
 
         let mut items = vec![];
         for i in 0..config.bindings.len() {
             items.push(DescriptorItem {
                 set_index,
-                binding_index: i
+                binding_index: i,
             });
         }
+
         let set = DescriptorSetItem {
             set_index,
         };
@@ -53,7 +55,7 @@ impl HaDescriptorAllocator {
         (set, items)
     }
 
-    pub fn allocate(&mut self) -> Result<HaDescriptorRepository, DescriptorError> {
+    pub fn allocate(&mut self) -> Result<HaDescriptorRepository, AllocatorError> {
 
         // descriptor pool
         let pool_sizes = self.pool_sizes();
@@ -65,9 +67,9 @@ impl HaDescriptorAllocator {
 
         // descriptor layout
         let mut layouts = vec![];
-        for (i, config) in self.set_configs.iter().enumerate() {
+        for config in self.set_configs.iter() {
             let mut layout_info = DescriptorSetLayoutInfo::setup(config.layout_flags);
-            for info in config.bindings.iter() {
+            for (i, info) in config.bindings.iter().enumerate() {
                 layout_info.add_binding(info, config.stage_flags[i]);
             }
             let layout = layout_info.build(&self.device)?;
@@ -75,7 +77,7 @@ impl HaDescriptorAllocator {
         }
 
         // descriptor sets
-        let sets = pool.allocator(&self.device, layouts)?;
+        let sets = pool.allocate(&self.device, layouts)?;
         let configs = self.set_configs.drain(..).collect();
 
         let repository = HaDescriptorRepository::store(&self.device, pool, sets, configs);
@@ -93,8 +95,7 @@ impl HaDescriptorAllocator {
             }
         }
 
-
-        let result = map.drain().collect();
+        let result = map.into_iter().collect();
         result
     }
 

@@ -10,12 +10,12 @@ use core::error::SurfaceError;
 
 use utility::dimension::Dimension2D;
 
-/// Wrapper class for vk::Surface.
-pub struct HaSurface<'win> {
+/// Wrapper class for `vk::Surface`.
+pub(crate) struct HaSurface<'win> {
 
-    /// the handle of vk::SurfaceKHR
+    /// the handle of `vk::SurfaceKHR`.
     pub handle: vk::SurfaceKHR,
-    /// an extension loader provides functions for creation and destruction of vk::Surface object.
+    /// the extension loader provides functions for creation and destruction of `vk::SurfaceKHR` object.
     loader: ash::extensions::Surface,
     /// an reference to window object.
     window: &'win winit::Window,
@@ -23,7 +23,7 @@ pub struct HaSurface<'win> {
 
 impl<'win> HaSurface<'win> {
 
-    /// initialize surface extension loader and vk::Surface object.
+    /// initialize surface extension loader and `vk::Surface` object.
     pub fn new(instance: &HaInstance, window: &'win winit::Window) -> Result<HaSurface<'win>, SurfaceError> {
 
         let surface = unsafe {
@@ -69,7 +69,7 @@ impl<'win> HaSurface<'win> {
             .or(Err(SurfaceError::QueryFormatsError))
     }
 
-    /// query the supported presentation modes for a surface
+    /// query the supported presentation modes for a surface.
     pub fn present_modes(&self, physical_device: vk::PhysicalDevice) -> Result<Vec<vk::PresentModeKHR>, SurfaceError> {
 
         self.loader.get_physical_device_surface_present_modes_khr(physical_device, self.handle)
@@ -87,7 +87,7 @@ impl<'win> HaSurface<'win> {
 
     /// Some cleaning operations before this object was uninitialized.
     ///
-    /// For HaSurface, it destroy the vk::Surface object.
+    /// For HaSurface, it destroy the `vk::SurfaceKHR` object.
     pub fn cleanup(&self) {
 
         unsafe {

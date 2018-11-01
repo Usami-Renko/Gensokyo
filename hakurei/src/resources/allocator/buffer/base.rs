@@ -4,18 +4,24 @@ use ash::vk;
 use core::device::HaDevice;
 use core::physical::{ HaPhyDevice, MemorySelector };
 
-use resources::allocator::BufMemAlloAbstract;
+use resources::allocator::{ BufMemAlloAbstract, BufferInfosAllocatable };
 use resources::allocator::{ HostBufMemAllocator, CachedBufMemAllocator, DeviceBufMemAllocator, StagingBufMemAllocator };
-use resources::buffer::{ HaBuffer, BufferSubItem, BufferConfigAbstract };
-use resources::buffer::{ HostBufferConfig, CachedBufferConfig, DeviceBufferConfig, StagingBufferConfig };
+use resources::buffer::{ HaBuffer, BufferBlockInfo, BufferItem };
+use resources::buffer::{
+    HaVertexBlock, VertexBlockInfo,
+    HaIndexBlock, IndexBlockInfo,
+    HaUniformBlock, UniformBlockInfo,
+    HaImgsrcBlock, ImgsrcBlockInfo,
+};
 use resources::memory::{ HaMemoryType, MemoryPropertyFlag };
 use resources::repository::HaBufferRepository;
 use resources::error::{ BufferError, AllocatorError };
 
-use utility::memory::bind_to_alignment;
 use utility::marker::VulkanEnum;
 
+
 pub struct HaBufferAllocator {
+
     physical: HaPhyDevice,
     device  : HaDevice,
 
@@ -38,7 +44,7 @@ impl  HaBufferAllocator {
             device: device.clone(),
 
             buffers: vec![],
-            spaces: vec![],
+            spaces : vec![],
 
             ty,
             allocator: ty.allocator(),
@@ -47,71 +53,72 @@ impl  HaBufferAllocator {
         }
     }
 
-    pub fn attach_host_buffer(&mut self, config: HostBufferConfig) -> Result<Vec<BufferSubItem>, AllocatorError> {
+    pub fn append_vertex(&mut self, info: VertexBlockInfo) -> Result<HaVertexBlock, AllocatorError> {
 
-        if self.ty == BufferStorageType::Host {
-            self.attach_buffer(config)
-        } else {
-            Err(AllocatorError::UnmatchBufferConfig)
-        }
+        let buffer_info = self.gen_buffer(&info, BufferBranch::Vertex)?;
+        let block = HaVertexBlock::from(&info, buffer_info.item);
+        self.append_buffer(buffer_info.buffer, buffer_info.aligment_space, info);
+
+        Ok(block)
     }
 
-    pub fn attach_cached_buffer(&mut self, config: CachedBufferConfig) -> Result<Vec<BufferSubItem>, AllocatorError> {
+    pub fn append_index(&mut self, info: IndexBlockInfo) -> Result<HaIndexBlock, AllocatorError> {
 
-        if self.ty == BufferStorageType::Cached {
-            self.attach_buffer(config)
-        } else {
-            Err(AllocatorError::UnmatchBufferConfig)
-        }
+        let buffer_info = self.gen_buffer(&info, BufferBranch::Index)?;
+        let block = HaIndexBlock::from(&info, buffer_info.item);
+        self.append_buffer(buffer_info.buffer, buffer_info.aligment_space, info);
+
+        Ok(block)
     }
 
-    pub fn attach_device_buffer(&mut self, config: DeviceBufferConfig) -> Result<Vec<BufferSubItem>, AllocatorError> {
+    pub fn append_uniform(&mut self, info: UniformBlockInfo) -> Result<HaUniformBlock, AllocatorError> {
 
-        if self.ty == BufferStorageType::Device {
-            self.attach_buffer(config)
-        } else {
-            Err(AllocatorError::UnmatchBufferConfig)
-        }
+        let buffer_info = self.gen_buffer(&info, BufferBranch::Uniform)?;
+        let block = HaUniformBlock::from(&info, buffer_info.item);
+        self.append_buffer(buffer_info.buffer, buffer_info.aligment_space, info);
+
+        Ok(block)
     }
 
-    pub fn attach_staging_buffer(&mut self, config: StagingBufferConfig) -> Result<Vec<BufferSubItem>, AllocatorError> {
+    pub(crate) fn append_imgsrc(&mut self, info: ImgsrcBlockInfo) -> Result<HaImgsrcBlock, AllocatorError> {
 
-        if self.ty == BufferStorageType::Staging {
-            self.attach_buffer(config)
-        } else {
-            Err(AllocatorError::UnmatchBufferConfig)
-        }
+        let buffer_info = self.gen_buffer(&info, BufferBranch::ImageSrc)?;
+        let block = HaImgsrcBlock::from(buffer_info.item);
+        self.append_buffer(buffer_info.buffer, buffer_info.aligment_space, info);
+
+        Ok(block)
     }
 
-    fn attach_buffer(&mut self, config: impl BufferConfigAbstract + 'static) -> Result<Vec<BufferSubItem>, AllocatorError> {
+    fn gen_buffer(&mut self, info: &impl BufferBlockInfo, branch: BufferBranch) -> Result<BufferGenInfo, AllocatorError> {
 
-        // TODO: Currently HaBuffer only support operation in single queue family.
-        let buffer = config.generate(&self.device, None)?;
+        if self.ty.check_usage(branch) == false {
+            return Err(AllocatorError::UnsupportBufferUsage)
+        }
+
+        let buffer = info.build(&self.device, None, self.ty)?;
         self.memory_selector.try(buffer.requirement.memory_type_bits, self.require_mem_flag)?;
 
-        let buffer_index = self.buffers.len();
+        use utility::memory::bind_to_alignment;
         let aligment_space = bind_to_alignment(buffer.requirement.size, buffer.requirement.alignment);
 
-        let mut items = vec![];
-        let mut offset: vk::DeviceSize = 0;
+        let item = BufferItem {
+            handle: buffer.handle,
+            buffer_index: self.buffers.len(),
+            size: info.total_size(),
+        };
 
-        for &item_size in config.items_size().iter() {
-            let item = BufferSubItem {
-                handle: buffer.handle,
-                buffer_index,
-                offset,
-                size: item_size,
-            };
-            items.push(item);
-            offset += item_size;
-        }
+        let info = BufferGenInfo {
+            buffer, aligment_space, item,
+        };
+        Ok(info)
+    }
 
-        self.spaces.push(aligment_space);
+    fn append_buffer(&mut self, buffer: HaBuffer, space: vk::DeviceSize, config: impl BufferInfosAllocatable + 'static) {
+
+        self.spaces.push(space);
         self.buffers.push(buffer);
 
-        self.allocator.add_allocate(aligment_space, Box::new(config));
-
-        Ok(items)
+        self.allocator.add_allocate(space, Box::new(config));
     }
 
     pub fn allocate(&mut self) -> Result<HaBufferRepository, AllocatorError> {
@@ -202,4 +209,51 @@ impl BufferStorageType {
             | BufferStorageType::Staging => HaMemoryType::StagingMemory,
         }
     }
+
+    fn check_usage(&self, branch: BufferBranch) -> bool {
+        match self {
+            | BufferStorageType::Host => {
+                [
+                    BufferBranch::Vertex,
+                    BufferBranch::Index,
+                    BufferBranch::Uniform,
+                ].contains(&branch)
+            },
+            | BufferStorageType::Cached  => {
+                [
+                    BufferBranch::Vertex,
+                    BufferBranch::Index,
+                ].contains(&branch)
+            },
+            | BufferStorageType::Device  => {
+                [
+                    BufferBranch::Vertex,
+                    BufferBranch::Index,
+                ].contains(&branch)
+            },
+            | BufferStorageType::Staging => {
+                [
+                    BufferBranch::Vertex,
+                    BufferBranch::Index,
+                    BufferBranch::Uniform,
+                    BufferBranch::ImageSrc,
+                ].contains(&branch)
+            },
+        }
+    }
+}
+
+#[derive(Debug, Clone, Copy, Eq, PartialEq)]
+enum BufferBranch {
+    Vertex,
+    Index,
+    Uniform,
+    ImageSrc,
+}
+
+struct BufferGenInfo {
+
+    buffer: HaBuffer,
+    aligment_space: vk::DeviceSize,
+    item: BufferItem,
 }

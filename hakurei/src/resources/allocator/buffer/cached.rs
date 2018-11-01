@@ -4,7 +4,7 @@ use ash::vk;
 use core::device::HaDevice;
 
 use resources::allocator::{ BufMemAlloAbstract, BufferAllocateInfos };
-use resources::buffer::BufferConfigAbstract;
+use resources::allocator::BufferInfosAllocatable;
 use resources::memory::{ HaCachedMemory, HaMemoryAbstract };
 use resources::error::MemoryError;
 
@@ -27,10 +27,10 @@ impl CachedBufMemAllocator {
 
 impl BufMemAlloAbstract for CachedBufMemAllocator {
 
-    fn add_allocate(&mut self, space: vk::DeviceSize, config: Box<BufferConfigAbstract>) {
+    fn add_allocate(&mut self, space: vk::DeviceSize, config: Box<BufferInfosAllocatable>) {
         if let Some(ref mut infos) = self.infos {
             infos.spaces.push(space);
-            infos.configs.push(config);
+            infos.infos.push(config);
         }
     }
 

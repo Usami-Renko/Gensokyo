@@ -4,9 +4,14 @@ use ash::vk::uint32_t;
 use ash::version::DeviceV1_0;
 
 use core::device::HaDevice;
+use core::physical::HaPhyDevice;
 
-use resources::memory::{ HaMemoryAbstract, HaMemoryType, MemoryDataUploadable, };
+use resources::allocator::BufferAllocateInfos;
+use resources::buffer::BufferItem;
+use resources::memory::{ HaMemoryAbstract, HaMemoryType, MemoryRange };
+use resources::memory::{ MemoryDataUploadable, UploadStagingResource, StagingUploader };
 use resources::error::MemoryError;
+use utility::memory::MemoryWritePtr;
 
 use std::ptr;
 
@@ -16,8 +21,6 @@ pub struct HaCachedMemory  {
     _size      : vk::DeviceSize,
     mem_type   : Option<vk::MemoryType>,
 }
-
-impl MemoryDataUploadable for HaCachedMemory {}
 
 impl HaMemoryAbstract for HaCachedMemory {
 
@@ -35,7 +38,8 @@ impl HaMemoryAbstract for HaCachedMemory {
         HaMemoryType::CachedMemory
     }
 
-    fn allocate(device: &HaDevice, size: vk::DeviceSize, mem_type_index: usize, mem_type: Option<vk::MemoryType>) -> Result<HaCachedMemory, MemoryError> {
+    fn allocate(device: &HaDevice, size: vk::DeviceSize, mem_type_index: usize, mem_type: Option<vk::MemoryType>)
+        -> Result<HaCachedMemory, MemoryError> {
 
         let allocate_info = vk::MemoryAllocateInfo {
             s_type: vk::StructureType::MemoryAllocateInfo,
@@ -59,3 +63,23 @@ impl HaMemoryAbstract for HaCachedMemory {
     }
 }
 
+impl MemoryDataUploadable for HaCachedMemory {
+
+    fn prepare_data_transfer(&mut self, physical: &HaPhyDevice, device: &HaDevice, allocate_infos: &Option<BufferAllocateInfos>)
+        -> Result<Option<UploadStagingResource>, MemoryError> {
+
+        StagingUploader::prepare_data_transfer(physical, device, allocate_infos)
+    }
+
+    fn map_memory_ptr(&mut self, staging: &mut Option<UploadStagingResource>, item: &BufferItem, offset: vk::DeviceSize)
+        -> Result<(MemoryWritePtr, MemoryRange), MemoryError> {
+
+        StagingUploader::map_memory_ptr(staging, item, offset)
+    }
+
+    fn terminate_transfer(&mut self, device: &HaDevice, staging: &Option<UploadStagingResource>, ranges_to_flush: &Vec<MemoryRange>)
+        -> Result<(), MemoryError> {
+
+        StagingUploader::terminate_transfer(device, staging, ranges_to_flush)
+    }
+}

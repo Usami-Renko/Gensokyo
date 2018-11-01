@@ -5,5 +5,7 @@ pub(crate) mod memory;
 pub(crate) mod fps;
 pub(crate) mod dimension;
 pub(crate) mod time;
+pub(crate) mod wrapper;
 pub(crate) mod camera;
 pub(crate) mod shaderc;
+pub(crate) mod model;

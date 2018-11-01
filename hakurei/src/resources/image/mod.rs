@@ -1,19 +1,37 @@
 
-pub use self::image::ImageDescInfo;
-pub use self::view::ImageViewDescInfo;
-pub use self::flag::{ ImageLayout, ImageAspectFlag, ImageCreateFlag, ImageUsageFlag };
-pub use self::item::ImageViewItem;
-pub use self::sampler::{ HaSampler, SamplerDescInfo };
-pub use self::enums::{ ImageType, ImageViewType, ImageTiling, Filter, MipmapMode, CompareOp, BorderColor };
+pub use self::flag::ImageLayout;
+pub use self::enums::{
+    ImagePipelineStage, DepthStencilImageFormat,
+    ImageTiling, Filter, MipmapMode, CompareOp, BorderColor
+};
+pub use self::branch::{
+    ImageBlockEntity, ImageCopiable, ImageCopyInfo, // traits
+    SampleImageInfo, HaSampleImage, // sample
+    DepthStencilImageInfo, HaDepthStencilImage, // depth
+};
 
-pub(crate) use self::image::HaImage;
-pub(crate) use self::view::HaImageView;
-pub(crate) use self::io::{ load_texture, ImageStorageInfo };
+pub(crate) use self::image::{ HaImage, ImageDescInfo };
+pub(crate) use self::view::{ HaImageView, ImageViewDescInfo };
+pub(crate) use self::item::ImageViewItem;
+pub(crate) use self::flag::{ ImageUsageFlag, ImageAspectFlag };
+pub(crate) use self::io::{ ImageStorageInfo, ImageSource };
+pub(crate) use self::enums::{ ImageBranchType, ImageType, ImageViewType, DepthImageUsage };
+
+pub(crate) use self::branch::{
+    ImageBranchInfoAbs, HaImageDescAbs, HaImageViewDescAbs, ImageBarrierBundleAbs, // traits
+    HaSamplerDescAbs, HaSampler, SamplerDescInfo, SampleImageBarrierBundle, // sample
+    DepSteImageBarrierBundle, // depth
+    ImageBranchInfoDesc, // infos
+};
+
+
+#[macro_use]
+mod macros;
 
 mod image;
 mod view;
-mod sampler;
 mod flag;
 mod io;
 mod item;
 mod enums;
+mod branch;

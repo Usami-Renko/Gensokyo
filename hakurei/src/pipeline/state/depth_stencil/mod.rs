@@ -1,8 +1,7 @@
 
-pub use self::depthstencil::{ HaDepthStencil, HaDepthStencilPrefab };
-pub use self::depth::DepthTest;
-pub use self::stencil::StencilTest;
-pub use self::stencil::StencilOpState;
+pub use self::depthstencil::{ HaDepthStencilState, HaDepthStencilPrefab };
+pub use self::depth::{ DepthTest, DepthBoundInfo };
+pub use self::stencil::{ StencilTest, StencilFaceFlag, StencilOpState };
 
 mod depthstencil;
 mod depth;

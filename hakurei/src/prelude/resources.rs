@@ -2,25 +2,27 @@
 pub use resources::allocator::{
     HaBufferAllocator, BufferStorageType, // buffer
     HaDescriptorAllocator, // descriptor
-    HaImageAllocator, ImageStorageType,   // image
+    HaImagePreAllocator, HaImageDistributor, ImageStorageType,   // image
 };
 
 pub use resources::buffer::{
-    BufferCreateFlag, HostBufferUsage, CachedBufferUsage, DeviceBufferUsage, StagingBufferUsage, // flag
-    BufferItem, BufferSubItem, // item
-    HostBufferConfig, CachedBufferConfig, DeviceBufferConfig, StagingBufferConfig, // config
-    BufferConfigModifiable, // traits
+    BufferCreateFlag, // flag
+    BufferItem, // item
+    HaVertexBlock, VertexBlockInfo, // block
+    HaIndexBlock, IndexBlockInfo, // block
+    HaUniformBlock, UniformBlockInfo, // block
 };
 
 pub use resources::command::{
     HaCommandBuffer, CommandBufferUsage,       // buffer
     HaCommandPool, CommandPoolFlag,            // pool
     HaCommandRecorder, CommandBufferUsageFlag, // record
+    CmdViewportInfo, CmdScissorInfo, // infos
+    CmdVertexBindingInfo, CmdIndexBindingInfo, // infos
 };
 
 pub use resources::descriptor::{
     DescriptorSetConfig, DescriptorItem, DescriptorSetItem,  // item
-    DescriptorBufferBindingInfo, DescriptorImageBindingInfo, // item
     DescriptorPoolFlag, // pool
     HaDescriptorSetLayout, DescriptorSetLayoutFlag, BufferDescriptorType, ImageDescriptorType, // layout
 };
@@ -29,22 +31,21 @@ pub use resources::descriptor::{
 pub use resources::framebuffer::{};
 
 pub use resources::image::{
-    ImageDescInfo,     // image
-    ImageViewDescInfo, // view
-    ImageLayout, ImageAspectFlag, ImageCreateFlag, ImageUsageFlag, // flag
-    ImageViewItem, // item
-    HaSampler, SamplerDescInfo, // sampler
-    ImageType, ImageViewType, ImageTiling, Filter, MipmapMode, CompareOp, BorderColor, // enums
+    ImagePipelineStage, DepthStencilImageFormat, // enums
+    ImageTiling, Filter, MipmapMode, CompareOp, BorderColor, // enums
+    SampleImageInfo, HaSampleImage, // branch/sample
+    DepthStencilImageInfo, HaDepthStencilImage, // branch/depthstencil
+    ImageBlockEntity, ImageCopiable, ImageCopyInfo, // branch/trait
 };
 
 // currently no memory API is public,
 pub use resources::memory::{};
 
 pub use resources::repository::{
-    HaBufferRepository, CmdVertexBindingInfos, CmdIndexBindingInfo, // buffer
-    HaDescriptorRepository, CmdDescriptorBindingInfos, // descriptor
+    HaBufferRepository, // buffer
+    HaDescriptorRepository, // descriptor
     HaImageRepository, // image
-    BufferDataUploader, BufferDataUpdater, // transfer
+    BufferDataUploader, BufferDataUpdater, DataCopyer, // transfer
 };
 
 pub use resources::toolkit::{

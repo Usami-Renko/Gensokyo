@@ -22,14 +22,14 @@ pub enum CommandBufferUsage {
 
 impl CommandBufferUsage {
     pub(super) fn level(&self) -> vk::CommandBufferLevel {
-        match *self {
+        match self {
             | CommandBufferUsage::UnitaryCommand
             | CommandBufferUsage::PrimaryCommand   => vk::CommandBufferLevel::Primary,
             | CommandBufferUsage::SecondaryCommand => vk::CommandBufferLevel::Secondary,
         }
     }
     pub(super) fn usage(&self) -> vk::SubpassContents {
-        match *self {
+        match self {
             // Inline specifies that the render pass commands will be embedded in the primary command buffer itself and no secondary command buffers will be executed.
             | CommandBufferUsage::UnitaryCommand   => vk::SubpassContents::Inline,
             // SecondaryCommandBuffer specifies that the render pass commands will be executed from secondary command buffers,
@@ -42,26 +42,27 @@ impl CommandBufferUsage {
 
 pub struct HaCommandBuffer {
 
-    pub(super) device : HaDevice,
-
     pub(crate) handle: vk::CommandBuffer,
-    pub(super) usage: CommandBufferUsage,
+    pub(crate) usage: CommandBufferUsage,
 }
 
-impl<'buffer> HaCommandBuffer {
+impl HaCommandBuffer {
 
-    pub(crate) fn new(device: &HaDevice, handle: vk::CommandBuffer, usage: CommandBufferUsage) -> HaCommandBuffer {
-        HaCommandBuffer { device: device.clone(), handle, usage, }
+    pub(crate) fn new(handle: vk::CommandBuffer, usage: CommandBufferUsage) -> HaCommandBuffer {
+        HaCommandBuffer { handle, usage, }
     }
 
-    pub fn setup_record(&'buffer self) -> HaCommandRecorder<'buffer> {
+    pub(crate) fn setup_record(self, device: &HaDevice) -> HaCommandRecorder {
+
+        let usage = self.usage;
+        let handle = self.handle;
 
         HaCommandRecorder {
-            buffer: self,
-            device: self.device.clone(),
+            buffer: Some(self),
+            device: device.clone(),
+            handle, usage,
         }
     }
-
 }
 
 impl<'re> Handles for [&'re HaCommandBuffer] {

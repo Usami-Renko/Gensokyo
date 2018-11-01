@@ -4,7 +4,7 @@ use ash::vk;
 use core::device::HaDevice;
 
 use resources::allocator::{ BufMemAlloAbstract, BufferAllocateInfos };
-use resources::buffer::BufferConfigAbstract;
+use resources::allocator::BufferInfosAllocatable;
 use resources::memory::{ HaStagingMemory, HaMemoryAbstract };
 use resources::error::MemoryError;
 
@@ -27,7 +27,7 @@ impl StagingBufMemAllocator {
 
 impl BufMemAlloAbstract for StagingBufMemAllocator {
 
-    fn add_allocate(&mut self, space: vk::DeviceSize, _: Box<BufferConfigAbstract>) {
+    fn add_allocate(&mut self, space: vk::DeviceSize, _: Box<BufferInfosAllocatable>) {
 
         if let Some(ref mut infos) = self.infos {
             infos.spaces.push(space);

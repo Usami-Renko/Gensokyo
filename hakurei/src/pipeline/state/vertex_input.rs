@@ -4,17 +4,18 @@ use ash::vk::uint32_t;
 
 use std::ptr;
 
-pub struct HaVertexInput {
+#[derive(Default)]
+pub struct HaVertexInputState {
 
     bindings:   Vec<vk::VertexInputBindingDescription>,
     attributes: Vec<vk::VertexInputAttributeDescription>,
 }
 
-impl HaVertexInput {
+impl HaVertexInputState {
 
     pub fn setup(bindings: Vec<vk::VertexInputBindingDescription>, attributes: Vec<vk::VertexInputAttributeDescription>)
-        -> HaVertexInput {
-        HaVertexInput {
+        -> HaVertexInputState {
+        HaVertexInputState {
             bindings,
             attributes,
         }
@@ -41,12 +42,3 @@ impl HaVertexInput {
     }
 }
 
-impl Default for HaVertexInput {
-
-    fn default() -> HaVertexInput {
-        HaVertexInput {
-            bindings:   vec![],
-            attributes: vec![],
-        }
-    }
-}

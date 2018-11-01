@@ -21,11 +21,11 @@ struct QueueOperationIndices {
     graphics      : Option<usize>,
     compute       : Option<usize>,
     transfer      : Option<usize>,
-    sparse_inding : Option<usize>,
+    sparse_binding: Option<usize>,
 }
 
 #[derive(Debug, Clone, Copy, Eq, PartialEq)]
-pub enum QueueOperationType {
+pub(crate) enum QueueOperationType {
     Graphics,
     Compute,
     Transfer,
@@ -35,7 +35,8 @@ pub enum QueueOperationType {
 impl QueueOperationType {
 
     fn is_support(&self, queue_flag: vk::QueueFlags) -> bool {
-        let inspect_flag = match *self {
+
+        let inspect_flag = match self {
             | QueueOperationType::Graphics      => vk::QUEUE_GRAPHICS_BIT,
             | QueueOperationType::Compute       => vk::QUEUE_COMPUTE_BIT,
             | QueueOperationType::Transfer      => vk::QUEUE_TRANSFER_BIT,
@@ -60,7 +61,7 @@ impl VulkanFlags for [QueueOperationType] {
     }
 }
 
-pub struct PhysicalQueueFamilies {
+pub(crate) struct PhysicalQueueFamilies {
 
     families           : Vec<vk::QueueFamilyProperties>,
     pub family_indices : QueueFamilyIndices,
@@ -134,13 +135,29 @@ impl PhysicalQueueFamilies {
                 | QueueOperationType::Graphics      => self.operation_indices.graphics.is_some(),
                 | QueueOperationType::Compute       => self.operation_indices.compute.is_some(),
                 | QueueOperationType::Transfer      => self.operation_indices.transfer.is_some(),
-                | QueueOperationType::SparseBinding => self.operation_indices.sparse_inding.is_some(),
+                | QueueOperationType::SparseBinding => self.operation_indices.sparse_binding.is_some(),
             }
         })
     }
 
+    #[allow(dead_code)]
     pub fn queue_families_count(&self) -> usize {
         self.families.len()
+    }
+
+    pub fn is_queue_support_operations(&self, check_family_index: uint32_t, usages: &[QueueOperationType]) -> bool {
+
+        let family = &self.families[check_family_index as usize];
+
+        usages.iter().all(|usage| {
+            usage.is_support(family.queue_flags)
+        })
+    }
+
+    pub fn is_queue_count_enough(&self, check_family_index: uint32_t, request_queue_count: usize) -> bool {
+
+        let family = &self.families[check_family_index as usize];
+        family.queue_count as usize >= request_queue_count
     }
 }
 
@@ -151,7 +168,7 @@ fn generate_operation_indices(families: &Vec<vk::QueueFamilyProperties>) -> Queu
         graphics: None,
         compute:  None,
         transfer: None,
-        sparse_inding: None,
+        sparse_binding: None,
     };
 
     for (index, family) in families.iter().enumerate() {
@@ -166,11 +183,11 @@ fn generate_operation_indices(families: &Vec<vk::QueueFamilyProperties>) -> Queu
         if result.transfer.is_none() && QueueOperationType::Transfer.is_support(test_flags) {
             result.transfer = Some(index);
         }
-        if result.sparse_inding.is_none() && QueueOperationType::SparseBinding.is_support(test_flags) {
-            result.sparse_inding = Some(index);
+        if result.sparse_binding.is_none() && QueueOperationType::SparseBinding.is_support(test_flags) {
+            result.sparse_binding = Some(index);
         }
 
-        if result.graphics.is_some() && result.compute.is_some() && result.transfer.is_some() && result.sparse_inding.is_some() {
+        if result.graphics.is_some() && result.compute.is_some() && result.transfer.is_some() && result.sparse_binding.is_some() {
             break
         }
     }

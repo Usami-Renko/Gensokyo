@@ -3,7 +3,7 @@ use cgmath;
 use cgmath::{ Matrix4, Vector3, Point3, InnerSpace, Zero, Deg, Rad };
 use winit::VirtualKeyCode;
 
-use config::camera as CameraConfig;
+use config::utility;
 use input::ActionNerve;
 
 use utility::camera::traits::HaCameraAbstract;
@@ -62,6 +62,14 @@ impl HaCameraAbstract for HaStageCamera {
         } else if actioner.is_key_pressed_raw(VirtualKeyCode::Left) {
             self.horizontal_rotate += delta_time * self.rotate_sensitive;
         }
+
+        // mouse motion
+        if actioner.is_mouse_move() {
+            let mut mouse_motion = actioner.mouse_motion();
+            mouse_motion = mouse_motion.scale(0.5);
+            self.horizontal_rotate += mouse_motion.delta_x * delta_time * self.rotate_sensitive;
+            self.vertical_rotate   += mouse_motion.delta_y * delta_time * self.rotate_sensitive;
+        }
     }
 }
 
@@ -114,9 +122,9 @@ impl Default for HaStageCamera {
             up   : Vector3::zero(),
             right: Vector3::zero(),
 
-            _wheel_sentivity: CameraConfig::CAMERA_WHEEL_SENTIVITY,
+            _wheel_sentivity: utility::CAMERA_WHEEL_SENTIVITY,
 
-            zoom: CameraConfig::CAMERA_ZOOM,
+            zoom: utility::CAMERA_ZOOM,
             near: 0.1,
             far : 100.0,
             screen_aspect: 1.0,

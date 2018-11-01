@@ -6,7 +6,7 @@ use ash::version::DeviceV1_0;
 use core::device::HaDevice;
 use core::physical::HaPhyDevice;
 
-use resources::buffer::BufferSubItem;
+use resources::buffer::BufferItem;
 use resources::memory::{ HaMemoryAbstract, MemoryDataUploadable, MemoryMapable };
 use resources::memory::{ HaMemoryType, UploadStagingResource };
 use resources::memory::{ MemoryRange, MemoryMapStatus };
@@ -85,7 +85,7 @@ impl MemoryDataUploadable for HaHostMemory {
         Ok(None)
     }
 
-    fn map_memory_ptr(&mut self, _: &mut Option<UploadStagingResource>, item: &BufferSubItem, offset: vk::DeviceSize) -> Result<(MemoryWritePtr, MemoryRange), MemoryError> {
+    fn map_memory_ptr(&mut self, _: &mut Option<UploadStagingResource>, item: &BufferItem, offset: vk::DeviceSize) -> Result<(MemoryWritePtr, MemoryRange), MemoryError> {
 
         let ptr = unsafe {
             self.map_status.data_ptr.offset(offset as isize)
@@ -96,7 +96,8 @@ impl MemoryDataUploadable for HaHostMemory {
         Ok((writer, range))
     }
 
-    fn terminate_transfer(&mut self, device: &HaDevice, _: &Option<UploadStagingResource>, ranges_to_flush: &Vec<MemoryRange>) -> Result<(), MemoryError> {
+    fn terminate_transfer(&mut self, device: &HaDevice, _: &Option<UploadStagingResource>, ranges_to_flush: &Vec<MemoryRange>)
+        -> Result<(), MemoryError> {
 
         if !self.is_coherent_memroy() {
             // FIXME: the VkPhysicalDeviceLimits::nonCoherentAtomSize is not satified for flushing range.

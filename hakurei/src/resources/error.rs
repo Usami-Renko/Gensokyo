@@ -119,17 +119,19 @@ pub enum AllocatorError {
     Command(CommandError),
     Image(ImageError),
     Sync(SyncError),
+    Descriptor(DescriptorError),
     MemoryNotYetAllocated,
     DeviceMemoryNotSupportDirectUpdate,
     DataTransferNotActivate,
-    UnmatchBufferConfig,
+    UnsupportBufferUsage,
 }
 
-impl_from_err!(Buffer(BufferError)   -> AllocatorError);
-impl_from_err!(Memory(MemoryError)   -> AllocatorError);
-impl_from_err!(Command(CommandError) -> AllocatorError);
-impl_from_err!(Image(ImageError)     -> AllocatorError);
-impl_from_err!(Sync(SyncError)       -> AllocatorError);
+impl_from_err!(Buffer(BufferError)         -> AllocatorError);
+impl_from_err!(Memory(MemoryError)         -> AllocatorError);
+impl_from_err!(Command(CommandError)       -> AllocatorError);
+impl_from_err!(Image(ImageError)           -> AllocatorError);
+impl_from_err!(Sync(SyncError)             -> AllocatorError);
+impl_from_err!(Descriptor(DescriptorError) -> AllocatorError);
 
 impl Error for AllocatorError {}
 impl fmt::Display for AllocatorError {
@@ -137,11 +139,12 @@ impl fmt::Display for AllocatorError {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
 
         let description = match self {
-            | AllocatorError::Buffer(ref e)  => e.to_string(),
-            | AllocatorError::Memory(ref e)  => e.to_string(),
-            | AllocatorError::Command(ref e) => e.to_string(),
-            | AllocatorError::Image(ref e)   => e.to_string(),
-            | AllocatorError::Sync(ref e)    => e.to_string(),
+            | AllocatorError::Buffer(ref e)     => e.to_string(),
+            | AllocatorError::Memory(ref e)     => e.to_string(),
+            | AllocatorError::Command(ref e)    => e.to_string(),
+            | AllocatorError::Image(ref e)      => e.to_string(),
+            | AllocatorError::Sync(ref e)       => e.to_string(),
+            | AllocatorError::Descriptor(ref e) => e.to_string(),
             | AllocatorError::MemoryNotYetAllocated   => {
                 String::from("The memory is not allocated yet. Memory must be allocated first before using it.")
             },
@@ -151,8 +154,8 @@ impl fmt::Display for AllocatorError {
             | AllocatorError::DataTransferNotActivate => {
                 String::from("The repository must be activated before making data transfer operations.")
             },
-            | AllocatorError::UnmatchBufferConfig => {
-                String::from("The type of buffer config is unable to match with the type of buffer allocator.")
+            | AllocatorError::UnsupportBufferUsage => {
+                String::from("The type of buffer is not support on this allocator.")
             },
         };
         write!(f, "{}", description)
@@ -182,7 +185,6 @@ impl fmt::Display for DescriptorError {
     }
 }
 
-
 #[derive(Debug, Clone, Eq, PartialEq)]
 pub enum ImageError {
     SourceLoadError,
@@ -190,6 +192,7 @@ pub enum ImageError {
     ViewCreationError,
     Memory(MemoryError),
     NoImageAttachError,
+    NotYetAllocateError,
     SamplerCreationError,
 }
 
@@ -205,6 +208,7 @@ impl fmt::Display for ImageError {
             | ImageError::ImageCreationError   => write!(f, "Failed to create Image Object."),
             | ImageError::ViewCreationError    => write!(f, "Failed to create ImageView Object."),
             | ImageError::Memory(ref e)        => write!(f, "{}", e.to_string()),
+            | ImageError::NotYetAllocateError  => write!(f, "The image or image view have not yet allocated."),
             | ImageError::NoImageAttachError   => write!(f, "There must be images attached to allocator before allocate memory."),
             | ImageError::SamplerCreationError => write!(f, "Failed to create Sampler Object."),
         }

@@ -41,7 +41,7 @@ impl VulkanFlags for [SwapchainCreateFlag] {
     }
 }
 
-pub struct SwapchainBuilder<'vk, 'win: 'vk> {
+pub(crate) struct SwapchainBuilder<'vk, 'win: 'vk> {
 
     device:  HaDevice,
     surface: &'vk HaSurface<'win>,
@@ -68,8 +68,8 @@ impl<'vk, 'win: 'vk> SwapchainBuilder<'vk, 'win> {
 
             support,
             image_share_info,
-            image_count       : config.swapchain.image_count,
-            acquire_image_time: config.swapchain.acquire_image_time_out.vulkan_time(),
+            image_count       : config.core.swapchain.image_count,
+            acquire_image_time: config.core.swapchain.acquire_image_time_out.vulkan_time(),
         };
 
         Ok(builder)
@@ -130,8 +130,13 @@ impl<'vk, 'win: 'vk> SwapchainBuilder<'vk, 'win> {
 
         let mut view_desc = ImageViewDescInfo::init(
             ImageViewType::Type2d,
+            &[ImageAspectFlag::ColorBit],
         );
-        view_desc.set_subrange(&[ImageAspectFlag::ColorBit], 0, 1, 0, 1);
+
+        view_desc.subrange = vk::ImageSubresourceRange {
+            aspect_mask: [ImageAspectFlag::ColorBit].flags(),
+            base_mip_level: 0, level_count: 1, base_array_layer: 0, layer_count: 1
+        };
 
         let mut views = vec![];
         for image in images.iter() {

@@ -15,20 +15,10 @@ use utility::marker::VulkanFlags;
 use std::ptr;
 use std::ffi::CStr;
 
-/// a struct stores all need information during the initialization of Validation Layer.
-pub struct ValidationInfo {
-    /// tell if validation layer should be enabled.
-    pub is_enable: bool,
-    /// the layer names required for validation layer support.
-    pub required_validation_layers: Vec<String>,
-    /// the message type that Validation Layer would report for.
-    pub flags: Vec<DebugReportFlag>,
-}
+/// Wrapper class for `vk::DebugReport` object.
+pub(crate) struct HaDebugger {
 
-/// Wrapper class for vk::DebugReport object.
-pub struct HaDebugger {
-
-    /// the handle of vk::DebugReport object.
+    /// the handle of `vk::DebugReport` object.
     loader: DebugReport,
     /// the handle of callback function used in Validation Layer.
     callback: vk::DebugReportCallbackEXT,
@@ -36,7 +26,7 @@ pub struct HaDebugger {
 
 impl HaDebugger {
 
-    /// initialize debug extension loader and vk::DebugReport object.
+    /// Initialize debug extension loader and `vk::DebugReport` object.
     pub fn setup(instance: &HaInstance, flags: &[DebugReportFlag]) -> Result<HaDebugger, ValidationError> {
 
         // load the debug extension
@@ -45,12 +35,12 @@ impl HaDebugger {
 
         // configurate debug callback.
         let debug_callback_create_info = vk::DebugReportCallbackCreateInfoEXT {
-            s_type       : vk::StructureType::DebugReportCallbackCreateInfoExt,
-            p_next       : ptr::null(),
+            s_type      : vk::StructureType::DebugReportCallbackCreateInfoExt,
+            p_next      : ptr::null(),
             // Enum DebugReportFlags enumerate all available flags.
-            flags        : flags.flags(),
-            pfn_callback : vulkan_debug_report_callback,
-            p_user_data  : ptr::null_mut(),
+            flags       : flags.flags(),
+            pfn_callback: vulkan_debug_report_callback,
+            p_user_data : ptr::null_mut(),
         };
 
         let callback = unsafe {
@@ -68,7 +58,7 @@ impl HaDebugger {
 
     /// Some cleaning operations before this object was uninitialized.
     ///
-    /// For HaDebugger, it destroy the vk::DebugReport object.
+    /// For HaDebugger, it destroy the `vk::DebugReport` object.
     pub fn cleanup(&self) {
         unsafe {
             self.loader.destroy_debug_report_callback_ext(self.callback, None);
@@ -106,14 +96,14 @@ impl VulkanFlags for [DebugReportFlag] {
 
 /// the callback function in Debug Report.
 unsafe extern "system" fn vulkan_debug_report_callback(
-    _flags        : vk::DebugReportFlagsEXT,
-    _obj_type     : vk::DebugReportObjectTypeEXT,
-    _obj          : vk::uint64_t,
-    _location     : vk::size_t,
-    _code         : vk::int32_t,
-    _layer_prefix : *const vk::c_char,
-    p_message     : *const vk::c_char,
-    _user_data    : *mut vk::c_void
+    _flags       : vk::DebugReportFlagsEXT,
+    _obj_type    : vk::DebugReportObjectTypeEXT,
+    _obj         : vk::uint64_t,
+    _location    : vk::size_t,
+    _code        : vk::int32_t,
+    _layer_prefix: *const vk::c_char,
+    p_message    : *const vk::c_char,
+    _user_data   : *mut vk::c_void
 ) -> u32 {
 
     println!("[Debug] {:?}", CStr::from_ptr(p_message));

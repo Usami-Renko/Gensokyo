@@ -3,7 +3,7 @@ use ash::vk;
 use ash::vk::uint32_t;
 use ash::version::DeviceV1_0;
 
-use config::core::CoreConfig;
+use config::core::DeviceConfig;
 use core::DeviceV1;
 use core::device::{ HaLogicalDevice, HaDevice, HaQueue };
 use core::device::queue::HaQueueAbstract;
@@ -17,11 +17,12 @@ use sync::fence::HaFence;
 use utility::marker::{ VulkanFlags, Handles };
 use utility::time::TimePeriod;
 
+use std::rc::Rc;
 use std::ptr;
 
 pub struct HaTransferQueue {
 
-    pub queue: HaQueue,
+    pub queue: Rc<HaQueue>,
     pool : TransferCommandPool,
 
     transfer_wait_time: TimePeriod,
@@ -29,11 +30,15 @@ pub struct HaTransferQueue {
 
 impl HaQueueAbstract for HaTransferQueue {
 
-    fn new(device: &DeviceV1, queue: HaQueue, config: &CoreConfig) -> Result<Self, LogicalDeviceError> {
+    fn new(device: &DeviceV1, queue: &Rc<HaQueue>, config: &DeviceConfig) -> Result<Self, LogicalDeviceError> {
 
-        let pool = TransferCommandPool::setup(device, &queue)?;
+        let pool = TransferCommandPool::setup(device, queue)?;
 
-        let transfer_queue = HaTransferQueue { queue, pool, transfer_wait_time: config.transfer_wait_time, };
+        let transfer_queue = HaTransferQueue {
+            queue: queue.clone(),
+            pool,
+            transfer_wait_time: config.transfer_wait_time,
+        };
         Ok(transfer_queue)
     }
 
@@ -73,22 +78,26 @@ pub struct HaTransfer {
 
 impl HaTransfer {
 
-    pub fn commands(&mut self, count: usize) -> Result<&[HaCommandBuffer], CommandError> {
+    pub fn commands(&self, count: usize) -> Result<Vec<HaCommandBuffer>, CommandError> {
 
         // just use a single primary command buffer for transferation.
-        let mut new_commands = self.device.transfer_queue.pool.allocate(&self.device, count)?;
-        let start_index = self.command_buffers.len();
-        self.command_buffers.append(&mut new_commands);
-
-        let commands = &self.command_buffers[start_index..];
+        let commands = self.device.transfer_queue.pool.allocate(&self.device, count)?;
         Ok(commands)
     }
 
-    pub fn command(&mut self) -> Result<&HaCommandBuffer, CommandError> {
+    pub fn commits(&mut self, commands: Vec<HaCommandBuffer>) {
+        commands.into_iter()
+            .for_each(|command| self.command_buffers.push(command));
+    }
 
-        let mut new_commands = self.device.transfer_queue.pool.allocate(&self.device, 1)?;
-        self.command_buffers.append(&mut new_commands);
-        Ok(&self.command_buffers.last().unwrap())
+    pub fn command(&self) -> Result<HaCommandBuffer, CommandError> {
+
+        let mut commands = self.device.transfer_queue.pool.allocate(&self.device, 1)?;
+        Ok(commands.pop().unwrap())
+    }
+
+    pub fn commit(&mut self, command: HaCommandBuffer) {
+        self.command_buffers.push(command);
     }
 
     pub fn excute(&mut self) -> Result<(), AllocatorError> {
@@ -182,7 +191,7 @@ impl TransferCommandPool {
 
         let buffers = handles.iter()
             .map(|&handle|
-                HaCommandBuffer::new(&device, handle, CommandBufferUsage::UnitaryCommand)
+                HaCommandBuffer::new(handle, CommandBufferUsage::UnitaryCommand)
             ).collect();
 
         Ok(buffers)

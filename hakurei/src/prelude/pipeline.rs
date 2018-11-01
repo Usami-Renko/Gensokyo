@@ -1,6 +1,6 @@
 
 pub use pipeline::graphics::{
-    HaGraphicsPipeline, // pipeline
+    HaGraphicsPipeline, GraphicsPipelineContainer, // pipeline
     GraphicsPipelineBuilder, GraphicsPipelineConfig, PipelineCreateFlag, // builder
 };
 
@@ -8,7 +8,7 @@ pub use pipeline::pass::{
     HaRenderPass, // render
     RenderAttachement, RenderAttachementPrefab, // attachment
     AttachmentDescFlag, AttachmentLoadOp, AttachmentStoreOp, // attachment
-    AttachmentType, SubpassType, // subpass
+    AttachmentType, // subpass
     RenderDependency, RenderDependencyPrefab, // dependency
     AccessFlag, DependencyFlag, // dependency
     RenderPassBuilder, // builder
@@ -17,23 +17,22 @@ pub use pipeline::pass::{
 };
 
 pub use pipeline::shader::{
-    HaVertexInputBinding, HaVertexInputAttribute, VertexInputDescription, // input
+    HaVertexInputBinding, HaVertexInputAttribute, VertexInputDescription, VertexInputRate, // input
     HaShaderInfo, // module
     ShaderStageFlag, // flag
 };
 
 pub use pipeline::state::{
-    HaVertexInput, // vertex_input
-    HaInputAssembly, PrimitiveTopology, // input_assembly
-    HaViewport, // viewport
-    HaRasterizer, RasterizerPrefab, PolygonMode, CullModeType, FrontFaceType, DepthBias, // rasterizer
-    HaMultisample, MultisamplePrefab, SampleCountType, SampleShading, // multisample
-    HaDepthStencil, HaDepthStencilPrefab, DepthTest, StencilTest, StencilOpState, // depth_stencil
-    HaBlend, BlendAttachemnt, BlendAttachmentPrefab, ColorComponentFlag, BlendFactor, BlendOp, LogicalOp, CompareOp, // blend
-    HaTessellation, // tessellation
-    HaDynamicState, // dynamic
+    HaVertexInputState, // vertex_input
+    HaInputAssemblyState, PrimitiveTopology, // input_assembly
+    HaViewportState, ViewportStateType, ViewportStateInfo, ViewportInfo, ScissorInfo, // viewport
+    HaRasterizerState, RasterizerPrefab, PolygonMode, CullModeType, FrontFaceType, DepthBiasInfo, // rasterizer
+    HaMultisampleState, MultisamplePrefab, SampleCountType, SampleShading, // multisample
+    HaDepthStencilState, HaDepthStencilPrefab, DepthTest, StencilTest, StencilOpState, DepthBoundInfo, StencilFaceFlag, // depth_stencil
+    HaBlendState, BlendAttachemnt, BlendAttachmentPrefab, ColorComponentFlag, BlendFactor, BlendOp, LogicalOp, CompareOp, // blend
+    HaTessellationState, // tessellation
 };
 
 pub use pipeline::layout::{ HaPipelineLayout, PipelineLayoutBuilder };
-pub use pipeline::stages::PipelineStageFlag;
+pub use pipeline::stages::{ PipelineStageFlag, PipelineType };
 

@@ -20,9 +20,9 @@ pub struct HaFence {
 
 impl HaFence {
 
-    pub fn setup(device: &HaDevice, sign: bool) -> Result<HaFence, SyncError> {
+    pub fn setup(device: &HaDevice, is_sign: bool) -> Result<HaFence, SyncError> {
 
-        let flags = if sign {
+        let flags = if is_sign {
             [&FenceCreateFlag::Signaled].flags()
         } else {
             vk::FenceCreateFlags::empty()

@@ -7,12 +7,12 @@
 layout (binding = 0) uniform sampler2D texSampler;
 
 // fragment input
-layout (location = 0) in vec2 fragTexColor;
+layout (location = 0) in vec2 fragTexCoord;
 
 // fragment output
 layout (location = 0) out vec4 outColor;
 
 void main() {
 
-    outColor = texture(texSampler, fragTexColor);
+    outColor = texture(texSampler, fragTexCoord);
 }

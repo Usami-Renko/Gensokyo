@@ -17,6 +17,7 @@ use sync::error::SyncError;
 use utility::time::TimePeriod;
 use utility::marker::Handles;
 
+use std::rc::Rc;
 use std::ptr;
 
 pub struct HaLogicalDevice {
@@ -33,7 +34,7 @@ pub enum DeviceQueueIdentifier {
     Graphics,
     Present,
     Transfer,
-    Custom(Box<DeviceQueueIdentifier>, usize),
+    Custom { identifier: Box<DeviceQueueIdentifier>, queue_index: usize },
 }
 
 impl HaLogicalDevice {
@@ -125,13 +126,13 @@ impl HaLogicalDevice {
         }
     }
 
-    pub(crate) fn queue_handle_by_identifier(&self, identifier: DeviceQueueIdentifier) -> &HaQueue {
+    pub(crate) fn queue_handle_by_identifier(&self, identifier: DeviceQueueIdentifier) -> &Rc<HaQueue> {
         match identifier {
             | DeviceQueueIdentifier::Graphics => &self.graphics_queue.queue,
             | DeviceQueueIdentifier::Present  => &self.present_queue.queue,
             | DeviceQueueIdentifier::Transfer => &self.transfer_queue.queue,
-            | DeviceQueueIdentifier::Custom(ident, queue_index) => {
-                self.queue_container.queue(*ident, queue_index)
+            | DeviceQueueIdentifier::Custom { identifier, queue_index } => {
+                self.queue_container.queue(*identifier, queue_index)
             },
         }
     }

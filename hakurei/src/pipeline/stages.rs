@@ -6,6 +6,21 @@ use utility::marker::Handles;
 
 use utility::marker::VulkanEnum;
 
+pub enum PipelineType {
+    Graphics,
+    Compute,
+}
+
+impl PipelineType {
+    pub(super) fn to_bind_point(&self) -> vk::PipelineBindPoint {
+        match self {
+            PipelineType::Graphics => vk::PipelineBindPoint::Graphics,
+            PipelineType::Compute  => vk::PipelineBindPoint::Compute,
+        }
+    }
+}
+
+// TODO: Make PipelineStageFlag be private API.
 #[derive(Debug, Clone, Copy, Eq, PartialEq)]
 pub enum PipelineStageFlag {
     /// TopOfPipeBit specifies the stage of the pipeline where any commands are initially received by the queue

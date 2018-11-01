@@ -19,7 +19,9 @@ All available examples and corresponding `example_number` are listed in the foll
 | 02             | index    | Draw the triangle with index buffer.                         |
 | 03             | uniform  | Show the usage of uniform buffer.                            |
 | 04             | texture  | Use sampler to render an image on screen.                    |
-| 05             | cube     | Render an 3D cube object and use arrow keys to control its angle. |
+| 05             | cube     | Render an 3D cube object. Use arrow keys or mouse to control its rotation. |
+| 06             | depth    | Use depth attachment in graphics pipeline. Use arrow keys to move the camera location.(Currently this example failed to adapt the window resize event since the depth image need to recreate.) |
+| 07             | model    | Load a simple model. Use arrow keys and mouse to control the camera. |
 
 ### Example usage:
 

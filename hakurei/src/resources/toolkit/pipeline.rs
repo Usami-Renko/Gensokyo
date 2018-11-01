@@ -3,6 +3,7 @@ use core::device::HaDevice;
 
 use pipeline::graphics::GraphicsPipelineBuilder;
 use pipeline::pass::RenderPassBuilder;
+use pipeline::stages::PipelineType;
 
 use pipeline::error::PipelineError;
 
@@ -24,8 +25,11 @@ impl PipelineKit {
         RenderPassBuilder::new(&self.device)
     }
 
-    pub fn graphics_pipeline_builder(&self) -> Result<GraphicsPipelineBuilder, PipelineError> {
+    pub fn pipeline_builder(&self, typ: PipelineType) -> Result<GraphicsPipelineBuilder, PipelineError> {
 
-        GraphicsPipelineBuilder::new(&self.device)
+        match typ {
+            | PipelineType::Graphics => GraphicsPipelineBuilder::new(&self.device),
+            | PipelineType::Compute  => unimplemented!()
+        }
     }
 }

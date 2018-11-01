@@ -8,7 +8,7 @@ use core::physical::HaPhyDevice;
 
 use resources::error::MemoryError;
 
-pub struct PhysicalMemory {
+pub(crate) struct PhysicalMemory {
 
     _handle: vk::PhysicalDeviceMemoryProperties,
     types  : Vec<vk::MemoryType>,
@@ -63,7 +63,7 @@ impl PhysicalMemory {
 }
 
 
-pub struct MemorySelector {
+pub(crate) struct MemorySelector {
 
     physical: HaPhyDevice,
     /// The index of memory type that available to use.

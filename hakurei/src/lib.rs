@@ -7,6 +7,11 @@ extern crate image;
 extern crate smallvec;
 extern crate cgmath;
 extern crate shaderc;
+extern crate tobj;
+#[macro_use]
+extern crate toml;
+#[macro_use]
+extern crate serde_derive;
 
 #[macro_use]
 extern crate hakurei_macros;

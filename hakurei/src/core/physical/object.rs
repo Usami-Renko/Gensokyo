@@ -3,6 +3,7 @@ use ash::vk;
 use ash::version::InstanceV1_0;
 
 use config::VERBOSE;
+use config::engine::EngineConfig;
 use core::instance::HaInstance;
 use core::surface::HaSurface;
 use core::error::PhysicalDeviceError;
@@ -11,13 +12,13 @@ use core::physical::features::PhyscialFeatures;
 use core::physical::memory::PhysicalMemory;
 use core::physical::family::PhysicalQueueFamilies;
 use core::physical::extension::PhysicalExtension;
-use core::physical::requirement::PhysicalRequirement;
+use core::physical::formats::PhysicalFormatProperties;
 
 use utility::marker::VulkanEnum;
 
 use std::fmt;
 
-pub struct HaPhysicalDevice {
+pub(crate) struct HaPhysicalDevice {
 
     pub(crate) handle     : vk::PhysicalDevice,
     pub(super) properties : PhysicalProperties,
@@ -25,15 +26,17 @@ pub struct HaPhysicalDevice {
     pub(crate) memory     : PhysicalMemory,
     pub(crate) families   : PhysicalQueueFamilies,
     pub(crate) extensions : PhysicalExtension,
+    pub(crate) formats    : PhysicalFormatProperties,
 }
 
 impl HaPhysicalDevice {
 
-    pub fn new(instance: &HaInstance, surface: &HaSurface, requirement: PhysicalRequirement)
-               -> Result<HaPhysicalDevice, PhysicalDeviceError> {
+    pub fn new(instance: &HaInstance, surface: &HaSurface, config: &EngineConfig) -> Result<HaPhysicalDevice, PhysicalDeviceError> {
 
         let alternative_devices = instance.handle.enumerate_physical_devices()
             .or(Err(PhysicalDeviceError::EnumerateDeviceError))?;
+
+        let requirement = config.core.to_physical_requirement();
 
         let mut optimal_device = None;
 
@@ -67,16 +70,14 @@ impl HaPhysicalDevice {
                 continue
             }
 
-            optimal_device = Some(
-                HaPhysicalDevice {
-                    handle: physical_device,
-                    properties,
-                    features,
-                    memory,
-                    families,
-                    extensions,
-                }
-            );
+            let formats = PhysicalFormatProperties::inspect(instance, physical_device, config)?;
+
+            let selected_physical_device = HaPhysicalDevice {
+                handle: physical_device,
+                properties, features, memory, families, extensions, formats,
+            };
+
+            optimal_device = Some(selected_physical_device);
 
             break
         }
@@ -90,6 +91,8 @@ impl HaPhysicalDevice {
         optimal_device.ok_or(PhysicalDeviceError::NoSuitableDeviceError)
     }
 
+
+
     pub fn cleanup(&self) {
         // No method for delete physical device
         // leave it empty
@@ -98,8 +101,8 @@ impl HaPhysicalDevice {
 
 
 #[derive(Debug, Clone, Copy, Eq, PartialEq)]
-pub enum PhysicalDeviceType {
-    Known,
+pub(crate) enum PhysicalDeviceType {
+    Unknown,
     IntegratedGPU,
     DiscreteGPU,
     VirtualGPU,
@@ -111,7 +114,7 @@ impl VulkanEnum for PhysicalDeviceType {
 
     fn value(&self) -> Self::EnumType {
         match *self {
-            | PhysicalDeviceType::Known         => vk::PhysicalDeviceType::Other,
+            | PhysicalDeviceType::Unknown       => vk::PhysicalDeviceType::Other,
             | PhysicalDeviceType::IntegratedGPU => vk::PhysicalDeviceType::IntegratedGpu,
             | PhysicalDeviceType::DiscreteGPU   => vk::PhysicalDeviceType::DiscreteGpu,
             | PhysicalDeviceType::VirtualGPU    => vk::PhysicalDeviceType::VirtualGpu,
@@ -128,7 +131,7 @@ impl From<vk::PhysicalDeviceType> for PhysicalDeviceType {
             | vk::PhysicalDeviceType::IntegratedGpu => PhysicalDeviceType::VirtualGPU,
             | vk::PhysicalDeviceType::DiscreteGpu   => PhysicalDeviceType::DiscreteGPU,
             | vk::PhysicalDeviceType::VirtualGpu    => PhysicalDeviceType::IntegratedGPU,
-            | vk::PhysicalDeviceType::Other         => PhysicalDeviceType::Known,
+            | vk::PhysicalDeviceType::Other         => PhysicalDeviceType::Unknown,
         }
     }
 }
@@ -142,7 +145,7 @@ impl fmt::Display for PhysicalDeviceType {
             | PhysicalDeviceType::IntegratedGPU => "Integrated GPU",
             | PhysicalDeviceType::DiscreteGPU   => "Discrate GPU",
             | PhysicalDeviceType::VirtualGPU    => "Virtual GPU",
-            | PhysicalDeviceType::Known         => "Unknown",
+            | PhysicalDeviceType::Unknown => "Unknown",
         };
 
         write!(f, "{}", description)

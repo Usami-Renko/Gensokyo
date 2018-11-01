@@ -6,7 +6,7 @@ use ash::version::DeviceV1_0;
 use core::device::HaDevice;
 use core::physical::HaPhyDevice;
 
-use resources::buffer::BufferSubItem;
+use resources::buffer::BufferItem;
 use resources::memory::{ HaMemoryAbstract, MemoryDataUploadable, MemoryMapable };
 use resources::memory::{ HaMemoryType, UploadStagingResource };
 use resources::memory::{ MemoryRange, MemoryMapStatus };
@@ -44,7 +44,8 @@ impl HaMemoryAbstract for HaStagingMemory {
         HaMemoryType::StagingMemory
     }
 
-    fn allocate(device: &HaDevice, size: vk::DeviceSize, mem_type_index: usize, mem_type: Option<vk::MemoryType>) -> Result<HaStagingMemory, MemoryError> {
+    fn allocate(device: &HaDevice, size: vk::DeviceSize, mem_type_index: usize, mem_type: Option<vk::MemoryType>)
+        -> Result<HaStagingMemory, MemoryError> {
 
         let allocate_info = vk::MemoryAllocateInfo {
             s_type: vk::StructureType::MemoryAllocateInfo,
@@ -98,7 +99,7 @@ impl MemoryDataUploadable for HaStagingMemory {
         Ok(None)
     }
 
-    fn map_memory_ptr(&mut self, _: &mut Option<UploadStagingResource>, item: &BufferSubItem, offset: vk::DeviceSize) -> Result<(MemoryWritePtr, MemoryRange), MemoryError> {
+    fn map_memory_ptr(&mut self, _: &mut Option<UploadStagingResource>, item: &BufferItem, offset: vk::DeviceSize) -> Result<(MemoryWritePtr, MemoryRange), MemoryError> {
 
         let ptr = unsafe {
             self.map_status.data_ptr.offset(offset as isize)
@@ -109,7 +110,8 @@ impl MemoryDataUploadable for HaStagingMemory {
         Ok((writer, range))
     }
 
-    fn terminate_transfer(&mut self, device: &HaDevice, _: &Option<UploadStagingResource>, ranges_to_flush: &Vec<MemoryRange>) -> Result<(), MemoryError> {
+    fn terminate_transfer(&mut self, device: &HaDevice, _: &Option<UploadStagingResource>, ranges_to_flush: &Vec<MemoryRange>)
+        -> Result<(), MemoryError> {
 
         if !self.is_coherent_memroy() {
             // FIXME: the VkPhysicalDeviceLimits::nonCoherentAtomSize is not satified for flushing range.
@@ -117,6 +119,44 @@ impl MemoryDataUploadable for HaStagingMemory {
         }
 
         self.enable_map(device, false)?;
+
+        Ok(())
+    }
+}
+
+pub(crate) struct StagingUploader {}
+
+impl StagingUploader {
+
+    pub fn prepare_data_transfer(physical: &HaPhyDevice, device: &HaDevice, allocate_infos: &Option<BufferAllocateInfos>)
+        -> Result<Option<UploadStagingResource>, MemoryError> {
+
+        let staging = UploadStagingResource::new(physical, device, allocate_infos)?;
+
+        Ok(Some(staging))
+    }
+
+    pub fn map_memory_ptr(staging: &mut Option<UploadStagingResource>, item: &BufferItem, _offset: vk::DeviceSize)
+        -> Result<(MemoryWritePtr, MemoryRange), MemoryError> {
+
+        if let Some(ref mut staging) = staging {
+
+            let result = staging.append_dst_item(item)?;
+            Ok(result)
+        } else {
+            Err(MemoryError::AllocateInfoMissing)
+        }
+    }
+
+    pub fn terminate_transfer(device: &HaDevice, staging: &Option<UploadStagingResource>, _ranges_to_flush: &Vec<MemoryRange>)
+        -> Result<(), MemoryError> {
+
+        if let Some(staging) = staging {
+            staging.transfer(device)
+                .or(Err(MemoryError::BufferToBufferCopyError))?
+        } else {
+            return Err(MemoryError::AllocateInfoMissing)
+        }
 
         Ok(())
     }

@@ -1,13 +1,81 @@
 
 use ash::vk;
 
+use core::physical::HaPhysicalDevice;
+use pipeline::stages::PipelineStageFlag;
 use utility::marker::VulkanEnum;
+
+/// ImagePipelineStage indicate in which pipeline stage this image is used.
+#[derive(Debug, Clone, Eq, PartialEq, Hash)]
+pub enum ImagePipelineStage {
+    VertexStage,
+    FragmentStage,
+}
+
+impl ImagePipelineStage {
+
+    pub(crate) fn to_stage_flag(&self) -> PipelineStageFlag {
+        match self {
+            | ImagePipelineStage::VertexStage   => PipelineStageFlag::VertexShaderBit,
+            | ImagePipelineStage::FragmentStage => PipelineStageFlag::FragmentShaderBit,
+        }
+    }
+}
+
+#[derive(Debug, Clone, Eq, PartialEq, Hash)]
+pub(crate) enum ImageBranchType {
+    SampleImage(ImagePipelineStage),
+    DepthStencilImage(DepthImageUsage),
+}
+
+#[derive(Debug, Clone, Eq, PartialEq, Hash)]
+pub(crate) enum DepthImageUsage {
+    Attachment,
+    ShaderRead(DepthStencilImageFormat, ImagePipelineStage),
+}
+
+impl DepthImageUsage {
+
+    pub(crate) fn dst_stage_flag(&self) -> PipelineStageFlag {
+        match self {
+            | DepthImageUsage::Attachment => PipelineStageFlag::EarlyFragmentTestsBit,
+            | DepthImageUsage::ShaderRead(_format, pipeline_stage) => pipeline_stage.to_stage_flag(),
+        }
+    }
+
+    pub(crate) fn dst_format(&self, physical: &HaPhysicalDevice) -> vk::Format {
+        match self {
+            | DepthImageUsage::Attachment => physical.formats.depth_stencil_format,
+            | DepthImageUsage::ShaderRead(format, _pipeline_stage) => format.to_vk_format(),
+        }
+    }
+}
+
+#[derive(Debug, Clone, Copy, Eq, PartialEq, Hash)]
+pub enum DepthStencilImageFormat {
+    Depth32Bit,
+    Depth32BitStencil8Bit,
+    Depth24BitStencil8Bit,
+}
+
+impl DepthStencilImageFormat {
+
+    pub(crate) fn to_vk_format(&self) -> vk::Format {
+        match self {
+            | DepthStencilImageFormat::Depth32Bit => vk::Format::D32Sfloat,
+            | DepthStencilImageFormat::Depth24BitStencil8Bit => vk::Format::D24UnormS8Uint,
+            | DepthStencilImageFormat::Depth32BitStencil8Bit => vk::Format::D32SfloatS8Uint,
+        }
+    }
+}
 
 // TODO: Map to raw value
 #[derive(Debug, Clone, Copy, Eq, PartialEq)]
-pub enum ImageType {
+pub(crate) enum ImageType {
+    #[allow(dead_code)]
     Type1d,
     Type2d,
+    #[allow(dead_code)]
     Type3d,
 }
 
@@ -25,13 +93,19 @@ impl VulkanEnum for ImageType {
 
 // TODO: Map to raw value
 #[derive(Debug, Clone, Copy, Eq, PartialEq)]
-pub enum ImageViewType {
+pub(crate) enum ImageViewType {
+    #[allow(dead_code)]
     Type1d,
     Type2d,
+    #[allow(dead_code)]
     Type3d,
+    #[allow(dead_code)]
     Cube,
+    #[allow(dead_code)]
     Type1dArray,
+    #[allow(dead_code)]
     Type2dArray,
+    #[allow(dead_code)]
     CubeArray,
 }
 

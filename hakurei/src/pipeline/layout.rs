@@ -9,12 +9,10 @@ use pipeline::error::PipelineError;
 
 use std::ptr;
 
-// TODO: This module need futher development yet.
-
 pub struct PipelineLayoutBuilder {
 
-    descriptor_layouts : Vec<vk::DescriptorSetLayout>,
-    push_constants     : Vec<vk::PushConstantRange>,
+    descriptor_layouts: Vec<vk::DescriptorSetLayout>,
+    push_constants    : Vec<vk::PushConstantRange>,
 }
 
 impl PipelineLayoutBuilder {
@@ -30,14 +28,14 @@ impl PipelineLayoutBuilder {
 
     fn info(&self) -> vk::PipelineLayoutCreateInfo {
         vk::PipelineLayoutCreateInfo {
-            s_type : vk::StructureType::PipelineLayoutCreateInfo,
-            p_next : ptr::null(),
+            s_type: vk::StructureType::PipelineLayoutCreateInfo,
+            p_next: ptr::null(),
             // flags is reserved for future use in API version 1.1.82.
-            flags  : vk::PipelineLayoutCreateFlags::empty(),
-            set_layout_count : self.descriptor_layouts.len() as uint32_t,
-            p_set_layouts    : self.descriptor_layouts.as_ptr(),
-            push_constant_range_count : self.push_constants.len() as uint32_t,
-            p_push_constant_ranges    : self.push_constants.as_ptr(),
+            flags : vk::PipelineLayoutCreateFlags::empty(),
+            set_layout_count: self.descriptor_layouts.len() as uint32_t,
+            p_set_layouts   : self.descriptor_layouts.as_ptr(),
+            push_constant_range_count: self.push_constants.len() as uint32_t,
+            p_push_constant_ranges   : self.push_constants.as_ptr(),
         }
     }
 
@@ -54,7 +52,7 @@ impl Default for PipelineLayoutBuilder {
     fn default() -> PipelineLayoutBuilder {
         PipelineLayoutBuilder {
             descriptor_layouts: vec![],
-            push_constants:     vec![],
+            push_constants    : vec![],
         }
     }
 }

@@ -4,32 +4,34 @@ use ash::vk;
 use std::os::raw::c_float;
 use std::ptr;
 
+use pipeline::state::DynamicableValue;
+
 use utility::marker::VulkanEnum;
 use utility::marker::Prefab;
 
-pub struct HaRasterizer {
+pub struct HaRasterizerState {
 
     /// The method of rasterization for polygons.
     ///
     /// Possible values: Fill, Line, Point.
-    polygon_mode : vk::PolygonMode,
+    polygon_mode: vk::PolygonMode,
     /// The triangle facing direction used for primitive culling.
     ///
     /// Possible values: None, Front, Back, FrontAndBack.
-    cull_mode    : vk::CullModeFlags,
+    cull_mode   : vk::CullModeFlags,
     /// The front-facing triangle orientation to be used for culling.
     ///
     /// Possible values: Clockwise, Counter-Clockwise.
-    front_face   : vk::FrontFace,
+    front_face  : vk::FrontFace,
     /// The width of rasterized line segments
-    line_width   : c_float,
+    line_width  : DynamicableValue<c_float>,
 
-    depth_bias   : DepthBias,
+    depth_bias  : DynamicableValue<DepthBiasInfo>,
 
     /// Controls whether to clamp the fragment’s depth values instead of clipping primitives to the z planes of the frustum.
-    depth_clamp_enable        : vk::Bool32,
+    depth_clamp_enable       : vk::Bool32,
     /// Controls whether primitives are discarded immediately before the rasterization stage.
-    rasterizer_discard_enable : vk::Bool32,
+    rasterizer_discard_enable: vk::Bool32,
 }
 
 #[derive(Debug, Clone, Copy, Eq, PartialEq)]
@@ -41,40 +43,46 @@ pub enum RasterizerPrefab {
 }
 
 impl Prefab for RasterizerPrefab {
-    type PrefabType = HaRasterizer;
+    type PrefabType = HaRasterizerState;
 
     fn generate(&self) -> Self::PrefabType {
-        match *self {
-            | RasterizerPrefab::Common => HaRasterizer { ..Default::default() },
+        match self {
+            | RasterizerPrefab::Common => HaRasterizerState { ..Default::default() },
         }
     }
 }
 
-impl HaRasterizer {
+impl HaRasterizerState {
 
-    pub fn setup(prefab: RasterizerPrefab) -> HaRasterizer {
+    pub fn setup(prefab: RasterizerPrefab) -> HaRasterizerState {
         prefab.generate()
     }
 
     pub(crate) fn info(&self) -> vk::PipelineRasterizationStateCreateInfo {
+
+        let depth_bias = self.depth_bias.to_depth_bias();
+
         vk::PipelineRasterizationStateCreateInfo {
             s_type: vk::StructureType::PipelineRasterizationStateCreateInfo,
             p_next: ptr::null(),
             // flags is reserved for future use in API version 1.1.82.
-            flags: vk::PipelineRasterizationStateCreateFlags::empty(),
+            flags : vk::PipelineRasterizationStateCreateFlags::empty(),
 
-            polygon_mode : self.polygon_mode,
-            cull_mode    : self.cull_mode,
-            front_face   : self.front_face,
-            line_width   : self.line_width,
+            polygon_mode: self.polygon_mode,
+            cull_mode   : self.cull_mode,
+            front_face  : self.front_face,
+            line_width  : match self.line_width {
+                | DynamicableValue::Fixed { value } => value,
+                | DynamicableValue::Dynamic => 1.0,
+            },
 
-            depth_bias_enable          : self.depth_bias.enable,
-            depth_bias_constant_factor : self.depth_bias.constant_factor,
-            depth_bias_clamp           : self.depth_bias.clamp,
-            depth_bias_slope_factor    : self.depth_bias.slope_factor,
+            depth_bias_enable         : depth_bias.enable,
+            depth_bias_constant_factor: depth_bias.constant_factor,
+            depth_bias_clamp          : depth_bias.clamp,
+            depth_bias_slope_factor   : depth_bias.slope_factor,
 
-            depth_clamp_enable        : self.depth_clamp_enable,
-            rasterizer_discard_enable : self.rasterizer_discard_enable,
+            depth_clamp_enable       : self.depth_clamp_enable,
+            rasterizer_discard_enable: self.rasterizer_discard_enable,
         }
     }
 
@@ -88,11 +96,11 @@ impl HaRasterizer {
     pub fn set_front_face(&mut self, face: vk::FrontFace) {
         self.front_face = face;
     }
-    pub fn set_line_width(&mut self, width: c_float) {
-        self.line_width = width
-    }
-    pub fn set_depth_bias(&mut self, bias: DepthBias) {
+    pub fn set_depth_bias(&mut self, bias: DynamicableValue<DepthBiasInfo>) {
         self.depth_bias = bias;
+    }
+    pub fn set_line_width(&mut self, width: DynamicableValue<c_float>) {
+        self.line_width = width;
     }
     pub fn set_depth_clamp_enable(&mut self, enable: bool) {
         self.depth_clamp_enable = if enable { 1 } else { 0 };
@@ -100,47 +108,71 @@ impl HaRasterizer {
     pub fn set_rasterizer_discard_enable(&mut self, enable: bool) {
         self.rasterizer_discard_enable = if enable { 1 } else { 0 };
     }
+
+    pub(crate) fn is_dynamic_lindwidth(&self) -> bool {
+        self.line_width.is_dynamic()
+    }
+    pub(crate) fn is_dynamic_depthbias(&self) -> bool {
+        self.depth_bias.is_dynamic()
+    }
 }
 
-impl Default for HaRasterizer {
+impl Default for HaRasterizerState {
 
-    fn default() -> HaRasterizer {
-        HaRasterizer {
-            cull_mode    : vk::CULL_MODE_BACK_BIT,
-            front_face   : vk::FrontFace::Clockwise,
-            polygon_mode : vk::PolygonMode::Fill,
-            line_width   : 1.0,
+    fn default() -> HaRasterizerState {
+        HaRasterizerState {
+            cull_mode   : vk::CULL_MODE_BACK_BIT,
+            front_face  : vk::FrontFace::Clockwise,
+            polygon_mode: vk::PolygonMode::Fill,
+            line_width  : DynamicableValue::Fixed { value: 1.0 },
 
-            depth_bias: DepthBias::disable(),
+            depth_bias: DynamicableValue::Fixed { value: DepthBiasInfo::disable() },
 
-            depth_clamp_enable        : vk::VK_FALSE,
-            rasterizer_discard_enable : vk::VK_FALSE,
+            depth_clamp_enable       : vk::VK_FALSE,
+            rasterizer_discard_enable: vk::VK_FALSE,
         }
     }
 }
 
-
-pub struct DepthBias {
+#[derive(Debug, Clone)]
+pub struct DepthBiasInfo {
     // TODO: Add explaination for each field
-    enable          : vk::Bool32,
-    clamp           : c_float,
-    constant_factor : c_float,
-    slope_factor    : c_float,
+    pub(crate) enable          : vk::Bool32,
+    pub(crate) constant_factor : c_float,
+    pub(crate) clamp           : c_float,
+    pub(crate) slope_factor    : c_float,
 }
 
-impl DepthBias {
+impl DynamicableValue<DepthBiasInfo> {
 
-    pub fn disable() -> DepthBias {
-        DepthBias {
-            enable          : vk::VK_FALSE,
-            clamp           : 0.0,
-            constant_factor : 0.0,
-            slope_factor    : 0.0,
+    fn to_depth_bias(&self) -> DepthBiasInfo {
+        match self {
+            | DynamicableValue::Fixed { value } => value.clone(),
+            | DynamicableValue::Dynamic => DepthBiasInfo::disable(),
+        }
+    }
+}
+
+impl DepthBiasInfo {
+
+    pub fn disable() -> DepthBiasInfo {
+        DepthBiasInfo {
+            enable         : vk::VK_FALSE,
+            constant_factor: 0.0,
+            clamp          : 0.0,
+            slope_factor   : 0.0,
         }
     }
 
-    pub fn setup(clamp: c_float, constant_factor: c_float, slope_factor: c_float) -> DepthBias {
-        DepthBias { enable: vk::VK_TRUE, clamp, constant_factor, slope_factor, }
+    /// Initialize DepthBias value.
+    ///
+    /// `constant_factor` is a scalar factor controlling the constant depth value added to each fragment.
+    ///
+    /// `clamp` is the maximum (or minimum) depth bias of a fragment.
+    ///
+    /// `slope_factor` is a scalar factor applied to a fragment’s slope in depth bias calculations.
+    pub fn setup(constant_factor: c_float, clamp: c_float, slope_factor: c_float) -> DepthBiasInfo {
+        DepthBiasInfo { enable: vk::VK_TRUE, clamp, constant_factor, slope_factor, }
     }
 }
 

@@ -14,3 +14,8 @@ pub use utility::shaderc::{
     HaShadercOptions, HaShaderOptimalLevel, HaShaderDebugPattern, // options
     VulkanShadercOptions, HaGLSLProfile, GLSLVersion, // vulkan
 };
+
+pub use utility::model::{
+    ModelObjLoader, ObjDataEntity, // obj
+    ModelLoadingErr, // error
+};

@@ -4,20 +4,17 @@ extern crate hakurei_macros;
 extern crate hakurei;
 
 use hakurei::prelude::*;
-use hakurei::prelude::config::*;
 use hakurei::prelude::queue::*;
 use hakurei::prelude::pipeline::*;
 use hakurei::prelude::resources::*;
 use hakurei::prelude::sync::*;
 use hakurei::prelude::input::*;
 
-use std::path::Path;
+use std::path::{ Path, PathBuf };
 
-const WINDOW_TITLE: &'static str = "02.Index";
-const WINDOW_WIDTH:  u32 = 800;
-const WINDOW_HEIGHT: u32 = 600;
-const VERTEX_SHADER_SOURCE_PATH  : &'static str = "src/02.index/index.vert";
-const FRAGMENT_SHADER_SOURCE_PATH: &'static str = "src/02.index/index.frag";
+const MANIFEST_PATH: &str = "src/02.index/hakurei.toml";
+const VERTEX_SHADER_SOURCE_PATH  : &str = "src/02.index/index.vert";
+const FRAGMENT_SHADER_SOURCE_PATH: &str = "src/02.index/index.frag";
 
 define_input! {
     #[binding = 0, rate = vertex]
@@ -45,8 +42,8 @@ struct DrawIndexProcedure {
     index_data    : Vec<uint32_t>,
 
     buffer_storage: HaBufferRepository,
-    vertex_item   : BufferSubItem,
-    index_item    : BufferSubItem,
+    vertex_buffer : HaVertexBlock,
+    index_buffer  : HaIndexBlock,
 
     graphics_pipeline: HaGraphicsPipeline,
 
@@ -64,8 +61,8 @@ impl DrawIndexProcedure {
             index_data    : INDEX_DATA.to_vec(),
 
             buffer_storage: HaBufferRepository::empty(),
-            vertex_item   : BufferSubItem::unset(),
-            index_item    : BufferSubItem::unset(),
+            vertex_buffer : HaVertexBlock::uninitialize(),
+            index_buffer  : HaIndexBlock::uninitialize(),
 
             graphics_pipeline: HaGraphicsPipeline::uninitialize(),
 
@@ -79,24 +76,22 @@ impl DrawIndexProcedure {
 
 impl ProgramProc for DrawIndexProcedure {
 
-    fn assets(&mut self, _device: &HaDevice, kit: AllocatorKit) -> Result<(), ProcedureError> {
+    fn assets(&mut self, kit: AllocatorKit) -> Result<(), ProcedureError> {
 
         // vertex & index buffer
         let mut buffer_allocator = kit.buffer(BufferStorageType::Cached);
 
-        let mut vertex_buffer_config = CachedBufferConfig::new(CachedBufferUsage::VertexBuffer);
-        vertex_buffer_config.add_item(data_size!(self.vertex_data, Vertex));
+        let vertex_info = VertexBlockInfo::new(data_size!(self.vertex_data, Vertex));
+        self.vertex_buffer = buffer_allocator.append_vertex(vertex_info)?;
 
-        let mut index_buffer_config  = CachedBufferConfig::new(CachedBufferUsage::IndexBuffer);
-        index_buffer_config.add_item(data_size!(self.index_data, uint32_t));
+        let index_info = IndexBlockInfo::new(data_size!(self.index_data, uint32_t));
+        self.index_buffer = buffer_allocator.append_index(index_info)?;
 
-        self.vertex_item = buffer_allocator.attach_cached_buffer(vertex_buffer_config)?.pop().unwrap();
-        self.index_item  = buffer_allocator.attach_cached_buffer(index_buffer_config)?.pop().unwrap();
         self.buffer_storage = buffer_allocator.allocate()?;
 
         self.buffer_storage.data_uploader()?
-            .upload(&self.vertex_item, &self.vertex_data)?
-            .upload(&self.index_item, &self.index_data)?
+            .upload(&self.vertex_buffer, &self.vertex_data)?
+            .upload(&self.index_buffer, &self.index_data)?
             .done()?;
 
         Ok(())
@@ -122,7 +117,7 @@ impl ProgramProc for DrawIndexProcedure {
 
         // pipeline
         let mut render_pass_builder = kit.pass_builder();
-        let first_subpass = render_pass_builder.new_subpass(SubpassType::Graphics);
+        let first_subpass = render_pass_builder.new_subpass(PipelineType::Graphics);
 
         let color_attachment = RenderAttachement::setup(RenderAttachementPrefab::BackColorAttachment, swapchain.format);
         let _attachment_index = render_pass_builder.add_attachemnt(color_attachment, first_subpass, AttachmentType::Color);
@@ -136,16 +131,16 @@ impl ProgramProc for DrawIndexProcedure {
         render_pass_builder.add_dependenty(dependency);
 
         let render_pass = render_pass_builder.build(swapchain)?;
-        let viewport = HaViewport::setup(swapchain.extent);
+        let viewport = HaViewportState::single(ViewportStateInfo::new(swapchain.extent));
         let pipeline_config = GraphicsPipelineConfig::new(shader_infos, vertex_input_desc, render_pass)
-            .setup_viewport(viewport)
-            .finish_config();
+            .setup_viewport(ViewportStateType::Fixed { state: viewport })
+            .finish();
 
-            let mut pipeline_builder = kit.graphics_pipeline_builder()?;
-        pipeline_builder.add_config(pipeline_config);
+        let mut pipeline_builder = kit.pipeline_builder(PipelineType::Graphics)?;
+        let pipeline_index = pipeline_builder.add_config(pipeline_config);
 
-        let mut graphics_pipelines = pipeline_builder.build()?;
-        self.graphics_pipeline = graphics_pipelines.pop().unwrap();
+        let mut pipelines = pipeline_builder.build()?;
+        self.graphics_pipeline = pipelines.take_at(pipeline_index)?;
 
         Ok(())
     }
@@ -162,27 +157,27 @@ impl ProgramProc for DrawIndexProcedure {
     }
 
     fn commands(&mut self, kit: CommandKit) -> Result<(), ProcedureError> {
-        // command buffer
-        let command_pool = kit.pool(DeviceQueueIdentifier::Graphics)?;
+
+        self.command_pool = kit.pool(DeviceQueueIdentifier::Graphics)?;
 
         let command_buffer_count = self.graphics_pipeline.frame_count();
-        let command_buffers = command_pool
+        let raw_commands = self.command_pool
             .allocate(CommandBufferUsage::UnitaryCommand, command_buffer_count)?;
 
-        for (frame_index, command_buffer) in command_buffers.iter().enumerate() {
-            let recorder = command_buffer.setup_record();
+        for (frame_index, command) in raw_commands.into_iter().enumerate() {
+            let mut recorder = kit.recorder(command);
 
             recorder.begin_record(&[CommandBufferUsageFlag::SimultaneousUseBit])?
                 .begin_render_pass(&self.graphics_pipeline, frame_index)
                 .bind_pipeline(&self.graphics_pipeline)
-                .bind_vertex_buffers(0, &self.buffer_storage.vertex_binding_infos(&[&self.vertex_item]))
-                .bind_index_buffers(&self.buffer_storage.index_binding_info(&self.index_item))
+                .bind_vertex_buffers(0, &[CmdVertexBindingInfo { block: &self.vertex_buffer, sub_block_index: None }])
+                .bind_index_buffer(CmdIndexBindingInfo { block: &self.index_buffer, sub_block_index: None })
                 .draw_indexed(self.index_data.len() as uint32_t, 1, 0, 0, 0)
-                .end_render_pass()
-                .end_record()?;
+                .end_render_pass();
+
+            let command_recorded = recorder.end_record()?;
+            self.command_buffers.push(command_recorded);
         }
-        self.command_pool    = command_pool;
-        self.command_buffers = command_buffers;
 
         Ok(())
     }
@@ -204,7 +199,7 @@ impl ProgramProc for DrawIndexProcedure {
         return Ok(&self.present_availables[image_index])
     }
 
-    fn clean_resources(&mut self) -> Result<(), ProcedureError> {
+    fn clean_resources(&mut self, _: &HaDevice) -> Result<(), ProcedureError> {
 
         self.present_availables.iter()
             .for_each(|semaphore| semaphore.cleanup());
@@ -217,7 +212,7 @@ impl ProgramProc for DrawIndexProcedure {
         Ok(())
     }
 
-    fn cleanup(&mut self) {
+    fn cleanup(&mut self, _: &HaDevice) {
 
         for semaphore in self.present_availables.iter() {
             semaphore.cleanup();
@@ -241,14 +236,9 @@ impl ProgramProc for DrawIndexProcedure {
 fn main() {
 
     let procecure = DrawIndexProcedure::new();
-    let mut config = EngineConfig::default();
-    config.window.dimension = Dimension2D {
-        width : WINDOW_WIDTH,
-        height: WINDOW_HEIGHT,
-    };
-    config.window.title = String::from(WINDOW_TITLE);
 
-    let mut program = ProgramEnv::new(config, procecure);
+    let manifest = PathBuf::from(MANIFEST_PATH);
+    let mut program = ProgramEnv::new(Some(manifest), procecure).unwrap();
 
     match program.launch() {
         | Ok(_) => (),

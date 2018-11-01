@@ -7,7 +7,7 @@ use core::instance::HaInstance;
 use core::physical::PhysicalDeviceType;
 use utility::cast;
 
-pub struct PhysicalProperties {
+pub(crate) struct PhysicalProperties {
 
     handle: vk::PhysicalDeviceProperties,
     device_name: String,
