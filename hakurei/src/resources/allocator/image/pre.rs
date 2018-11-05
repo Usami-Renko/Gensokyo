@@ -80,7 +80,7 @@ impl HaImagePreAllocator {
             return Err(AllocatorError::Image(ImageError::NoImageAttachError))
         }
 
-        // 1.create image buffer.
+        // 1.select memory type for image.
         let optimal_memory_index = self.memory_selector.optimal_memory()?;
         let mem_type = self.physical.memory.memory_type(optimal_memory_index);
         let total_space = self.image_infos.iter()

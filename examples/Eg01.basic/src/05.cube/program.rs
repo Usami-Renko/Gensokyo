@@ -47,7 +47,7 @@ impl CubeProcedure {
     pub fn new(dimension: Dimension2D) -> CubeProcedure {
         let camera = CameraConfigurator::config()
             .place_at(Point3::new(0.0, 0.0, 3.0))
-            .screen_dimension(dimension.width, dimension.height)
+            .screen_aspect_ratio(dimension.width as f32 / dimension.height as f32)
             .for_stage_camera();
 
         CubeProcedure {
@@ -194,7 +194,6 @@ impl ProgramProc for CubeProcedure {
     }
 
     fn subresources(&mut self, device: &HaDevice) -> Result<(), ProcedureError> {
-
         // sync
         for _ in 0..self.graphics_pipeline.frame_count() {
             let present_available = HaSemaphore::setup(device)?;

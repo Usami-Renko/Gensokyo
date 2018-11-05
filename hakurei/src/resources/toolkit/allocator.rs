@@ -9,7 +9,7 @@ use resources::allocator::HaDescriptorAllocator;
 use resources::allocator::{ HaImagePreAllocator, ImageStorageType };
 use resources::descriptor::DescriptorPoolFlag;
 
-use utility::model::ModelObjLoader;
+use utility::model::{ ModelObjLoader, ModelGltfLoader };
 use utility::dimension::Dimension2D;
 
 pub struct AllocatorKit {
@@ -51,5 +51,9 @@ impl AllocatorKit {
 
     pub fn obj_loader(&self) -> ModelObjLoader {
         ModelObjLoader::new()
+    }
+
+    pub fn gltf_loader(&self) -> ModelGltfLoader {
+        ModelGltfLoader::new()
     }
 }

@@ -82,9 +82,8 @@ impl HaDescriptorRepository {
             self.pool.cleanup(&device);
             self.pool = HaDescriptorPool::uninitialize();
 
-            for set in self.sets.iter() {
-                set.cleanup(&device);
-            }
+            self.sets.iter()
+                .for_each(|set| set.cleanup(&device));
         }
 
         self.sets.clear();

@@ -14,9 +14,9 @@ impl ModelObjLoader {
         ModelObjLoader {}
     }
 
-    pub fn load_model(&self, from: &Path, data_entity: &mut impl ObjDataEntity) -> Result<(), ModelLoadingErr> {
+    pub fn load_model(&self, from: impl AsRef<Path>, data_entity: &mut impl ObjDataEntity) -> Result<(), ModelLoadingErr> {
 
-        let (models, _materials) = tobj::load_obj(from)
+        let (models, _materials) = tobj::load_obj(from.as_ref())
             .map_err(|e| ModelLoadingErr::Obj(ModelObjLoadingError::Loading(e)))?;
 
         // TODO: Currently only support loading first model in obj file.

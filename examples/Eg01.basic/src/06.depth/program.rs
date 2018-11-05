@@ -50,7 +50,7 @@ impl DepthProcedure {
     pub fn new(dimension: Dimension2D) -> DepthProcedure {
         let camera = CameraConfigurator::config()
             .place_at(Point3::new(0.0, 0.0, 3.0))
-            .screen_dimension(dimension.width, dimension.height)
+            .screen_aspect_ratio(dimension.width as f32 / dimension.height as f32)
             .for_flight_camera();
 
         DepthProcedure {

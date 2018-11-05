@@ -30,14 +30,15 @@ impl<'a> BufferDataUploader<'a> {
         let uploader = BufferDataUploader {
             device: device.clone(),
             dst_memory: memory,
-            offsets, ranges: vec![], staging,
+            ranges: vec![],
+            offsets, staging,
         };
         Ok(uploader)
     }
 
-    pub fn upload<D: Copy>(&mut self, block: &impl BufferBlockEntity, data: &Vec<D>) -> Result<&mut BufferDataUploader<'a>, AllocatorError> {
+    pub fn upload<D: Copy>(&mut self, to_block: &impl BufferBlockEntity, data: &Vec<D>) -> Result<&mut BufferDataUploader<'a>, AllocatorError> {
 
-        let item = block.get_buffer_item();
+        let item = to_block.get_buffer_item();
         // offset is a zero-based byte offset of the buffer from the beginning of the memory object.
         let offset = self.offsets[item.buffer_index];
 

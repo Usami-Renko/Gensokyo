@@ -8,6 +8,7 @@ extern crate smallvec;
 extern crate cgmath;
 extern crate shaderc;
 extern crate tobj;
+extern crate gltf;
 #[macro_use]
 extern crate toml;
 #[macro_use]

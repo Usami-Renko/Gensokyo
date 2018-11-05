@@ -9,10 +9,7 @@ layout (binding = 0, set = 0) uniform UboOjbect {
     mat4 model;
 } ubo;
 
-layout (location = 0) in vec4 inPosition;
-layout (location = 1) in vec2 inTexCoord;
-
-layout (location = 0) out vec2 fragTexCoord;
+layout (location = 0) in vec3 inPosition;
 
 out gl_PerVertex {
     vec4 gl_Position;
@@ -20,7 +17,6 @@ out gl_PerVertex {
 
 void main() {
 
-    vec4 model = ubo.model * inPosition;
+    vec4 model = ubo.model * vec4(inPosition, 1.0);
     gl_Position = ubo.projection * ubo.view * model;
-    fragTexCoord = inTexCoord;
 }

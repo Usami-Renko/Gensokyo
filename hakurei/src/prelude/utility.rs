@@ -18,4 +18,5 @@ pub use utility::shaderc::{
 pub use utility::model::{
     ModelObjLoader, ObjDataEntity, // obj
     ModelLoadingErr, // error
+    ModelGltfLoader, GltfEntity, // gltf
 };

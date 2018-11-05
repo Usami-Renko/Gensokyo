@@ -28,8 +28,8 @@ impl CameraConfigurator {
     pub fn world_up(mut self, up: Vector3<f32>) -> Self { self.world_up = up; self }
     pub fn yaw(mut self, yaw: f32) -> Self { self.yaw = yaw; self }
     pub fn pitch(mut self, pitch: f32) -> Self { self.pitch = pitch; self }
-    pub fn view_distance(mut self, near: f32, far: f32) -> Self { self.near = near; self.far  = far; self }
-    pub fn screen_dimension(mut self, width: u32, height: u32) -> Self { self.screen_aspect = (width as f32) / (height as f32); self }
+    pub fn view_distance(mut self, near: f32, far: f32) -> Self { self.near = near; self.far = far; self }
+    pub fn screen_aspect_ratio(mut self, ratio: f32) -> Self { self.screen_aspect = ratio; self }
 
     pub fn for_chase_camera(self) -> HaChaseCamera {
         unimplemented!()

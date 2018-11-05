@@ -121,7 +121,6 @@ pub enum AllocatorError {
     Sync(SyncError),
     Descriptor(DescriptorError),
     MemoryNotYetAllocated,
-    DeviceMemoryNotSupportDirectUpdate,
     DataTransferNotActivate,
     UnsupportBufferUsage,
 }
@@ -147,9 +146,6 @@ impl fmt::Display for AllocatorError {
             | AllocatorError::Descriptor(ref e) => e.to_string(),
             | AllocatorError::MemoryNotYetAllocated   => {
                 String::from("The memory is not allocated yet. Memory must be allocated first before using it.")
-            },
-            | AllocatorError::DeviceMemoryNotSupportDirectUpdate => {
-                String::from("It's not support to send data to device memory directly. Please use buffer copy operation.")
             },
             | AllocatorError::DataTransferNotActivate => {
                 String::from("The repository must be activated before making data transfer operations.")

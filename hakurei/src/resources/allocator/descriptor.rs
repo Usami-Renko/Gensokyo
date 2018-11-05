@@ -60,7 +60,7 @@ impl HaDescriptorAllocator {
         // descriptor pool
         let pool_sizes = self.pool_sizes();
         let mut pool_info = DescriptorPoolInfo::new(self.pool_flag);
-        pool_sizes.iter().for_each(|&pool_size| {
+        pool_sizes.iter().for_each(|pool_size| {
             pool_info.add_pool_size(pool_size.0, pool_size.1);
         });
         let pool = pool_info.build(&self.device)?;
