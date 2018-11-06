@@ -121,7 +121,7 @@ impl UploadStagingResource {
             let mem_type = physical.memory.memory_type(memory_index);
 
             let mut src_memory = HaStagingMemory::allocate(
-                device, allo_infos.spaces.iter().sum(), memory_index, Some(mem_type)
+                device, allo_infos.spaces.iter().sum(), memory_index, mem_type
             )?;
 
             // bind buffers to memory

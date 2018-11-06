@@ -4,17 +4,17 @@ use ash::vk::uint32_t;
 
 use core::device::HaDevice;
 
-use resources::descriptor::{ DescriptorSetConfig, DescriptorItem, DescriptorSetItem };
-use resources::descriptor::{ DescriptorSetLayoutInfo };
+use resources::allocator::HaDescriptorDistributor;
+use resources::descriptor::DescriptorSetConfig;
+use resources::descriptor::{ DescriptorSetIndex, DescriptorSetLayoutInfo };
 use resources::descriptor::{ DescriptorPoolInfo, DescriptorPoolFlag };
-use resources::repository::HaDescriptorRepository;
 use resources::error::AllocatorError;
 
 use utility::marker::VulkanFlags;
 
 use std::collections::HashMap;
 
-pub struct HaDescriptorAllocator {
+pub struct HaDescriptorPreAllocator {
 
     device: HaDevice,
     pool_flag: vk::DescriptorPoolCreateFlags,
@@ -22,40 +22,27 @@ pub struct HaDescriptorAllocator {
     set_configs: Vec<DescriptorSetConfig>,
 }
 
-impl HaDescriptorAllocator {
+impl HaDescriptorPreAllocator {
 
-    pub(crate) fn new(device: &HaDevice, flags: &[DescriptorPoolFlag]) -> HaDescriptorAllocator {
+    pub(crate) fn new(device: &HaDevice, flags: &[DescriptorPoolFlag]) -> HaDescriptorPreAllocator {
 
-        HaDescriptorAllocator {
-            device: device.clone(),
+        HaDescriptorPreAllocator {
+            device   : device.clone(),
             pool_flag: flags.flags(),
 
             set_configs: vec![],
         }
     }
 
-    pub fn attach_descriptor_set(&mut self, config: DescriptorSetConfig) -> (DescriptorSetItem, Vec<DescriptorItem>) {
+    pub fn append_set(&mut self, config: DescriptorSetConfig) -> DescriptorSetIndex {
 
-        let set_index = self.set_configs.len();
-
-        let mut items = vec![];
-        for i in 0..config.bindings.len() {
-            items.push(DescriptorItem {
-                set_index,
-                binding_index: i,
-            });
-        }
-
-        let set = DescriptorSetItem {
-            set_index,
-        };
-
+        let index = DescriptorSetIndex(self.set_configs.len());
         self.set_configs.push(config);
 
-        (set, items)
+        index
     }
 
-    pub fn allocate(&mut self) -> Result<HaDescriptorRepository, AllocatorError> {
+    pub fn allocate(self) -> Result<HaDescriptorDistributor, AllocatorError> {
 
         // descriptor pool
         let pool_sizes = self.pool_sizes();
@@ -78,9 +65,8 @@ impl HaDescriptorAllocator {
 
         // descriptor sets
         let sets = pool.allocate(&self.device, layouts)?;
-        let configs = self.set_configs.drain(..).collect();
 
-        let repository = HaDescriptorRepository::store(&self.device, pool, sets, configs);
+        let repository = HaDescriptorDistributor::new(self.device, pool, sets, self.set_configs);
         Ok(repository)
     }
 
@@ -90,7 +76,8 @@ impl HaDescriptorAllocator {
         for config in self.set_configs.iter() {
             for info in config.bindings.iter() {
 
-                let count = map.entry(info.descriptor_type()).or_insert(0 as uint32_t);
+                let count = map.entry(info.descriptor_type())
+                    .or_insert(0 as uint32_t);
                 *count += 1;
             }
         }
@@ -100,8 +87,8 @@ impl HaDescriptorAllocator {
     }
 
     pub fn reset(&mut self, flags: &[DescriptorPoolFlag]) {
+
         self.pool_flag = flags.flags();
         self.set_configs.clear();
     }
 }
-

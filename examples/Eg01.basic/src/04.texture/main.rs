@@ -34,7 +34,7 @@ struct TextureMappingProcedure {
     vertex_buffer : HaVertexBlock,
 
     descriptor_storage: HaDescriptorRepository,
-    sampler_set       : DescriptorSetItem,
+    sampler_set       : DescriptorSet,
     image_storage     : HaImageRepository,
     sample_image      : HaSampleImage,
 
@@ -62,7 +62,7 @@ impl TextureMappingProcedure {
             vertex_buffer : HaVertexBlock::uninitialize(),
 
             descriptor_storage: HaDescriptorRepository::empty(),
-            sampler_set       : DescriptorSetItem::unset(),
+            sampler_set       : DescriptorSet::unset(),
             image_storage     : HaImageRepository::empty(),
             sample_image      : HaSampleImage::uninitialize(),
 
@@ -110,12 +110,12 @@ impl ProgramProc for TextureMappingProcedure {
         ]);
 
         let mut descriptor_allocator = kit.descriptor(&[]);
-        let (set_item, mut descriptor_binding_items) = descriptor_allocator.attach_descriptor_set(descriptor_set_config);
-        let sampler_item = descriptor_binding_items.pop().unwrap();
+        let desc_index = descriptor_allocator.append_set(descriptor_set_config);
 
-        self.descriptor_storage = descriptor_allocator.allocate()?;
-        self.descriptor_storage.update_descriptors(&[sampler_item])?;
-        self.sampler_set = set_item;
+        let mut descriptor_distributor = descriptor_allocator.allocate()?;
+        self.sampler_set = descriptor_distributor.acquire_set(desc_index);
+
+        self.descriptor_storage = descriptor_distributor.into_repository();
 
         Ok(())
     }
@@ -158,7 +158,7 @@ impl ProgramProc for TextureMappingProcedure {
 
         let pipeline_config = GraphicsPipelineConfig::new(shader_infos, vertex_input_desc, render_pass)
             .setup_viewport(ViewportStateType::Fixed { state: viewport })
-            .add_descriptor_set(self.descriptor_storage.set_layout_at(&self.sampler_set))
+            .add_descriptor_set(&self.sampler_set)
             .finish();
 
         let mut pipeline_builder = kit.pipeline_builder(PipelineType::Graphics)?;
@@ -195,7 +195,7 @@ impl ProgramProc for TextureMappingProcedure {
                 .begin_render_pass(&self.graphics_pipeline, frame_index)
                 .bind_pipeline(&self.graphics_pipeline)
                 .bind_vertex_buffers(0, &[CmdVertexBindingInfo { block: &self.vertex_buffer, sub_block_index: None }])
-                .bind_descriptor_sets(&self.graphics_pipeline, 0, self.descriptor_storage.descriptor_binding_infos(&[&self.sampler_set]))
+                .bind_descriptor_sets(&self.graphics_pipeline, 0, &[&self.sampler_set])
                 .draw(self.vertex_data.len() as uint32_t, 1, 0, 0)
                 .end_render_pass();
 

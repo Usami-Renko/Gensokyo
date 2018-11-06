@@ -18,7 +18,7 @@ use pipeline::state::SampleCountType;
 
 use utility::marker::VulkanEnum;
 
-use std::path::{ Path, PathBuf };
+use std::path::PathBuf;
 
 pub struct SampleImageInfo {
 
@@ -32,12 +32,12 @@ pub struct SampleImageInfo {
     view_desc   : ImageViewDescInfo,
     sampler_desc: SamplerDescInfo,
 
-    allocate_index: usize,
+    allocate_index: Option<usize>,
 }
 
 impl SampleImageInfo {
 
-    pub fn new(binding: uint32_t, count: uint32_t, path: &Path, pipeline_stage: ImagePipelineStage) -> SampleImageInfo {
+    pub fn new(binding: uint32_t, count: uint32_t, path: impl Into<PathBuf>, pipeline_stage: ImagePipelineStage) -> SampleImageInfo {
 
         let image_desc = ImageDescInfo::init(
             // TODO: Currently HaSampleImage only support 2D image.
@@ -58,9 +58,9 @@ impl SampleImageInfo {
         let sampler_desc = SamplerDescInfo::default();
 
         SampleImageInfo {
-            path: PathBuf::from(path),
+            path: path.into(),
             pipeline_stage, binding, count, sampler_desc, image_desc, view_desc,
-            allocate_index: 0,
+            allocate_index: None,
         }
     }
 
@@ -79,12 +79,12 @@ impl ImageBranchInfoAbs for SampleImageInfo {
         &self.image_desc
     }
 
-    fn allocate_index(&self) -> usize {
+    fn allocate_index(&self) -> Option<usize> {
         self.allocate_index
     }
 
     fn set_allocate_index(&mut self, value: usize) {
-        self.allocate_index = value;
+        self.allocate_index = Some(value);
     }
 
     fn allocate_info(&self, image: HaImage, storage: ImageStorageInfo) -> ImageAllocateInfo {

@@ -13,7 +13,7 @@ impl ModelGltfLoader {
         ModelGltfLoader {}
     }
 
-    pub fn load_model(&self, path: &impl AsRef<Path>) -> Result<GltfEntity, ModelLoadingErr> {
+    pub fn load_model(&self, path: impl AsRef<Path>) -> Result<GltfEntity, ModelLoadingErr> {
 
         GltfEntity::load(path)
     }

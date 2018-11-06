@@ -1,7 +1,7 @@
 
 pub use resources::allocator::{
     HaBufferAllocator, BufferStorageType, // buffer
-    HaDescriptorAllocator, // descriptor
+    HaDescriptorPreAllocator, // descriptor
     HaImagePreAllocator, HaImageDistributor, ImageStorageType,   // image
 };
 
@@ -22,7 +22,8 @@ pub use resources::command::{
 };
 
 pub use resources::descriptor::{
-    DescriptorSetConfig, DescriptorItem, DescriptorSetItem,  // item
+    DescriptorSet, // item
+    DescriptorSetConfig, // binding
     DescriptorPoolFlag, // pool
     HaDescriptorSetLayout, DescriptorSetLayoutFlag, BufferDescriptorType, ImageDescriptorType, // layout
 };

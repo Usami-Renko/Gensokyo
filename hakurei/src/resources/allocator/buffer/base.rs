@@ -132,7 +132,7 @@ impl  HaBufferAllocator {
         let mem_type = self.physical.memory.memory_type(optimal_memory_index);
 
         self.allocator.allocate(
-            &self.device, self.spaces.iter().sum(), optimal_memory_index, Some(mem_type)
+            &self.device, self.spaces.iter().sum(), optimal_memory_index, mem_type
         )?;
 
         let mut repository_buffer = vec![];

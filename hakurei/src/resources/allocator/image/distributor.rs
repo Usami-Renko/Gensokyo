@@ -8,7 +8,7 @@ use resources::image::ImageBranchInfoAbs;
 use resources::memory::HaMemoryAbstract;
 use resources::allocator::ImageAllocateInfo;
 use resources::repository::HaImageRepository;
-use resources::error::AllocatorError;
+use resources::error::{ AllocatorError, ImageError };
 
 pub struct HaImageDistributor {
 
@@ -38,8 +38,9 @@ impl HaImageDistributor {
 
     pub fn acquire_sample_image(&self, info: SampleImageInfo) -> Result<HaSampleImage, AllocatorError> {
 
+        let allocate_index = info.allocate_index()
+            .ok_or(AllocatorError::Image(ImageError::NotYetAllocateError))?;
         let sampler = info.gen_sample(&self.device)?;
-        let allocate_index = info.allocate_index();
 
         let image = HaSampleImage::setup(
             info, sampler,
@@ -52,7 +53,8 @@ impl HaImageDistributor {
 
     pub fn acquire_depth_stencil_image(&self, info: DepthStencilImageInfo) -> Result<HaDepthStencilImage, AllocatorError> {
 
-        let allocate_index = info.allocate_index();
+        let allocate_index = info.allocate_index()
+            .ok_or(AllocatorError::Image(ImageError::NotYetAllocateError))?;
         let format = info.format;
 
         let image = HaDepthStencilImage::setup(

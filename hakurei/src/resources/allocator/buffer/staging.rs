@@ -34,7 +34,7 @@ impl BufMemAlloAbstract for StagingBufMemAllocator {
         }
     }
 
-    fn allocate(&mut self, device: &HaDevice, size: vk::DeviceSize, mem_type_index: usize, mem_type: Option<vk::MemoryType>) -> Result<(), MemoryError> {
+    fn allocate(&mut self, device: &HaDevice, size: vk::DeviceSize, mem_type_index: usize, mem_type: vk::MemoryType) -> Result<(), MemoryError> {
 
         let memory = HaStagingMemory::allocate(device, size, mem_type_index, mem_type)?;
         self.memory = Some(memory);

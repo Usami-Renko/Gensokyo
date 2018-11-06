@@ -17,9 +17,9 @@ use std::ptr;
 
 pub struct HaCachedMemory  {
 
-    handle     : vk::DeviceMemory,
-    _size      : vk::DeviceSize,
-    mem_type   : Option<vk::MemoryType>,
+    handle   : vk::DeviceMemory,
+    _size    : vk::DeviceSize,
+    mem_type : vk::MemoryType,
 }
 
 impl HaMemoryAbstract for HaCachedMemory {
@@ -29,16 +29,14 @@ impl HaMemoryAbstract for HaCachedMemory {
     }
 
     fn flag(&self) -> vk::MemoryPropertyFlags {
-        self.mem_type.as_ref()
-            .and_then(|m| Some(m.property_flags))
-            .unwrap_or(vk::MemoryPropertyFlags::empty())
+        self.mem_type.property_flags
     }
 
     fn memory_type(&self) -> HaMemoryType {
         HaMemoryType::CachedMemory
     }
 
-    fn allocate(device: &HaDevice, size: vk::DeviceSize, mem_type_index: usize, mem_type: Option<vk::MemoryType>)
+    fn allocate(device: &HaDevice, size: vk::DeviceSize, mem_type_index: usize, mem_type: vk::MemoryType)
         -> Result<HaCachedMemory, MemoryError> {
 
         let allocate_info = vk::MemoryAllocateInfo {

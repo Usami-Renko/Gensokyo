@@ -19,7 +19,7 @@ pub(crate) trait ImageBranchInfoAbs {
 
     fn storage(&mut self, physical: &HaPhyDevice, config: &ImageLoadConfig) ->  Result<ImageStorageInfo, ImageError>;
     fn view_desc(&self) -> &ImageDescInfo;
-    fn allocate_index(&self) -> usize;
+    fn allocate_index(&self) -> Option<usize>;
     fn set_allocate_index(&mut self, value: usize);
     fn allocate_info(&self, image: HaImage, storage: ImageStorageInfo) -> ImageAllocateInfo;
 }

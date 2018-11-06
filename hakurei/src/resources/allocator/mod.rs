@@ -1,8 +1,7 @@
 
 pub use self::buffer::{ HaBufferAllocator, BufferStorageType };
 pub use self::image::{ HaImagePreAllocator, HaImageDistributor, ImageStorageType };
-
-pub use self::descriptor::HaDescriptorAllocator;
+pub use self::descriptor::{ HaDescriptorPreAllocator, HaDescriptorDistributor };
 
 pub(crate) use self::buffer::{ BufMemAlloAbstract, BufferAllocateInfos, BufferInfosAllocatable };
 pub(crate) use self::buffer::{

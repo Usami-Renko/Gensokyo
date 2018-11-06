@@ -29,7 +29,7 @@ pub struct DepthStencilImageInfo {
     image_desc: ImageDescInfo,
     view_desc : ImageViewDescInfo,
 
-    allocate_index: usize,
+    allocate_index: Option<usize>,
 }
 
 impl DepthStencilImageInfo {
@@ -62,7 +62,7 @@ impl DepthStencilImageInfo {
         DepthStencilImageInfo {
             usage, binding, count, image_desc, view_desc, dimension,
             format: vk::Format::Undefined,
-            allocate_index: 0,
+            allocate_index: None,
         }
     }
 }
@@ -82,12 +82,12 @@ impl ImageBranchInfoAbs for DepthStencilImageInfo {
         &self.image_desc
     }
 
-    fn allocate_index(&self) -> usize {
+    fn allocate_index(&self) -> Option<usize> {
         self.allocate_index
     }
 
     fn set_allocate_index(&mut self, value: usize) {
-        self.allocate_index = value;
+        self.allocate_index = Some(value);
     }
 
     fn allocate_info(&self, image: HaImage, storage: ImageStorageInfo) -> ImageAllocateInfo {

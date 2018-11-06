@@ -31,7 +31,7 @@ impl DescriptorSetLayoutInfo {
 
         let binding = vk::DescriptorSetLayoutBinding {
             // binding is the binding number of this entry and corresponds to a resource of the same binding number in the shader stages.
-            binding: info.binding_value(),
+            binding: info.binding_index(),
             // desc_type specifyies which type of resource descriptors are used for this binding.
             descriptor_type : info.descriptor_type(),
             // descriptor_count is the number of descriptors contained in the binding, accessed in a shader as an array.

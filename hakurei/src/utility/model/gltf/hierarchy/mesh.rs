@@ -7,7 +7,7 @@ use utility::model::ModelGltfLoadingError;
 
 pub(crate) struct GltfMesh {
 
-    name: Option<String>,
+    _name: Option<String>,
     // TODO: Remove the pub(crate) decleration.
     pub(crate) primitives: Vec<GltfPrimitive>,
 }
@@ -26,7 +26,7 @@ impl GltfMesh {
         }
 
         let mesh = GltfMesh {
-            name, primitives,
+            _name: name, primitives,
         };
 
         Ok(mesh)

@@ -24,10 +24,10 @@ pub struct HaImagePreAllocator {
     device  : HaDevice,
 
     image_config: ImageLoadConfig,
-    image_infos: Vec<ImageAllocateInfo>,
+    image_infos : Vec<ImageAllocateInfo>,
 
     storage_type: ImageStorageType,
-    allocator: Box<ImgMemAlloAbstract>,
+    allocator   : Box<ImgMemAlloAbstract>,
     require_mem_flag: vk::MemoryPropertyFlags,
     memory_selector : MemorySelector,
 }
@@ -46,7 +46,7 @@ impl HaImagePreAllocator {
             image_infos: vec![],
 
             storage_type: typ,
-            allocator: typ.allocator(),
+            allocator   : typ.allocator(),
             require_mem_flag: typ.memory_type().property_flags(),
             memory_selector : MemorySelector::init(physical),
         }
@@ -77,7 +77,7 @@ impl HaImagePreAllocator {
     pub fn allocate(mut self) -> Result<HaImageDistributor, AllocatorError> {
 
         if self.image_infos.is_empty() {
-            return Err(AllocatorError::Image(ImageError::NoImageAttachError))
+            return Err(AllocatorError::Image(ImageError::NoImageAppendError))
         }
 
         // 1.select memory type for image.
@@ -90,7 +90,7 @@ impl HaImagePreAllocator {
 
         // 2.allocate memory.
         self.allocator.allocate(
-            &self.device, total_space, optimal_memory_index, Some(mem_type)
+            &self.device, total_space, optimal_memory_index, mem_type
         )?;
 
         // 3.bind image to memory.

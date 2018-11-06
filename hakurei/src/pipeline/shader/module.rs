@@ -33,9 +33,9 @@ enum ShaderSourcePattern {
 
 impl HaShaderInfo {
 
-    pub fn from_source(stage: ShaderStageFlag, source_path: &Path, main_func: Option<&str>, tag_name: &str) -> HaShaderInfo {
+    pub fn from_source(stage: ShaderStageFlag, source_path: impl AsRef<Path>, main_func: Option<&str>, tag_name: &str) -> HaShaderInfo {
 
-        let path = PathBuf::from(source_path);
+        let path = PathBuf::from(source_path.as_ref());
         let main = main_func
             .and_then(|m| Some(m.to_owned()))
             .unwrap_or(String::from("main"));
@@ -47,9 +47,9 @@ impl HaShaderInfo {
         }
     }
 
-    pub fn from_spirv(stage: ShaderStageFlag, spirv_path: &Path, main_func: Option<&str>) -> HaShaderInfo {
+    pub fn from_spirv(stage: ShaderStageFlag, spirv_path: impl AsRef<Path>, main_func: Option<&str>) -> HaShaderInfo {
 
-        let path = PathBuf::from(spirv_path);
+        let path = PathBuf::from(spirv_path.as_ref());
         let main = main_func
             .and_then(|m| Some(m.to_owned()))
             .unwrap_or(String::from("main"));

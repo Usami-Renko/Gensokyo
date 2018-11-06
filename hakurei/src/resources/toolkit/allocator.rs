@@ -5,7 +5,7 @@ use core::device::HaDevice;
 use core::swapchain::HaSwapchain;
 
 use resources::allocator::{ HaBufferAllocator, BufferStorageType };
-use resources::allocator::HaDescriptorAllocator;
+use resources::allocator::HaDescriptorPreAllocator;
 use resources::allocator::{ HaImagePreAllocator, ImageStorageType };
 use resources::descriptor::DescriptorPoolFlag;
 
@@ -37,8 +37,8 @@ impl AllocatorKit {
         HaBufferAllocator::new(&self.physical, &self.device, ty)
     }
 
-    pub fn descriptor(&self, flags: &[DescriptorPoolFlag]) -> HaDescriptorAllocator {
-        HaDescriptorAllocator::new(&self.device, flags)
+    pub fn descriptor(&self, flags: &[DescriptorPoolFlag]) -> HaDescriptorPreAllocator {
+        HaDescriptorPreAllocator::new(&self.device, flags)
     }
 
     pub fn image(&self, ty: ImageStorageType) -> HaImagePreAllocator {

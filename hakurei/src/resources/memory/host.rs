@@ -21,7 +21,7 @@ pub struct HaHostMemory {
 
     handle     : vk::DeviceMemory,
     _size      : vk::DeviceSize,
-    mem_type   : Option<vk::MemoryType>,
+    mem_type   : vk::MemoryType,
 
     map_status : MemoryMapStatus,
 }
@@ -35,16 +35,14 @@ impl HaMemoryAbstract for HaHostMemory {
     }
 
     fn flag(&self) -> vk::MemoryPropertyFlags {
-        self.mem_type.as_ref()
-            .and_then(|m| Some(m.property_flags))
-            .unwrap_or(vk::MemoryPropertyFlags::empty())
+        self.mem_type.property_flags
     }
 
     fn memory_type(&self) -> HaMemoryType {
         HaMemoryType::HostMemory
     }
 
-    fn allocate(device: &HaDevice, size: vk::DeviceSize, mem_type_index: usize, mem_type: Option<vk::MemoryType>) -> Result<HaHostMemory, MemoryError> {
+    fn allocate(device: &HaDevice, size: vk::DeviceSize, mem_type_index: usize, mem_type: vk::MemoryType) -> Result<HaHostMemory, MemoryError> {
 
         let allocate_info = vk::MemoryAllocateInfo {
             s_type: vk::StructureType::MemoryAllocateInfo,

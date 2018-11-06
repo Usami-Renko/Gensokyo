@@ -187,7 +187,7 @@ pub enum ImageError {
     ImageCreationError,
     ViewCreationError,
     Memory(MemoryError),
-    NoImageAttachError,
+    NoImageAppendError,
     NotYetAllocateError,
     SamplerCreationError,
 }
@@ -204,8 +204,8 @@ impl fmt::Display for ImageError {
             | ImageError::ImageCreationError   => write!(f, "Failed to create Image Object."),
             | ImageError::ViewCreationError    => write!(f, "Failed to create ImageView Object."),
             | ImageError::Memory(ref e)        => write!(f, "{}", e.to_string()),
-            | ImageError::NotYetAllocateError  => write!(f, "The image or image view have not yet allocated."),
-            | ImageError::NoImageAttachError   => write!(f, "There must be images attached to allocator before allocate memory."),
+            | ImageError::NotYetAllocateError  => write!(f, "The image is not allocated yet. Have you forget to call HaImagePreAllocator::append_**_image() before HaImageDistributor::acquire_**_image()?"),
+            | ImageError::NoImageAppendError   => write!(f, "There must be images appended to allocator before allocate memory."),
             | ImageError::SamplerCreationError => write!(f, "Failed to create Sampler Object."),
         }
     }

@@ -13,7 +13,7 @@ use resources::error::MemoryError;
 pub(crate) trait BufMemAlloAbstract {
 
     fn add_allocate(&mut self, space: vk::DeviceSize, config: Box<BufferInfosAllocatable>);
-    fn allocate(&mut self, device: &HaDevice, size: vk::DeviceSize, mem_type_index: usize, mem_type: Option<vk::MemoryType>) -> Result<(), MemoryError>;
+    fn allocate(&mut self, device: &HaDevice, size: vk::DeviceSize, mem_type_index: usize, mem_type: vk::MemoryType) -> Result<(), MemoryError>;
     fn borrow_memory(&self) -> Result<&HaMemoryAbstract, MemoryError>;
     fn memory_map_if_need(&mut self, device: &HaDevice) -> Result<(), MemoryError>;
     fn take_memory(&mut self) -> Result<Box<HaMemoryAbstract>, MemoryError>;

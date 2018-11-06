@@ -5,10 +5,11 @@ use ash::version::DeviceV1_0;
 
 use core::device::HaDevice;
 
-use resources::command::buffer::{ HaCommandBuffer, CommandBufferUsage };
-use resources::command::{ CmdVertexBindingInfo, CmdIndexBindingInfo, CmdDescriptorBindingInfos };
+use resources::command::{ HaCommandBuffer, CommandBufferUsage };
+use resources::command::{ CmdVertexBindingInfo, CmdIndexBindingInfo };
 use resources::command::{ CmdViewportInfo, CmdScissorInfo, CmdDepthBiasInfo, CmdDepthBoundInfo };
 use resources::buffer::BufferBlockEntity;
+use resources::descriptor::DescriptorSet;
 use resources::error::CommandError;
 
 use pipeline::graphics::HaGraphicsPipeline;
@@ -65,9 +66,7 @@ impl HaCommandRecorder {
         };
 
         unsafe {
-            self.device.handle.cmd_begin_render_pass(self.handle,
-                                                     &begin_info,
-                                                     self.usage.usage());
+            self.device.handle.cmd_begin_render_pass(self.handle, &begin_info, self.usage.usage());
         }
         self
     }
@@ -229,11 +228,15 @@ impl HaCommandRecorder {
         self
     }
 
-    pub fn bind_descriptor_sets(&self, pipeline: &HaGraphicsPipeline, first_set: uint32_t, binding_infos: CmdDescriptorBindingInfos) -> &HaCommandRecorder {
+    pub fn bind_descriptor_sets(&self, pipeline: &HaGraphicsPipeline, first_set: uint32_t, sets: &[&DescriptorSet]) -> &HaCommandRecorder {
+
+        let handles = sets.iter()
+            .map(|s| s.item.handle).collect::<Vec<_>>();
+
         unsafe {
             // TODO: Currently dynamic_offsets field is not configuration.
             self.device.handle.cmd_bind_descriptor_sets(
-                self.handle, pipeline.bind_point, pipeline.layout.handle, first_set, &binding_infos.handles, &[])
+                self.handle, pipeline.bind_point, pipeline.layout.handle, first_set, &handles, &[])
         };
         self
     }

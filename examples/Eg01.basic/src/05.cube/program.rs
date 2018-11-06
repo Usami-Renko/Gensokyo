@@ -32,7 +32,7 @@ pub struct CubeProcedure {
     ubo_buffer : HaUniformBlock,
 
     desc_storage: HaDescriptorRepository,
-    ubo_set    : DescriptorSetItem,
+    ubo_set     : DescriptorSet,
 
     command_pool   : HaCommandPool,
     command_buffers: Vec<HaCommandBuffer>,
@@ -67,11 +67,11 @@ impl CubeProcedure {
                     model     : Matrix4::identity(),
                 },
             ],
-            ubo_storage: HaBufferRepository::empty(),
+            ubo_storage : HaBufferRepository::empty(),
             desc_storage: HaDescriptorRepository::empty(),
 
-            ubo_buffer : HaUniformBlock::uninitialize(),
-            ubo_set: DescriptorSetItem::unset(),
+            ubo_buffer: HaUniformBlock::uninitialize(),
+            ubo_set   : DescriptorSet::unset(),
 
             command_pool: HaCommandPool::uninitialize(),
             command_buffers: vec![],
@@ -128,17 +128,16 @@ impl ProgramProc for CubeProcedure {
 
         // descriptor
         let mut descriptor_set_config = DescriptorSetConfig::init(&[]);
-        let ubo_binding_index = descriptor_set_config.add_buffer_binding(&self.ubo_buffer, &[
+        descriptor_set_config.add_buffer_binding(&self.ubo_buffer, &[
             ShaderStageFlag::VertexStage,
         ]);
 
         let mut descriptor_allocator = kit.descriptor(&[]);
-        let (descriptor_set_item, descriptor_binding_items) = descriptor_allocator.attach_descriptor_set(descriptor_set_config);
-        let ubo_descriptor_item = descriptor_binding_items[ubo_binding_index].clone();
+        let desc_index = descriptor_allocator.append_set(descriptor_set_config);
 
-        self.desc_storage = descriptor_allocator.allocate()?;
-        self.desc_storage.update_descriptors(&[ubo_descriptor_item])?;
-        self.ubo_set = descriptor_set_item;
+        let mut descriptor_distributor = descriptor_allocator.allocate()?;
+        self.ubo_set = descriptor_distributor.acquire_set(desc_index);
+        self.desc_storage = descriptor_distributor.into_repository();
 
         Ok(())
     }
@@ -181,7 +180,7 @@ impl ProgramProc for CubeProcedure {
 
         let pipeline_config = GraphicsPipelineConfig::new(shader_infos, vertex_input_desc, render_pass)
             .setup_viewport(ViewportStateType::Fixed { state: viewport })
-            .add_descriptor_set(self.desc_storage.set_layout_at(&self.ubo_set))
+            .add_descriptor_set(&self.ubo_set)
             .finish();
 
         let mut pipeline_builder = kit.pipeline_builder(PipelineType::Graphics)?;
@@ -219,7 +218,7 @@ impl ProgramProc for CubeProcedure {
                 .bind_pipeline(&self.graphics_pipeline)
                 .bind_vertex_buffers(0, &[CmdVertexBindingInfo { block: &self.vertex_buffer, sub_block_index: None }])
                 .bind_index_buffer(CmdIndexBindingInfo { block: &self.index_buffer, sub_block_index: None })
-                .bind_descriptor_sets(&self.graphics_pipeline, 0, self.desc_storage.descriptor_binding_infos(&[&self.ubo_set]))
+                .bind_descriptor_sets(&self.graphics_pipeline, 0, &[&self.ubo_set])
                 .draw_indexed(self.index_data.len() as uint32_t, 1, 0, 0, 0)
                 .end_render_pass();
 

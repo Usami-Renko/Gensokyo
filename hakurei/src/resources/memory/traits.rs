@@ -21,7 +21,7 @@ pub(crate) trait HaMemoryAbstract: MemoryDataUploadable {
     fn flag(&self) -> vk::MemoryPropertyFlags;
     fn memory_type(&self) -> HaMemoryType;
 
-    fn allocate(device: &HaDevice, size: vk::DeviceSize, mem_type_index: usize, mem_type: Option<vk::MemoryType>) -> Result<Self, MemoryError> where Self: Sized;
+    fn allocate(device: &HaDevice, size: vk::DeviceSize, mem_type_index: usize, mem_type: vk::MemoryType) -> Result<Self, MemoryError> where Self: Sized;
 
     // bindings
     fn bind_to_buffer(&self, device: &HaDevice, buffer: &HaBuffer, memory_offset: vk::DeviceSize) -> Result<(), MemoryError> {

@@ -44,7 +44,7 @@ struct UniformBufferProcedure {
     ubo_buffer: HaUniformBlock,
 
     desc_storage: HaDescriptorRepository,
-    ubo_set: DescriptorSetItem,
+    ubo_set: DescriptorSet,
 
     graphics_pipeline: HaGraphicsPipeline,
 
@@ -74,7 +74,7 @@ impl UniformBufferProcedure {
             ubo_buffer: HaUniformBlock::uninitialize(),
 
             desc_storage: HaDescriptorRepository::empty(),
-            ubo_set: DescriptorSetItem::unset(),
+            ubo_set: DescriptorSet::unset(),
 
             graphics_pipeline: HaGraphicsPipeline::uninitialize(),
 
@@ -107,19 +107,18 @@ impl ProgramProc for UniformBufferProcedure {
 
         // descriptor
         let mut descriptor_set_config = DescriptorSetConfig::init(&[]);
-        let ubo_binding_index = descriptor_set_config.add_buffer_binding(
+        descriptor_set_config.add_buffer_binding(
             &self.ubo_buffer,
             &[
             ShaderStageFlag::VertexStage,
         ]);
 
         let mut descriptor_allocator = kit.descriptor(&[]);
-        let (descriptor_set_item, descriptor_binding_items) = descriptor_allocator.attach_descriptor_set(descriptor_set_config);
-        let ubo_descriptor_item = descriptor_binding_items[ubo_binding_index].clone();
+        let descriptor_index = descriptor_allocator.append_set(descriptor_set_config);
 
-        self.desc_storage = descriptor_allocator.allocate()?;
-        self.desc_storage.update_descriptors(&[ubo_descriptor_item])?;
-        self.ubo_set = descriptor_set_item;
+        let mut descriptor_distributor = descriptor_allocator.allocate()?;
+        self.ubo_set = descriptor_distributor.acquire_set(descriptor_index);
+        self.desc_storage = descriptor_distributor.into_repository();
 
         Ok(())
     }
@@ -162,7 +161,7 @@ impl ProgramProc for UniformBufferProcedure {
 
         let pipeline_config = GraphicsPipelineConfig::new(shader_infos, vertex_input_desc, render_pass)
             .setup_viewport(ViewportStateType::Fixed { state: viewport })
-            .add_descriptor_set(self.desc_storage.set_layout_at(&self.ubo_set))
+            .add_descriptor_set(&self.ubo_set)
             .finish();
 
         let mut pipeline_builder = kit.pipeline_builder(PipelineType::Graphics)?;
@@ -198,7 +197,7 @@ impl ProgramProc for UniformBufferProcedure {
                 .begin_render_pass(&self.graphics_pipeline, frame_index)
                 .bind_pipeline(&self.graphics_pipeline)
                 .bind_vertex_buffers(0, &[CmdVertexBindingInfo { block: &self.vertex_buffer, sub_block_index: None }])
-                .bind_descriptor_sets(&self.graphics_pipeline, 0, self.desc_storage.descriptor_binding_infos(&[&self.ubo_set]))
+                .bind_descriptor_sets(&self.graphics_pipeline, 0, &[&self.ubo_set])
                 .draw(self.vertex_data.len() as uint32_t, 1, 0, 0)
                 .end_render_pass();
 

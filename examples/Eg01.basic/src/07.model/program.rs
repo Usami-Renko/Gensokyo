@@ -32,7 +32,7 @@ pub struct ModelProcedure {
     ubo_storage: HaBufferRepository,
     ubo_buffer : HaUniformBlock,
     descriptor_storage: HaDescriptorRepository,
-    descriptor_sets   : DescriptorSetItem,
+    descriptor_set    : DescriptorSet,
 
     depth_attachment: HaDepthStencilImage,
     image_storage: HaImageRepository,
@@ -71,7 +71,7 @@ impl ModelProcedure {
             ubo_storage: HaBufferRepository::empty(),
             ubo_buffer : HaUniformBlock::uninitialize(),
             descriptor_storage: HaDescriptorRepository::empty(),
-            descriptor_sets: DescriptorSetItem::unset(),
+            descriptor_set: DescriptorSet::unset(),
 
             depth_attachment: HaDepthStencilImage::uninitialize(),
             image_storage: HaImageRepository::empty(),
@@ -103,7 +103,7 @@ impl ProgramProc for ModelProcedure {
 
         // load gltf model.
         let model_loader = kit.gltf_loader();
-        self.model = model_loader.load_model(&Path::new(MODEL_GLTF_PATH))?;
+        self.model = model_loader.load_model(Path::new(MODEL_GLTF_PATH))?;
 
         self.model.config_buffer(&kit, BufferStorageType::Device)?;
 
@@ -131,20 +131,18 @@ impl ProgramProc for ModelProcedure {
 
         // descriptor
         let mut descriptor_set_config = DescriptorSetConfig::init(&[]);
-        let ubo_binding_index = descriptor_set_config.add_buffer_binding(
+        descriptor_set_config.add_buffer_binding(
             &self.ubo_buffer,
             &[ShaderStageFlag::VertexStage]
         );
 
-        let mut descriptor_allocator = kit.descriptor(&[]);
-        let (descriptor_set_item, descriptor_binding_items) =
-            descriptor_allocator.attach_descriptor_set(descriptor_set_config);
+        let mut desc_allocator = kit.descriptor(&[]);
+        let desc_index = desc_allocator.append_set(descriptor_set_config);
 
-        let ubo_descriptor_item = descriptor_binding_items[ubo_binding_index].clone();
+        let mut desc_distributor = desc_allocator.allocate()?;
 
-        self.descriptor_storage = descriptor_allocator.allocate()?;
-        self.descriptor_storage.update_descriptors(&[ubo_descriptor_item])?;
-        self.descriptor_sets = descriptor_set_item;
+        self.descriptor_set = desc_distributor.acquire_set(desc_index);
+        self.descriptor_storage = desc_distributor.into_repository();
 
         Ok(())
     }
@@ -194,7 +192,7 @@ impl ProgramProc for ModelProcedure {
         let pipeline_config = GraphicsPipelineConfig::new(shader_infos, self.model.vertex_desc(), render_pass)
             .setup_viewport(ViewportStateType::Fixed { state: viewport })
             .setup_depth_stencil(depth_stencil)
-            .add_descriptor_set(self.descriptor_storage.set_layout_at(&self.descriptor_sets))
+            .add_descriptor_set(&self.descriptor_set)
             .finish();
 
         let mut pipeline_builder = kit.pipeline_builder(PipelineType::Graphics)?;
@@ -230,8 +228,7 @@ impl ProgramProc for ModelProcedure {
 
             recorder.begin_record(&[CommandBufferUsageFlag::SimultaneousUseBit])?
                 .begin_render_pass(&self.graphics_pipeline, frame_index)
-                .bind_descriptor_sets(&self.graphics_pipeline, 0, self.descriptor_storage.descriptor_binding_infos(
-                    &[&self.descriptor_sets]))
+                .bind_descriptor_sets(&self.graphics_pipeline, 0, &[&self.descriptor_set])
                 .bind_pipeline(&self.graphics_pipeline);
 
             self.model.record_command(&recorder);
@@ -267,6 +264,7 @@ impl ProgramProc for ModelProcedure {
 
         self.present_availables.iter()
             .for_each(|semaphore| semaphore.cleanup());
+
         self.present_availables.clear();
         self.command_buffers.clear();
 

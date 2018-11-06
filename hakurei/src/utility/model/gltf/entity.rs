@@ -20,7 +20,7 @@ use std::path::Path;
 #[derive(Default)]
 pub struct GltfEntity {
 
-    scenes   : Vec<GltfScene>,
+    _scenes: Vec<GltfScene>,
     resources: GltfResources,
 
     allo_res: Option<AllocateResource>,
@@ -46,7 +46,7 @@ impl GltfEntity {
         }
 
         let entity = GltfEntity {
-            scenes, resources, allo_res: None,
+            _scenes: scenes, resources, allo_res: None,
         };
 
         Ok(entity)

@@ -9,8 +9,8 @@ use utility::model::ModelGltfLoadingError;
 
 pub(crate) struct GltfScene {
 
-    name : Option<String>,
-    nodes: Vec<GltfNode>,
+    _name: Option<String>,
+    _nodes: Vec<GltfNode>,
 }
 
 impl<'a> GltfHierarchyAbstract<'a> for GltfScene {
@@ -28,7 +28,8 @@ impl<'a> GltfHierarchyAbstract<'a> for GltfScene {
         }
 
         let scene = GltfScene {
-            name, nodes,
+            _name: name,
+            _nodes: nodes,
         };
 
         Ok(scene)

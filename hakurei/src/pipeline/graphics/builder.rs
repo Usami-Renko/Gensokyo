@@ -25,7 +25,7 @@ use pipeline::{
     error::PipelineError,
 };
 
-use resources::descriptor::HaDescriptorSetLayout;
+use resources::descriptor::DescriptorSet;
 
 use utility::shaderc::{ HaShaderCompiler, ShaderCompilePrefab, ShadercConfiguration };
 use utility::marker::VulkanFlags;
@@ -320,8 +320,8 @@ impl GraphicsPipelineConfig {
         self
     }
 
-    pub fn add_descriptor_set(mut self, set_layout: &HaDescriptorSetLayout) -> GraphicsPipelineConfig {
-        self.layout_builder.add_descriptor_layout(set_layout.handle);
+    pub fn add_descriptor_set(mut self, set: &DescriptorSet) -> GraphicsPipelineConfig {
+        self.layout_builder.add_descriptor_layout(set.layout);
         self
     }
 }

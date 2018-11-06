@@ -24,6 +24,7 @@ impl BufferDimension {
 }
 
 impl fmt::Display for BufferDimension {
+
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
         write!(f, "width: {}, height: {}, layers: {}", self.extent.width, self.extent.height, self.layers)
     }

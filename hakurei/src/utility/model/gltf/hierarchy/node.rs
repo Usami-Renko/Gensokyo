@@ -9,8 +9,8 @@ use utility::model::ModelGltfLoadingError;
 
 pub(crate) struct GltfNode {
 
-    name: Option<String>,
-    mesh: Option<usize>,
+    _name: Option<String>,
+    _mesh: Option<usize>,
 }
 
 impl<'a> GltfHierarchyAbstract<'a> for GltfNode {
@@ -32,7 +32,8 @@ impl<'a> GltfHierarchyAbstract<'a> for GltfNode {
         };
 
         let node = GltfNode {
-            name, mesh,
+            _name: name,
+            _mesh: mesh,
         };
 
         Ok(node)
@@ -41,9 +42,9 @@ impl<'a> GltfHierarchyAbstract<'a> for GltfNode {
 
 impl<'a> GltfNode {
 
-    fn get_mesh(&self, res: &'a GltfResources) -> Option<&'a GltfMesh> {
+    fn _get_mesh(&self, res: &'a GltfResources) -> Option<&'a GltfMesh> {
 
-        let mesh_index = self.mesh?;
+        let mesh_index = self._mesh?;
         Some(&res.meshes[mesh_index])
     }
 }
