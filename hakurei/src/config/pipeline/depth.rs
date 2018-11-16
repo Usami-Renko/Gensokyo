@@ -1,22 +1,12 @@
 
 use toml;
-use ash::vk;
+
+use vk::resources::image::ImageTiling;
+use vk::pipeline::config::DepthStencilConfig;
+use vk::utils::types::vkformat;
 
 use config::engine::ConfigMirror;
-use config::macros::vk_string_to_format;
 use config::error::{ ConfigError, MappingError };
-
-pub(crate) struct DepthStencilConfig {
-
-    /// The prefer format for depth or stencil buffer.
-    ///
-    /// Although this format can be specified in pipeline creation, it's recommended to specify the format in this config setting, because in this way the hakurei engine can help to check if this format is supported in the system.
-    ///
-    /// The pipeline will use the first format which support VK_FORMAT_FEATURE_DEPTH_STENCIL_ATTACHMENT_BIT in vkGetPhysicalDeviceFormatProperties call.
-    pub prefer_depth_stencil_formats: Vec<vk::Format>,
-    /// The prefer image tiling mode for depth or stencil buffer.
-    pub prefer_image_tiling: vk::ImageTiling,
-}
 
 #[derive(Deserialize, Default)]
 pub(crate) struct DepthStencilConfigMirror {
@@ -31,7 +21,9 @@ impl ConfigMirror for DepthStencilConfigMirror {
 
         let mut prefer_depth_stencil_formats = vec![];
         for raw_format in self.prefer_depth_stencil_formats.iter() {
-            prefer_depth_stencil_formats.push(vk_string_to_format(raw_format)?);
+
+            use vk::utils::format::vk_string_to_format;
+            prefer_depth_stencil_formats.push(vk_string_to_format(raw_format));
         }
 
         let config = DepthStencilConfig {
@@ -67,11 +59,11 @@ impl ConfigMirror for DepthStencilConfigMirror {
     }
 }
 
-fn vk_raw2image_tiling(raw: &String) -> Result<vk::ImageTiling, ConfigError> {
+fn vk_raw2image_tiling(raw: &String) -> Result<ImageTiling, ConfigError> {
 
     let tiling = match raw.as_str() {
-        | "Optimal" => vk::ImageTiling::Optimal,
-        | "Linear"  => vk::ImageTiling::Linear,
+        | "Optimal" => ImageTiling::Optimal,
+        | "Linear"  => ImageTiling::Linear,
         | _ => return Err(ConfigError::Mapping(MappingError::ImgTilingMappingError)),
     };
 

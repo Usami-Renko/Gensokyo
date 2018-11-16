@@ -2,6 +2,7 @@
 [workspace]
 members = [
     "hakurei",
+    "hakurei-vulkan",
     "hakurei-macros",
 
     "examples/Eg01.basic",

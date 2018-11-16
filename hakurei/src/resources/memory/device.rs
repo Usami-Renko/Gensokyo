@@ -1,60 +1,41 @@
 
-use ash::vk;
-use ash::vk::uint32_t;
-use ash::version::DeviceV1_0;
+use vk::core::device::HaDevice;
+use vk::core::physical::HaPhyDevice;
 
-use core::device::HaDevice;
-use core::physical::HaPhyDevice;
+use vk::resources::buffer::BufferItem;
+use vk::resources::memory::{ HaMemory, HaMemoryType, HaMemoryAbstract, MemorySelector };
+use vk::resources::memory::MemoryRange;
+use vk::utils::memory::MemoryWritePtr;
+use vk::utils::types::vkMemorySize;
+use vk::resources::error::MemoryError;
 
-use resources::allocator::BufferAllocateInfos;
-use resources::buffer::BufferItem;
-use resources::memory::{ HaMemoryAbstract, HaMemoryType, MemoryRange };
-use resources::memory::{ MemoryDataUploadable, UploadStagingResource, StagingUploader };
-use resources::error::MemoryError;
-use utility::memory::MemoryWritePtr;
-
-use std::ptr;
+use resources::memory::traits::{ HaMemoryEntityAbs, MemoryDataUploadable };
+use resources::memory::staging::{ StagingUploader, UploadStagingResource };
+use resources::allocator::buffer::BufferAllocateInfos;
 
 pub struct HaDeviceMemory {
 
-    handle   : vk::DeviceMemory,
-    _size    : vk::DeviceSize,
-    mem_type : vk::MemoryType,
+    target: HaMemory,
 }
+
+impl HaMemoryEntityAbs for HaDeviceMemory {}
 
 impl HaMemoryAbstract for HaDeviceMemory {
 
-    fn handle(&self) -> vk::DeviceMemory {
-        self.handle
-    }
-
-    fn flag(&self) -> vk::MemoryPropertyFlags {
-        self.mem_type.property_flags
+    fn target(&self) -> &HaMemory {
+        &self.target
     }
 
     fn memory_type(&self) -> HaMemoryType {
         HaMemoryType::DeviceMemory
     }
 
-    fn allocate(device: &HaDevice, size: vk::DeviceSize, mem_type_index: usize, mem_type: vk::MemoryType) -> Result<Self, MemoryError> {
+    fn allocate(device: &HaDevice, size: vkMemorySize, selector: &MemorySelector) -> Result<HaDeviceMemory, MemoryError> {
 
-        let allocate_info = vk::MemoryAllocateInfo {
-            s_type: vk::StructureType::MemoryAllocateInfo,
-            p_next: ptr::null(),
-            allocation_size: size,
-            // an index identifying a memory type from the memoryTypes array of the vkPhysicalDeviceMemoryProperties structure.
-            memory_type_index: mem_type_index as uint32_t,
-        };
-
-        let handle = unsafe {
-            device.handle.allocate_memory(&allocate_info, None)
-                .or(Err(MemoryError::AllocateMemoryError))?
-        };
+        let target = HaMemory::allocate(device, size, selector)?;
 
         let memory = HaDeviceMemory {
-            handle,
-            _size: size,
-            mem_type,
+            target,
         };
         Ok(memory)
     }
@@ -68,7 +49,7 @@ impl MemoryDataUploadable for HaDeviceMemory {
         StagingUploader::prepare_data_transfer(physical, device, allocate_infos)
     }
 
-    fn map_memory_ptr(&mut self, staging: &mut Option<UploadStagingResource>, item: &BufferItem, offset: vk::DeviceSize)
+    fn map_memory_ptr(&mut self, staging: &mut Option<UploadStagingResource>, item: &BufferItem, offset: vkMemorySize)
         -> Result<(MemoryWritePtr, MemoryRange), MemoryError> {
 
         StagingUploader::map_memory_ptr(staging, item, offset)

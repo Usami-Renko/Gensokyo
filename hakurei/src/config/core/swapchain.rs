@@ -1,35 +1,21 @@
 
 use toml;
-use ash::vk;
-use ash::vk::uint32_t;
+
+use vk::core::swapchain::SwapchainConfig;
+use vk::core::swapchain::{ ColorSpace, PresentMode };
+use vk::utils::types::vkint;
 
 use config::engine::ConfigMirror;
-use config::macros::vk_string_to_format;
 use config::error::{ ConfigError, MappingError };
 
-use utility::time::TimePeriod;
+use utils::time::TimePeriod;
 use std::time::Duration;
-
-#[derive(Debug, Clone)]
-pub(crate) struct SwapchainConfig {
-
-    pub image_count: uint32_t,
-    /// the value of layers property in vk::Framebuffer.
-    pub framebuffer_layers: uint32_t,
-
-    pub prefer_surface_format     : vk::Format,
-    pub prefer_surface_color_space: vk::ColorSpaceKHR,
-
-    pub prefer_primary_present_mode  : vk::PresentModeKHR,
-    pub prefer_secondary_present_mode: vk::PresentModeKHR,
-
-    pub acquire_image_time_out: TimePeriod,
-}
 
 #[derive(Deserialize, Default)]
 pub(crate) struct SwapchainConfigMirror {
-    image_count: uint32_t,
-    framebuffer_layers: uint32_t,
+    
+    image_count: vkint,
+    framebuffer_layers: vkint,
     prefer_surface_format     : String,
     prefer_surface_color_space: String,
     present_mode_primary  : String,
@@ -43,17 +29,19 @@ impl ConfigMirror for SwapchainConfigMirror {
 
     fn into_config(self) -> Result<Self::ConfigType, ConfigError> {
 
+        use vk::utils::format::vk_string_to_format;
+
         let config = SwapchainConfig {
             image_count: self.image_count,
             framebuffer_layers: self.framebuffer_layers,
 
-            prefer_surface_format     : vk_string_to_format(&self.prefer_surface_format)?,
+            prefer_surface_format     : vk_string_to_format(&self.prefer_surface_format),
             prefer_surface_color_space: vk_raw2colorspace(&self.prefer_surface_color_space)?,
 
             prefer_primary_present_mode  : vk_raw2presentmode(&self.present_mode_primary)?,
             prefer_secondary_present_mode: vk_raw2presentmode(&self.present_mode_secondary)?,
 
-            acquire_image_time_out: vk_raw2acquire_image_time(&self.acquire_image_time_out, self.acquire_image_duration)?,
+            acquire_image_time_out: vk_raw2acquire_image_time(&self.acquire_image_time_out, self.acquire_image_duration)?.vulkan_time(),
         };
 
         Ok(config)
@@ -98,23 +86,23 @@ impl ConfigMirror for SwapchainConfigMirror {
     }
 }
 
-fn vk_raw2colorspace(raw: &String) -> Result<vk::ColorSpaceKHR, ConfigError> {
+fn vk_raw2colorspace(raw: &String) -> Result<ColorSpace, ConfigError> {
 
     let color_space = match raw.as_str() {
-        | "SrgbNonlinear" => vk::ColorSpaceKHR::SrgbNonlinear,
+        | "SrgbNonlinear" => ColorSpace::SrgbNonlinear,
         | _ => return Err(ConfigError::Mapping(MappingError::ColorspaceMappingError)),
     };
 
     Ok(color_space)
 }
 
-fn vk_raw2presentmode(raw: &String) -> Result<vk::PresentModeKHR, ConfigError> {
+fn vk_raw2presentmode(raw: &String) -> Result<PresentMode, ConfigError> {
 
     let present_mode = match raw.as_str() {
-        | "Immediate"   => vk::PresentModeKHR::Immediate,
-        | "Mailbox"     => vk::PresentModeKHR::Mailbox,
-        | "Fifo"        => vk::PresentModeKHR::Fifo,
-        | "FifoRelaxed" => vk::PresentModeKHR::FifoRelaxed,
+        | "Immediate"   => PresentMode::Immediate,
+        | "Mailbox"     => PresentMode::Mailbox,
+        | "Fifo"        => PresentMode::Fifo,
+        | "FifoRelaxed" => PresentMode::FifoRelaxed,
         | _ => return Err(ConfigError::Mapping(MappingError::SwapchainPresentModeError)),
     };
 

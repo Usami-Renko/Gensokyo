@@ -1,14 +1,15 @@
 
-use ash::vk;
+use vk::core::device::HaDevice;
+use vk::core::physical::HaPhyDevice;
 
-use core::device::HaDevice;
-use core::physical::HaPhyDevice;
+use vk::resources::buffer::HaBuffer;
+use vk::resources::memory::HaMemoryType;
+use vk::resources::error::{ AllocatorError, MemoryError };
+use vk::utils::types::vkMemorySize;
 
-use resources::allocator::BufferAllocateInfos;
-use resources::buffer::HaBuffer;
-use resources::memory::{ HaMemoryAbstract, HaMemoryType };
+use resources::memory::HaMemoryEntity;
 use resources::repository::{ BufferDataUploader, BufferDataUpdater };
-use resources::error::{ AllocatorError, MemoryError };
+use resources::allocator::buffer::BufferAllocateInfos;
 
 #[derive(Default)]
 pub struct HaBufferRepository {
@@ -16,10 +17,10 @@ pub struct HaBufferRepository {
     device  : Option<HaDevice>,
     physical: Option<HaPhyDevice>,
     buffers : Vec<HaBuffer>,
-    memory  : Option<Box<HaMemoryAbstract>>,
+    memory  : Option<HaMemoryEntity>,
 
     /// The offset of each buffer in memory.
-    offsets: Vec<vk::DeviceSize>,
+    offsets: Vec<vkMemorySize>,
 
     allocate_infos: Option<BufferAllocateInfos>,
 }
@@ -30,14 +31,14 @@ impl HaBufferRepository {
         HaBufferRepository::default()
     }
 
-    pub(crate) fn store(device: &HaDevice, physical: &HaPhyDevice, buffers: Vec<HaBuffer>, memory: Box<HaMemoryAbstract>, allocate_infos: BufferAllocateInfos) -> HaBufferRepository {
+    pub(crate) fn store(device: HaDevice, physical: HaPhyDevice, buffers: Vec<HaBuffer>, memory: HaMemoryEntity, allocate_infos: BufferAllocateInfos) -> HaBufferRepository {
 
-        use utility::memory::spaces_to_offsets;
+        use utils::shortcuts::spaces_to_offsets;
         let offsets = spaces_to_offsets(&allocate_infos.spaces);
 
         HaBufferRepository {
-            device  : Some(device.clone()),
-            physical: Some(physical.clone()),
+            device  : Some(device),
+            physical: Some(physical),
             memory  : Some(memory),
 
             buffers, offsets,
@@ -49,7 +50,11 @@ impl HaBufferRepository {
 
         if let Some(ref mut memory) = self.memory {
 
-            BufferDataUploader::new(&self.physical.as_ref().unwrap(), &self.device.as_ref().unwrap(), memory, &self.offsets, &self.allocate_infos)
+            BufferDataUploader::new(
+                &self.physical.as_ref().unwrap(),
+                &self.device.as_ref().unwrap(),
+                memory,
+                &self.allocate_infos)
         } else {
             Err(AllocatorError::Memory(MemoryError::MemoryNotYetAllocateError))
         }
@@ -62,7 +67,10 @@ impl HaBufferRepository {
             let updater = match memory.memory_type() {
                 | HaMemoryType::HostMemory
                 | HaMemoryType::StagingMemory => {
-                    BufferDataUpdater::new(&self.device.as_ref().unwrap(), memory, &self.offsets)
+                    BufferDataUpdater::new(
+                        &self.device.as_ref().unwrap(),
+                        memory,
+                        &self.offsets)
                 },
                 | HaMemoryType::CachedMemory
                 | HaMemoryType::DeviceMemory => {

@@ -1,24 +1,16 @@
 
 use toml;
 
+use vk::utils::types::vkformat;
+use vk::utils::format::VKFormat;
+use resources::image::io::ImageLoadConfig;
+
 use config::engine::ConfigMirror;
 use config::error::ConfigError;
 
-#[derive(Debug, Clone)]
-pub(crate) struct ImageLoadConfig {
-
-    /// flip_vertical define whether to flip vertical when loading image.
-    pub flip_vertical  : bool,
-    /// flip_horizontal define whether to flip horizontal when loading image.
-    pub flip_horizontal: bool,
-    /// byte_per_pixel define the byte count in per pixel.
-    pub byte_per_pixel: u32,
-    /// force_rgba define whether to load the image from file with rgba channel.
-    pub force_rgba: bool,
-}
-
 #[derive(Deserialize, Default)]
 pub(crate) struct ImageLoadConfigMirror {
+
     flip_vertical  : bool,
     flip_horizontal: bool,
     byte_per_pixel : u32,
@@ -35,6 +27,8 @@ impl ConfigMirror for ImageLoadConfigMirror {
             flip_horizontal: self.flip_horizontal,
             byte_per_pixel : self.byte_per_pixel,
             force_rgba     : self.force_rgba,
+            // TODO: Reset this member from tom setting.
+            img_format     : VKFormat::R8g8b8a8Unorm,
         };
 
         Ok(config)

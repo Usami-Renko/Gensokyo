@@ -1,10 +1,10 @@
 
 use toml;
-use ash::vk::uint32_t;
 
 use config::engine::ConfigMirror;
 use config::error::ConfigError;
-use utility::dimension::Dimension2D;
+
+use vk::utils::types::{ vkint, vkDimension2D };
 
 #[derive(Debug, Clone)]
 pub(crate) struct WindowConfig {
@@ -14,9 +14,9 @@ pub(crate) struct WindowConfig {
     pub always_on_top: bool,
     pub is_resizable : bool,
 
-    pub dimension: Dimension2D,
-    pub min_dimension: Option<Dimension2D>,
-    pub max_dimension: Option<Dimension2D>,
+    pub dimension: vkDimension2D,
+    pub min_dimension: Option<vkDimension2D>,
+    pub max_dimension: Option<vkDimension2D>,
 
     pub is_cursor_grap: bool,
     pub is_cursor_hide: bool,
@@ -36,12 +36,12 @@ pub(crate) struct WindowConfigMirror {
 
 #[derive(Deserialize, Default)]
 struct Dimension {
-    width : uint32_t,
-    height: uint32_t,
-    min_width : uint32_t,
-    min_height: uint32_t,
-    max_width : uint32_t,
-    max_height: uint32_t,
+    width : vkint,
+    height: vkint,
+    min_width : vkint,
+    min_height: vkint,
+    max_width : vkint,
+    max_height: vkint,
 }
 
 #[derive(Deserialize, Default)]
@@ -60,7 +60,7 @@ impl ConfigMirror for WindowConfigMirror {
             mode : self.mode,
             always_on_top: self.always_on_top,
             is_resizable : self.is_resizable,
-            dimension: Dimension2D {
+            dimension: vkDimension2D {
                 width : self.dimension.width,
                 height: self.dimension.height,
             },
@@ -91,22 +91,22 @@ impl ConfigMirror for WindowConfigMirror {
         if let Some(v) = toml.get("dimension") {
 
             if let Some(v) = v.get("width") {
-                self.dimension.width = v.as_integer().ok_or(ConfigError::ParseError)? as uint32_t;
+                self.dimension.width = v.as_integer().ok_or(ConfigError::ParseError)? as vkint;
             }
             if let Some(v) = v.get("height") {
-                self.dimension.height = v.as_integer().ok_or(ConfigError::ParseError)? as uint32_t;
+                self.dimension.height = v.as_integer().ok_or(ConfigError::ParseError)? as vkint;
             }
             if let Some(v) = v.get("min_width") {
-                self.dimension.min_width = v.as_integer().ok_or(ConfigError::ParseError)? as uint32_t;
+                self.dimension.min_width = v.as_integer().ok_or(ConfigError::ParseError)? as vkint;
             }
             if let Some(v) = v.get("min_height") {
-                self.dimension.min_height = v.as_integer().ok_or(ConfigError::ParseError)? as uint32_t;
+                self.dimension.min_height = v.as_integer().ok_or(ConfigError::ParseError)? as vkint;
             }
             if let Some(v) = v.get("max_width") {
-                self.dimension.max_width = v.as_integer().ok_or(ConfigError::ParseError)? as uint32_t;
+                self.dimension.max_width = v.as_integer().ok_or(ConfigError::ParseError)? as vkint;
             }
             if let Some(v) = v.get("max_height") {
-                self.dimension.max_height = v.as_integer().ok_or(ConfigError::ParseError)? as uint32_t;
+                self.dimension.max_height = v.as_integer().ok_or(ConfigError::ParseError)? as vkint;
             }
         }
 
@@ -124,12 +124,12 @@ impl ConfigMirror for WindowConfigMirror {
     }
 }
 
-fn parse_dimension(width: uint32_t, height: uint32_t) -> Option<Dimension2D> {
+fn parse_dimension(width: vkint, height: vkint) -> Option<vkDimension2D> {
 
-    if width == uint32_t::default() || height == uint32_t::default() {
+    if width == vkint::default() || height == vkint::default() {
         None
     } else {
-        let min_dimension = Dimension2D {
+        let min_dimension = vkDimension2D {
             width, height,
         };
         Some(min_dimension)

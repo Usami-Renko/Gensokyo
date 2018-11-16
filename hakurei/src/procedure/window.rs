@@ -4,11 +4,11 @@ use winit;
 use config::window::WindowConfig;
 use config::env::{ HaEnv, EnvWindow };
 
-use utility::dimension::Dimension2D;
+use vk::utils::types::vkDimension2D;
 
 pub(crate) struct WindowInfo {
 
-    window_size : Dimension2D,
+    window_size : vkDimension2D,
     window_title: String,
 
     config: WindowConfig,
@@ -26,7 +26,7 @@ impl WindowInfo {
         }
     }
 
-    pub fn reset_size(&mut self, dimension: Dimension2D) {
+    pub fn reset_size(&mut self, dimension: vkDimension2D) {
         self.window_size = dimension;
     }
 

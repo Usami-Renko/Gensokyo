@@ -2,13 +2,14 @@
 use winit;
 
 use config::error::ConfigError;
-use core::error::{ InstanceError, ValidationError, PhysicalDeviceError, SurfaceError, LogicalDeviceError };
-use core::swapchain::SwapchainError;
-use pipeline::error::PipelineError;
-use resources::error::CommandError;
-use resources::error::AllocatorError;
-use sync::error::SyncError;
-use utility::model::ModelLoadingErr;
+
+use vk::core::error::{ InstanceError, ValidationError, PhysicalDeviceError, SurfaceError, LogicalDeviceError };
+use vk::core::swapchain::error::{ SwapchainError, SwapchainInitError, SwapchainRuntimeError };
+use vk::pipeline::error::PipelineError;
+use vk::resources::error::CommandError;
+use vk::resources::error::AllocatorError;
+use vk::resources::error::SyncError;
+use assets::model::ModelLoadingErr;
 
 use std::fmt;
 use std::error::Error;
@@ -108,3 +109,13 @@ impl fmt::Display for ProcedureError {
     }
 }
 
+impl From<SwapchainInitError> for ProcedureError {
+    fn from(error: SwapchainInitError) -> Self {
+        SwapchainError::Init(error).into()
+    }
+}
+impl From<SwapchainRuntimeError> for ProcedureError {
+    fn from(error: SwapchainRuntimeError) -> Self {
+        SwapchainError::Runtime(error).into()
+    }
+}

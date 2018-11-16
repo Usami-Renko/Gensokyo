@@ -4,16 +4,8 @@ use toml;
 use config::engine::ConfigMirror;
 use config::error::{ ConfigError, MappingError };
 
-use core::debug::DebugReportFlag;
-
-pub(crate) struct ValidationConfig {
-    /// tell if validation layer should be enabled.
-    pub is_enable: bool,
-    /// the layer names required for validation layer support.
-    pub required_validation_layers: Vec<String>,
-    /// the message type that Validation Layer would report for.
-    pub flags: Vec<DebugReportFlag>,
-}
+use vk::core::debug::ValidationConfig;
+use vk::core::debug::DebugReportFlag;
 
 #[derive(Deserialize, Default)]
 pub(crate) struct ValidationConfigMirror {

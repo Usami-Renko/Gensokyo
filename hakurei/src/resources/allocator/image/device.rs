@@ -1,11 +1,11 @@
 
-use ash::vk;
+use vk::core::device::HaDevice;
+use vk::resources::memory::{ HaMemoryAbstract, MemorySelector };
+use vk::resources::error::MemoryError;
+use vk::utils::types::vkMemorySize;
 
-use core::device::HaDevice;
-
-use resources::allocator::ImgMemAlloAbstract;
-use resources::memory::{ HaDeviceMemory, HaMemoryAbstract };
-use resources::error::MemoryError;
+use resources::allocator::image::traits::ImgMemAlloAbstract;
+use resources::memory::HaDeviceMemory;
 
 pub struct DeviceImgMemAllocator {
 
@@ -24,9 +24,9 @@ impl DeviceImgMemAllocator {
 
 impl ImgMemAlloAbstract for DeviceImgMemAllocator {
 
-    fn allocate(&mut self, device: &HaDevice, size: vk::DeviceSize, mem_type_index: usize, mem_type: vk::MemoryType) -> Result<(), MemoryError> {
+    fn allocate(&mut self, device: &HaDevice, size: vkMemorySize, selector: &MemorySelector) -> Result<(), MemoryError> {
 
-        let memory = HaDeviceMemory::allocate(device, size, mem_type_index, mem_type)?;
+        let memory = HaDeviceMemory::allocate(device, size, selector)?;
         self.memory = Some(memory);
         Ok(())
     }

@@ -1,8 +1,8 @@
 
-use core::device::HaDevice;
+use vk::core::device::HaDevice;
 
-use resources::descriptor::HaDescriptorPool;
-use resources::descriptor::HaDescriptorSet;
+use vk::resources::descriptor::HaDescriptorPool;
+use vk::resources::descriptor::HaDescriptorSet;
 
 pub struct HaDescriptorRepository {
 
@@ -14,6 +14,7 @@ pub struct HaDescriptorRepository {
 impl HaDescriptorRepository {
 
     pub fn empty() -> HaDescriptorRepository {
+
         HaDescriptorRepository {
             device: None,
             pool  : HaDescriptorPool::uninitialize(),

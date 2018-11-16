@@ -1,12 +1,12 @@
 
-use ash::vk;
+use vk::utils::types::vkMemorySize;
 
-use resources::allocator::BufferInfosAllocatable;
+use resources::allocator::buffer::traits::BufferInfosAllocatable;
 
-pub(crate) struct BufferAllocateInfos {
+pub struct BufferAllocateInfos {
 
     pub infos: Vec<Box<BufferInfosAllocatable>>,
-    pub spaces: Vec<vk::DeviceSize>,
+    pub spaces: Vec<vkMemorySize>,
 }
 
 impl BufferAllocateInfos {

@@ -1,8 +1,10 @@
 
 use toml;
 
+use resources::image::io::ImageLoadConfig;
+
 use config::engine::ConfigMirror;
-use config::resources::{ ImageLoadConfig, ImageLoadConfigMirror };
+use config::resources::ImageLoadConfigMirror;
 use config::error::ConfigError;
 
 #[derive(Debug, Clone)]

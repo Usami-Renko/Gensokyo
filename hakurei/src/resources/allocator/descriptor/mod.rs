@@ -1,6 +1,7 @@
 
-pub use self::pre::HaDescriptorPreAllocator;
+pub use self::target::HaDescriptorAllocator;
 pub use self::distributor::HaDescriptorDistributor;
 
-mod pre;
+mod target;
 mod distributor;
+mod index;

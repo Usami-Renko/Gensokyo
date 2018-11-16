@@ -1,10 +1,13 @@
 
 use toml;
 
+use vk::core::config::CoreConfig;
+use vk::pipeline::config::PipelineConfig;
+
 use config::manifest;
-use config::core::{ CoreConfig, CoreConfigMirror };
+use config::core::CoreConfigMirror;
 use config::window::{ WindowConfig, WindowConfigMirror };
-use config::pipeline::{ PipelineConfig, PipelineConfigMirror };
+use config::pipeline::PipelineConfigMirror;
 use config::resources::{ ResourceConfig, ResourceConfigMirror };
 use config::error::ConfigError;
 

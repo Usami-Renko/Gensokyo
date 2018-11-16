@@ -1,15 +1,15 @@
 
-use ash::vk;
+use vk::core::device::HaDevice;
+use vk::resources::memory::{ HaMemoryAbstract, MemorySelector };
+use vk::resources::error::MemoryError;
+use vk::utils::types::vkMemorySize;
 
-use core::device::HaDevice;
+use resources::memory::HaMemoryEntity;
+use resources::allocator::buffer::traits::{ BufMemAlloAbstract, BufferInfosAllocatable };
+use resources::allocator::buffer::infos::BufferAllocateInfos;
+use resources::memory::HaDeviceMemory;
 
-use resources::allocator::{ BufMemAlloAbstract, BufferAllocateInfos };
-use resources::allocator::BufferInfosAllocatable;
-use resources::memory::{ HaDeviceMemory, HaMemoryAbstract };
-use resources::error::MemoryError;
-
-
-pub(crate) struct DeviceBufMemAllocator {
+pub struct DeviceBufMemAllocator {
 
     infos : Option<BufferAllocateInfos>,
     memory: Option<HaDeviceMemory>,
@@ -27,7 +27,7 @@ impl DeviceBufMemAllocator {
 
 impl BufMemAlloAbstract for DeviceBufMemAllocator {
 
-    fn add_allocate(&mut self, space: vk::DeviceSize, config: Box<BufferInfosAllocatable>) {
+    fn add_allocate(&mut self, space: vkMemorySize, config: Box<BufferInfosAllocatable>) {
 
         if let Some(ref mut infos) = self.infos {
             infos.spaces.push(space);
@@ -35,10 +35,11 @@ impl BufMemAlloAbstract for DeviceBufMemAllocator {
         }
     }
 
-    fn allocate(&mut self, device: &HaDevice, size: vk::DeviceSize, mem_type_index: usize, mem_type: vk::MemoryType) -> Result<(), MemoryError> {
+    fn allocate(&mut self, device: &HaDevice, size: vkMemorySize, selector: &MemorySelector) -> Result<(), MemoryError> {
 
-        let memory = HaDeviceMemory::allocate(device, size, mem_type_index, mem_type)?;
+        let memory = HaDeviceMemory::allocate(device, size, selector)?;
         self.memory = Some(memory);
+
         Ok(())
     }
 
@@ -54,10 +55,10 @@ impl BufMemAlloAbstract for DeviceBufMemAllocator {
         Ok(())
     }
 
-    fn take_memory(&mut self) -> Result<Box<HaMemoryAbstract>, MemoryError> {
+    fn take_memory(&mut self) -> Result<HaMemoryEntity, MemoryError> {
 
         self.memory.take()
-            .and_then(|mem| Some(Box::new(mem) as Box<HaMemoryAbstract>))
+            .and_then(|mem| Some(Box::new(mem) as HaMemoryEntity))
             .ok_or(MemoryError::MemoryNotYetAllocateError)
     }
 

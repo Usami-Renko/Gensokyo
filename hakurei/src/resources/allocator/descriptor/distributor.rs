@@ -1,12 +1,12 @@
 
-use ash::version::DeviceV1_0;
+use vk::core::device::HaDevice;
 
-use core::device::HaDevice;
+use vk::resources::descriptor::{ HaDescriptorPool, HaDescriptorSet, DescriptorSetConfig };
+use vk::resources::descriptor::DescriptorSetItem;
 
+use resources::descriptor::DescriptorSet;
 use resources::repository::HaDescriptorRepository;
-use resources::descriptor::{ HaDescriptorPool, HaDescriptorSet, DescriptorSetConfig };
-use resources::descriptor::{ DescriptorSet, DescriptorSetIndex };
-use resources::descriptor::DescriptorSetItem;
+use resources::allocator::descriptor::index::DescriptorSetIndex;
 
 pub struct HaDescriptorDistributor {
 
@@ -20,7 +20,7 @@ pub struct HaDescriptorDistributor {
 
 impl HaDescriptorDistributor {
 
-    pub(crate) fn new(device: HaDevice, pool: HaDescriptorPool, sets: Vec<HaDescriptorSet>, configs: Vec<DescriptorSetConfig>) -> HaDescriptorDistributor {
+    pub(super) fn new(device: HaDevice, pool: HaDescriptorPool, sets: Vec<HaDescriptorSet>, configs: Vec<DescriptorSetConfig>) -> HaDescriptorDistributor {
 
         HaDescriptorDistributor {
             device, pool, sets, configs,
@@ -30,22 +30,11 @@ impl HaDescriptorDistributor {
 
     pub fn acquire_set(&mut self, index: DescriptorSetIndex) -> DescriptorSet {
 
-        let set = &self.sets[index.0];
-        let binding_indices = self.configs[index.0].bindings.iter()
-            .map(|binding_info| binding_info.binding_index()).collect();
+        let set = &self.sets[index.value];
+        let config = &self.configs[index.value];
+        self.update_sets.push(index.clone());
 
-        let set = DescriptorSet {
-            item: DescriptorSetItem {
-                handle   : set.handle,
-                set_index: index.0,
-                binding_indices,
-            },
-            layout: set.layout.handle,
-        };
-
-        self.update_sets.push(index);
-
-        set
+        DescriptorSet::new(set, config, index.value)
     }
 
     pub fn into_repository(self) -> HaDescriptorRepository {
@@ -61,17 +50,15 @@ impl HaDescriptorDistributor {
 
         for set_index in self.update_sets.iter() {
 
-            for binding_info in self.configs[set_index.0].bindings.iter() {
-                let write_info = binding_info.write_set(&self.sets[set_index.0]);
-                write_infos.push(write_info);
-            }
+            let config = &self.configs[set_index.value];
+            let update_set = &self.sets[set_index.value];
+
+            let set_write_infos = config.iter_binding()
+                .map(|binding| binding.write_set(update_set))
+                .collect::<Vec<_>>();
+            write_infos.extend(set_write_infos);
         }
 
-        let write_sets = write_infos.into_iter()
-            .map(|info| info.info).collect::<Vec<_>>();
-
-        unsafe {
-            self.device.handle.update_descriptor_sets(&write_sets, &[]);
-        }
+        self.device.update_descriptor_sets(write_infos);
     }
 }

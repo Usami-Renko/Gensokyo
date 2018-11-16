@@ -1,14 +1,16 @@
 
-use core::device::HaDevice;
+use vk::core::device::HaDevice;
 
-use resources::image::HaImageView;
-use resources::image::{ HaSampleImage, SampleImageInfo };
-use resources::image::{ HaDepthStencilImage, DepthStencilImageInfo };
+use vk::resources::image::HaImageView;
+use vk::resources::memory::HaMemoryAbstract;
+use vk::resources::error::{ AllocatorError, ImageError };
+
+use resources::image::sample::{ HaSampleImage, SampleImageInfo };
+use resources::image::depth::{ HaDepthStencilAttachment, DepthStencilAttachmentInfo };
+
 use resources::image::ImageBranchInfoAbs;
-use resources::memory::HaMemoryAbstract;
-use resources::allocator::ImageAllocateInfo;
+use resources::allocator::image::ImageAllocateInfo;
 use resources::repository::HaImageRepository;
-use resources::error::{ AllocatorError, ImageError };
 
 pub struct HaImageDistributor {
 
@@ -21,7 +23,7 @@ pub struct HaImageDistributor {
 
 impl HaImageDistributor {
 
-    pub(crate) fn new(device: HaDevice, infos: Vec<ImageAllocateInfo>, memory: Box<HaMemoryAbstract>) -> Result<HaImageDistributor, AllocatorError> {
+    pub(super) fn new(device: HaDevice, infos: Vec<ImageAllocateInfo>, memory: Box<HaMemoryAbstract>) -> Result<HaImageDistributor, AllocatorError> {
 
         let mut views = vec![];
         for info in infos.iter() {
@@ -45,22 +47,21 @@ impl HaImageDistributor {
         let image = HaSampleImage::setup(
             info, sampler,
             &self.infos[allocate_index],
-            self.views[allocate_index].handle,
+            &self.views[allocate_index]
         );
 
         Ok(image)
     }
 
-    pub fn acquire_depth_stencil_image(&self, info: DepthStencilImageInfo) -> Result<HaDepthStencilImage, AllocatorError> {
+    pub fn acquire_depth_stencil_image(&self, info: DepthStencilAttachmentInfo) -> Result<HaDepthStencilAttachment, AllocatorError> {
 
         let allocate_index = info.allocate_index()
             .ok_or(AllocatorError::Image(ImageError::NotYetAllocateError))?;
-        let format = info.format;
 
-        let image = HaDepthStencilImage::setup(
-            info, format,
+        let image = HaDepthStencilAttachment::setup(
+            info,
             &self.infos[allocate_index],
-            self.views[allocate_index].handle,
+            &self.views[allocate_index],
         );
 
         Ok(image)

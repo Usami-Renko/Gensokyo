@@ -1,8 +1,8 @@
 
-use core::device::HaDevice;
+use vk::core::device::HaDevice;
 
-use resources::memory::HaMemoryAbstract;
-use resources::image::{ HaImage, HaImageView };
+use vk::resources::memory::HaMemoryAbstract;
+use vk::resources::image::{ HaImage, HaImageView };
 
 #[derive(Default)]
 pub struct HaImageRepository {

@@ -9,7 +9,8 @@ use procedure::window::WindowInfo;
 use procedure::workflow::{ CoreInfrastructure, HaResources, ProgramProc };
 use procedure::error::{ RuntimeError, ProcedureError };
 
-use utility::fps::HaFpsTimer;
+use utils::fps::HaFpsTimer;
+use vk::utils::types::vkDimension2D;
 
 use input::{ ActionNerve, SceneReaction };
 
@@ -62,7 +63,13 @@ impl<T> ProgramEnv<T> where T: ProgramProc {
                         resources = new_resources;
 
                         // update current window size.
-                        self.window_info.reset_size(core.surface.window_size());
+                        // TODO: Handle unwrap().
+                        let window_size = window.get_inner_size().unwrap();
+                        let dimension = vkDimension2D {
+                            width : window_size.width  as u32,
+                            height: window_size.height as u32,
+                        };
+                        self.window_info.reset_size(dimension);
 
                         continue
                     },

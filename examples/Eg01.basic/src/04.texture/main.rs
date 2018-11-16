@@ -105,7 +105,7 @@ impl ProgramProc for TextureMappingProcedure {
 
         // descriptor
         let mut descriptor_set_config = DescriptorSetConfig::init(&[]);
-        let _ = descriptor_set_config.add_image_binding(&self.sample_image, &[
+        descriptor_set_config.add_image_binding(&self.sample_image, &[
             ShaderStageFlag::FragmentStage,
         ]);
 

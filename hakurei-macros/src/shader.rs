@@ -26,7 +26,7 @@ macro_rules! define_input {
                     bindings: vec![
                         HaVertexInputBinding {
                             binding: $binding_index,
-                            stride: mem::size_of::<Self>() as uint32_t,
+                            stride: mem::size_of::<Self>() as vkint,
                             rate: vertex_rate!($input_rate),
                         },
                     ],
@@ -35,7 +35,7 @@ macro_rules! define_input {
                             binding: $binding_index,
                             location: $loc_index,
                             format: vk_format!($format),
-                            offset: offset_of!(Self, $filed_name) as uint32_t,
+                            offset: offset_of!(Self, $filed_name) as vkint,
                         },
                     )*],
                 }
@@ -47,13 +47,13 @@ macro_rules! define_input {
 
 #[macro_export]
 macro_rules! vk_format {
-    (float)  => (Format::R32Sfloat);
-    (double) => (Format::R64Sfloat);
-    (vec2)   => (Format::R32g32Sfloat);
-    (vec3)   => (Format::R32g32b32Sfloat);
-    (vec4)   => (Format::R32g32b32a32Sfloat);
-    (ivec2)  => (Format::R32g32Sint);
-    (uvec4)  => (Format::R32g32b32a32Sint);
+    (float)  => (VKFormat::R32Sfloat);
+    (double) => (VKFormat::R64Sfloat);
+    (vec2)   => (VKFormat::R32g32Sfloat);
+    (vec3)   => (VKFormat::R32g32b32Sfloat);
+    (vec4)   => (VKFormat::R32g32b32a32Sfloat);
+    (ivec2)  => (VKFormat::R32g32Sint);
+    (uvec4)  => (VKFormat::R32g32b32a32Sint);
 }
 
 #[macro_export]

@@ -2,23 +2,23 @@
 use winit;
 
 use config::engine::EngineConfig;
-use core::instance::HaInstance;
-use core::debug::HaDebugger;
-use core::physical::HaPhysicalDevice;
-use core::surface::HaSurface;
-use core::device::{ HaDevice, HaLogicalDevice, LogicalDeviceBuilder };
-use core::swapchain::HaSwapchain;
-use core::swapchain::SwapchainBuilder;
-use core::swapchain::{ SwapchainError, SwapchainRuntimeError };
-use resources::toolkit::{ AllocatorKit, PipelineKit, CommandKit };
-use sync::fence::HaFence;
-use sync::semaphore::HaSemaphore;
+use vk::core::instance::HaInstance;
+use vk::core::debug::HaDebugger;
+use vk::core::physical::HaPhysicalDevice;
+use vk::core::surface::HaSurface;
+use vk::core::device::{ HaDevice, HaLogicalDevice, LogicalDeviceBuilder };
+use vk::core::swapchain::HaSwapchain;
+use vk::core::swapchain::SwapchainBuilder;
+use vk::core::swapchain::error::{ SwapchainError, SwapchainRuntimeError };
+use vk::resources::sync::{ HaFence, HaSemaphore };
+
+use toolkit::{ AllocatorKit, PipelineKit, CommandKit };
 
 use procedure::loops::ProgramEnv;
 use procedure::error::ProcedureError;
 
 use input::{ ActionNerve, SceneAction };
-use utility::time::TimePeriod;
+use utils::time::TimePeriod;
 
 use std::rc::Rc;
 
@@ -39,10 +39,12 @@ pub trait ProgramProc {
 
 pub struct CoreInfrastructure<'win> {
 
+    window: &'win winit::Window,
+
     instance: HaInstance,
     debugger: Option<HaDebugger>,
 
-    pub(crate) surface : HaSurface<'win>,
+    pub(crate) surface : HaSurface,
     pub(crate) physical: Rc<HaPhysicalDevice>,
     pub(crate) device  : Rc<HaLogicalDevice>,
 }
@@ -61,7 +63,7 @@ impl<'win, T> ProgramEnv<T> where T: ProgramProc {
     pub(super) fn initialize_core(&self, window: &'win winit::Window, config: &EngineConfig)
         -> Result<CoreInfrastructure<'win>, ProcedureError> {
 
-        let instance = HaInstance::new(&self.config)?;
+        let instance = HaInstance::new(&self.config.core.instance, &self.config.core.validation)?;
 
         let debugger = if self.config.core.validation.is_enable {
             let debugger = HaDebugger::setup(&instance, &self.config.core.validation.flags)?;
@@ -71,13 +73,13 @@ impl<'win, T> ProgramEnv<T> where T: ProgramProc {
         };
 
         let surface = HaSurface::new(&instance, window)?;
-        let physical = HaPhysicalDevice::new(&instance, &surface, config)?;
+        let physical = HaPhysicalDevice::new(&instance, &surface, &config.core, &config.pipeline)?;
         // Initialize the device with default queues. (one graphics queue, one present queue, one transfer queue)
         let device = LogicalDeviceBuilder::init(&instance, &physical, &config.core.device)?
             .build()?;
 
         let core = CoreInfrastructure {
-            instance, debugger, surface,
+            instance, debugger, surface, window,
             device  : Rc::new(device),
             physical: Rc::new(physical),
         };
@@ -111,7 +113,7 @@ impl<'win, T> ProgramEnv<T> where T: ProgramProc {
         -> Result<(), ProcedureError> {
 
         let fence_to_wait = &resources.sync_fences[current_frame];
-        fence_to_wait.wait(TimePeriod::Infinte)?;
+        fence_to_wait.wait(TimePeriod::Infinte.vulkan_time())?;
 
         let image_result = resources.swapchain.next_image(Some(&resources.image_awaits[current_frame]), None);
         let image_index = match image_result {
@@ -158,8 +160,8 @@ impl<'win, T> ProgramEnv<T> where T: ProgramProc {
 
     fn create_inner_resources(&self, core: &CoreInfrastructure, old_resource: Option<&HaResources>) -> Result<HaResources, ProcedureError> {
 
-        let swapchain = SwapchainBuilder::init(&self.config, &core.physical, &core.device, &core.surface)?
-            .build(&core.instance, old_resource.and_then(|re| Some(&re.swapchain)))?;
+        let swapchain = SwapchainBuilder::init(&self.config.core.swapchain, &core.physical, &core.device, &core.surface)?
+            .build(&core.instance, old_resource.and_then(|re| Some(&re.swapchain)), &core.window)?;
 
         // sync
         let mut image_awaits = vec![];

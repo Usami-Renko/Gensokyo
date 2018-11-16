@@ -2,13 +2,12 @@
 #[macro_export]
 macro_rules! data_size {
     ($data:expr, $d_type:ty) => (
-        (::std::mem::size_of::<$d_type>() * $data.len()) as DeviceSize
+        (::std::mem::size_of::<$d_type>() * $data.len()) as vkMemorySize
     );
     ($data:expr) => (
-        (::std::mem::size_of_value($data)) as DeviceSize
+        (::std::mem::size_of_value($data)) as vkMemorySize
     );
 }
-
 
 // the macro is copy from crate 'memoffset' v0.2
 #[macro_export]

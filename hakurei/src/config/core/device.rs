@@ -2,35 +2,25 @@
 use toml;
 
 use config::engine::ConfigMirror;
-use config::macros::vk_string_to_physical_feature;
 use config::error::{ ConfigError, MappingError };
 
-use core::physical::QueueOperationType;
-use core::physical::{ PhysicalDeviceType, PhysicalFeatureType, DeviceExtensionType };
+use vk::core::device::DeviceConfig;
+use vk::core::physical::QueueOperationType;
+use vk::core::physical::{ PhysicalDeviceType, PhysicalFeatureType, DeviceExtensionType };
 
-use core::device::QueueRequestStrategy;
+use vk::core::device::QueueRequestStrategy;
 
-use utility::time::TimePeriod;
+use utils::time::TimePeriod;
 use std::time::Duration;
-
-#[derive(Debug, Clone)]
-pub(crate) struct DeviceConfig {
-
-    pub device_types: Vec<PhysicalDeviceType>,
-    pub features    : Vec<PhysicalFeatureType>,
-    pub extensions  : Vec<DeviceExtensionType>,
-    pub queue_operations: Vec<QueueOperationType>,
-
-    pub queue_request_strategy: QueueRequestStrategy,
-    pub transfer_wait_time: TimePeriod,
-}
 
 #[derive(Deserialize, Default)]
 pub(crate) struct DeviceConfigMirror {
+
     types     : Vec<String>,
     features  : Vec<String>,
     extensions: Vec<String>,
     queue_ops : Vec<String>,
+
     queue_request_strategy: String,
     transfer_time_out: String,
     transfer_duration: u64, // in ms unit
@@ -46,9 +36,10 @@ impl ConfigMirror for DeviceConfigMirror {
             device_types.push(vk_raw2device_type(raw_device_type)?);
         }
 
+        use vk::utils::format::vk_string_to_physical_feature;
         let mut features = vec![];
         for raw_feature in self.features.iter() {
-            features.push(vk_string_to_physical_feature(raw_feature)?);
+            features.push(vk_string_to_physical_feature(raw_feature));
         }
 
         let mut extensions = vec![];
@@ -64,7 +55,7 @@ impl ConfigMirror for DeviceConfigMirror {
         let config = DeviceConfig {
             device_types, features, extensions, queue_operations,
             queue_request_strategy: vk_raw2queue_request_strategy(&self.queue_request_strategy)?,
-            transfer_wait_time: vk_raw2transfer_wait_time(&self.transfer_time_out, self.transfer_duration)?,
+            transfer_wait_time: vk_raw2transfer_wait_time(&self.transfer_time_out, self.transfer_duration)?.vulkan_time(),
         };
 
         Ok(config)

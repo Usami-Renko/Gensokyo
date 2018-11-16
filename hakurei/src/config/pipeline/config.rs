@@ -1,14 +1,11 @@
 
 use toml;
 
+use vk::pipeline::config::{ PipelineConfig, DepthStencilConfig };
+
 use config::engine::ConfigMirror;
-use config::pipeline::{ DepthStencilConfig, DepthStencilConfigMirror };
+use config::pipeline::DepthStencilConfigMirror;
 use config::error::ConfigError;
-
-pub(crate) struct PipelineConfig {
-
-    pub depth_stencil: DepthStencilConfig,
-}
 
 #[derive(Deserialize, Default)]
 pub(crate) struct PipelineConfigMirror {

@@ -1,15 +1,15 @@
 
-use ash::vk;
+use vk::core::device::HaDevice;
+use vk::resources::memory::{ HaMemoryAbstract, MemorySelector };
+use vk::resources::error::MemoryError;
+use vk::utils::types::vkMemorySize;
 
-use core::device::HaDevice;
+use resources::memory::HaMemoryEntity;
+use resources::allocator::buffer::traits::{ BufMemAlloAbstract, BufferInfosAllocatable };
+use resources::allocator::buffer::infos::BufferAllocateInfos;
+use resources::memory::HaStagingMemory;
 
-use resources::allocator::{ BufMemAlloAbstract, BufferAllocateInfos };
-use resources::allocator::BufferInfosAllocatable;
-use resources::memory::{ HaStagingMemory, HaMemoryAbstract };
-use resources::error::MemoryError;
-
-
-pub(crate) struct StagingBufMemAllocator {
+pub struct StagingBufMemAllocator {
 
     infos : Option<BufferAllocateInfos>,
     memory: Option<HaStagingMemory>,
@@ -27,16 +27,16 @@ impl StagingBufMemAllocator {
 
 impl BufMemAlloAbstract for StagingBufMemAllocator {
 
-    fn add_allocate(&mut self, space: vk::DeviceSize, _: Box<BufferInfosAllocatable>) {
+    fn add_allocate(&mut self, space: vkMemorySize, _: Box<BufferInfosAllocatable>) {
 
         if let Some(ref mut infos) = self.infos {
             infos.spaces.push(space);
         }
     }
 
-    fn allocate(&mut self, device: &HaDevice, size: vk::DeviceSize, mem_type_index: usize, mem_type: vk::MemoryType) -> Result<(), MemoryError> {
+    fn allocate(&mut self, device: &HaDevice, size: vkMemorySize, selector: &MemorySelector) -> Result<(), MemoryError> {
 
-        let memory = HaStagingMemory::allocate(device, size, mem_type_index, mem_type)?;
+        let memory = HaStagingMemory::allocate(device, size, selector)?;
         self.memory = Some(memory);
         Ok(())
     }
@@ -53,10 +53,10 @@ impl BufMemAlloAbstract for StagingBufMemAllocator {
         Ok(())
     }
 
-    fn take_memory(&mut self) -> Result<Box<HaMemoryAbstract>, MemoryError> {
+    fn take_memory(&mut self) -> Result<HaMemoryEntity, MemoryError> {
 
         self.memory.take()
-            .and_then(|mem| Some(Box::new(mem) as Box<HaMemoryAbstract>))
+            .and_then(|mem| Some(Box::new(mem) as HaMemoryEntity))
             .ok_or(MemoryError::MemoryNotYetAllocateError)
     }
 
