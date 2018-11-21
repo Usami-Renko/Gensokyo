@@ -1,5 +1,6 @@
 
-use core::DeviceV1;
+use ash;
+
 use core::device::device::{ HaLogicalDevice, DeviceConfig };
 use core::device::queue::{ HaQueue, HaQueueAbstract };
 use core::error::LogicalDeviceError;
@@ -13,7 +14,7 @@ pub struct HaGraphicsQueue {
 
 impl HaQueueAbstract for HaGraphicsQueue {
 
-    fn new(_device: &DeviceV1, queue: &Rc<HaQueue>, _config: &DeviceConfig) -> Result<Self, LogicalDeviceError> {
+    fn new(_device: &ash::Device, queue: &Rc<HaQueue>, _config: &DeviceConfig) -> Result<Self, LogicalDeviceError> {
 
         let graphics_queue = HaGraphicsQueue {
             queue: queue.clone(),

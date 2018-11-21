@@ -1,12 +1,6 @@
 
-use utils::types::{ vkint, vkchar };
-
+use types::vkchar;
 use std::ffi::{ CStr, CString };
-
-pub fn vk_make_version(major: vkint, minor: vkint, patch: vkint) -> vkint {
-
-    vk_make_version!(major, minor, patch)
-}
 
 /// Helper function to convert [c_char; SIZE] to string
 pub fn vk_to_string(raw_string_array: &[vkchar]) -> String {

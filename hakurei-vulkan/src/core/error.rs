@@ -2,7 +2,7 @@
 use std::fmt;
 use std::error::Error;
 
-use resources::error::CommandError;
+use command::CommandError;
 
 /// possible error may occur during the creation of vk::Instance.
 #[derive(Debug, Clone, Copy, Eq, PartialEq)]
@@ -35,7 +35,6 @@ impl fmt::Display for InstanceError {
 #[derive(Debug, Clone, Copy, Eq, PartialEq)]
 pub enum ValidationError {
 
-    DebugReportCreationError,
     DebugCallbackCreationError,
 }
 
@@ -45,7 +44,6 @@ impl fmt::Display for ValidationError {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
 
         let description = match self {
-            | ValidationError::DebugReportCreationError   => "Failed to create DebugReport Object.",
             | ValidationError::DebugCallbackCreationError => "Failed to create DebugReport Callback Object.",
         };
 
@@ -109,7 +107,6 @@ impl fmt::Display for PhysicalFormatUsage {
 pub enum SurfaceError {
 
     SurfaceCreationError,
-    ExtensionLoadError,
     QueryCapabilitiesError,
     QueryFormatsError,
     QueryPresentModeError,
@@ -122,7 +119,6 @@ impl fmt::Display for SurfaceError {
 
         let description = match self {
             | SurfaceError::SurfaceCreationError   => "Failed to create Surface.",
-            | SurfaceError::ExtensionLoadError     => "Failed to load Surface extension.",
             | SurfaceError::QueryCapabilitiesError => "Failed to query surface capabilities.",
             | SurfaceError::QueryFormatsError      => "Failed to query surface formats.",
             | SurfaceError::QueryPresentModeError  => "Failed to query surface present mode.",

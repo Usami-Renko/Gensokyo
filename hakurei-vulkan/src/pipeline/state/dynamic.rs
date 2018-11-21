@@ -1,10 +1,15 @@
 
 use ash::vk;
 
-use utils::marker::VulkanEnum;
-use utils::types::vkint;
+use types::vkuint;
 
 use std::ptr;
+
+#[derive(Debug)]
+pub enum DynamicableValue<T> {
+    Fixed { value: T },
+    Dynamic,
+}
 
 /// Most states are baked into the pipeline, but there are still a few dynamic states that can be changed within a command buffer.
 #[derive(Default)]
@@ -16,79 +21,25 @@ pub struct HaDynamicState {
 
 impl HaDynamicState {
 
-    pub fn info(&self) -> vk::PipelineDynamicStateCreateInfo {
+    pub(crate) fn info(&self) -> vk::PipelineDynamicStateCreateInfo {
 
         vk::PipelineDynamicStateCreateInfo {
-            s_type: vk::StructureType::PipelineDynamicStateCreateInfo,
+            s_type: vk::StructureType::PIPELINE_DYNAMIC_STATE_CREATE_INFO,
             p_next: ptr::null(),
             // flags is reserved for future use in API version 1.1.82.
             flags : vk::PipelineDynamicStateCreateFlags::empty(),
-
-            dynamic_state_count: self.states.len() as vkint,
+            dynamic_state_count: self.states.len() as vkuint,
             p_dynamic_states   : self.states.as_ptr(),
         }
     }
 
-    pub fn add_state(&mut self, state: DynamicState) {
-        self.states.push(state.value());
+    pub fn add_state(&mut self, state: vk::DynamicState) {
+        self.states.push(state);
     }
 
     pub fn is_contain_state(&self) -> bool {
         !self.states.is_empty()
     }
-}
-
-// TODO: Add configuration for Other Dynamic States.
-#[derive(Debug, Clone, Copy, Eq, PartialEq)]
-pub enum DynamicState {
-
-    /// `Viewport` specifies that the pViewports state in vk::PipelineViewportStateCreateInfo will be ignored and must be set dynamically with vk::CmdSetViewport before any draw commands.
-    ///
-    /// The number of viewports used by a pipeline is still specified by the viewportCount member of vk::PipelineViewportStateCreateInfo.
-    Viewport,
-    /// `Scissor` specifies that the pScissors state in vk::PipelineViewportStateCreateInfo will be ignored and must be set dynamically with vk::CmdSetScissor before any draw commands.
-    ///
-    /// The number of scissor rectangles used by a pipeline is still specified by the scissorCount member of vk::PipelineViewportStateCreateInfo.
-    Scissor,
-    /// `LineWidth` specifies that the lineWidth state in vk::PipelineRasterizationStateCreateInfo will be ignored
-    /// and must be set dynamically with vk::CmdSetLineWidth before any draw commands that generate line primitives for the rasterizer.
-    LineWidth,
-    /// `DepthBias` specifies that the depthBiasConstantFactor, depthBiasClamp and depthBiasSlopeFactor states in vk::PipelineRasterizationStateCreateInfo will be ignored and must be set dynamically with vk::CmdSetDepthBias before any draws are performed with depthBiasEnable in vk::PipelineRasterizationStateCreateInfo set to vk::TRUE.
-    DepthBias,
-    /// `BlendConstants` specifies that the blendConstants state in vk::PipelineColorBlendStateCreateInfo will be ignored and must be set dynamically with vk::CmdSetBlendConstants before any draws are performed with a pipeline state with vk::PipelineColorBlendAttachmentState member blendEnable set to vk::TRUE and any of the blend functions using a constant blend color.
-    BlendConstants,
-    /// `DepthBounds` specifies that the minDepthBounds and maxDepthBounds states of vk::PipelineDepthStencilStateCreateInfo will be ignored and must be set dynamically with vk::CmdSetDepthBounds before any draws are performed with a pipeline state with vk::PipelineDepthStencilStateCreateInfo member depthBoundsTestEnable set to vk::TRUE.
-    DepthBounds,
-    /// `StencilCompareMask` specifies that the compareMask state in vk::PipelineDepthStencilStateCreateInfo for both front and back will be ignored and must be set dynamically with vk::CmdSetStencilCompareMask before any draws are performed with a pipeline state with vk::PipelineDepthStencilStateCreateInfo member stencilTestEnable set to vk::TRUE.
-    StencilCompareMask,
-    /// `StencilWriteMask` specifies that the writeMask state in vk::PipelineDepthStencilStateCreateInfo for both front and back will be ignored and must be set dynamically with vk::CmdSetStencilWriteMask before any draws are performed with a pipeline state with vk::PipelineDepthStencilStateCreateInfo member stencilTestEnable set to vk::TRUE.
-    StencilWriteMask,
-    /// `StencilReference` specifies that the reference state in vk::PipelineDepthStencilStateCreateInfo for both front and back will be ignored and must be set dynamically with vk::CmdSetStencilReference before any draws are performed with a pipeline state with vk::PipelineDepthStencilStateCreateInfo member stencilTestEnable set to vk::TRUE.
-    StencilReference,
-}
-
-impl VulkanEnum for DynamicState {
-    type EnumType = vk::DynamicState;
-
-    fn value(&self) -> Self::EnumType {
-        match self {
-            | DynamicState::Viewport           => vk::DynamicState::Viewport,
-            | DynamicState::Scissor            => vk::DynamicState::Scissor,
-            | DynamicState::LineWidth          => vk::DynamicState::LineWidth,
-            | DynamicState::DepthBias          => vk::DynamicState::DepthBias,
-            | DynamicState::BlendConstants     => vk::DynamicState::BlendConstants,
-            | DynamicState::DepthBounds        => vk::DynamicState::DepthBounds,
-            | DynamicState::StencilCompareMask => vk::DynamicState::StencilCompareMask,
-            | DynamicState::StencilWriteMask   => vk::DynamicState::StencilWriteMask,
-            | DynamicState::StencilReference   => vk::DynamicState::StencilReference,
-        }
-    }
-}
-
-#[derive(Debug)]
-pub enum DynamicableValue<T> {
-    Fixed { value: T },
-    Dynamic,
 }
 
 impl<T> DynamicableValue<T>{
@@ -101,8 +52,9 @@ impl<T> DynamicableValue<T>{
     }
 }
 
-impl Clone for DynamicableValue<vkint> {
+impl Clone for DynamicableValue<vkuint> {
     fn clone(&self) -> Self {
         self.to_owned()
     }
 }
+

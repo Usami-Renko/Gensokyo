@@ -10,10 +10,9 @@ keywords    = ["Vulkan", "Rust", "Graphics"]
 [dependencies]
 hakurei-macros = { path = "../hakurei-macros" }
 
-winit     = "0.17.1" # winit is a window creation and management library.
-ash       = "0.24.4" # ash is the vulkan bindings for Rust.
+winit     = "0.18.0" # winit is a window creation and management library.
+ash       = "0.26.0" # ash is the vulkan bindings for Rust.
 num       = "0.2"    # num crate is a collection of numeric types and traits for Rust.
-image     = "0.19.0" # image crate provides basic imaging processing functions and methods for converting to and from image formats.
 memoffset = "0.2"    # memoffset provides C-Like offset_of functionality for Rust structs.
 shaderc   = "0.3.10" # shaderc is the Rust bindings for the shaderc library.
 # error-chain = "0.12.0" # Consistent error handling for Rust.
@@ -21,9 +20,9 @@ shaderc   = "0.3.10" # shaderc is the Rust bindings for the shaderc library.
 
 # vulkan platform dependencies on macOS.
 [target.'cfg(target_os = "macos")'.dependencies]
-metal-rs = "0.10.4"
-cocoa    = "0.15.0"
-objc     = "0.2.5"
+metal = "0.13.0"
+cocoa = "0.18.4"
+objc  = "0.2.5"
 
 # vulkan platform dependencies on Windows.
 [target.'cfg(target_os = "windows")'.dependencies]

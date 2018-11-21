@@ -1,21 +1,21 @@
 
 use ash::vk;
-use ash::vk::Bool32;
 
 use pipeline::state::dynamic::DynamicableValue;
-use utils::types::vkfloat;
+
+use types::{ vkfloat, vkbool, VK_TRUE, VK_FALSE };
 
 pub struct DepthTest {
 
     /// test_enable controls whether depth testing is enabled.
-    pub(super) test_enable: Bool32,
+    pub test_enable: vkbool,
     /// write_enable controls whether depth writes are enabled when write_enable is true.
     /// Depth writes are always disabled when test_enable is false.
-    pub(super) write_enable: Bool32,
+    pub write_enable: vkbool,
     /// compare_op is the comparison operator used in the depth test.
-    pub(super) compare_op: vk::CompareOp,
+    pub compare_op: vk::CompareOp,
 
-    pub(super) depth_bound: DynamicableValue<DepthBoundInfo>,
+    pub depth_bound: DynamicableValue<DepthBoundInfo>,
 }
 
 
@@ -23,7 +23,7 @@ impl DepthTest {
 
     pub fn enable(wirte_enable: bool, compare_op: vk::CompareOp, bounds_enable: bool) -> DepthTest {
         DepthTest {
-            test_enable: vk::VK_TRUE,
+            test_enable: VK_TRUE,
             write_enable: if wirte_enable { 1 } else { 0 },
             compare_op,
             depth_bound: if bounds_enable {
@@ -51,9 +51,9 @@ impl Default for DepthTest {
 
     fn default() -> DepthTest {
         DepthTest {
-            test_enable:  vk::VK_FALSE,
-            write_enable: vk::VK_FALSE,
-            compare_op: vk::CompareOp::Less,
+            test_enable:  VK_FALSE,
+            write_enable: VK_FALSE,
+            compare_op: vk::CompareOp::LESS,
 
             depth_bound: DynamicableValue::Fixed { value : DepthBoundInfo::disable() },
         }
@@ -64,15 +64,15 @@ impl Default for DepthTest {
 pub struct DepthBoundInfo {
 
     /// `enable` controls whether depth bounds testing is enabled.
-    pub(super) enable: Bool32,
+    pub enable: vkbool,
     /// `min_bounds` define minimum value used in the depth bounds test.
     ///
     /// Default is 0.0. This value must be smaller than min_bounds and between 0.0 and 1.0.
-    pub(crate) min_bound: vkfloat,
+    pub min_bound: vkfloat,
     /// `max_bounds` define the maximum value used in depth bounds test.
     ///
     /// Default is 1.0. This value must be bigger than depth_bounds and between 0.0 and 1.0.
-    pub(crate) max_bound: vkfloat,
+    pub max_bound: vkfloat,
 }
 
 impl DepthBoundInfo {
@@ -89,7 +89,7 @@ impl DepthBoundInfo {
     pub fn enable() -> DepthBoundInfo {
 
         DepthBoundInfo {
-            enable    : vk::VK_TRUE,
+            enable    : VK_TRUE,
             ..Default::default()
         }
     }
@@ -102,7 +102,7 @@ impl DepthBoundInfo {
     pub fn setup(min: vkfloat, max: vkfloat) -> DepthBoundInfo {
 
         DepthBoundInfo {
-            enable: vk::VK_TRUE,
+            enable: VK_TRUE,
             min_bound: min,
             max_bound: max,
         }
@@ -114,7 +114,7 @@ impl Default for DepthBoundInfo {
     fn default() -> DepthBoundInfo {
 
         DepthBoundInfo {
-            enable    : vk::VK_FALSE,
+            enable    : VK_FALSE,
             min_bound: 0.0,
             max_bound: 1.0,
         }

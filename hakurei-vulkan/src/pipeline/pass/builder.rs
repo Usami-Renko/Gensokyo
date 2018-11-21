@@ -9,14 +9,12 @@ use pipeline::pass::render::HaRenderPass;
 use pipeline::pass::attachment::RenderAttachement;
 use pipeline::pass::subpass::{ RenderSubpass, AttachmentType };
 use pipeline::pass::dependency::RenderDependency;
-use pipeline::stages::PipelineType;
+use pipeline::pass::framebuffer::{ HaFramebuffer, FramebufferBuilder };
 use pipeline::error::{ RenderPassError, PipelineError };
 
 //use resources::image::HaDepthStencilImage;
-use resources::framebuffer::{ HaFramebuffer, FramebufferBuilder };
 
-use utils::types::vkint;
-use utils::marker::VulkanEnum;
+use types::vkuint;
 
 use std::ptr;
 
@@ -37,32 +35,31 @@ impl RenderPassBuilder {
 
         RenderPassBuilder {
             device: device.clone(),
-            attachments : vec![],
-            subpasses   : vec![],
-            dependencies: vec![],
-
-            depth_handle: None,
+            attachments  : Vec::new(),
+            subpasses    : Vec::new(),
+            dependencies : Vec::new(),
+            depth_handle : None,
         }
     }
 
     /// create a new subpass in the RenderPass, return the index of the subpass.
-    pub fn new_subpass(&mut self, typ: PipelineType) -> vkint {
+    pub fn new_subpass(&mut self) -> vkuint {
 
-        let mut subpass = RenderSubpass::empty();
-        subpass.set_bind_point(typ.to_bind_point());
+        // TODO: Currently only support Graphics Subpass.
+        let subpass = RenderSubpass::new(vk::PipelineBindPoint::GRAPHICS);
 
         let subpass_index = self.subpasses.len();
         self.subpasses.push(subpass);
 
-        subpass_index as vkint
+        subpass_index as vkuint
     }
 
     /// create a attachment and set its reference to subpass, return the index of this attachment.
-    pub fn add_attachemnt(&mut self, attachment: RenderAttachement, subpass_index: vkint, type_: AttachmentType) -> usize {
+    pub fn add_attachemnt(&mut self, attachment: RenderAttachement, subpass_index: vkuint, type_: AttachmentType) -> usize {
 
         let attachment_ref = vk::AttachmentReference {
-            attachment: self.attachments.len() as vkint,
-            layout: attachment.layout.value(),
+            attachment: self.attachments.len() as vkuint,
+            layout: attachment.layout,
         };
 
         match type_ {
@@ -85,7 +82,7 @@ impl RenderPassBuilder {
     }
 
     pub fn set_attachment_preserve(&mut self, subpass_index: usize, attachment_index: usize) {
-        self.subpasses[subpass_index].add_preserve(attachment_index as vkint);
+        self.subpasses[subpass_index].add_preserve(attachment_index as vkuint);
     }
 
     pub fn add_dependenty(&mut self, dependency: RenderDependency) {
@@ -97,22 +94,27 @@ impl RenderPassBuilder {
 //        self.depth_handle = Some(depth_view.get_item().view_handle);
 //    }
 
-    pub fn build(&self, swapchain: &HaSwapchain) -> Result<HaRenderPass, PipelineError> {
+    pub fn build(self, swapchain: &HaSwapchain) -> Result<HaRenderPass, PipelineError> {
 
-        let attachments = self.attachments.iter().map(|a| a.desc()).collect::<Vec<_>>();
-        let subpasses = self.subpasses.iter().map(|r| r.desc()).collect::<Vec<_>>();
-        let dependencies = self.dependencies.iter().map(|d| d.desc()).collect::<Vec<_>>();
+        let clear_values = self.attachments.iter()
+            .map(|a| a.clear_value).collect();
+        let attachments: Vec<vk::AttachmentDescription> = self.attachments.into_iter()
+            .map(|a| a.build()).collect();
+        let subpasses: Vec<vk::SubpassDescription> = self.subpasses.into_iter()
+            .map(|r| r.build()).collect();
+        let dependencies: Vec<vk::SubpassDependency> = self.dependencies.into_iter()
+            .map(|d| d.build()).collect();
 
         let create_info = vk::RenderPassCreateInfo {
-            s_type: vk::StructureType::RenderPassCreateInfo,
+            s_type: vk::StructureType::RENDER_PASS_CREATE_INFO,
             p_next: ptr::null(),
             // flags is reserved for future use in API version 1.1.82.
             flags: vk::RenderPassCreateFlags::empty(),
-            attachment_count: attachments.len() as vkint,
+            attachment_count: attachments.len() as vkuint,
             p_attachments   : attachments.as_ptr(),
-            subpass_count   : subpasses.len() as vkint,
+            subpass_count   : subpasses.len() as vkuint,
             p_subpasses     : subpasses.as_ptr(),
-            dependency_count: dependencies.len() as vkint,
+            dependency_count: dependencies.len() as vkuint,
             p_dependencies  : dependencies.as_ptr(),
         };
 
@@ -123,16 +125,8 @@ impl RenderPassBuilder {
 
         let framebuffers = generate_framebuffers(&self.device, swapchain, handle, &self.depth_handle)
             .map_err(|e| PipelineError::RenderPass(e))?;
-        let clear_values = self.attachments.iter()
-            .map(|a| a.clear_value).collect();
 
-        let render_pass = HaRenderPass {
-            handle,
-            clear_values,
-
-            framebuffers,
-            framebuffer_extent: swapchain.extent(),
-        };
+        let render_pass = HaRenderPass::new(handle, framebuffers, swapchain.extent(), clear_values);
         Ok(render_pass)
     }
 }
@@ -146,20 +140,18 @@ fn generate_framebuffers(device: &HaDevice, swapchain: &HaSwapchain, render_pass
     if let Some(depth_view) = depth {
 
         for view in swapchain.views().iter() {
-            let mut builder = FramebufferBuilder::init(swapchain.extent(), 1);
+            let mut builder = FramebufferBuilder::new(swapchain.extent(), 1);
             builder.add_attachment(&view.handle);
             builder.add_attachment(depth_view);
-            let framebuffer = builder.build(device, render_pass)
-                .map_err(|e| RenderPassError::Framebuffer(e))?;
+            let framebuffer = builder.build(device, render_pass)?;
             framebuffers.push(framebuffer);
         }
     } else {
 
         for view in swapchain.views().iter() {
-            let mut builder = FramebufferBuilder::init(swapchain.extent(), 1);
+            let mut builder = FramebufferBuilder::new(swapchain.extent(), 1);
             builder.add_attachment(&view.handle);
-            let framebuffer = builder.build(device, render_pass)
-                .map_err(|e| RenderPassError::Framebuffer(e))?;
+            let framebuffer = builder.build(device, render_pass)?;
             framebuffers.push(framebuffer);
         }
     }

@@ -1,8 +1,7 @@
 
 use ash::vk;
-use ash::version::{ EntryV1_0, InstanceV1_0 };
-
-use core::{ EntryV1, InstanceV1 };
+use ash::version::EntryV1_0;
+use ash::version::InstanceV1_0;
 
 use core::debug::ValidationConfig;
 use core::error::InstanceError;
@@ -10,7 +9,7 @@ use core::platforms;
 use core::debug;
 
 use utils::cast;
-use utils::types::vkint;
+use types::vkuint;
 
 use std::ptr;
 use std::ffi::CString;
@@ -18,12 +17,12 @@ use std::ffi::CString;
 /// Wrapper class for `vk::Instance` object.
 pub struct HaInstance {
 
-    /// the object used in instance creation define in ash crate.
-    pub entry: EntryV1,
     /// handle of `vk::Instance`.
-    pub handle: InstanceV1,
+    pub(crate) handle: ash::Instance,
+    /// the object used in instance creation define in ash crate.
+    pub(crate) entry: ash::Entry,
     /// an array to store the names of vulkan layers enabled in instance creation.
-    pub enable_layer_names: Vec<CString>,
+    pub(crate) enable_layer_names: Vec<CString>,
 }
 
 impl HaInstance {
@@ -31,14 +30,14 @@ impl HaInstance {
     /// Initialize `vk::Instance` object
     pub fn new(config: &InstanceConfig, validation: &ValidationConfig) -> Result<HaInstance, InstanceError> {
 
-        let entry = EntryV1::new()
+        let entry = ash::Entry::new()
             .or(Err(InstanceError::EntryCreationError))?;
 
         let app_name    = CString::new(config.name_application.clone()).unwrap();
         let engine_name = CString::new(config.name_engine.clone()).unwrap();
 
-        let app_info = vk::ApplicationInfo {
-            s_type              : vk::StructureType::ApplicationInfo,
+        let application_info = vk::ApplicationInfo {
+            s_type              : vk::StructureType::APPLICATION_INFO,
             p_next              : ptr::null(),
             p_application_name  : app_name.as_ptr(),
             application_version : config.version_application,
@@ -54,14 +53,14 @@ impl HaInstance {
         let enable_extension_names = platforms::required_extension_names();
 
         let instance_create_info = vk::InstanceCreateInfo {
-            s_type                     : vk::StructureType::InstanceCreateInfo,
+            s_type                     : vk::StructureType::INSTANCE_CREATE_INFO,
             p_next                     : ptr::null(),
             // flags is reserved for future use in API version 1.1.82.
             flags                      : vk::InstanceCreateFlags::empty(),
-            p_application_info         : &app_info,
-            enabled_layer_count        : enable_layer_names_ptr.len() as u32,
+            p_application_info         : &application_info,
+            enabled_layer_count        : enable_layer_names_ptr.len() as vkuint,
             pp_enabled_layer_names     : enable_layer_names_ptr.as_ptr(),
-            enabled_extension_count    : enable_extension_names.len() as u32,
+            enabled_extension_count    : enable_extension_names.len() as vkuint,
             pp_enabled_extension_names : enable_extension_names.as_ptr(),
         };
 
@@ -72,10 +71,7 @@ impl HaInstance {
         };
 
         let instance = HaInstance {
-            entry,
-            handle,
-
-            enable_layer_names,
+            entry, handle, enable_layer_names,
         };
 
         Ok(instance)
@@ -94,7 +90,7 @@ impl HaInstance {
 /// Convenient function to get the names of required vulkan layers.
 ///
 /// Return an vector of CString if succeeds, or an error explan the detail.
-fn required_layers(entry: &EntryV1, validation: &ValidationConfig) -> Result<Vec<CString>, InstanceError> {
+fn required_layers(entry: &ash::Entry, validation: &ValidationConfig) -> Result<Vec<CString>, InstanceError> {
 
     // required validation layer name if need  ---------------------------
     let mut enable_layer_names = vec![];
@@ -122,9 +118,9 @@ fn required_layers(entry: &EntryV1, validation: &ValidationConfig) -> Result<Vec
 
 pub struct InstanceConfig {
 
-    pub version_api         : vkint,
-    pub version_application : vkint,
-    pub version_engine      : vkint,
+    pub version_api         : vkuint,
+    pub version_application : vkuint,
+    pub version_engine      : vkuint,
 
     pub name_application : String,
     pub name_engine      : String,

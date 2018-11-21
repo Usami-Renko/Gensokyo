@@ -2,18 +2,16 @@
 use ash::vk;
 use ash::version::DeviceV1_0;
 
-use core::DeviceV1;
 use core::device::HaDevice;
 use core::device::device::{ HaLogicalDevice, DeviceConfig };
 use core::device::queue::{ HaQueue, HaQueueAbstract };
 use core::error::LogicalDeviceError;
 
-use resources::sync::HaFence;
-use resources::command::{ HaCommandBuffer, CommandBufferUsage, CommandPoolFlag };
-use resources::error::{ CommandError, AllocatorError };
+use sync::HaFence;
+use command::{ HaCommandBuffer, CmdBufferUsage };
+use command::CommandError;
 
-use utils::marker::{ VulkanFlags, Handles };
-use utils::types::{ vkint, vklint };
+use types::{ vklint, vkuint };
 
 use std::rc::Rc;
 use std::ptr;
@@ -28,7 +26,7 @@ pub struct HaTransferQueue {
 
 impl HaQueueAbstract for HaTransferQueue {
 
-    fn new(device: &DeviceV1, queue: &Rc<HaQueue>, config: &DeviceConfig) -> Result<Self, LogicalDeviceError> {
+    fn new(device: &ash::Device, queue: &Rc<HaQueue>, config: &DeviceConfig) -> Result<Self, LogicalDeviceError> {
 
         let pool = TransferCommandPool::setup(device, queue)?;
 
@@ -69,9 +67,8 @@ impl HaTransferQueue {
 pub struct HaTransfer {
 
     device: HaDevice,
+    fence: HaFence,
     command_buffers: Vec<HaCommandBuffer>,
-
-    fence : HaFence,
     transfer_wait_time: vklint,
 }
 
@@ -101,23 +98,24 @@ impl HaTransfer {
         self.command_buffers.push(command);
     }
 
-    pub fn excute(&mut self) -> Result<(), AllocatorError> {
+    pub fn excute(&mut self) -> Result<(), CommandError> {
 
         if self.command_buffers.is_empty() {
             return Err(CommandError::NoCommandAvailable)?;
         }
 
-        self.fence.reset()?;
+        // TODO: handle unwrap().
+        self.fence.reset().unwrap();
 
-        let submit_commands = self.command_buffers.handles();
+        let submit_commands: Vec<vk::CommandBuffer> = collect_handle!(self.command_buffers);
 
         let submit_info = vk::SubmitInfo {
-            s_type: vk::StructureType::SubmitInfo,
+            s_type: vk::StructureType::SUBMIT_INFO,
             p_next: ptr::null(),
             wait_semaphore_count  : 0,
             p_wait_semaphores     : ptr::null(),
             p_wait_dst_stage_mask : ptr::null(),
-            command_buffer_count  : submit_commands.len() as vkint,
+            command_buffer_count  : submit_commands.len() as vkuint,
             p_command_buffers     : submit_commands.as_ptr(),
             signal_semaphore_count: 0,
             p_signal_semaphores   : ptr::null(),
@@ -130,7 +128,8 @@ impl HaTransfer {
                 .or(Err(CommandError::QueueSubmitError))?;
         }
 
-        self.fence.wait(self.transfer_wait_time)?;
+        // TODO: handle unwrap().
+        self.fence.wait(self.transfer_wait_time).unwrap();
         transfer_queue.pool.free(&self.device, &self.command_buffers);
         self.command_buffers.clear();
 
@@ -147,9 +146,6 @@ impl Drop for HaTransfer {
 }
 
 
-
-
-
 struct TransferCommandPool {
 
     handle: vk::CommandPool,
@@ -157,14 +153,14 @@ struct TransferCommandPool {
 
 impl TransferCommandPool {
 
-    fn setup(device: &DeviceV1, queue: &HaQueue) -> Result<TransferCommandPool, CommandError> {
+    fn setup(device: &ash::Device, queue: &HaQueue) -> Result<TransferCommandPool, CommandError> {
 
         let info = vk::CommandPoolCreateInfo {
-            s_type: vk::StructureType::CommandPoolCreateInfo,
+            s_type: vk::StructureType::COMMAND_POOL_CREATE_INFO,
             p_next: ptr::null(),
             // TODO: Consider CommandPoolFlag::ResetCommandBufferBit.
             // the command buffer will be short-live, so use TransientBit.
-            flags: [CommandPoolFlag::TransientBit].flags(),
+            flags: vk::CommandPoolCreateFlags::TRANSIENT,
             queue_family_index: queue.family_index,
         };
 
@@ -173,18 +169,18 @@ impl TransferCommandPool {
                 .or(Err(CommandError::PoolCreationError))?
         };
 
-        let pool = TransferCommandPool { handle, };
+        let pool = TransferCommandPool { handle };
         Ok(pool)
     }
 
     fn allocate(&self, device: &HaDevice, count: usize) -> Result<Vec<HaCommandBuffer>, CommandError> {
 
         let allocate_info = vk::CommandBufferAllocateInfo {
-            s_type: vk::StructureType::CommandBufferAllocateInfo,
+            s_type: vk::StructureType::COMMAND_BUFFER_ALLOCATE_INFO,
             p_next: ptr::null(),
             command_pool: self.handle,
-            level: vk::CommandBufferLevel::Primary,
-            command_buffer_count: count as vkint,
+            level: vk::CommandBufferLevel::PRIMARY,
+            command_buffer_count: count as vkuint,
         };
 
         let handles = unsafe {
@@ -194,14 +190,15 @@ impl TransferCommandPool {
 
         let buffers = handles.iter()
             .map(|&handle|
-                HaCommandBuffer::new(handle, CommandBufferUsage::UnitaryCommand)
+                HaCommandBuffer::new(handle, CmdBufferUsage::UnitaryCommand)
             ).collect();
 
         Ok(buffers)
     }
 
     fn free(&self, device: &HaDevice, buffers_to_free: &[HaCommandBuffer]) {
-        let buffer_handles = buffers_to_free.handles();
+
+        let buffer_handles: Vec<vk::CommandBuffer> = collect_handle!(buffers_to_free);
 
         unsafe {
             device.handle.free_command_buffers(self.handle, &buffer_handles);

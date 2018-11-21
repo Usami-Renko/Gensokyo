@@ -1,7 +1,7 @@
 
 use ash::vk;
 
-use utils::types::{ vkint, vksint, vkfloat, vkDimension2D };
+use types::{ vkuint, vksint, vkfloat, vkDim2D };
 use std::ptr;
 
 #[derive(Default)]
@@ -27,8 +27,8 @@ impl HaViewportState {
 
     pub fn multi(infos: Vec<ViewportStateInfo>) -> HaViewportState {
 
-        let mut ports = vec![];
-        let mut scissors = vec![];
+        let mut ports = Vec::new();
+        let mut scissors = Vec::new();
         let length = infos.len();
 
         for info in infos.into_iter() {
@@ -49,14 +49,15 @@ impl HaViewportState {
     }
 
     pub(crate) fn info(&self) -> vk::PipelineViewportStateCreateInfo {
+
         vk::PipelineViewportStateCreateInfo {
-            s_type: vk::StructureType::PipelineViewportStateCreateInfo,
+            s_type: vk::StructureType::PIPELINE_VIEWPORT_STATE_CREATE_INFO,
             p_next: ptr::null(),
             // flags is reserved for future use in API version 1.1.82.
             flags : vk::PipelineViewportStateCreateFlags::empty(),
-            viewport_count: self.length as vkint,
+            viewport_count: self.length as vkuint,
             p_viewports   : self.ports.as_ptr(),
-            scissor_count : self.length as vkint,
+            scissor_count : self.length as vkuint,
             p_scissors    : self.scissors.as_ptr(),
         }
     }
@@ -96,15 +97,15 @@ impl ViewportStateType {
             },
             | ViewportStateType::Dynamic { count } => {
                 HaViewportState {
-                    ports: vec![],
-                    scissors: vec![],
+                    ports: Vec::new(),
+                    scissors: Vec::new(),
                     length: count,
                 }
             },
             | ViewportStateType::DynamicViewportFixedScissor { scissors } => {
                 let length = scissors.len();
                 HaViewportState {
-                    ports: vec![],
+                    ports: Vec::new(),
                     scissors: scissors.into_iter().map(|s| s.content).collect(),
                     length,
                 }
@@ -113,7 +114,7 @@ impl ViewportStateType {
                 let length = viewports.len();
                 HaViewportState {
                     ports: viewports.into_iter().map(|v| v.content).collect(),
-                    scissors: vec![],
+                    scissors: Vec::new(),
                     length,
                 }
             },
@@ -128,7 +129,7 @@ pub struct ViewportInfo {
 
 impl ViewportInfo {
 
-    pub fn new(dimension: vkDimension2D) -> ViewportInfo {
+    pub fn new(dimension: vkDim2D) -> ViewportInfo {
 
         ViewportInfo {
             content: vk::Viewport {
@@ -169,12 +170,12 @@ pub struct ScissorInfo {
 
 impl ScissorInfo {
 
-    pub fn new(dimension: vkDimension2D) -> ScissorInfo {
+    pub fn new(dimension: vkDim2D) -> ScissorInfo {
 
         ScissorInfo {
             content: vk::Rect2D {
                 offset: vk::Offset2D { x: 0, y: 0 },
-                extent: vkDimension2D {
+                extent: vkDim2D {
                     width: dimension.width,
                     height: dimension.height
                 }
@@ -191,10 +192,10 @@ impl ScissorInfo {
     /// `width` is the width of scissor area.
     ///
     /// `height` is the width of scissor area.
-    pub fn set_detail(&mut self, x: vksint, y: vksint, width: vkint, height: vkint) {
+    pub fn set_detail(&mut self, x: vksint, y: vksint, width: vkuint, height: vkuint) {
         self.content = vk::Rect2D {
             offset: vk::Offset2D { x, y },
-            extent: vkDimension2D { width, height },
+            extent: vkDim2D { width, height },
         }
     }
 }
@@ -208,7 +209,7 @@ pub struct ViewportStateInfo {
 
 impl ViewportStateInfo {
 
-    pub fn new(dimension: vkDimension2D) -> ViewportStateInfo {
+    pub fn new(dimension: vkDim2D) -> ViewportStateInfo {
 
         ViewportStateInfo {
             viewport: ViewportInfo::new(dimension),

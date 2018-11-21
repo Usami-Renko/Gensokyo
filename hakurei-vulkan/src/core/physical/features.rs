@@ -3,123 +3,82 @@ use ash::vk;
 use ash::version::InstanceV1_0;
 
 use core::instance::HaInstance;
+use core::physical::config::PhysicalInspectProperty;
 
-#[derive(Debug, Clone, Copy, Eq, PartialEq)]
-pub enum PhysicalFeatureType {
+pub(crate) struct PhyscialFeatures {
 
-    RobustBufferAccess,
-    FullDrawIndexUint32,
-    ImageCubeArray,
-    IndependentBlend,
-    GeometryShader,
-    TessellationShader,
-    SampleRateShading,
-    DualSrcBlend,
-    LogicOp,
-    MultiDrawIndirect,
-    DrawIndirectFirstInstance,
-    DepthClamp,
-    DepthBiasClamp,
-    /// Fill mode non solid is required for wireframe display.
-    FillModeNonSolid,
-    DepthBounds,
-    /// Line width > 1.0f only if wide lines feature is supported and enabled.
-    WideLines,
-    LargePoints,
-    AlphaToOne,
-    MultiViewport,
-    SamplerAnisotropy,
-    TextureCompressionEtc2,
-    TextureCompressionAstcLdr,
-    TextureCompressionBc,
-    OcclusionQueryPrecise,
-    PipelineStatisticsQuery,
-    VertexPipelineStoresAndAtomics,
-    FragmentStoresAndAtomics,
-    ShaderTessellationAndGeometryPointSize,
-    ShaderImageGatherExtended,
-    ShaderStorageImageExtendedFormats,
-    ShaderStorageImageMultisample,
-    ShaderStorageImageReadWithoutFormat,
-    ShaderStorageImageWriteQithoutFormat,
-    ShaderUniformBufferArrayDynamicIndexing,
-    ShaderSampledImageArrayDynamicIndexing,
-    ShaderStorageBufferArrayDynamicIndexing,
-    ShaderStorageImageArrayDynamicIndexing,
-    ShaderClipDistance,
-    ShaderCullDistance,
-    ShaderFloat64,
-    ShaderInt64,
-    ShaderInt16,
-    ShaderResourceResidency,
-    ShaderResourceMinLod,
-    SparseBinding,
-    SparseResidencyBuffer,
-    SparseResidencyImage2d,
-    SparseResidencyImage3d,
-    SparseResidency2samples,
-    SparseResidency4samples,
-    SparseResidency8samples,
-    SparseResidency16samples,
-    SparseResidencyAliased,
-    VariableMultisampleRate,
-    InheritedQueries,
+    availables : vk::PhysicalDeviceFeatures,
+    enables    : vk::PhysicalDeviceFeatures,
 }
 
-pub struct PhyscialFeatures {
+#[derive(Debug, Clone)]
+pub struct PhysicalFeatureConfig {
 
-    handle: vk::PhysicalDeviceFeatures,
-    pub enables: Option<vk::PhysicalDeviceFeatures>,
+    require_features: vk::PhysicalDeviceFeatures,
 }
 
 impl PhyscialFeatures {
 
-    pub fn inspect(instance: &HaInstance, physical_device: vk::PhysicalDevice) -> PhyscialFeatures {
+    pub fn query(instance: &HaInstance, physical_device: vk::PhysicalDevice) -> PhyscialFeatures {
 
-        let handle = instance.handle.get_physical_device_features(physical_device);
+        let available_features = unsafe {
+            instance.handle.get_physical_device_features(physical_device)
+        };
 
         PhyscialFeatures {
-            handle,
-            enables: None,
+            availables: available_features,
+            enables: Default::default(),
         }
     }
 
-    pub fn get_enable_features(&self) -> vk::PhysicalDeviceFeatures {
-
-        if let Some(ref features) = self.enables {
-            features.clone()
-        } else {
-            vk::PhysicalDeviceFeatures { ..Default::default() }
-        }
+    pub fn enable_features(&self) -> &vk::PhysicalDeviceFeatures {
+        &self.enables
     }
 }
 
+//impl PhysicalInspectProperty for PhyscialFeatures {
+//    type ConfigType = PhysicalFeatureConfig;
+//
+//    fn inspect(&self, config: &Self::ConfigType) -> bool {
+//
+//        if config.require_features.robust_buffer_access == 0 || self.availables.robust_buffer_access == 0 {
+//            return false
+//        }
+//
+//        true
+//    }
+//
+//    fn set(&mut self, config: &Self::ConfigType) {
+//
+//
+//    }
+//}
+
 macro_rules! impl_physical_features {
-    ($struct_name:ty, {$($feature:tt -> $vk_feature:tt,)*}) => {
+    (
+        $struct_name:ty,
+        {
+            $($feature:tt,)*
+        }
+    ) => {
 
-        impl $struct_name {
+        impl PhysicalInspectProperty for $struct_name {
+            type ConfigType = PhysicalFeatureConfig;
 
-            pub fn check_requirements(&self, require_features: &Vec<PhysicalFeatureType>) -> bool {
+            fn inspect(&self, config: &Self::ConfigType) -> bool {
 
-                require_features.iter().all(|requirement| {
-                    match requirement {
-                        $(| PhysicalFeatureType::$feature => self.handle.$vk_feature == 1,)*
+                $(
+                    if config.require_features.$feature == 0 || self.availables.$feature == 0 {
+                        return false
                     }
-                })
+                )*
+
+                true
             }
 
-            pub fn enable_features(&mut self, require_features: &Vec<PhysicalFeatureType>) {
-                let mut enable_features = vk::PhysicalDeviceFeatures {
-                    ..Default::default()
-                };
+            fn set(&mut self, config: &Self::ConfigType) {
 
-                require_features.iter().for_each(|feature| {
-                    match feature {
-                        $(| PhysicalFeatureType::$feature => enable_features.$vk_feature = 1,)*
-                    }
-                });
-
-                self.enables = Some(enable_features);
+                self.enables = config.require_features;
             }
         }
     };
@@ -127,59 +86,59 @@ macro_rules! impl_physical_features {
 
 impl_physical_features!(
     PhyscialFeatures, {
-    RobustBufferAccess -> robust_buffer_access,
-    FullDrawIndexUint32 -> full_draw_index_uint32,
-    ImageCubeArray -> image_cube_array,
-    IndependentBlend -> independent_blend,
-    GeometryShader -> geometry_shader,
-    TessellationShader -> tessellation_shader,
-    SampleRateShading -> sample_rate_shading,
-    DualSrcBlend -> dual_src_blend,
-    LogicOp -> logic_op,
-    MultiDrawIndirect -> multi_draw_indirect,
-    DrawIndirectFirstInstance -> draw_indirect_first_instance,
-    DepthClamp -> depth_clamp,
-    DepthBiasClamp -> depth_bias_clamp,
-    FillModeNonSolid -> fill_mode_non_solid,
-    DepthBounds -> depth_bounds,
-    WideLines -> wide_lines,
-    LargePoints -> large_points,
-    AlphaToOne -> alpha_to_one,
-    MultiViewport -> multi_viewport,
-    SamplerAnisotropy -> sampler_anisotropy,
-    TextureCompressionEtc2 -> texture_compression_etc2,
-    TextureCompressionAstcLdr -> texture_compression_astc_ldr,
-    TextureCompressionBc -> texture_compression_bc,
-    OcclusionQueryPrecise -> occlusion_query_precise,
-    PipelineStatisticsQuery -> pipeline_statistics_query,
-    VertexPipelineStoresAndAtomics -> vertex_pipeline_stores_and_atomics,
-    FragmentStoresAndAtomics -> fragment_stores_and_atomics,
-    ShaderTessellationAndGeometryPointSize -> shader_tessellation_and_geometry_point_size,
-    ShaderImageGatherExtended -> shader_image_gather_extended,
-    ShaderStorageImageExtendedFormats -> shader_storage_image_extended_formats,
-    ShaderStorageImageMultisample -> shader_storage_image_multisample,
-    ShaderStorageImageReadWithoutFormat -> shader_storage_image_read_without_format,
-    ShaderStorageImageWriteQithoutFormat -> shader_storage_image_write_without_format,
-    ShaderUniformBufferArrayDynamicIndexing -> shader_uniform_buffer_array_dynamic_indexing,
-    ShaderSampledImageArrayDynamicIndexing -> shader_sampled_image_array_dynamic_indexing,
-    ShaderStorageBufferArrayDynamicIndexing -> shader_storage_buffer_array_dynamic_indexing,
-    ShaderStorageImageArrayDynamicIndexing -> shader_storage_image_array_dynamic_indexing,
-    ShaderClipDistance -> shader_clip_distance,
-    ShaderCullDistance -> shader_cull_distance,
-    ShaderFloat64 -> shader_float64,
-    ShaderInt64 -> shader_int64,
-    ShaderInt16 -> shader_int16,
-    ShaderResourceResidency -> shader_resource_residency,
-    ShaderResourceMinLod -> shader_resource_min_lod,
-    SparseBinding -> sparse_binding,
-    SparseResidencyBuffer -> sparse_residency_buffer,
-    SparseResidencyImage2d -> sparse_residency_image2d,
-    SparseResidencyImage3d -> sparse_residency_image3d,
-    SparseResidency2samples -> sparse_residency2samples,
-    SparseResidency4samples -> sparse_residency4samples,
-    SparseResidency8samples -> sparse_residency8samples,
-    SparseResidency16samples -> sparse_residency16samples,
-    SparseResidencyAliased -> sparse_residency_aliased,
-    VariableMultisampleRate -> variable_multisample_rate,
-    InheritedQueries -> inherited_queries,
+    robust_buffer_access,
+    full_draw_index_uint32,
+    image_cube_array,
+    independent_blend,
+    geometry_shader,
+    tessellation_shader,
+    sample_rate_shading,
+    dual_src_blend,
+    logic_op,
+    multi_draw_indirect,
+    draw_indirect_first_instance,
+    depth_clamp,
+     depth_bias_clamp,
+    fill_mode_non_solid,
+    depth_bounds,
+    wide_lines,
+    large_points,
+    alpha_to_one,
+    multi_viewport,
+    sampler_anisotropy,
+    texture_compression_etc2,
+    texture_compression_astc_ldr,
+    texture_compression_bc,
+    occlusion_query_precise,
+    pipeline_statistics_query,
+    vertex_pipeline_stores_and_atomics,
+    fragment_stores_and_atomics,
+    shader_tessellation_and_geometry_point_size,
+    shader_image_gather_extended,
+    shader_storage_image_extended_formats,
+    shader_storage_image_multisample,
+    shader_storage_image_read_without_format,
+    shader_storage_image_write_without_format,
+    shader_uniform_buffer_array_dynamic_indexing,
+    shader_sampled_image_array_dynamic_indexing,
+    shader_storage_buffer_array_dynamic_indexing,
+    shader_storage_image_array_dynamic_indexing,
+    shader_clip_distance,
+    shader_cull_distance,
+    shader_float64,
+    shader_int64,
+    shader_int16,
+    shader_resource_residency,
+    shader_resource_min_lod,
+    sparse_binding,
+    sparse_residency_buffer,
+    sparse_residency_image2_d,
+    sparse_residency_image3_d,
+    sparse_residency2_samples,
+    sparse_residency4_samples,
+    sparse_residency8_samples,
+    sparse_residency16_samples,
+    sparse_residency_aliased,
+    variable_multisample_rate,
+    inherited_queries,
 });

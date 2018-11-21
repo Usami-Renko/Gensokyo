@@ -1,7 +1,7 @@
 
 use ash::vk;
 
-use utils::types::vkint;
+use types::vkuint;
 
 use std::ptr;
 
@@ -14,6 +14,7 @@ pub enum AttachmentType {
     DepthStencil,
 }
 
+#[derive(Debug, Default)]
 pub struct RenderSubpass {
 
     /// bind_point specifies whether this is a compute or graphics subpass.
@@ -47,43 +48,36 @@ pub struct RenderSubpass {
     /// Setting the attachment index to VK_ATTACHMENT_UNUSED or leaving this pointer as NULL indicates that no depth/stencil attachment will be used in the subpass.
     depth_stencils: Vec<vk::AttachmentReference>,
     /// preserves is an array of render pass attachment indices describing the attachments that are not used by a subpass, but whose contents must be preserved throughout the subpass.
-    preserves: Vec<vkint>,
+    preserves: Vec<vkuint>,
 }
 
 impl RenderSubpass {
 
-    pub fn empty() -> RenderSubpass {
+    pub fn new(bind_point: vk::PipelineBindPoint) -> RenderSubpass {
         RenderSubpass {
-            bind_point    : vk::PipelineBindPoint::Graphics,
-            inputs        : vec![],
-            colors        : vec![],
-            resolves      : vec![],
-            depth_stencils: vec![],
-            preserves     : vec![],
+            bind_point,
+            ..Default::default()
         }
     }
 
-    pub fn desc(&self) -> vk::SubpassDescription {
+    pub(crate) fn build(&self) -> vk::SubpassDescription {
 
         // Here p_resolve_attachments and p_depth_stencil_attachment may cause crash if use a empty vec pointer.
         vk::SubpassDescription {
             // The value of the flags is currently provided by extension.
             flags: vk::SubpassDescriptionFlags::empty(),
             pipeline_bind_point       : self.bind_point,
-            input_attachment_count    : self.inputs.len() as vkint,
+            input_attachment_count    : self.inputs.len() as vkuint,
             p_input_attachments       : self.inputs.as_ptr(),
-            color_attachment_count    : self.colors.len() as vkint,
+            color_attachment_count    : self.colors.len() as vkuint,
             p_color_attachments       : self.colors.as_ptr(),
             p_resolve_attachments     : if self.resolves.is_empty() { ptr::null() } else { self.resolves.as_ptr() },
             p_depth_stencil_attachment: if self.depth_stencils.is_empty() { ptr::null() } else { self.depth_stencils.as_ptr() },
-            preserve_attachment_count : self.preserves.len() as vkint,
+            preserve_attachment_count : self.preserves.len() as vkuint,
             p_preserve_attachments    : self.preserves.as_ptr(),
         }
     }
 
-    pub fn set_bind_point(&mut self, bind_point: vk::PipelineBindPoint) {
-        self.bind_point = bind_point;
-    }
     pub fn add_input(&mut self, attachment: vk::AttachmentReference) {
         self.inputs.push(attachment);
     }
@@ -96,8 +90,7 @@ impl RenderSubpass {
     pub fn add_depth_stencil(&mut self, attachment: vk::AttachmentReference) {
         self.depth_stencils.push(attachment);
     }
-    pub fn add_preserve(&mut self, attachment_index: vkint) {
+    pub fn add_preserve(&mut self, attachment_index: vkuint) {
         self.preserves.push(attachment_index);
     }
 }
-

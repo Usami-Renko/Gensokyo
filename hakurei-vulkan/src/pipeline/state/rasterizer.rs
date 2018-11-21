@@ -5,8 +5,7 @@ use std::ptr;
 
 use pipeline::state::dynamic::DynamicableValue;
 
-use utils::types::vkfloat;
-use utils::marker::{ VulkanEnum, Prefab };
+use types::{ vkfloat, vkbool, VK_TRUE, VK_FALSE };
 
 pub struct HaRasterizerState {
 
@@ -28,9 +27,9 @@ pub struct HaRasterizerState {
     depth_bias  : DynamicableValue<DepthBiasInfo>,
 
     /// Controls whether to clamp the fragment’s depth values instead of clipping primitives to the z planes of the frustum.
-    depth_clamp_enable       : vk::Bool32,
+    depth_clamp_enable       : vkbool,
     /// Controls whether primitives are discarded immediately before the rasterization stage.
-    rasterizer_discard_enable: vk::Bool32,
+    rasterizer_discard_enable: vkbool,
 }
 
 #[derive(Debug, Clone, Copy, Eq, PartialEq)]
@@ -41,10 +40,9 @@ pub enum RasterizerPrefab {
     Common,
 }
 
-impl Prefab for RasterizerPrefab {
-    type PrefabType = HaRasterizerState;
+impl RasterizerPrefab {
 
-    fn generate(&self) -> Self::PrefabType {
+    fn generate(&self) -> HaRasterizerState {
         match self {
             | RasterizerPrefab::Common => HaRasterizerState { ..Default::default() },
         }
@@ -62,7 +60,7 @@ impl HaRasterizerState {
         let depth_bias = self.depth_bias.to_depth_bias();
 
         vk::PipelineRasterizationStateCreateInfo {
-            s_type: vk::StructureType::PipelineRasterizationStateCreateInfo,
+            s_type: vk::StructureType::PIPELINE_RASTERIZATION_STATE_CREATE_INFO,
             p_next: ptr::null(),
             // flags is reserved for future use in API version 1.1.82.
             flags : vk::PipelineRasterizationStateCreateFlags::empty(),
@@ -85,12 +83,11 @@ impl HaRasterizerState {
         }
     }
 
-
-    pub fn set_polygon_mode(&mut self, mode: PolygonMode) {
-        self.polygon_mode = mode.value();
+    pub fn set_polygon_mode(&mut self, mode: vk::PolygonMode) {
+        self.polygon_mode = mode;
     }
-    pub fn set_cull_mode(&mut self, mode: CullModeType) {
-        self.cull_mode = mode.value();
+    pub fn set_cull_mode(&mut self, mode: vk::CullModeFlags) {
+        self.cull_mode = mode;
     }
     pub fn set_front_face(&mut self, face: vk::FrontFace) {
         self.front_face = face;
@@ -120,15 +117,15 @@ impl Default for HaRasterizerState {
 
     fn default() -> HaRasterizerState {
         HaRasterizerState {
-            cull_mode   : vk::CULL_MODE_BACK_BIT,
-            front_face  : vk::FrontFace::Clockwise,
-            polygon_mode: vk::PolygonMode::Fill,
+            cull_mode   : vk::CullModeFlags::BACK,
+            front_face  : vk::FrontFace::CLOCKWISE,
+            polygon_mode: vk::PolygonMode::FILL,
             line_width  : DynamicableValue::Fixed { value: 1.0 },
 
             depth_bias: DynamicableValue::Fixed { value: DepthBiasInfo::disable() },
 
-            depth_clamp_enable       : vk::VK_FALSE,
-            rasterizer_discard_enable: vk::VK_FALSE,
+            depth_clamp_enable       : VK_FALSE,
+            rasterizer_discard_enable: VK_FALSE,
         }
     }
 }
@@ -136,7 +133,7 @@ impl Default for HaRasterizerState {
 #[derive(Debug, Clone)]
 pub struct DepthBiasInfo {
     // TODO: Add explaination for each field
-    enable          : vk::Bool32,
+    enable              : vkbool,
     pub constant_factor : vkfloat,
     pub clamp           : vkfloat,
     pub slope_factor    : vkfloat,
@@ -156,7 +153,7 @@ impl DepthBiasInfo {
 
     pub fn disable() -> DepthBiasInfo {
         DepthBiasInfo {
-            enable         : vk::VK_FALSE,
+            enable         : VK_FALSE,
             constant_factor: 0.0,
             clamp          : 0.0,
             slope_factor   : 0.0,
@@ -171,74 +168,7 @@ impl DepthBiasInfo {
     ///
     /// `slope_factor` is a scalar factor applied to a fragment’s slope in depth bias calculations.
     pub fn setup(constant_factor: vkfloat, clamp: vkfloat, slope_factor: vkfloat) -> DepthBiasInfo {
-        DepthBiasInfo { enable: vk::VK_TRUE, clamp, constant_factor, slope_factor, }
+        DepthBiasInfo { enable: VK_TRUE, clamp, constant_factor, slope_factor, }
     }
 }
 
-
-#[derive(Debug, Clone, Copy, Eq, PartialEq)]
-pub enum CullModeType {
-    None, Front, Back, FrontAndBack,
-}
-
-impl VulkanEnum for CullModeType {
-    type EnumType = vk::CullModeFlags;
-
-    fn value(&self) -> Self::EnumType {
-        match self {
-            | CullModeType::None         => vk::CULL_MODE_NONE,
-            | CullModeType::Front        => vk::CULL_MODE_FRONT_BIT,
-            | CullModeType::Back         => vk::CULL_MODE_BACK_BIT,
-            | CullModeType::FrontAndBack => vk::CULL_MODE_FRONT_AND_BACK,
-        }
-    }
-}
-
-
-
-/// PolygonMode specifies the method of rasterization for polygons.
-///
-/// These modes affect only the final rasterization of polygons:
-/// in particular, a polygon’s vertices are shaded and the polygon is clipped and possibly culled before these modes are applied.
-#[derive(Debug, Clone, Copy, Eq, PartialEq)]
-pub enum PolygonMode {
-    /// Fill specifies that polygon vertices are drawn as points.
-    Fill,
-    /// Line specifies that polygon edges are drawn as line segments.
-    Line,
-    /// Point specifies that polygons are rendered using the polygon rasterization rules in this section.
-    Point
-}
-
-impl VulkanEnum for PolygonMode {
-    type EnumType = vk::PolygonMode;
-
-    fn value(&self) -> Self::EnumType {
-        match self {
-            | PolygonMode::Fill  => vk::PolygonMode::Fill,
-            | PolygonMode::Line  => vk::PolygonMode::Line,
-            | PolygonMode::Point => vk::PolygonMode::Point,
-        }
-    }
-}
-
-
-/// FrontFaceType determine whether the triangle is back-facing or front-facing.
-#[derive(Debug, Clone, Copy, Eq, PartialEq)]
-pub enum FrontFaceType {
-    /// CounterClockwise specifies that the face of triangle drawed with CounterClockwise order is considered front-facing.
-    CounterClockwise,
-    /// Clockwise specifies that the face of triangle drawed with Clockwise order is considered front-facing.
-    Clockwise,
-}
-
-impl VulkanEnum for FrontFaceType {
-    type EnumType = vk::FrontFace;
-
-    fn value(&self) -> Self::EnumType {
-        match self {
-            | FrontFaceType::CounterClockwise => vk::FrontFace::CounterClockwise,
-            | FrontFaceType::Clockwise        => vk::FrontFace::Clockwise,
-        }
-    }
-}

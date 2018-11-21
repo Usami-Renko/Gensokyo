@@ -2,11 +2,9 @@
 use ash::vk;
 
 use pipeline::state::blend::attachment::BlendAttachemnt;
-use pipeline::state::blend::ops::LogicalOp;
 use pipeline::state::dynamic::DynamicableValue;
 
-use utils::types::{ vkint, vkfloat };
-use utils::marker::{ VulkanEnum, Prefab };
+use types::{ vkuint, vkfloat, VK_TRUE, VK_FALSE };
 
 use std::ptr;
 
@@ -17,15 +15,14 @@ pub enum HaBlendPrefab {
     Unset,
 }
 
-impl Prefab for HaBlendPrefab {
-    type PrefabType = HaBlendState;
+impl HaBlendPrefab {
 
-    fn generate(&self) -> Self::PrefabType {
+    fn generate(&self) -> HaBlendState {
 
         match *self {
             | HaBlendPrefab::Default => HaBlendState {
                 logic_op_enable: false,
-                logic_op: LogicalOp::Copy.value(),
+                logic_op: vk::LogicOp::COPY,
                 attachments: vec![
                     BlendAttachemnt::default(),
                 ],
@@ -33,7 +30,7 @@ impl Prefab for HaBlendPrefab {
             },
             | HaBlendPrefab::Unset => HaBlendState {
                 logic_op_enable: false,
-                logic_op: LogicalOp::NoOp.value(),
+                logic_op: vk::LogicOp::NO_OP,
                 attachments: vec![],
                 blend_constants: DynamicableValue::Fixed { value: [0.0; 4] },
             },
@@ -61,24 +58,24 @@ impl HaBlendState {
 
     pub(crate) fn info(&self) -> vk::PipelineColorBlendStateCreateInfo {
 
-        let attchement_infos = self.attachments.iter()
-            .map(|a| a.state()).collect::<Vec<_>>();
+        let attchement_infos: Vec<vk::PipelineColorBlendAttachmentState> = self.attachments.iter()
+            .map(|a| a.state()).collect();
 
         vk::PipelineColorBlendStateCreateInfo {
-            s_type : vk::StructureType::PipelineColorBlendStateCreateInfo,
+            s_type : vk::StructureType::PIPELINE_COLOR_BLEND_STATE_CREATE_INFO,
             p_next : ptr::null(),
             // flags is reserved for future use in API version 1.1.82.
             flags  : vk::PipelineColorBlendStateCreateFlags::empty(),
-            logic_op_enable  : if self.logic_op_enable { vk::VK_TRUE } else { vk::VK_FALSE },
+            logic_op_enable  : if self.logic_op_enable { VK_TRUE } else { VK_FALSE },
             logic_op         : self.logic_op,
-            attachment_count : attchement_infos.len() as vkint,
+            attachment_count : attchement_infos.len() as vkuint,
             p_attachments    : attchement_infos.as_ptr(),
             blend_constants  : self.blend_constants.to_blend_contents(),
         }
     }
 
-    pub fn set_logical_operation(&mut self, logic_op: LogicalOp) {
-        self.logic_op = logic_op.value();
+    pub fn set_logical_operation(&mut self, logic_op: vk::LogicOp) {
+        self.logic_op = logic_op;
     }
     pub fn add_attachment(&mut self, attachment: BlendAttachemnt) {
         self.attachments.push(attachment);

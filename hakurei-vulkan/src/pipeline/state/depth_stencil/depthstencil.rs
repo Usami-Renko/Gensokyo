@@ -2,8 +2,6 @@
 use ash::vk;
 use std::ptr;
 
-use utils::marker::Prefab;
-
 use pipeline::state::depth_stencil::DepthTest;
 use pipeline::state::depth_stencil::StencilTest;
 
@@ -21,10 +19,9 @@ pub enum HaDepthStencilPrefab {
     EnableDepthStencil,
 }
 
-impl Prefab for HaDepthStencilPrefab {
-    type PrefabType = HaDepthStencilState;
+impl HaDepthStencilPrefab {
 
-    fn generate(&self) -> Self::PrefabType {
+    fn generate(&self) -> HaDepthStencilState {
 
         match self {
             | HaDepthStencilPrefab::Disable => HaDepthStencilState {
@@ -32,7 +29,7 @@ impl Prefab for HaDepthStencilPrefab {
                 stencil: StencilTest::disable(),
             },
             | HaDepthStencilPrefab::EnableDepth => HaDepthStencilState {
-                depth  : DepthTest::enable(true, vk::CompareOp::Less, false),
+                depth  : DepthTest::enable(true, vk::CompareOp::LESS, false),
                 stencil: StencilTest::disable(),
             },
             | HaDepthStencilPrefab::EnableStencil => HaDepthStencilState {
@@ -40,7 +37,7 @@ impl Prefab for HaDepthStencilPrefab {
                 stencil: StencilTest::enalbe(),
             },
             | HaDepthStencilPrefab::EnableDepthStencil => HaDepthStencilState {
-                depth  : DepthTest::enable(true, vk::CompareOp::Less, false),
+                depth  : DepthTest::enable(true, vk::CompareOp::LESS, false),
                 stencil: StencilTest::enalbe(),
             },
         }
@@ -65,7 +62,7 @@ impl HaDepthStencilState {
         let depth_bound = self.depth.depth_bound.to_depth_bound();
 
         vk::PipelineDepthStencilStateCreateInfo {
-            s_type : vk::StructureType::PipelineDepthStencilStateCreateInfo,
+            s_type : vk::StructureType::PIPELINE_DEPTH_STENCIL_STATE_CREATE_INFO,
             p_next : ptr::null(),
             // flags is reserved for future use in API version 1.1.82.
             flags  : vk::PipelineDepthStencilStateCreateFlags::empty(),

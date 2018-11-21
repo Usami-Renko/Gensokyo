@@ -1,12 +1,12 @@
 
 use ash::vk;
-use ash::vk::uint32_t;
 
 use core::device::enums::PrefabQueuePriority;
-use resources::sync::HaSemaphore;
 
-use pipeline::stages::PipelineStageFlag;
-use resources::command::HaCommandBuffer;
+use sync::HaSemaphore;
+use command::HaCommandBuffer;
+
+use types::vkuint;
 
 #[derive(Debug, Clone, Copy, Eq, PartialEq, Hash)]
 pub enum QueueUsage {
@@ -20,14 +20,14 @@ pub struct HaQueue {
     pub handle: vk::Queue,
 
     pub _priority    : PrefabQueuePriority,
-    pub family_index : uint32_t,
-    pub _queue_index : uint32_t,
+    pub family_index : vkuint,
+    pub _queue_index : vkuint,
 }
 
 
 impl HaQueue {
 
-    pub fn new(handle: vk::Queue, priority: PrefabQueuePriority, family_index: uint32_t, queue_index: uint32_t) -> HaQueue {
+    pub fn new(handle: vk::Queue, priority: PrefabQueuePriority, family_index: vkuint, queue_index: vkuint) -> HaQueue {
         HaQueue {
             handle,
             _priority: priority,
@@ -44,7 +44,7 @@ pub struct QueueSubmitBundle<'vec, 're: 'vec> {
     /// semaphore(s) to be signaled when command buffers have completed.
     pub sign_semaphores: &'vec [&'re HaSemaphore],
     /// list of pipeline stages that the semaphore waits will occur at.
-    pub wait_stages    : &'vec [PipelineStageFlag],
+    pub wait_stages    : &'vec [vk::PipelineStageFlags],
     /// command buffers(s) to execute in this batch (submission).
     pub commands       : &'vec [&'re HaCommandBuffer],
 }

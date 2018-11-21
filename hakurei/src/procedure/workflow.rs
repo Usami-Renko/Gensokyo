@@ -158,7 +158,7 @@ impl<'win, T> ProgramEnv<T> where T: ProgramProc {
             .map_err(|e| ProcedureError::LogicalDevice(e))
     }
 
-    fn create_inner_resources(&self, core: &CoreInfrastructure, old_resource: Option<&HaResources>) -> Result<HaResources, ProcedureError> {
+    fn create_inner_resources(&self, core: &'win CoreInfrastructure, old_resource: Option<&HaResources>) -> Result<HaResources, ProcedureError> {
 
         let swapchain = SwapchainBuilder::init(&self.config.core.swapchain, &core.physical, &core.device, &core.surface)?
             .build(&core.instance, old_resource.and_then(|re| Some(&re.swapchain)), &core.window)?;
@@ -175,10 +175,7 @@ impl<'win, T> ProgramEnv<T> where T: ProgramProc {
         }
 
         let resources = HaResources {
-            swapchain,
-
-            image_awaits,
-            sync_fences,
+            swapchain, image_awaits, sync_fences,
         };
         Ok(resources)
     }

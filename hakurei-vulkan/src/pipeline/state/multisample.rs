@@ -1,12 +1,9 @@
 
 use ash::vk;
-use ash::vk::{ Bool32 };
 
 use std::ptr;
-use std::os::raw::c_float;
 
-use utils::marker::{ VulkanEnum, Prefab };
-use utils::types::vkint;
+use types::{ vkuint, vkbool, vkfloat, VK_FALSE, VK_TRUE };
 
 #[derive(Debug, Clone, Copy, Eq, PartialEq)]
 pub enum MultisamplePrefab {
@@ -14,10 +11,9 @@ pub enum MultisamplePrefab {
     Disable,
 }
 
-impl Prefab for MultisamplePrefab {
-    type PrefabType = HaMultisampleState;
+impl  MultisamplePrefab {
 
-    fn generate(&self) -> Self::PrefabType {
+    fn generate(&self) -> HaMultisampleState {
         match self {
             | MultisamplePrefab::Disable => HaMultisampleState { ..Default::default() },
         }
@@ -27,13 +23,13 @@ impl Prefab for MultisamplePrefab {
 pub struct HaMultisampleState {
 
     /// The number of samples per pixel used in rasterization.
-    sample_count  : SampleCountType,
+    sample_count  : vk::SampleCountFlags,
     /// Sample shading can be used to specify a minimum number of unique samples to process for each fragment.
     sample_shading: SampleShading,
     /// Controls whether a temporary coverage value is generated based on the alpha component of the fragment’s first color output.
-    alpha_to_coverage_enable: Bool32,
+    alpha_to_coverage_enable: vkbool,
     /// Controls whether the alpha component of the fragment’s first color output is replaced with one.
-    alpha_to_one_enalbe     : Bool32,
+    alpha_to_one_enalbe     : vkbool,
 }
 
 impl HaMultisampleState {
@@ -45,31 +41,31 @@ impl HaMultisampleState {
     pub(crate) fn info(&self) -> vk::PipelineMultisampleStateCreateInfo {
 
         vk::PipelineMultisampleStateCreateInfo {
-            s_type : vk::StructureType::PipelineMultisampleStateCreateInfo,
+            s_type : vk::StructureType::PIPELINE_MULTISAMPLE_STATE_CREATE_INFO,
             p_next : ptr::null(),
             // flags is reserved for future use in API version 1.1.82.
             flags  : vk::PipelineMultisampleStateCreateFlags::empty(),
 
-            rasterization_samples : self.sample_count.value(),
-            sample_shading_enable : self.sample_shading.enable,
-            min_sample_shading    : self.sample_shading.min_sample,
-            p_sample_mask         : &self.sample_shading.sample_masks,
+            rasterization_samples    : self.sample_count,
+            sample_shading_enable    : self.sample_shading.enable,
+            min_sample_shading       : self.sample_shading.min_sample,
+            p_sample_mask            : &self.sample_shading.sample_masks,
             alpha_to_coverage_enable : self.alpha_to_coverage_enable,
             alpha_to_one_enable      : self.alpha_to_one_enalbe,
         }
     }
 
-    pub fn set_sample_count(&mut self, count: SampleCountType) {
+    pub fn set_sample_count(&mut self, count: vk::SampleCountFlags) {
         self.sample_count = count;
     }
     pub fn set_sample_shading(&mut self, sample_shading: SampleShading) {
         self.sample_shading = sample_shading;
     }
     pub fn set_alpha_to_coverage_enable(&mut self, enable: bool) {
-        self.alpha_to_coverage_enable = if enable { 1 } else { 0 };
+        self.alpha_to_coverage_enable = if enable { VK_TRUE } else { VK_FALSE };
     }
     pub fn set_alpha_to_one_enalbe(&mut self, enable: bool) {
-        self.alpha_to_one_enalbe = if enable { 1 } else { 0 };
+        self.alpha_to_one_enalbe = if enable { VK_TRUE } else { VK_FALSE };
     }
 }
 
@@ -77,10 +73,10 @@ impl Default for HaMultisampleState {
 
     fn default() -> HaMultisampleState {
         HaMultisampleState {
-            sample_count   : SampleCountType::Count1Bit,
+            sample_count   : vk::SampleCountFlags::TYPE_1,
             sample_shading : SampleShading::disable(),
-            alpha_to_coverage_enable : vk::VK_FALSE,
-            alpha_to_one_enalbe      : vk::VK_FALSE,
+            alpha_to_coverage_enable : VK_FALSE,
+            alpha_to_one_enalbe      : VK_FALSE,
         }
     }
 }
@@ -88,44 +84,22 @@ impl Default for HaMultisampleState {
 
 pub struct SampleShading {
 
-    enable      : Bool32,
-    min_sample  : c_float,
-    sample_masks: vkint,
+    enable      : vkbool,
+    min_sample  : vkfloat,
+    sample_masks: vkuint,
 }
 
 impl SampleShading {
 
     pub fn disable() -> SampleShading {
         SampleShading {
-            enable       : vk::VK_FALSE,
+            enable       : VK_FALSE,
             min_sample   : 0.0,
             sample_masks : 0,
         }
     }
 
-    pub fn setup(min_sample: c_float, sample_masks: vkint) -> SampleShading {
-        SampleShading { enable: vk::VK_TRUE, min_sample, sample_masks, }
-    }
-}
-
-
-#[derive(Debug, Clone, Copy, Eq, PartialEq)]
-pub enum SampleCountType {
-    Count1Bit, Count2Bit, Count4Bit, Count8Bit, Count16Bit, Count32Bit, Count64Bit,
-}
-
-impl VulkanEnum for SampleCountType {
-    type EnumType = vk::SampleCountFlags;
-
-    fn value(&self) -> Self::EnumType {
-        match self {
-            | SampleCountType::Count1Bit  => vk::SAMPLE_COUNT_1_BIT,
-            | SampleCountType::Count2Bit  => vk::SAMPLE_COUNT_2_BIT,
-            | SampleCountType::Count4Bit  => vk::SAMPLE_COUNT_4_BIT,
-            | SampleCountType::Count8Bit  => vk::SAMPLE_COUNT_8_BIT,
-            | SampleCountType::Count16Bit => vk::SAMPLE_COUNT_16_BIT,
-            | SampleCountType::Count32Bit => vk::SAMPLE_COUNT_32_BIT,
-            | SampleCountType::Count64Bit => vk::SAMPLE_COUNT_64_BIT,
-        }
+    pub fn setup(min_sample: vkfloat, sample_masks: vkuint) -> SampleShading {
+        SampleShading { enable: VK_TRUE, min_sample, sample_masks, }
     }
 }

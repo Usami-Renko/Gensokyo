@@ -2,8 +2,6 @@
 use std::fmt;
 use std::error::Error;
 
-use resources::error::FramebufferError;
-
 use pipeline::shader::shaderc::ShaderCompileError;
 
 #[derive(Debug, Clone, Copy, Eq, PartialEq)]
@@ -60,12 +58,11 @@ impl_from_err!(Shader(ShaderError)         -> PipelineError);
 impl_from_err!(Shaderc(ShaderCompileError) -> PipelineError);
 impl_from_err!(RenderPass(RenderPassError) -> PipelineError);
 
-
 #[derive(Debug, Clone, Eq, PartialEq)]
 pub enum RenderPassError {
 
     RenderPassCreationError,
-    Framebuffer(FramebufferError),
+    FramebufferCreationError,
 }
 
 impl Error for RenderPassError {}
@@ -75,7 +72,7 @@ impl fmt::Display for RenderPassError {
 
         match self {
             | RenderPassError::RenderPassCreationError  => write!(f, "Failed to create Render Pass object."),
-            | RenderPassError::Framebuffer(ref e)       => write!(f, "{}", e),
+            | RenderPassError::FramebufferCreationError => write!(f, "Failed to create Framebuffer Object."),
         }
     }
 }

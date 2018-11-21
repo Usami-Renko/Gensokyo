@@ -14,18 +14,16 @@ use pipeline::state::multisample::HaMultisampleState;
 use pipeline::state::depth_stencil::HaDepthStencilState;
 use pipeline::state::blend::HaBlendState;
 use pipeline::state::tessellation::HaTessellationState;
-use pipeline::state::dynamic::DynamicState;
 use pipeline::pass::HaRenderPass;
 use pipeline::graphics::pipeline::{ HaGraphicsPipeline, GraphicsPipelineContainer };
 use pipeline::layout::PipelineLayoutBuilder;
 use pipeline::error::PipelineError;
 
-use resources::descriptor::ToDescriptorSetLayout;
+use descriptor::ToDescriptorSetLayout;
 
 use pipeline::shader::shaderc::{ HaShaderCompiler, ShaderCompilePrefab, ShadercConfiguration };
 
-use utils::types::vkint;
-use utils::marker::VulkanFlags;
+use types::vkuint;
 
 use std::ptr;
 
@@ -55,8 +53,8 @@ impl GraphicsPipelineConfig {
         }
     }
 
-    pub fn set_flags(&mut self, flags: &[PipelineCreateFlag]) {
-        self.flags = flags.flags();
+    pub fn with_flags(&mut self, flags: vk::PipelineCreateFlags) {
+        self.flags = flags;
     }
 
     pub fn finish(self) -> GraphicsPipelineConfig {
@@ -80,7 +78,7 @@ impl GraphicsPipelineBuilder {
 
         let builder = GraphicsPipelineBuilder {
             device : device.clone(),
-            configs: vec![],
+            configs: Vec::new(),
             shaderc: HaShaderCompiler::setup(ShaderCompilePrefab::Vulkan)?,
         };
 
@@ -106,7 +104,7 @@ impl GraphicsPipelineBuilder {
     pub fn build(&mut self) -> Result<GraphicsPipelineContainer, PipelineError> {
 
         for config in self.configs.iter_mut() {
-            let mut shader_modules = vec![];
+            let mut shader_modules = Vec::new();
             for shader in config.shaders.iter() {
                 let module = shader.build(&self.device, &mut self.shaderc)?;
                 shader_modules.push(module);
@@ -114,13 +112,13 @@ impl GraphicsPipelineBuilder {
             config.shader_modules = shader_modules;
         }
 
-        let mut layouts = vec![];
-        let mut infos = vec![];
+        let mut layouts = Vec::new();
+        let mut infos = Vec::new();
 
         for config in self.configs.iter() {
 
-            let shader_create_infos = config.shader_modules.iter()
-                .map(|m| m.info()).collect::<Vec<_>>();
+            let shader_create_infos: Vec<vk::PipelineShaderStageCreateInfo> = config.shader_modules.iter()
+                .map(|m| m.info()).collect();
             let tessellation_info = config.states.tessellation.as_ref()
                 .map_or(ptr::null(), |t| &t.info());
             let dynamic_info = if config.states.dynamic.is_contain_state() {
@@ -130,11 +128,11 @@ impl GraphicsPipelineBuilder {
             layouts.push(pipeline_layout);
 
             let graphics_pipeline_create_info = vk::GraphicsPipelineCreateInfo {
-                s_type: vk::StructureType::GraphicsPipelineCreateInfo,
+                s_type: vk::StructureType::GRAPHICS_PIPELINE_CREATE_INFO,
                 p_next: ptr::null(),
-                // TODO: Add configuration for flags
+                // TODO: Add configuration for vk::PipelineCreateFlags.
                 flags : vk::PipelineCreateFlags::empty(),
-                stage_count: shader_create_infos.len() as vkint,
+                stage_count: shader_create_infos.len() as vkuint,
                 p_stages   : shader_create_infos.as_ptr(),
                 p_vertex_input_state  : &config.states.vertex_input.info(),
                 p_input_assembly_state: &config.states.input_assembly.info(),
@@ -208,14 +206,14 @@ impl GraphicsPipelineConfig {
         match state {
             | ViewportStateType::Fixed { .. } => {},
             | ViewportStateType::Dynamic { .. } => {
-                self.states.dynamic.add_state(DynamicState::Viewport);
-                self.states.dynamic.add_state(DynamicState::Scissor);
+                self.states.dynamic.add_state(vk::DynamicState::VIEWPORT);
+                self.states.dynamic.add_state(vk::DynamicState::SCISSOR);
             },
             | ViewportStateType::DynamicViewportFixedScissor { .. } => {
-                self.states.dynamic.add_state(DynamicState::Viewport);
+                self.states.dynamic.add_state(vk::DynamicState::VIEWPORT);
             },
             | ViewportStateType::FixedViewportDynamicScissor { .. } => {
-                self.states.dynamic.add_state(DynamicState::Scissor);
+                self.states.dynamic.add_state(vk::DynamicState::SCISSOR);
             },
         }
 
@@ -226,10 +224,10 @@ impl GraphicsPipelineConfig {
     pub fn setup_rasterizer(mut self, state: HaRasterizerState) -> GraphicsPipelineConfig {
 
         if state.is_dynamic_lindwidth() {
-            self.states.dynamic.add_state(DynamicState::LineWidth);
+            self.states.dynamic.add_state(vk::DynamicState::LINE_WIDTH);
         }
         if state.is_dynamic_depthbias() {
-            self.states.dynamic.add_state(DynamicState::DepthBias);
+            self.states.dynamic.add_state(vk::DynamicState::DEPTH_BIAS);
         }
 
         self.states.rasterizer = state;
@@ -244,16 +242,16 @@ impl GraphicsPipelineConfig {
     pub fn setup_depth_stencil(mut self, state: HaDepthStencilState) -> GraphicsPipelineConfig {
 
         if state.depth.is_dynamic_depthbound() {
-            self.states.dynamic.add_state(DynamicState::DepthBounds);
+            self.states.dynamic.add_state(vk::DynamicState::DEPTH_BOUNDS);
         }
         if state.stencil.is_dynamic_compare_mask() {
-            self.states.dynamic.add_state(DynamicState::StencilCompareMask);
+            self.states.dynamic.add_state(vk::DynamicState::STENCIL_COMPARE_MASK);
         }
         if state.stencil.is_dynamic_write_mask() {
-            self.states.dynamic.add_state(DynamicState::StencilWriteMask);
+            self.states.dynamic.add_state(vk::DynamicState::STENCIL_WRITE_MASK);
         }
         if state.stencil.is_dynamic_reference() {
-            self.states.dynamic.add_state(DynamicState::StencilReference);
+            self.states.dynamic.add_state(vk::DynamicState::STENCIL_REFERENCE);
         }
 
         self.states.depth_stencil = state;
@@ -263,7 +261,7 @@ impl GraphicsPipelineConfig {
     pub fn setup_blend(mut self, state: HaBlendState) -> GraphicsPipelineConfig {
 
         if state.is_dynamic_blend_constants() {
-            self.states.dynamic.add_state(DynamicState::BlendConstants);
+            self.states.dynamic.add_state(vk::DynamicState::BLEND_CONSTANTS);
         }
 
         self.states.blend = state;
@@ -278,47 +276,5 @@ impl GraphicsPipelineConfig {
     pub fn add_descriptor_set(mut self, set: &impl ToDescriptorSetLayout) -> GraphicsPipelineConfig {
         self.layout_builder.add_descriptor_layout(&set.to_set_layout());
         self
-    }
-}
-
-#[derive(Debug, Clone, Copy, Eq, PartialEq)]
-pub enum PipelineCreateFlag {
-
-    /// DisableOptimizationBit specifies that the created pipeline will not be optimized.
-    ///
-    /// Using this flag may reduce the time taken to create the pipeline.
-    DisableOptimizationBit,
-    /// AllowDerivativesBit specifies that the pipeline to be created is allowed to be the parent of a pipeline
-    /// that will be created in a subsequent call to vkCreateGraphicsPipelines or vkCreateComputePipelines.
-    AllowDerivativesBit,
-    /// DerivativeBit specifies that the pipeline to be created will be a child of a previously created parent pipeline.
-    DerivativeBit,
-    // TODO: Others flags are not supported in ash yet.
-    // ViewIndexFromDeviceIndexBit specifies that any shader input variables decorated as ViewIndex will be assigned values
-    // as if they were decorated as DeviceIndex.
-    //ViewIndexFromDeviceIndexBit,
-    // Same as ViewIndexFromDeviceIndexBit.
-    //ViewIndexFromDeviceIndexBitKHR,
-    // specifies that a compute pipeline can be used with vkCmdDispatchBase with a non-zero base workgroup.
-    //DispatchBase,
-    // Same as DispatchBase,
-    //DispatchBaseKHR,
-}
-
-impl VulkanFlags for [PipelineCreateFlag] {
-    type FlagType = vk::PipelineCreateFlags;
-
-    fn flags(&self) -> Self::FlagType {
-        self.iter().fold(vk::PipelineCreateFlags::empty(), |acc, flag| {
-            match flag {
-                | PipelineCreateFlag::DisableOptimizationBit         => acc | vk::PIPELINE_CREATE_DISABLE_OPTIMIZATION_BIT,
-                | PipelineCreateFlag::AllowDerivativesBit            => acc | vk::PIPELINE_CREATE_ALLOW_DERIVATIVES_BIT,
-                | PipelineCreateFlag::DerivativeBit                  => acc | vk::PIPELINE_CREATE_DERIVATIVE_BIT,
-                //| PipelineCreateFlag::ViewIndexFromDeviceIndexBit    => acc | vk::PIPELINE_CREATE_VIEW_INDEX_FROM_DEVICE_INDEX_BIT,
-                //| PipelineCreateFlag::ViewIndexFromDeviceIndexBitKHR => acc | vk::PIPELINE_CREATE_VIEW_INDEX_FROM_DEVICE_INDEX_BIT_KHR,
-                //| PipelineCreateFlag::DispatchBase                   => acc | vk::PIPELINE_CREATE_DISPATCH_BASE,
-                //| PipelineCreateFlag::DispatchBaseKHR                => acc | vk::PIPELINE_CREATE_DISPATCH_BASE_KHR,
-            }
-        })
     }
 }

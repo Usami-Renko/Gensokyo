@@ -4,11 +4,8 @@ use ash::version::DeviceV1_0;
 
 use core::device::HaDevice;
 
-use pipeline::shader::flag::ShaderStageFlag;
 use pipeline::shader::shaderc::HaShaderCompiler;
 use pipeline::error::{ ShaderError, PipelineError };
-
-use utils::marker::VulkanEnum;
 
 use std::path::{ Path, PathBuf };
 use std::ffi::CString;
@@ -18,7 +15,7 @@ use std::ptr;
 
 pub struct HaShaderInfo {
 
-    stage: ShaderStageFlag,
+    stage: vk::ShaderStageFlags,
     path : PathBuf,
     main : String,
 
@@ -33,7 +30,7 @@ enum ShaderSourcePattern {
 
 impl HaShaderInfo {
 
-    pub fn from_source(stage: ShaderStageFlag, source_path: impl AsRef<Path>, main_func: Option<&str>, tag_name: &str) -> HaShaderInfo {
+    pub fn from_source(stage: vk::ShaderStageFlags, source_path: impl AsRef<Path>, main_func: Option<&str>, tag_name: &str) -> HaShaderInfo {
 
         let path = PathBuf::from(source_path.as_ref());
         let main = main_func
@@ -47,7 +44,7 @@ impl HaShaderInfo {
         }
     }
 
-    pub fn from_spirv(stage: ShaderStageFlag, spirv_path: impl AsRef<Path>, main_func: Option<&str>) -> HaShaderInfo {
+    pub fn from_spirv(stage: vk::ShaderStageFlags, spirv_path: impl AsRef<Path>, main_func: Option<&str>) -> HaShaderInfo {
 
         let path = PathBuf::from(spirv_path.as_ref());
         let main = main_func
@@ -63,10 +60,12 @@ impl HaShaderInfo {
 
     pub fn build(&self, device: &HaDevice, compiler: &mut HaShaderCompiler) -> Result<HaShaderModule, PipelineError> {
 
+        use pipeline::shader::shaderc::cast_shaderc_kind;
+
         let codes = match self.pattern {
             | ShaderSourcePattern::SourceCode => {
                 let source = load_to_str(&self.path)?;
-                let kind = self.stage.to_shaderc_kind();
+                let kind = cast_shaderc_kind(self.stage);
                 let tag_name = self.tag_name.as_ref().unwrap();
 
                 compiler.compile_source_into_spirv(&source, kind, tag_name, &self.main)?
@@ -89,7 +88,7 @@ impl HaShaderInfo {
     fn create_module(&self, device: &HaDevice, codes: &Vec<u8>) -> Result<vk::ShaderModule, ShaderError> {
 
         let module_create_info = vk::ShaderModuleCreateInfo {
-            s_type    : vk::StructureType::ShaderModuleCreateInfo,
+            s_type    : vk::StructureType::SHADER_MODULE_CREATE_INFO,
             p_next    : ptr::null(),
             // flags is reserved for future use in API version 1.1.82.
             flags     : vk::ShaderModuleCreateFlags::empty(),
@@ -108,19 +107,20 @@ impl HaShaderInfo {
 pub struct HaShaderModule {
 
     main   : CString,
-    stage  : ShaderStageFlag,
+    stage  : vk::ShaderStageFlags,
     handle : vk::ShaderModule,
 }
 
 impl HaShaderModule {
 
-    pub fn info(&self) -> vk::PipelineShaderStageCreateInfo {
+    pub(crate) fn info(&self) -> vk::PipelineShaderStageCreateInfo {
+
         vk::PipelineShaderStageCreateInfo {
-            s_type : vk::StructureType::PipelineShaderStageCreateInfo,
+            s_type : vk::StructureType::PIPELINE_SHADER_STAGE_CREATE_INFO,
             p_next : ptr::null(),
             // flags is reserved for future use in API version 1.1.82.
             flags  : vk::PipelineShaderStageCreateFlags::empty(),
-            stage  : self.stage.value(),
+            stage  : self.stage,
             module : self.handle,
             p_name : self.main.as_ptr(),
             // TODO: This field has not been covered.
@@ -143,7 +143,7 @@ fn load_spriv_bytes(path: &PathBuf) -> Result<Vec<u8>, ShaderError> {
         .or(Err(ShaderError::SpirvReadError))?;
     let bytes = file.bytes()
         .filter_map(|byte| byte.ok())
-        .collect::<Vec<_>>();
+        .collect();
 
     Ok(bytes)
 }

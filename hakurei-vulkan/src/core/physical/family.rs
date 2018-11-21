@@ -1,194 +1,172 @@
 
 use ash::vk;
 use ash::version::InstanceV1_0;
-use ash::vk::uint32_t;
 
 use core::instance::HaInstance;
+use core::physical::config::PhysicalInspectProperty;
 use core::error::PhysicalDeviceError;
 use core::surface::HaSurface;
 
-use utils::marker::VulkanFlags;
+use types::vkuint;
 
+#[derive(Debug, Clone)]
 pub struct QueueFamilyIndices {
 
-    pub graphics_index: uint32_t,
-    pub present_index : uint32_t,
-    pub transfer_index: uint32_t,
+    pub graphics_index: vkuint,
+    pub present_index : vkuint,
+    pub transfer_index: vkuint,
     pub is_share_same_family: bool,
 }
 
-struct QueueOperationIndices {
+struct QueueCapabilityIndices {
+
     graphics       : Option<usize>,
     compute        : Option<usize>,
     transfer       : Option<usize>,
     sparse_binding : Option<usize>,
+    protected      : Option<usize>,
 }
 
-#[derive(Debug, Clone, Copy, Eq, PartialEq)]
-pub enum QueueOperationType {
+pub(crate) struct PhysicalQueueFamilies {
 
-    Graphics,
-    Compute,
-    Transfer,
-    SparseBinding,
+    pub families: Vec<vk::QueueFamilyProperties>,
+    pub family_indices: QueueFamilyIndices,
+
+    capability_indices: QueueCapabilityIndices,
 }
 
-impl QueueOperationType {
+#[derive(Debug, Clone)]
+pub struct PhysicalQueueFamilyConfig {
 
-    fn is_support(&self, queue_flag: vk::QueueFlags) -> bool {
-
-        let inspect_flag = match self {
-            | QueueOperationType::Graphics      => vk::QUEUE_GRAPHICS_BIT,
-            | QueueOperationType::Compute       => vk::QUEUE_COMPUTE_BIT,
-            | QueueOperationType::Transfer      => vk::QUEUE_TRANSFER_BIT,
-            | QueueOperationType::SparseBinding => vk::QUEUE_SPARSE_BINDING_BIT,
-        };
-        queue_flag.subset(inspect_flag)
-    }
-}
-
-impl VulkanFlags for [QueueOperationType] {
-    type FlagType = vk::QueueFlags;
-
-    fn flags(&self) -> Self::FlagType {
-        self.iter().fold(vk::QueueFlags::empty(), |acc, flag| {
-            match *flag {
-                | QueueOperationType::Graphics      => acc | vk::QUEUE_GRAPHICS_BIT,
-                | QueueOperationType::Compute       => acc | vk::QUEUE_COMPUTE_BIT,
-                | QueueOperationType::Transfer      => acc | vk::QUEUE_TRANSFER_BIT,
-                | QueueOperationType::SparseBinding => acc | vk::QUEUE_SPARSE_BINDING_BIT,
-            }
-        })
-    }
-}
-
-pub struct PhysicalQueueFamilies {
-
-    families           : Vec<vk::QueueFamilyProperties>,
-    pub family_indices : QueueFamilyIndices,
-    operation_indices  : QueueOperationIndices,
+    require_capabilities: Vec<vk::QueueFlags>,
 }
 
 impl PhysicalQueueFamilies {
 
-    pub fn inspect(instance: &HaInstance, physical_device: vk::PhysicalDevice, surface: &HaSurface)
+    pub fn query(instance: &HaInstance, physical_device: vk::PhysicalDevice, surface: &HaSurface)
         -> Result<PhysicalQueueFamilies, PhysicalDeviceError> {
+        let families = unsafe {
+            instance.handle.get_physical_device_queue_family_properties(physical_device)
+        };
 
-        let families = instance.handle.get_physical_device_queue_family_properties(physical_device);
+        let mut candidate_graphics_index = None;
+        let mut candidate_present_index = None;
+        let mut candidate_transfer_index = None;
 
-        let mut back_graphics_index = None;
-        let mut back_present_index  = None;
-        let mut back_transfer_index = None;
-
-        let mut queue_family_index: uint32_t = 0;
+        let mut family_index: vkuint = 0; // queue family index
         for queue_family in families.iter() {
-            if queue_family.queue_count > 0 && queue_family.queue_flags.subset(vk::QUEUE_GRAPHICS_BIT & vk::QUEUE_TRANSFER_BIT) {
-                back_graphics_index = Some(queue_family_index);
-                back_transfer_index = Some(queue_family_index);
+            if queue_family.queue_count > 0 && queue_family.queue_flags.contains(vk::QueueFlags::GRAPHICS & vk::QueueFlags::TRANSFER) {
+                candidate_graphics_index = Some(family_index);
+                candidate_transfer_index = Some(family_index);
             }
 
-            if queue_family.queue_count > 0 && surface.is_present_support(physical_device, queue_family_index) {
-                back_present_index = Some(queue_family_index);
+            if queue_family.queue_count > 0 && surface.query_is_family_presentable(physical_device, family_index) {
+                candidate_present_index = Some(family_index);
             }
 
-            if back_graphics_index.is_some() && back_present_index.is_some() && back_transfer_index.is_some() {
+            if candidate_graphics_index.is_some() && candidate_present_index.is_some() && candidate_transfer_index.is_some() {
                 break
             }
 
-            queue_family_index += 1;
+            family_index += 1;
         }
 
-
-        if back_graphics_index.is_none() {
-            return Err(PhysicalDeviceError::GraphicsQueueNotSupportError)
-        }
-        if back_present_index.is_none() {
-            return Err(PhysicalDeviceError::PresentQueueNotSupportError)
-        }
-        if back_transfer_index.is_none() {
-            return Err(PhysicalDeviceError::TransferQueueNotSupportError)
-        }
+        let graphics_index = candidate_graphics_index
+            .ok_or(PhysicalDeviceError::GraphicsQueueNotSupportError)?;
+        let present_index = candidate_present_index
+            .ok_or(PhysicalDeviceError::PresentQueueNotSupportError)?;
+        let transfer_index = candidate_transfer_index
+            .ok_or(PhysicalDeviceError::TransferQueueNotSupportError)?;
+        let is_share_same_family = graphics_index == present_index && graphics_index == transfer_index;
 
         let family_indices = QueueFamilyIndices {
-            graphics_index: back_graphics_index.unwrap(),
-            present_index : back_present_index.unwrap(),
-            transfer_index: back_transfer_index.unwrap(),
-            is_share_same_family:
-                (back_graphics_index.unwrap() == back_present_index.unwrap()) &&
-                (back_graphics_index.unwrap() == back_transfer_index.unwrap()),
+            graphics_index,
+            present_index,
+            transfer_index,
+            is_share_same_family,
         };
 
-        let operation_indices = generate_operation_indices(&families);
+        let capability_indices = generate_operation_indices(&families);
 
         let queue_families = PhysicalQueueFamilies {
             families,
             family_indices,
-            operation_indices,
+            capability_indices,
         };
 
         Ok(queue_families)
     }
 
-    pub fn check_requirements(&self, require_operations: &Vec<QueueOperationType>) -> bool {
-
-        require_operations.iter().all(|require_operation| {
-            match *require_operation {
-                | QueueOperationType::Graphics      => self.operation_indices.graphics.is_some(),
-                | QueueOperationType::Compute       => self.operation_indices.compute.is_some(),
-                | QueueOperationType::Transfer      => self.operation_indices.transfer.is_some(),
-                | QueueOperationType::SparseBinding => self.operation_indices.sparse_binding.is_some(),
-            }
-        })
-    }
-
-    #[allow(dead_code)]
-    pub fn queue_families_count(&self) -> usize {
-        self.families.len()
-    }
-
-    pub fn is_queue_support_operations(&self, check_family_index: uint32_t, usages: &[QueueOperationType]) -> bool {
+    pub fn is_queue_support_capability(&self, check_family_index: vkuint, capability: vk::QueueFlags) -> bool {
 
         let family = &self.families[check_family_index as usize];
 
-        usages.iter().all(|usage| {
-            usage.is_support(family.queue_flags)
-        })
+        family.queue_flags.contains(capability)
     }
 
-    pub fn is_queue_count_enough(&self, check_family_index: uint32_t, request_queue_count: usize) -> bool {
+    pub fn is_queue_count_enough(&self, check_family_index: vkuint, request_queue_count: usize) -> bool {
 
         let family = &self.families[check_family_index as usize];
         family.queue_count as usize >= request_queue_count
     }
 }
 
+impl PhysicalInspectProperty for PhysicalQueueFamilies {
+    type ConfigType = PhysicalQueueFamilyConfig;
 
-fn generate_operation_indices(families: &Vec<vk::QueueFamilyProperties>) -> QueueOperationIndices {
+    fn inspect(&self, config: &Self::ConfigType) -> bool {
 
-    let mut result = QueueOperationIndices {
+        config.require_capabilities.iter()
+            .all(|&requirement| {
+                match requirement {
+                    | vk::QueueFlags::GRAPHICS => self.capability_indices.graphics.is_some(),
+                    | vk::QueueFlags::COMPUTE  => self.capability_indices.compute.is_some(),
+                    | vk::QueueFlags::TRANSFER => self.capability_indices.transfer.is_some(),
+                    | vk::QueueFlags::SPARSE_BINDING => self.capability_indices.sparse_binding.is_some(),
+                    | vk::QueueFlags::PROTECTED => self.capability_indices.protected.is_some(),
+                    | _ => false,
+                }
+            })
+    }
+
+    fn set(&mut self, _config: &Self::ConfigType) {
+        // nothing to set, leave it empty...
+    }
+}
+
+
+
+fn generate_operation_indices(families: &Vec<vk::QueueFamilyProperties>) -> QueueCapabilityIndices {
+
+    let mut result = QueueCapabilityIndices {
         graphics: None,
-        compute:  None,
+        compute: None,
         transfer: None,
         sparse_binding: None,
+        protected: None,
     };
 
     for (index, family) in families.iter().enumerate() {
+
         let test_flags = family.queue_flags;
 
-        if result.graphics.is_none() && QueueOperationType::Graphics.is_support(test_flags) {
+        if result.graphics.is_none() && test_flags.contains(vk::QueueFlags::GRAPHICS) {
             result.graphics = Some(index);
         }
-        if result.compute.is_none() && QueueOperationType::Compute.is_support(test_flags) {
+        if result.compute.is_none() && test_flags.contains(vk::QueueFlags::COMPUTE) {
             result.compute = Some(index);
         }
-        if result.transfer.is_none() && QueueOperationType::Transfer.is_support(test_flags) {
+        if result.transfer.is_none() && test_flags.contains(vk::QueueFlags::TRANSFER) {
             result.transfer = Some(index);
         }
-        if result.sparse_binding.is_none() && QueueOperationType::SparseBinding.is_support(test_flags) {
+        if result.sparse_binding.is_none() && test_flags.contains(vk::QueueFlags::SPARSE_BINDING) {
             result.sparse_binding = Some(index);
         }
+        if result.protected.is_none() && test_flags.contains(vk::QueueFlags::PROTECTED) {
+            result.protected = Some(index);
+        }
 
-        if result.graphics.is_some() && result.compute.is_some() && result.transfer.is_some() && result.sparse_binding.is_some() {
+        if result.graphics.is_some() && result.compute.is_some() && result.transfer.is_some() && result.sparse_binding.is_some() && result.protected.is_some() {
             break
         }
     }

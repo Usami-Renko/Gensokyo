@@ -3,14 +3,14 @@ use ash::vk;
 use ash::version::EntryV1_0;
 use ash::extensions::DebugReport;
 
-use core::EntryV1;
 use core::error::InstanceError;
 use core::instance::HaInstance;
 use core::error::ValidationError;
 
 use VERBOSE;
 use utils::cast;
-use utils::marker::VulkanFlags;
+
+use types::{ vklint, vksint, vkchar, vkptr, VK_FALSE };
 
 use std::ptr;
 use std::ffi::CStr;
@@ -27,19 +27,18 @@ pub struct HaDebugger {
 impl HaDebugger {
 
     /// Initialize debug extension loader and `vk::DebugReport` object.
-    pub fn setup(instance: &HaInstance, flags: &[DebugReportFlag]) -> Result<HaDebugger, ValidationError> {
+    pub fn setup(instance: &HaInstance, flags: vk::DebugReportFlagsEXT) -> Result<HaDebugger, ValidationError> {
 
         // load the debug extension
-        let loader = DebugReport::new(&instance.entry, &instance.handle)
-            .or(Err(ValidationError::DebugReportCreationError))?;
+        let loader = DebugReport::new(&instance.entry, &instance.handle);
 
         // configurate debug callback.
         let debug_callback_create_info = vk::DebugReportCallbackCreateInfoEXT {
-            s_type      : vk::StructureType::DebugReportCallbackCreateInfoExt,
+            s_type      : vk::StructureType::DEBUG_REPORT_CALLBACK_CREATE_INFO_EXT,
             p_next      : ptr::null(),
             // Enum DebugReportFlags enumerate all available flags.
-            flags       : flags.flags(),
-            pfn_callback: vulkan_debug_report_callback,
+            flags,
+            pfn_callback: Some(vulkan_debug_report_callback),
             p_user_data : ptr::null_mut(),
         };
 
@@ -49,8 +48,7 @@ impl HaDebugger {
         };
 
         let debugger = HaDebugger {
-            loader,
-            callback,
+            loader, callback,
         };
 
         Ok(debugger)
@@ -66,49 +64,20 @@ impl HaDebugger {
     }
 }
 
-/// the message type that Validation Layer would report for.
-#[allow(dead_code)]
-#[derive(Debug, Clone, Copy, Eq, PartialEq)]
-pub enum DebugReportFlag {
-
-    ErrorBit,
-    InformationBit,
-    DebugBit,
-    WarningBit,
-    PerformanceWarningBit,
-}
-
-impl VulkanFlags for [DebugReportFlag] {
-    type FlagType = vk::DebugReportFlagsEXT;
-
-    /// Convenient method to combine flags.
-    fn flags(&self) -> Self::FlagType {
-        self.iter().fold(vk::DebugReportFlagsEXT::empty(), |acc, flag| {
-            match flag {
-                | DebugReportFlag::ErrorBit              => acc | vk::DEBUG_REPORT_ERROR_BIT_EXT,
-                | DebugReportFlag::InformationBit        => acc | vk::DEBUG_REPORT_INFORMATION_BIT_EXT,
-                | DebugReportFlag::DebugBit              => acc | vk::DEBUG_REPORT_DEBUG_BIT_EXT,
-                | DebugReportFlag::WarningBit            => acc | vk::DEBUG_REPORT_WARNING_BIT_EXT,
-                | DebugReportFlag::PerformanceWarningBit => acc | vk::DEBUG_REPORT_PERFORMANCE_WARNING_BIT_EXT,
-            }
-        })
-    }
-}
-
 /// the callback function in Debug Report.
 unsafe extern "system" fn vulkan_debug_report_callback(
     _flags       : vk::DebugReportFlagsEXT,
     _obj_type    : vk::DebugReportObjectTypeEXT,
-    _obj         : vk::uint64_t,
-    _location    : vk::size_t,
-    _code        : vk::int32_t,
-    _layer_prefix: *const vk::c_char,
-    p_message    : *const vk::c_char,
-    _user_data   : *mut vk::c_void
+    _obj         : vklint,
+    _location    : usize,
+    _code        : vksint,
+    _layer_prefix: *const vkchar,
+    p_message    : *const vkchar,
+    _user_data   : vkptr
 ) -> u32 {
 
     println!("[Debug] {:?}", CStr::from_ptr(p_message));
-    vk::VK_FALSE
+    VK_FALSE
 }
 
 pub struct ValidationConfig {
@@ -117,11 +86,11 @@ pub struct ValidationConfig {
     /// the layer names required for validation layer support.
     pub required_validation_layers: Vec<String>,
     /// the message type that Validation Layer would report for.
-    pub flags: Vec<DebugReportFlag>,
+    pub flags: vk::DebugReportFlagsEXT,
 }
 
 /// helper function to check if all required layers of validation layer are satisfied.
-pub(super) fn is_support_validation_layer(entry: &EntryV1, required_validation_layers: &[String]) -> Result<bool, InstanceError> {
+pub(super) fn is_support_validation_layer(entry: &ash::Entry, required_validation_layers: &[String]) -> Result<bool, InstanceError> {
 
     let layer_properties = entry.enumerate_instance_layer_properties()
         .or(Err(InstanceError::LayerPropertiesEnumerateError))?;

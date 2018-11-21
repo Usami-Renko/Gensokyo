@@ -2,8 +2,8 @@
 use vk::core::physical::HaPhyDevice;
 use vk::core::device::HaDevice;
 
-use vk::resources::buffer::BufferItem;
-use vk::resources::memory::{ HaMemoryAbstract, MemoryRange };
+use vk::buffer::BufferSlice;
+use vk::memory::{ HaMemoryAbstract, MemoryRange };
 use vk::resources::error::MemoryError;
 use vk::utils::types::vkMemorySize;
 use vk::utils::memory::MemoryWritePtr;
@@ -20,8 +20,8 @@ pub trait MemoryDataUploadable {
     fn prepare_data_transfer(&mut self, physical: &HaPhyDevice, device: &HaDevice, allocate_infos: &Option<BufferAllocateInfos>)
         -> Result<Option<UploadStagingResource>, MemoryError>;
 
-    fn map_memory_ptr(&mut self, staging: &mut Option<UploadStagingResource>, item: &BufferItem, offset: vkMemorySize)
-        -> Result<(MemoryWritePtr, MemoryRange), MemoryError>;
+    fn map_memory_ptr(&mut self, staging: &mut Option<UploadStagingResource>, item: &BufferSlice, offset: vkMemorySize)
+                      -> Result<(MemoryWritePtr, MemoryRange), MemoryError>;
 
     fn terminate_transfer(&mut self, device: &HaDevice, staging: &Option<UploadStagingResource>, ranges_to_flush: &Vec<MemoryRange>)
         -> Result<(), MemoryError>;

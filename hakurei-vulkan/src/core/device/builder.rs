@@ -1,24 +1,22 @@
 
 use ash;
 use ash::vk;
-use ash::version::{ InstanceV1_0, DeviceV1_0, V1_0 };
-use ash::vk::uint32_t;
+use ash::version::{ InstanceV1_0, DeviceV1_0 };
 
 use core::instance::HaInstance;
-use core::physical::{ HaPhysicalDevice, QueueOperationType };
+use core::physical::HaPhysicalDevice;
 use core::device::device::{ DeviceConfig, HaLogicalDevice };
 use core::device::enums::{ PrefabQueuePriority, DeviceQueueIdentifier, QueueRequestStrategy };
 use core::device::queue::{ HaQueue, QueueUsage, QueueContainer };
 use core::error::LogicalDeviceError;
 
 use utils::cast;
+use types::vkuint;
 use VERBOSE;
 
 use std::collections::HashMap;
 use std::rc::Rc;
 use std::ptr;
-
-// TODO: The generation step hasn't been well test.
 
 pub struct LogicalDeviceBuilder<'a, 'b> {
 
@@ -44,6 +42,7 @@ impl<'a, 'b> LogicalDeviceBuilder<'a, 'b> {
 
     #[allow(dead_code)]
     pub fn add_queue(&mut self, usage: QueueUsage) -> DeviceQueueIdentifier {
+
         let queue_index = self.setup_queue(usage);
 
         match usage {
@@ -100,38 +99,36 @@ impl<'a, 'b> LogicalDeviceBuilder<'a, 'b> {
         let _ = self.setup_queue(QueueUsage::Transfer);
 
         let entity_queue_infos = self.queue_request.queue_infos();
-        let queue_create_infos = entity_queue_infos.into_iter()
+        let queue_create_infos: Vec<vk::DeviceQueueCreateInfo> = entity_queue_infos.into_iter()
             .map(|(family_index, priorities)| {
                 vk::DeviceQueueCreateInfo {
-                    s_type: vk::StructureType::DeviceQueueCreateInfo,
+                    s_type: vk::StructureType::DEVICE_QUEUE_CREATE_INFO,
                     p_next: ptr::null(),
                     // flags is reserved for future use in API version 1.1.82.
                     flags : vk::DeviceQueueCreateFlags::empty(),
-
-                    queue_family_index: family_index as uint32_t,
-                    queue_count       : priorities.len() as uint32_t,
+                    queue_family_index: family_index as vkuint,
+                    queue_count       : priorities.len() as vkuint,
                     p_queue_priorities: priorities.as_ptr(),
                 }
-            }).collect::<Vec<_>>();
+            }).collect();
 
         // Configurate device features, layers and extensions.
-        let enable_features = self.physical.features.get_enable_features();
+        let enable_features = self.physical.features.enable_features();
         let enable_layer_names = cast::to_array_ptr(&self.instance.enable_layer_names);
-        let enable_extension_names = cast::to_array_ptr(&self.physical.extensions.enables);
+        let enable_extension_names = cast::to_array_ptr(&self.physical.extensions.enable_extensions());
 
         // Create the logical device.
         let device_create_info = vk::DeviceCreateInfo {
-            s_type: vk::StructureType::DeviceCreateInfo,
-            p_next: ptr::null(),
-            // flags is reserved for future use in API version 1.1.82.
-            flags: vk::DeviceCreateFlags::empty(),
-            queue_create_info_count   : queue_create_infos.len() as uint32_t,
-            p_queue_create_infos      : queue_create_infos.as_ptr(),
-            enabled_layer_count       : enable_layer_names.len() as uint32_t,
-            pp_enabled_layer_names    : enable_layer_names.as_ptr(),
-            enabled_extension_count   : enable_extension_names.len() as uint32_t,
-            pp_enabled_extension_names: enable_extension_names.as_ptr(),
-            p_enabled_features        : &enable_features,
+            s_type                     : vk::StructureType::DEVICE_CREATE_INFO,
+            p_next                     : ptr::null(),
+            flags                      : vk::DeviceCreateFlags::empty(), // flags is reserved for future use in API version 1.1.82.
+            queue_create_info_count    : queue_create_infos.len() as vkuint,
+            p_queue_create_infos       : queue_create_infos.as_ptr(),
+            enabled_layer_count        : enable_layer_names.len() as vkuint,
+            pp_enabled_layer_names     : enable_layer_names.as_ptr(),
+            enabled_extension_count    : enable_extension_names.len() as vkuint,
+            pp_enabled_extension_names : enable_extension_names.as_ptr(),
+            p_enabled_features         : enable_features,
         };
 
         let handle = unsafe {
@@ -156,8 +153,15 @@ impl<'a, 'b> LogicalDeviceBuilder<'a, 'b> {
 
 enum QueueRequestInfo {
 
-    Queue { entity: EntityQueueInfo, logics: Vec<LogicQueueInfo> },
-    Queues { entities: Vec<EntityQueueInfo>, logics: Vec<LogicQueueInfo>, usage_indices: HashMap<QueueUsage, usize> },
+    Queue {
+        entity: EntityQueueInfo,
+        logics: Vec<LogicQueueInfo>,
+    },
+    Queues {
+        entities: Vec<EntityQueueInfo>,
+        logics: Vec<LogicQueueInfo>,
+        usage_indices: HashMap<QueueUsage, usize>,
+    },
 }
 
 impl QueueRequestInfo {
@@ -180,11 +184,10 @@ impl QueueRequestInfo {
                 };
 
                 let result = candidate_indices.iter().find(|family_index| {
-                    physical.families.is_queue_support_operations(**family_index, &[
+                    physical.families.is_queue_support_capability(**family_index,
                         // Graphics and Transfer operations must support for single request.
-                        QueueOperationType::Graphics,
-                        QueueOperationType::Transfer,
-                    ])
+                        vk::QueueFlags::GRAPHICS | vk::QueueFlags::TRANSFER
+                    )
                 });
 
                 if let Some(optimal_index) = result {
@@ -194,8 +197,10 @@ impl QueueRequestInfo {
                         family_index: optimal_index.clone(),
                         queue_index : 0,
                     };
+
                     let request_info = QueueRequestInfo::Queue { entity: entity_info, logics: vec![] };
                     Ok(request_info)
+
                 } else {
 
                     Err(LogicalDeviceError::QueueOpsUnsupport)
@@ -222,8 +227,8 @@ impl QueueRequestInfo {
                 }
 
                 let is_queue_count_enough = family_queue_counts.iter()
-                    .all(|(family_index, request_queue_count)|
-                        physical.families.is_queue_count_enough(*family_index, *request_queue_count)
+                    .all(|(&family_index, &request_queue_count)|
+                        physical.families.is_queue_count_enough(family_index, request_queue_count)
                 );
                 // ------------------------------------------------------------------------ //
 
@@ -263,7 +268,7 @@ impl QueueRequestInfo {
         }
     }
 
-    fn queue_infos(&self) -> Vec<(uint32_t, Vec<f32>)> {
+    fn queue_infos(&self) -> Vec<(vkuint, Vec<f32>)> {
 
         match self {
             | QueueRequestInfo::Queue { entity, .. } => {
@@ -273,7 +278,7 @@ impl QueueRequestInfo {
                 )]
             },
             | QueueRequestInfo::Queues { entities, .. } => {
-                let mut family_indices: HashMap<uint32_t, Vec<f32>> = HashMap::new();
+                let mut family_indices: HashMap<vkuint, Vec<f32>> = HashMap::new();
                 for entity_queue in entities.iter() {
                     if family_indices.contains_key(&entity_queue.family_index) {
                         let priorities = family_indices.get_mut(&entity_queue.family_index).unwrap();
@@ -289,7 +294,7 @@ impl QueueRequestInfo {
         }
     }
 
-    fn collect_queues(&self, device: &ash::Device<V1_0>, config: &DeviceConfig) -> Result<QueueContainer, LogicalDeviceError> {
+    fn collect_queues(&self, device: &ash::Device, config: &DeviceConfig) -> Result<QueueContainer, LogicalDeviceError> {
 
         match self {
             | QueueRequestInfo::Queue { entity, logics } => {
@@ -312,7 +317,7 @@ impl QueueRequestInfo {
                         };
                         let queue = HaQueue::new(handle, entity_queue_info.priority, entity_queue_info.family_index, entity_queue_info.queue_index);
                         Rc::new(queue)
-                    }).collect::<Vec<_>>();
+                    }).collect();
 
                 let queue_container = collect_to_container(device, logics, config, None, Some(&multiqueues))?;
                 Ok(queue_container)
@@ -325,8 +330,8 @@ impl QueueRequestInfo {
 struct EntityQueueInfo {
 
     priority: PrefabQueuePriority,
-    family_index: uint32_t,
-    queue_index : uint32_t,
+    family_index: vkuint,
+    queue_index : vkuint,
 }
 
 #[derive(Debug, Clone)]
@@ -339,10 +344,10 @@ struct LogicQueueInfo {
 #[derive(Debug, Clone, Copy, Eq, PartialEq)]
 enum LogicQueueEntityIndex {
     SingleQueue,
-    MultiQueues(uint32_t),
+    MultiQueues(vkuint),
 }
 
-fn collect_to_container(device: &ash::Device<V1_0>, logic_queues: &Vec<LogicQueueInfo>, config: &DeviceConfig, unique_queue: Option<&Rc<HaQueue>>, multi_queues: Option<&Vec<Rc<HaQueue>>>) ->  Result<QueueContainer, LogicalDeviceError> {
+fn collect_to_container(device: &ash::Device, logic_queues: &Vec<LogicQueueInfo>, config: &DeviceConfig, unique_queue: Option<&Rc<HaQueue>>, multi_queues: Option<&Vec<Rc<HaQueue>>>) ->  Result<QueueContainer, LogicalDeviceError> {
 
     let mut queue_container = QueueContainer::empty();
     for logic_queue_info in logic_queues.iter() {
@@ -353,7 +358,7 @@ fn collect_to_container(device: &ash::Device<V1_0>, logic_queues: &Vec<LogicQueu
             | LogicQueueEntityIndex::MultiQueues(queue_index) => {
                 let queue = &multi_queues.unwrap()[queue_index as usize];
                 queue_container.add_queue(device, logic_queue_info.usage, queue, config)?;
-            }
+            },
         }
     }
 

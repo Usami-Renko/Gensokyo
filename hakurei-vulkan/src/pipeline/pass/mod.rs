@@ -1,12 +1,13 @@
 
-pub use self::dependency::AccessFlag;
 pub use self::builder::RenderPassBuilder;
+pub use self::framebuffer::{ HaFramebuffer, FramebufferBuilder };
 
 pub(crate) use self::render::HaRenderPass;
-pub(crate) use self::dependency::DependencyFlag;
+
 
 mod render;
 mod attachment;
 mod subpass;
 mod dependency;
 mod builder;
+mod framebuffer;

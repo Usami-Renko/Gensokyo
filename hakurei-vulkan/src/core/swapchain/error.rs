@@ -49,7 +49,6 @@ impl fmt::Display for SwapchainError {
 pub enum SwapchainInitError {
 
     SwapchianCreationError,
-    ExtensionLoadError,
     SurfaceNotExistError,
     SurfacePropertiesQuery(SurfaceError),
     GraphicsQueueNotAvailable,
@@ -64,7 +63,6 @@ impl fmt::Display for SwapchainInitError {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
         match self {
             | SwapchainInitError::SwapchianCreationError        => write!(f, "Failed to create Swapchain Object."),
-            | SwapchainInitError::ExtensionLoadError            => write!(f, "Failed to load Swapchain Extension."),
             | SwapchainInitError::SurfaceNotExistError          => write!(f, "Surface does not exist."),
             | SwapchainInitError::SurfacePropertiesQuery(ref e) => write!(f, "Failed to query surface property. {}", e),
             | SwapchainInitError::GraphicsQueueNotAvailable     => write!(f, "Graphics Queue is not available"),
@@ -78,15 +76,9 @@ impl fmt::Display for SwapchainInitError {
 #[derive(Debug, Clone, Copy, Eq, PartialEq)]
 pub enum SwapchainRuntimeError {
 
-    SurfaceUnAvailableError,
-    ImageNotReadyError,
     AcquireTimeOut,
-    SurfaceSubOptimalError,
-    SurfaceOutOfDateError,
-    DeviceUnAvailableError,
-    OutOfHostMemory,
-    OutOfDeviceMemory,
-    Unkndow,
+    SubOptimal,
+    Unknown
 }
 
 impl Error for SwapchainRuntimeError {}
@@ -94,15 +86,9 @@ impl fmt::Display for SwapchainRuntimeError {
 
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
         let description = match self {
-            | SwapchainRuntimeError::SurfaceUnAvailableError => "Surface is no longer available.",
-            | SwapchainRuntimeError::ImageNotReadyError      => "Timeout is zero and no image was available.",
-            | SwapchainRuntimeError::AcquireTimeOut          => "No image became available within the time allowed.",
-            | SwapchainRuntimeError::SurfaceSubOptimalError  => "Swapchain does not match the surface properties exactly.",
-            | SwapchainRuntimeError::SurfaceOutOfDateError   => "Surface has changed and is not compatible with the swapchain. Please recreate the swapchain.",
-            | SwapchainRuntimeError::DeviceUnAvailableError  => "Device is no longer available.",
-            | SwapchainRuntimeError::OutOfHostMemory         => "Host memory is running out.",
-            | SwapchainRuntimeError::OutOfDeviceMemory       => "Device memory is running out.",
-            | SwapchainRuntimeError::Unkndow                 => "Get unknown error when acquiring image.",
+            | SwapchainRuntimeError::AcquireTimeOut => "No image became available within the time allowed.",
+            | SwapchainRuntimeError::SubOptimal     => "Swapchain does not match the surface properties exactly.",
+            | SwapchainRuntimeError::Unknown        => "Get unknown error when acquiring image.",
         };
 
         write!(f, "{}", description)

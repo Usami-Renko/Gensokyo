@@ -1,8 +1,8 @@
 
-use utils::types::{ vkMemorySize, MemPtr };
+use types::{ vkbytes, vkptr };
 
 #[inline]
-pub fn bind_to_alignment(bind_value: vkMemorySize, alignment: vkMemorySize) -> vkMemorySize {
+pub fn bind_to_alignment(bind_value: vkbytes, alignment: vkbytes) -> vkbytes {
     if bind_value < alignment {
         alignment
     } else {
@@ -12,13 +12,13 @@ pub fn bind_to_alignment(bind_value: vkMemorySize, alignment: vkMemorySize) -> v
 
 pub struct MemoryWritePtr {
 
-    ptr : MemPtr,
-    size: vkMemorySize,
+    ptr : vkptr,
+    size: vkbytes,
 }
 
 impl MemoryWritePtr {
 
-    pub fn new(ptr: MemPtr, size: vkMemorySize) -> MemoryWritePtr {
+    pub fn new(ptr: vkptr, size: vkbytes) -> MemoryWritePtr {
         MemoryWritePtr { ptr, size }
     }
 
@@ -30,7 +30,7 @@ impl MemoryWritePtr {
         let mut vert_algn = unsafe {
             ash::util::Align::new(
                 self.ptr,
-                mem::align_of::<D>() as vkMemorySize,
+                mem::align_of::<D>() as vkbytes,
                 self.size,
             )
         };

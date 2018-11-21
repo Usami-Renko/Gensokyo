@@ -1,6 +1,4 @@
 
-use core::DeviceV1;
-
 use core::device::DeviceConfig;
 use core::device::queue::traits::HaQueueAbstract;
 use core::device::queue::{ HaQueue, QueueUsage, HaGraphicsQueue, HaPresentQueue, HaTransferQueue };
@@ -26,7 +24,7 @@ impl QueueContainer {
         }
     }
 
-    pub fn add_queue(&mut self, device: &DeviceV1, usage: QueueUsage, queue: &Rc<HaQueue>, config: &DeviceConfig) -> Result<(), LogicalDeviceError> {
+    pub fn add_queue(&mut self, device: &ash::Device, usage: QueueUsage, queue: &Rc<HaQueue>, config: &DeviceConfig) -> Result<(), LogicalDeviceError> {
 
         match usage {
             | QueueUsage::Graphics => {

@@ -5,18 +5,17 @@ use ash::vk;
 use num::clamp;
 
 use core::surface::HaSurface;
-use core::swapchain::{ SwapchainConfig, SurfaceFormat, PresentMode };
+use core::swapchain::SwapchainConfig;
 use core::swapchain::error::SwapchainInitError;
 use core::error::SurfaceError;
 
-use utils::marker::VulkanEnum;
-use utils::types::{ vkint, vkformat, vkDimension2D };
+use types::{ vkDim2D, vkuint };
 
 pub struct SwapchainSupport {
 
     capabilities : vk::SurfaceCapabilitiesKHR,
-    formats      : Vec<SurfaceFormat>,
-    present_modes: Vec<PresentMode>,
+    formats      : Vec<vk::SurfaceFormatKHR>,
+    present_modes: Vec<vk::PresentModeKHR>,
 
     config: SwapchainConfig,
 }
@@ -26,17 +25,17 @@ impl SwapchainSupport {
     pub fn query_support(surface: &HaSurface, physical: vk::PhysicalDevice, config: &SwapchainConfig) -> Result<SwapchainSupport, SurfaceError> {
 
         let support = SwapchainSupport {
-            capabilities  : surface.capabilities(physical)?,
-            formats       : surface.formats(physical)?,
-            present_modes : surface.present_modes(physical)?,
+            capabilities  : surface.query_capabilities(physical)?,
+            formats       : surface.query_formats(physical)?,
+            present_modes : surface.query_present_modes(physical)?,
             config        : config.clone(),
         };
         Ok(support)
     }
 
-    pub fn optimal_extent(&self, window: &winit::Window) -> Result<vkDimension2D, SwapchainInitError> {
+    pub fn optimal_extent(&self, window: &winit::Window) -> Result<vkDim2D, SwapchainInitError> {
 
-        const SPECIAL_EXTEND: vkint = 0xFFFF_FFFF;
+        const SPECIAL_EXTEND: vkuint = 0xFFFF_FFFF;
 
         let optimal_extent = if self.capabilities.current_extent.width  == SPECIAL_EXTEND &&
             self.capabilities.current_extent.height == SPECIAL_EXTEND {
@@ -44,14 +43,14 @@ impl SwapchainSupport {
             let window_size = window.get_inner_size()
                 .ok_or(SwapchainInitError::SurfaceNotExistError)?;
 
-            vkDimension2D {
+            vkDim2D {
                 width: clamp(
-                    window_size.width as vkint,
+                    window_size.width as vkuint,
                     self.capabilities.min_image_extent.width,
                     self.capabilities.max_image_extent.width
                 ),
                 height: clamp(
-                    window_size.height as vkint,
+                    window_size.height as vkuint,
                     self.capabilities.min_image_extent.height,
                     self.capabilities.max_image_extent.height,
                 )
@@ -64,12 +63,10 @@ impl SwapchainSupport {
         Ok(optimal_extent)
     }
 
-    // TODO: Make format preference configurable.
-    pub fn optimal_format(&self) -> SurfaceFormat {
+    pub fn optimal_format(&self) -> vk::SurfaceFormatKHR {
 
-        // TODO: Replace vk::Format.
-        if self.formats.len() == 1 && self.formats[0].format.value() == vk::Format::Undefined {
-            return SurfaceFormat {
+        if self.formats.len() == 1 && self.formats[0].format == vk::Format::UNDEFINED {
+            return vk::SurfaceFormatKHR {
                 format      : self.config.prefer_surface_format,
                 color_space : self.config.prefer_surface_color_space,
             }
@@ -83,11 +80,10 @@ impl SwapchainSupport {
             }
         }
 
-        self.formats.first().unwrap().clone()
+        self.formats[0]
     }
 
-    // TODO: Make present mode preference configurable.
-    pub fn optimal_present_mode(&self) -> PresentMode {
+    pub fn optimal_present_mode(&self) -> vk::PresentModeKHR {
 
         if self.present_modes.iter().find(|&mode| *mode == self.config.prefer_primary_present_mode).is_some() {
             self.config.prefer_primary_present_mode

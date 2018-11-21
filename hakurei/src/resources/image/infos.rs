@@ -6,7 +6,6 @@ use vk::resources::image::{ ImageViewDescInfo, ImageSubresourceRange };
 use vk::resources::image::ImageLayout;
 use vk::resources::image::{ ImageBlockEntity, ImageCopiable, ImageCopyInfo };
 
-use resources::image::io::ImageStorageInfo;
 use resources::image::enums::ImageBranchType;
 
 use vk::utils::types::{ vkDimension3D, vkMemorySize };
