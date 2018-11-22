@@ -1,15 +1,15 @@
 
-use vk::core::device::HaDevice;
-use vk::core::physical::HaPhyDevice;
+use core::device::HaDevice;
+use core::physical::HaPhyDevice;
 
-use vk::resources::buffer::HaBuffer;
-use vk::resources::memory::HaMemoryType;
-use vk::resources::error::{ AllocatorError, MemoryError };
-use vk::utils::types::vkMemorySize;
+use buffer::target::HaBuffer;
+use buffer::allocator::BufferAllocateInfos;
+use memory::HaMemoryType;
+use memory::instance::HaMemoryEntity;
+use memory::transfer::{ BufferDataUploader, BufferDataUpdater };
+use memory::{ AllocatorError, MemoryError };
 
-use resources::memory::HaMemoryEntity;
-use resources::repository::{ BufferDataUploader, BufferDataUpdater };
-use resources::allocator::buffer::BufferAllocateInfos;
+use types::vkbytes;
 
 #[derive(Default)]
 pub struct HaBufferRepository {
@@ -20,7 +20,7 @@ pub struct HaBufferRepository {
     memory  : Option<HaMemoryEntity>,
 
     /// The offset of each buffer in memory.
-    offsets: Vec<vkMemorySize>,
+    offsets: Vec<vkbytes>,
 
     allocate_infos: Option<BufferAllocateInfos>,
 }
@@ -33,7 +33,7 @@ impl HaBufferRepository {
 
     pub(crate) fn store(device: HaDevice, physical: HaPhyDevice, buffers: Vec<HaBuffer>, memory: HaMemoryEntity, allocate_infos: BufferAllocateInfos) -> HaBufferRepository {
 
-        use utils::shortcuts::spaces_to_offsets;
+        use utils::memory::spaces_to_offsets;
         let offsets = spaces_to_offsets(&allocate_infos.spaces);
 
         HaBufferRepository {

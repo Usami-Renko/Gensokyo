@@ -4,10 +4,10 @@ use ash::vk;
 use core::device::{ HaDevice, HaLogicalDevice };
 use core::device::queue::HaTransfer;
 
-use resources::buffer::BufferCopiable;
-use resources::image::ImageCopiable;
-use resources::command::{ HaCommandRecorder, CommandBufferUsageFlag };
-use resources::error::AllocatorError;
+use buffer::BufferCopiable;
+use image::ImageCopiable;
+use command::HaCommandRecorder;
+use memory::error::AllocatorError;
 
 pub struct DataCopyer {
 
@@ -23,7 +23,7 @@ impl DataCopyer {
         let command = transfer.command()?;
         let recorder = command.setup_record(device);
 
-        let _ = recorder.begin_record(&[CommandBufferUsageFlag::OneTimeSubmitBit])?;
+        let _ = recorder.begin_record(vk::CommandBufferUsageFlags::ONE_TIME_SUBMIT)?;
 
         let copyer = DataCopyer {
             transfer, recorder,
@@ -68,7 +68,7 @@ impl DataCopyer {
                 // Specifying 0 for both indicates that the pixels are simply tightly packed.
                 buffer_row_length  : 0,
                 buffer_image_height: 0,
-                image_subresource: dst.sub_resource,
+                image_subresource: dst.sub_resource_layers,
                 // imageOffset selects the initial x, y, z offsets in texels of the sub-region of the source or destination image data.
                 image_offset: vk::Offset3D { x: 0, y: 0, z: 0 },
                 // imageExtent is the size in texels of the image to copy in width, height and depth.
@@ -92,7 +92,7 @@ impl DataCopyer {
                 buffer_offset: 0,
                 buffer_row_length  : 0,
                 buffer_image_height: 0,
-                image_subresource: src.sub_resource,
+                image_subresource: src.sub_resource_layers,
                 image_offset: vk::Offset3D { x:0, y: 0, z: 0 },
                 image_extent: src.extent,
             },
@@ -113,8 +113,8 @@ impl DataCopyer {
             vk::ImageCopy {
                 src_offset: vk::Offset3D { x: 0, y: 0, z: 0 },
                 dst_offset: vk::Offset3D { x: 0, y: 0, z: 0 },
-                src_subresource: src.sub_resource,
-                dst_subresource: dst.sub_resource,
+                src_subresource: src.sub_resource_layers,
+                dst_subresource: dst.sub_resource_layers,
                 extent: src.extent,
             },
         ];

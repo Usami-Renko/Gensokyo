@@ -1,19 +1,17 @@
 
-use vk::core::device::HaDevice;
-use vk::core::physical::HaPhyDevice;
+use core::device::HaDevice;
+use core::physical::HaPhyDevice;
 
-use vk::resources::buffer::BufferItem;
-use vk::resources::memory::{ HaMemory, HaMemoryType, HaMemoryAbstract, MemorySelector };
-use vk::resources::memory::{ MemoryMapable, MemoryMapStatus, MemoryRange };
-use vk::utils::memory::MemoryWritePtr;
-use vk::utils::types::vkMemorySize;
-use vk::resources::error::MemoryError;
+use buffer::BufferBlock;
+use buffer::allocator::BufferAllocateInfos;
+use memory::{ HaMemory, HaMemoryType, HaMemoryAbstract, MemorySelector };
+use memory::{ MemoryMapable, MemoryMapStatus, MemoryRange };
+use memory::instance::{ HaMemoryEntityAbs, MemoryDataUploadable };
+use memory::instance::staging::UploadStagingResource;
+use memory::MemoryError;
 
-use resources::memory::traits::{ HaMemoryEntityAbs, MemoryDataUploadable };
-use resources::memory::staging::UploadStagingResource;
-use resources::allocator::buffer::BufferAllocateInfos;
-
-use std::ptr;
+use utils::memory::MemoryWritePtr;
+use types::vkbytes;
 
 pub struct HaHostMemory {
 
@@ -27,15 +25,15 @@ impl HaMemoryEntityAbs for HaHostMemory {}
 
 impl HaMemoryAbstract for HaHostMemory {
 
-    fn target(&self) -> &HaMemory {
-        &self.target
-    }
-
     fn memory_type(&self) -> HaMemoryType {
         HaMemoryType::HostMemory
     }
 
-    fn allocate(device: &HaDevice, size: vkMemorySize, selector: &MemorySelector) -> Result<HaHostMemory, MemoryError> {
+    fn target(&self) -> &HaMemory {
+        &self.target
+    }
+
+    fn allocate(device: &HaDevice, size: vkbytes, selector: &MemorySelector) -> Result<HaHostMemory, MemoryError> {
 
         let target = HaMemory::allocate(device, size, selector)?;
 
@@ -60,15 +58,15 @@ impl MemoryDataUploadable for HaHostMemory {
         Ok(None)
     }
 
-    fn map_memory_ptr(&mut self, _: &mut Option<UploadStagingResource>, item: &BufferItem, offset: vkMemorySize)
+    fn map_memory_ptr(&mut self, _: &mut Option<UploadStagingResource>, block: &BufferBlock, offset: vkbytes)
         -> Result<(MemoryWritePtr, MemoryRange), MemoryError> {
 
         let ptr = unsafe {
             self.map_status.data_ptr.offset(offset as isize)
         };
 
-        let writer = MemoryWritePtr::new(ptr, item.size);
-        let range = MemoryRange { offset, size: item.size };
+        let writer = MemoryWritePtr::new(ptr, block.size);
+        let range = MemoryRange { offset, size: block.size };
 
         Ok((writer, range))
     }

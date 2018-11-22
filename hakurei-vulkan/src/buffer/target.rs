@@ -50,7 +50,7 @@ impl MemoryDstEntity for HaBuffer {
     }
 }
 
-#[derive(Default)]
+#[derive(Debug, Clone, Default)]
 pub struct BufferDescInfo {
 
     flags: vk::BufferCreateFlags,
@@ -100,12 +100,8 @@ impl BufferDescInfo {
         Ok(buffer)
     }
 
-    pub fn set_flag(&mut self, flags: vk::BufferCreateFlags) {
+    pub fn with_flag(&mut self, flags: vk::BufferCreateFlags) {
         self.flags = flags;
-    }
-
-    pub fn set_usage(&mut self, usage: vk::BufferUsageFlags) {
-        self.usage = usage;
     }
 }
 

@@ -7,7 +7,7 @@ use buffer::BufferInstance;
 
 pub struct CmdBufferBindingInfo<'a> {
 
-    pub block: &'a BufferInstance,
+    pub instance: &'a BufferInstance,
     pub sub_block_index: Option<usize>,
 }
 

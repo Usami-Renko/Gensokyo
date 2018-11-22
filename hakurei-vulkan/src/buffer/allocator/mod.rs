@@ -2,7 +2,6 @@
 pub use self::target::HaBufferAllocator;
 pub use self::index::BufferBlockIndex;
 pub use self::infos::BufferAllocateInfos;
-pub use self::traits::BufferInfosAllocatable;
 
 mod target;
 mod distributor;

@@ -3,19 +3,6 @@ use vk::utils::types::{ vkint, vkMemorySize };
 
 use config::error::ConfigError;
 
-pub fn spaces_to_offsets(spaces: &Vec<vkMemorySize>) -> Vec<vkMemorySize> {
-
-    let mut current: vkMemorySize = 0;
-    let mut offsets = vec![];
-
-    for &space in spaces.iter() {
-        offsets.push(current);
-        current += space;
-    }
-
-    offsets
-}
-
 pub fn vk_to_version(raw_version: &String) -> Result<vkint, ConfigError> {
 
     let versions = raw_version.split('.').collect::<Vec<_>>();

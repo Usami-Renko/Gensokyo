@@ -1,17 +1,17 @@
 
-use vk::core::device::HaDevice;
-use vk::core::physical::HaPhyDevice;
+use core::device::HaDevice;
+use core::physical::HaPhyDevice;
 
-use vk::resources::buffer::BufferItem;
-use vk::resources::memory::{ HaMemory, HaMemoryType, HaMemoryAbstract, MemorySelector };
-use vk::resources::memory::MemoryRange;
-use vk::utils::memory::MemoryWritePtr;
-use vk::utils::types::vkMemorySize;
-use vk::resources::error::MemoryError;
+use buffer::BufferBlock;
+use buffer::allocator::BufferAllocateInfos;
+use memory::{ HaMemory, HaMemoryType, HaMemoryAbstract, MemorySelector };
+use memory::structs::MemoryRange;
+use memory::instance::{ HaMemoryEntityAbs, MemoryDataUploadable };
+use memory::instance::staging::{ StagingUploader, UploadStagingResource };
+use memory::error::MemoryError;
 
-use resources::memory::traits::{ HaMemoryEntityAbs, MemoryDataUploadable };
-use resources::memory::staging::{ StagingUploader, UploadStagingResource };
-use resources::allocator::buffer::BufferAllocateInfos;
+use utils::memory::MemoryWritePtr;
+use types::vkbytes;
 
 pub struct HaDeviceMemory {
 
@@ -22,15 +22,15 @@ impl HaMemoryEntityAbs for HaDeviceMemory {}
 
 impl HaMemoryAbstract for HaDeviceMemory {
 
-    fn target(&self) -> &HaMemory {
-        &self.target
-    }
-
     fn memory_type(&self) -> HaMemoryType {
         HaMemoryType::DeviceMemory
     }
 
-    fn allocate(device: &HaDevice, size: vkMemorySize, selector: &MemorySelector) -> Result<HaDeviceMemory, MemoryError> {
+    fn target(&self) -> &HaMemory {
+        &self.target
+    }
+
+    fn allocate(device: &HaDevice, size: vkbytes, selector: &MemorySelector) -> Result<HaDeviceMemory, MemoryError> {
 
         let target = HaMemory::allocate(device, size, selector)?;
 
@@ -49,10 +49,10 @@ impl MemoryDataUploadable for HaDeviceMemory {
         StagingUploader::prepare_data_transfer(physical, device, allocate_infos)
     }
 
-    fn map_memory_ptr(&mut self, staging: &mut Option<UploadStagingResource>, item: &BufferItem, offset: vkMemorySize)
+    fn map_memory_ptr(&mut self, staging: &mut Option<UploadStagingResource>, block: &BufferBlock, offset: vkbytes)
         -> Result<(MemoryWritePtr, MemoryRange), MemoryError> {
 
-        StagingUploader::map_memory_ptr(staging, item, offset)
+        StagingUploader::map_memory_ptr(staging, block, offset)
     }
 
     fn terminate_transfer(&mut self, device: &HaDevice, staging: &Option<UploadStagingResource>, ranges_to_flush: &Vec<MemoryRange>)

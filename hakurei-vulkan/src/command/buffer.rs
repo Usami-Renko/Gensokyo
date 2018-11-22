@@ -53,7 +53,7 @@ impl HaCommandBuffer {
         HaCommandBuffer { handle, usage }
     }
 
-    fn setup_record(self, device: &HaDevice) -> HaCommandRecorder {
+    pub(crate) fn setup_record(self, device: &HaDevice) -> HaCommandRecorder {
 
         HaCommandRecorder::new(device, self)
     }

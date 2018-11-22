@@ -1,9 +1,29 @@
 
 use ash::vk;
 
+use buffer::instance::BufferInstanceType;
+use buffer::entity::BufferBlock;
+use buffer::target::BufferDescInfo;
 use types::vkbytes;
 
-pub trait BufferInstance: BufferCopiable {}
+pub trait BufferInstance: BufferCopiable {
+
+    fn typ(&self) -> BufferInstanceType;
+
+    fn as_block_ref(&self) -> &BufferBlock;
+}
+
+pub trait BufferBlockInfo {
+    const INSTANCE_TYPE: BufferInstanceType;
+
+    fn typ(&self) -> BufferInstanceType {
+        Self::INSTANCE_TYPE
+    }
+
+    fn as_desc_ref(&self) -> &BufferDescInfo;
+
+    fn into_desc(self) -> BufferDescInfo;
+}
 
 pub trait BufferCopiable {
 

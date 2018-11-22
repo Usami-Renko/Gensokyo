@@ -38,3 +38,16 @@ impl MemoryWritePtr {
         vert_algn.copy_from_slice(data);
     }
 }
+
+pub fn spaces_to_offsets(spaces: &Vec<vkbytes>) -> Vec<vkbytes> {
+
+    let mut current: vkbytes = 0;
+    let mut offsets = vec![];
+
+    for &space in spaces.iter() {
+        offsets.push(current);
+        current += space;
+    }
+
+    offsets
+}

@@ -1,17 +1,18 @@
 
-use vk::core::device::HaDevice;
-use vk::core::physical::HaPhyDevice;
+use core::device::HaDevice;
+use core::physical::HaPhyDevice;
 
-use vk::resources::buffer::{ HaBuffer, BufferItem, BufferStorageType};
-use vk::resources::memory::{ HaMemory, HaMemoryType, HaMemoryAbstract, MemorySelector };
-use vk::resources::memory::{ MemoryMapable, MemoryMapStatus, MemoryRange };
-use vk::resources::transfer::DataCopyer;
-use vk::resources::error::{ AllocatorError, MemoryError };
-use vk::utils::memory::MemoryWritePtr;
-use vk::utils::types::vkMemorySize;
+use buffer::{ HaBuffer, BufferBlock, BufferStorageType };
+use memory::{ HaMemory, HaMemoryType, HaMemoryAbstract, MemorySelector };
+use memory::{ MemoryMapable, MemoryMapStatus, MemoryRange };
+use memory::error::{ MemoryError, AllocatorError };
+use memory::transfer::DataCopyer;
 
-use resources::memory::traits::{ HaMemoryEntityAbs, MemoryDataUploadable };
-use resources::allocator::buffer::BufferAllocateInfos;
+use utils::memory::MemoryWritePtr;
+use types::vkbytes;
+
+use memory::instance::{ HaMemoryEntityAbs, MemoryDataUploadable };
+use buffer::allocator::BufferAllocateInfos;
 
 pub struct HaStagingMemory {
 
@@ -25,15 +26,15 @@ impl HaMemoryEntityAbs for HaStagingMemory {}
 
 impl HaMemoryAbstract for HaStagingMemory {
 
-    fn target(&self) -> &HaMemory {
-        &self.target
-    }
-
     fn memory_type(&self) -> HaMemoryType {
         HaMemoryType::StagingMemory
     }
 
-    fn allocate(device: &HaDevice, size: vkMemorySize, selector: &MemorySelector) -> Result<HaStagingMemory, MemoryError> {
+    fn target(&self) -> &HaMemory {
+        &self.target
+    }
+
+    fn allocate(device: &HaDevice, size: vkbytes, selector: &MemorySelector) -> Result<HaStagingMemory, MemoryError> {
 
         let target = HaMemory::allocate(device, size, selector)?;
 
@@ -74,14 +75,14 @@ impl MemoryDataUploadable for HaStagingMemory {
         Ok(None)
     }
 
-    fn map_memory_ptr(&mut self, _: &mut Option<UploadStagingResource>, item: &BufferItem, offset: vkMemorySize) -> Result<(MemoryWritePtr, MemoryRange), MemoryError> {
+    fn map_memory_ptr(&mut self, _: &mut Option<UploadStagingResource>, block: &BufferBlock, offset: vkbytes) -> Result<(MemoryWritePtr, MemoryRange), MemoryError> {
 
         let ptr = unsafe {
             self.map_status.data_ptr.offset(offset as isize)
         };
 
-        let writer = MemoryWritePtr::new(ptr, item.size);
-        let range = MemoryRange { offset, size: item.size };
+        let writer = MemoryWritePtr::new(ptr, block.size);
+        let range = MemoryRange { offset, size: block.size };
 
         Ok((writer, range))
     }
@@ -112,12 +113,12 @@ impl StagingUploader {
         Ok(Some(staging))
     }
 
-    pub fn map_memory_ptr(staging: &mut Option<UploadStagingResource>, item: &BufferItem, _offset: vkMemorySize)
+    pub fn map_memory_ptr(staging: &mut Option<UploadStagingResource>, block: &BufferBlock, _offset: vkbytes)
         -> Result<(MemoryWritePtr, MemoryRange), MemoryError> {
 
         if let Some(ref mut staging) = staging {
 
-            let result = staging.append_dst_item(item)?;
+            let result = staging.append_dst_block(block)?;
             Ok(result)
         } else {
             Err(MemoryError::AllocateInfoMissing)
@@ -144,8 +145,8 @@ pub struct UploadStagingResource {
     buffers   : Vec<HaBuffer>,
     src_memory: HaStagingMemory,
 
-    src_items: Vec<BufferItem>,
-    dst_items: Vec<BufferItem>,
+    src_blocks: Vec<BufferBlock>,
+    dst_blocks: Vec<BufferBlock>,
 }
 
 impl UploadStagingResource {
@@ -158,9 +159,9 @@ impl UploadStagingResource {
 
             // generate buffers
             let mut buffers = vec![];
-            for config in allo_infos.infos.iter() {
-                let staging_config = config.to_staging_info().unwrap();
-                let buffer = staging_config.build(device, None, BufferStorageType::Staging)
+            for buffer_desc in allo_infos.infos.iter() {
+
+                let buffer = buffer_desc.build(device, BufferStorageType::Staging, None)
                     .or(Err(MemoryError::AllocateMemoryError))?;
 
                 memory_selector.try(&buffer)?;
@@ -184,8 +185,8 @@ impl UploadStagingResource {
             let resource = UploadStagingResource {
                 buffers,
                 src_memory,
-                src_items: vec![],
-                dst_items: vec![],
+                src_blocks: vec![],
+                dst_blocks: vec![],
             };
 
             Ok(resource)
@@ -195,11 +196,10 @@ impl UploadStagingResource {
         }
     }
 
-    fn append_dst_item(&mut self, dst: &BufferItem) -> Result<(MemoryWritePtr, MemoryRange), MemoryError> {
+    fn append_dst_block(&mut self, dst: &BufferBlock) -> Result<(MemoryWritePtr, MemoryRange), MemoryError> {
 
-        let dst_item = dst.clone();
-
-        // FIXME: Fix this handle.
+//        let block = dst.clone();
+//
 //        let src_item = BufferItem {
 //            handle: self.buffers[dst.buffer_index].handle,
 //            size: dst.size,
@@ -225,7 +225,7 @@ impl UploadStagingResource {
     fn transfer(&self, device: &HaDevice) -> Result<(), AllocatorError> {
 
         let mut data_copyer = DataCopyer::new(device)?;
-        for (src, dst) in self.src_items.iter().zip(self.dst_items.iter()) {
+        for (src, dst) in self.src_blocks.iter().zip(self.dst_blocks.iter()) {
             data_copyer.copy_buffer_to_buffer(src, dst);
         }
 

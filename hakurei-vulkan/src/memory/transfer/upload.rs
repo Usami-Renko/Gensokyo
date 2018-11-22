@@ -1,15 +1,15 @@
 
-use vk::core::device::HaDevice;
-use vk::core::physical::HaPhyDevice;
+use core::device::HaDevice;
+use core::physical::HaPhyDevice;
 
-use vk::resources::buffer::BufferBlockEntity;
-use vk::resources::memory::MemoryRange;
-use vk::resources::error::AllocatorError;
-use vk::utils::types::vkMemorySize;
+use buffer::BufferInstance;
+use buffer::allocator::BufferAllocateInfos;
+use memory::structs::MemoryRange;
+use memory::instance::HaMemoryEntity;
+use memory::instance::UploadStagingResource;
+use memory::error::AllocatorError;
 
-use resources::memory::HaMemoryEntity;
-use resources::memory::UploadStagingResource;
-use resources::allocator::buffer::BufferAllocateInfos;
+use types::vkbytes;
 
 pub struct BufferDataUploader<'a> {
 
@@ -36,11 +36,11 @@ impl<'a> BufferDataUploader<'a> {
         Ok(uploader)
     }
 
-    pub fn upload(&mut self, to_block: &impl BufferBlockEntity, data: &[impl Copy]) -> Result<&mut BufferDataUploader<'a>, AllocatorError> {
+    pub fn upload(&mut self, to: &impl BufferInstance, data: &[impl Copy]) -> Result<&mut BufferDataUploader<'a>, AllocatorError> {
 
-        let item = to_block.item();
+        let block = to.as_block_ref();
 
-        let (writer, range) = self.dst_memory.map_memory_ptr(&mut self.staging, item, item.memory_offset)?;
+        let (writer, range) = self.dst_memory.map_memory_ptr(&mut self.staging, block, block.memory_offset)?;
         writer.write_data(data);
 
         self.ranges.push(range);
@@ -69,13 +69,13 @@ pub struct BufferDataUpdater<'a> {
 
     device : HaDevice,
     memory : &'a mut HaMemoryEntity,
-    offsets: &'a Vec<vkMemorySize>,
+    offsets: &'a Vec<vkbytes>,
     ranges : Vec<MemoryRange>,
 }
 
 impl<'a> BufferDataUpdater<'a> {
 
-    pub(super) fn new(device: &HaDevice, memory: &'a mut HaMemoryEntity, offsets: &'a Vec<vkMemorySize>) -> BufferDataUpdater<'a> {
+    pub(crate) fn new(device: &HaDevice, memory: &'a mut HaMemoryEntity, offsets: &'a Vec<vkbytes>) -> BufferDataUpdater<'a> {
 
         BufferDataUpdater {
             device: device.clone(),
@@ -83,11 +83,11 @@ impl<'a> BufferDataUpdater<'a> {
         }
     }
 
-    pub fn update(&mut self, block: &impl BufferBlockEntity, data: &[impl Copy]) -> Result<&mut BufferDataUpdater<'a>, AllocatorError> {
+    pub fn update(&mut self, to: &impl BufferInstance, data: &[impl Copy]) -> Result<&mut BufferDataUpdater<'a>, AllocatorError> {
 
-        let item = block.item();
+        let block = to.as_block_ref();
 
-        let (writer, range) = self.memory.map_memory_ptr(&mut None, item, item.memory_offset)?;
+        let (writer, range) = self.memory.map_memory_ptr(&mut None, block, block.memory_offset)?;
         writer.write_data(data);
 
         self.ranges.push(range);

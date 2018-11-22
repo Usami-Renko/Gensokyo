@@ -6,6 +6,7 @@ pub use self::enums::ImageStorageType;
 pub use self::sampler::{ HaSampler, SamplerDescInfo };
 pub use self::barrier::HaImageBarrier;
 pub use self::entity::ImageEntity;
+pub use self::error::ImageError;
 
 mod target;
 mod view;

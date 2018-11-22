@@ -18,7 +18,7 @@ use std::ptr;
 
 pub trait HaMemoryAbstract {
 
-    const MEMORY_TYPE: HaMemoryType;
+    fn memory_type(&self) -> HaMemoryType;
 
     fn target(&self) -> &HaMemory;
 

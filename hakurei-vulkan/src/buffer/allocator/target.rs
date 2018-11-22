@@ -1,24 +1,28 @@
 
-use vk::core::device::HaDevice;
-use vk::core::physical::HaPhyDevice;
+use core::device::HaDevice;
+use core::physical::HaPhyDevice;
 
-use vk::resources::buffer::{ HaBuffer, BufferBlockInfo, BufferItem, BufferStorageType };
-use vk::resources::memory::{ HaMemoryType, MemorySelector };
-use vk::resources::memory::MemoryDstEntity;
-use vk::resources::error::{ BufferError, AllocatorError };
-use vk::utils::types::vkMemorySize;
+use buffer::target::{ HaBuffer, BufferStorageType };
+use buffer::traits::BufferBlockInfo;
+use buffer::instance::BufferInstanceType;
+use buffer::BufferError;
+use memory::MemorySelector;
+use memory::MemoryDstEntity;
+use memory::AllocatorError;
 
-use resources::allocator::buffer::BufferBlockIndex;
-use resources::allocator::buffer::{
+use buffer::allocator::BufferBlockIndex;
+use buffer::allocator::{
     distributor::HaBufferDistributor,
-    traits::{ BufMemAlloAbstract, BufferInfosAllocatable },
+    traits::BufMemAlloAbstract,
     host::HostBufMemAllocator,
     cached::CachedBufMemAllocator,
     device::DeviceBufMemAllocator,
     staging::StagingBufMemAllocator,
 };
 
-use resources::buffer::{ VertexBlockInfo, IndexBlockInfo, UniformBlockInfo, ImgsrcBlockInfo, BufferBranch };
+
+use types::vkbytes;
+
 
 pub struct HaBufferAllocator {
 
@@ -27,7 +31,7 @@ pub struct HaBufferAllocator {
 
     buffers : Vec<HaBuffer>,
     /// The size of each buffer occupy.
-    spaces  : Vec<vkMemorySize>,
+    spaces  : Vec<vkbytes>,
 
     storage_type: BufferStorageType,
     allocator: Box<BufMemAlloAbstract>,
@@ -51,26 +55,26 @@ impl HaBufferAllocator {
         }
     }
 
-    pub fn append_buffer(&mut self, info: impl BufferBlockInfo + BufferInfosAllocatable + 'static) -> Result<BufferBlockIndex, AllocatorError> {
+    pub fn append_buffer(&mut self, info: impl BufferBlockInfo) -> Result<BufferBlockIndex, AllocatorError> {
 
-        let buffer_info = self.gen_buffer(&info, info.branch_type())?;
+        let buffer_info = self.gen_buffer(&info, info.typ())?;
         let index = BufferBlockIndex(self.buffers.len());
 
         self.spaces.push(buffer_info.aligment_space);
         self.buffers.push(buffer_info.buffer);
 
-        self.allocator.add_allocate(buffer_info.aligment_space, Box::new(info));
+        self.allocator.add_allocate(buffer_info.aligment_space, info.into_desc());
 
         Ok(index)
     }
 
-    fn gen_buffer(&mut self, info: &impl BufferBlockInfo, branch: BufferBranch) -> Result<BufferGenInfo, AllocatorError> {
+    fn gen_buffer(&mut self, info: &impl BufferBlockInfo, typ: BufferInstanceType) -> Result<BufferGenInfo, AllocatorError> {
 
-        if branch.check_storage_validity(self.storage_type) == false {
+        if typ.check_storage_validity(self.storage_type) == false {
             return Err(AllocatorError::UnsupportBufferUsage)
         }
 
-        let buffer = info.build(&self.device, None, self.storage_type)?;
+        let buffer = info.as_desc_ref().build(&self.device, self.storage_type, None)?;
         self.memory_selector.try(&buffer)?;
 
         let aligment_space = buffer.aligment_size();
@@ -88,7 +92,6 @@ impl HaBufferAllocator {
         }
 
         // allocate memory
-
         self.allocator.allocate(
             &self.device, self.spaces.iter().sum(), &self.memory_selector
         )?;
@@ -137,7 +140,7 @@ impl HaBufferAllocator {
 struct BufferGenInfo {
 
     buffer: HaBuffer,
-    aligment_space: vkMemorySize,
+    aligment_space: vkbytes,
 }
 
 fn gen_allocator(storage: BufferStorageType) -> Box<BufMemAlloAbstract> {

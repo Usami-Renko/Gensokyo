@@ -4,8 +4,8 @@ pub use self::cached::HaCachedMemory;
 pub use self::device::HaDeviceMemory;
 pub use self::staging::HaStagingMemory;
 
-pub(super) use self::staging::UploadStagingResource;
-pub(super) use self::traits::{ HaMemoryEntity, HaMemoryEntityAbs, MemoryDataUploadable };
+pub use self::staging::UploadStagingResource;
+pub use self::traits::{ HaMemoryEntity, HaMemoryEntityAbs, MemoryDataUploadable };
 
 mod traits;
 mod host;

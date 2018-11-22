@@ -2,25 +2,9 @@
 use ash::vk;
 
 use buffer::target::HaBuffer;
-use buffer::traits::BufferHandleEntity;
+use buffer::traits::{ BufferHandleEntity, BufferCopiable, BufferCopyInfo };
 
 use types::vkbytes;
-
-pub enum BufferEntity {
-
-    Block(BufferBlock),
-    Slices(Vec<BufferSlice>),
-}
-
-impl BufferHandleEntity for BufferEntity {
-
-    fn handle(&self) -> vk::Buffer {
-        match self {
-            | BufferEntity::Block(block)   => block.handle,
-            | BufferEntity::Slices(slices) => slices[0].handle,
-        }
-    }
-}
 
 #[derive(Debug, Clone, Default)]
 pub struct BufferBlock {
@@ -53,6 +37,21 @@ impl BufferBlock {
             size,
             memory_offset,
         }
+    }
+}
+
+impl BufferHandleEntity for BufferBlock {
+
+    fn handle(&self) -> vk::Buffer {
+        self.handle
+    }
+}
+
+impl BufferCopiable for BufferBlock {
+
+    fn copy_info(&self) -> BufferCopyInfo {
+
+        BufferCopyInfo::new(self, self.memory_offset, self.size)
     }
 }
 

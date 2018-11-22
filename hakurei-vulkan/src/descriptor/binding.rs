@@ -3,7 +3,7 @@ use ash::vk;
 
 use descriptor::set::HaDescriptorSet;
 use descriptor::enums::HaDescriptorType;
-use buffer::{ BufferEntity, BufferHandleEntity };
+use buffer::{ BufferBlock, BufferHandleEntity };
 use image::{ ImageEntity, HaSampler };
 
 use types::{ vkuint, vkbytes };
@@ -47,7 +47,7 @@ pub struct DescriptorBufferBindingInfo<'a> {
     /// the size of each element of descriptor.
     pub element_size: vkbytes,
     /// the reference to buffer where the descriptor data stores.
-    pub buffer: &'a BufferEntity,
+    pub buffer: &'a BufferBlock,
 }
 
 struct DescriptorWriteBufferContent(Vec<vk::DescriptorBufferInfo>);

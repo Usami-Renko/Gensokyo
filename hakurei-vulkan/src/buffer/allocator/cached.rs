@@ -1,45 +1,45 @@
 
-use vk::core::device::HaDevice;
-use vk::resources::memory::{ HaMemoryAbstract, MemorySelector };
-use vk::resources::error::MemoryError;
-use vk::utils::types::vkMemorySize;
+use core::device::HaDevice;
+use memory::{ HaMemoryAbstract, MemorySelector };
+use memory::MemoryError;
 
-use resources::memory::HaMemoryEntity;
-use resources::allocator::buffer::traits::{ BufMemAlloAbstract, BufferInfosAllocatable };
-use resources::allocator::buffer::infos::BufferAllocateInfos;
-use resources::memory::HaDeviceMemory;
+use types::vkbytes;
 
-pub struct DeviceBufMemAllocator {
+use memory::instance::HaMemoryEntity;
+use buffer::target::BufferDescInfo;
+use buffer::allocator::traits::BufMemAlloAbstract;
+use buffer::allocator::infos::BufferAllocateInfos;
+use memory::instance::HaCachedMemory;
+
+pub struct CachedBufMemAllocator {
 
     infos : Option<BufferAllocateInfos>,
-    memory: Option<HaDeviceMemory>,
+    memory: Option<HaCachedMemory>,
 }
 
-impl DeviceBufMemAllocator {
+impl CachedBufMemAllocator {
 
-    pub fn new() -> DeviceBufMemAllocator {
-        DeviceBufMemAllocator {
+    pub fn new() -> CachedBufMemAllocator {
+        CachedBufMemAllocator {
             infos : Some(BufferAllocateInfos::new()),
             memory: None,
         }
     }
 }
 
-impl BufMemAlloAbstract for DeviceBufMemAllocator {
+impl BufMemAlloAbstract for CachedBufMemAllocator {
 
-    fn add_allocate(&mut self, space: vkMemorySize, config: Box<BufferInfosAllocatable>) {
-
+    fn add_allocate(&mut self, space: vkbytes, desc_info: BufferDescInfo) {
         if let Some(ref mut infos) = self.infos {
             infos.spaces.push(space);
-            infos.infos.push(config);
+            infos.infos.push(desc_info);
         }
     }
 
-    fn allocate(&mut self, device: &HaDevice, size: vkMemorySize, selector: &MemorySelector) -> Result<(), MemoryError> {
+    fn allocate(&mut self, device: &HaDevice, size: vkbytes, selector: &MemorySelector) -> Result<(), MemoryError> {
 
-        let memory = HaDeviceMemory::allocate(device, size, selector)?;
+        let memory = HaCachedMemory::allocate(device, size, selector)?;
         self.memory = Some(memory);
-
         Ok(())
     }
 

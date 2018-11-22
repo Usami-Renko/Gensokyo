@@ -10,6 +10,7 @@ pub use self::set::{ HaDescriptorSet, DescriptorSetConfig };
 pub use self::pool::{ HaDescriptorPool, DescriptorPoolInfo };
 pub use self::entity::DescriptorSetEntity;
 pub use self::enums::{ HaDescriptorType, BufferDescriptorType, ImageDescriptorType };
+pub use self::error::DescriptorError;
 
 mod pool;
 mod layout;
