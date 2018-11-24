@@ -56,17 +56,7 @@ impl ImageViewDescInfo {
         }
     }
 
-    pub fn reset_depth_image_aspect_mask(&mut self, format: vk::Format) {
-
-        self.subrange.aspect_mask = match format {
-            | vk::Format::D32_SFLOAT => vk::ImageAspectFlags::DEPTH,
-            | vk::Format::D24_UNORM_S8_UINT
-            | vk::Format::D32_SFLOAT_S8_UINT => vk::ImageAspectFlags::DEPTH | vk::ImageAspectFlags::STENCIL,
-            | _ => panic!("This format is not available for DepthStencil Image.")
-        };
-    }
-
-    pub fn build(&self, device: &HaDevice, image: &HaImage, specific: ImageSpecificInfo) -> Result<HaImageView, ImageError> {
+    pub fn build(&self, device: &HaDevice, image: &HaImage, specific: &ImageSpecificInfo) -> Result<HaImageView, ImageError> {
 
         let view_info = vk::ImageViewCreateInfo {
             s_type     : vk::StructureType::IMAGE_VIEW_CREATE_INFO,
@@ -95,7 +85,7 @@ impl ImageViewDescInfo {
 
         let mut specific = ImageSpecificInfo::default();
         specific.format = format;
-        self.build(device, image, specific)
+        self.build(device, image, &specific)
     }
 }
 

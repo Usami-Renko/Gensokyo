@@ -8,32 +8,6 @@ use vk::utils::types::{ vkMemorySize, vkformat, vkDimension2D, vkDimension3D };
 use std::path::Path;
 use std::mem;
 
-pub struct ImageStorageInfo {
-
-    pub source: ImageSource,
-    /// dimension describes the number of data elements in each dimension of the base level.
-    pub dimension: vkDimension3D,
-    /// format describes the format and type of the data elements that will be contained in the image.
-    pub format: vkformat,
-}
-
-pub enum ImageSource {
-
-    UploadData(ImageData),
-    NoSource,
-}
-
-pub struct ImageData {
-    pub data: Vec<u8>,
-    pub size: vkMemorySize,
-}
-
-impl ImageData {
-
-    pub fn new(data: Vec<u8>, size: vkMemorySize) -> ImageData {
-        ImageData { data, size }
-    }
-}
 
 impl ImageStorageInfo {
 

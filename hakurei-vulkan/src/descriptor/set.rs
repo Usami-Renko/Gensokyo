@@ -4,6 +4,7 @@ use ash::vk;
 use core::device::HaDevice;
 
 use descriptor::layout::{ HaDescriptorSetLayout, DescriptorSetLayoutInfo };
+use descriptor::entity::DescriptorSetEntity;
 use descriptor::binding::DescriptorBindingInfo;
 use descriptor::binding::{ DescriptorBufferBindableTarget, DescriptorImageBindableTarget };
 
@@ -82,5 +83,29 @@ impl DescriptorSetConfig {
 
     pub fn iter_binding(&self) -> Iter<Box<dyn DescriptorBindingInfo>> {
         self.bindings.iter()
+    }
+}
+
+
+pub struct DescriptorSet {
+
+    entity: DescriptorSetEntity,
+    layout: HaDescriptorSetLayout,
+    set_index: usize,
+}
+
+impl DescriptorSet {
+
+    pub fn new(from: &HaDescriptorSet, config: &DescriptorSetConfig, set_index: usize) -> DescriptorSet {
+
+        let binding_indices = config.iter_binding()
+            .map(|b| b.binding_content().binding)
+            .collect();
+
+        DescriptorSet {
+            entity: DescriptorSetEntity::new(from, binding_indices),
+            layout: from.layout(),
+            set_index,
+        }
     }
 }

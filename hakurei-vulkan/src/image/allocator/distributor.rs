@@ -1,37 +1,43 @@
 
-use vk::core::device::HaDevice;
+use core::device::HaDevice;
 
-use vk::resources::image::HaImageView;
-use vk::resources::memory::HaMemoryAbstract;
-use vk::resources::error::{ AllocatorError, ImageError };
+use image::view::HaImageView;
+use image::allocator::ImageAllocateInfo;
+use image::instance::sample::{ HaSampleImage, SampleImageInfo };
+use image::instance::depth::{ HaDepthStencilAttachment, DepthStencilAttachmentInfo };
+use image::instance::ImageInstanceInfoAbs;
+use image::repository::HaImageRepository;
+use image::ImageError;
 
-use resources::image::sample::{ HaSampleImage, SampleImageInfo };
-use resources::image::depth::{ HaDepthStencilAttachment, DepthStencilAttachmentInfo };
+use memory::HaMemoryAbstract;
+use memory::AllocatorError;
 
-use resources::image::ImageBranchInfoAbs;
-use resources::allocator::image::ImageAllocateInfo;
-use resources::repository::HaImageRepository;
+use std::marker::PhantomData;
 
-pub struct HaImageDistributor {
+pub struct HaImageDistributor<M> {
+
+    phantom_type: PhantomData<M>,
 
     device: HaDevice,
-    memory: Box<HaMemoryAbstract>,
+    memory: Box<dyn HaMemoryAbstract>,
 
     views: Vec<HaImageView>,
     infos: Vec<ImageAllocateInfo>,
 }
 
-impl HaImageDistributor {
+impl<M> HaImageDistributor<M> {
 
-    pub(super) fn new(device: HaDevice, infos: Vec<ImageAllocateInfo>, memory: Box<HaMemoryAbstract>) -> Result<HaImageDistributor, AllocatorError> {
+    pub(super) fn new(_: PhantomData<M>, device: HaDevice, infos: Vec<ImageAllocateInfo>, memory: Box<dyn HaMemoryAbstract>) -> Result<HaImageDistributor<M>, AllocatorError> {
 
         let mut views = vec![];
         for info in infos.iter() {
-            let view = HaImageView::config(&device, &info.image, &info.view_desc, info.storage.format)?;
+
+            let view = info.view_desc.build(&device, &info.image, &info.image_desc.specific)?;
             views.push(view);
         }
 
         let distributor = HaImageDistributor {
+            phantom_type: PhantomData,
             device, memory, infos, views,
         };
 
@@ -67,11 +73,11 @@ impl HaImageDistributor {
         Ok(image)
     }
 
-    pub fn into_repository(self) -> HaImageRepository {
+    pub fn into_repository(self) -> HaImageRepository<M> {
 
         let images = self.infos.into_iter()
             .map(|info| info.image).collect();
 
-        HaImageRepository::store(self.device, images, self.views, self.memory)
+        HaImageRepository::store(self.phantom_type, self.device, images, self.views, self.memory)
     }
 }

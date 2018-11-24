@@ -34,7 +34,7 @@ impl PhysicalExtension {
 
         let result = PhysicalExtension {
             handles,
-            enable_extensions: Vec::new(),
+            enable_extensions: vec![],
         };
 
         Ok(result)

@@ -78,7 +78,7 @@ impl HaLogicalDevice {
 
         // TODO: Add configuration to select submit queue family
         // TODO: Add Speed test to this function.
-        let mut submit_infos = Vec::new();
+        let mut submit_infos = vec![];
         for bundle in bundles.iter() {
 
             let wait_semaphores: Vec<vk::Semaphore> = collect_handle!(bundle.wait_semaphores);

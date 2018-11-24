@@ -6,7 +6,7 @@ use core::device::HaDevice;
 
 use image::error::ImageError;
 
-use types::{ vkfloat, vkbool, VK_TRUE, VK_FALSE };
+use types::{ vkfloat, VK_TRUE, VK_FALSE };
 
 use std::ptr;
 

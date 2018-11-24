@@ -35,9 +35,9 @@ impl RenderPassBuilder {
 
         RenderPassBuilder {
             device: device.clone(),
-            attachments  : Vec::new(),
-            subpasses    : Vec::new(),
-            dependencies : Vec::new(),
+            attachments  : vec!(),
+            subpasses    : vec!(),
+            dependencies : vec!(),
             depth_handle : None,
         }
     }

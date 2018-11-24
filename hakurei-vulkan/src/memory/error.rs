@@ -18,6 +18,7 @@ pub enum AllocatorError {
     Sync(SyncError),
     Descriptor(DescriptorError),
     UnsupportBufferUsage,
+    DuplicateAppendImage,
 }
 
 impl_from_err!(Buffer(BufferError)         -> AllocatorError);
@@ -41,6 +42,9 @@ impl fmt::Display for AllocatorError {
             | AllocatorError::Descriptor(ref e) => e.to_string(),
             | AllocatorError::UnsupportBufferUsage => {
                 String::from("The type of buffer is not support on this allocator.")
+            },
+            | AllocatorError::DuplicateAppendImage => {
+                String::from("Duplicate append image to allocator.")
             },
         };
         write!(f, "{}", description)

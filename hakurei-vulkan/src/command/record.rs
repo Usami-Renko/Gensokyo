@@ -199,8 +199,8 @@ impl HaCommandRecorder {
 
     pub fn bind_vertex_buffers(&self, _first_binding: vkuint, _infos: &[CmdBufferBindingInfo]) -> &HaCommandRecorder {
 
-//        let mut handles = Vec::new();
-//        let mut offsets  = Vec::new();
+//        let mut handles = vec![];
+//        let mut offsets  = vec![];
 //
 //        for info in infos.into_iter() {
 //

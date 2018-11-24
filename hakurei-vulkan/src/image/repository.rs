@@ -1,28 +1,30 @@
 
-use vk::core::device::HaDevice;
+use core::device::HaDevice;
 
-use vk::resources::memory::HaMemoryAbstract;
-use vk::resources::image::{ HaImage, HaImageView };
+use memory::HaMemoryAbstract;
+use image::target::HaImage;
+use image::view::HaImageView;
+
+use std::marker::PhantomData;
 
 #[derive(Default)]
-pub struct HaImageRepository {
+pub struct HaImageRepository<M> {
+
+    phantom_type: PhantomData<M>,
 
     device : Option<HaDevice>,
     images : Vec<HaImage>,
     views  : Vec<HaImageView>,
-    memory : Option<Box<HaMemoryAbstract>>,
+    memory : Option<Box<dyn HaMemoryAbstract>>,
 }
 
-impl HaImageRepository {
+impl<M> HaImageRepository<M> {
 
-    pub fn empty() -> HaImageRepository {
-        HaImageRepository::default()
-    }
-
-    pub(crate) fn store(device: HaDevice, images: Vec<HaImage>, views: Vec<HaImageView>, memory: Box<HaMemoryAbstract>)
-        -> HaImageRepository {
+    pub(crate) fn store(_: PhantomData<M>, device: HaDevice, images: Vec<HaImage>, views: Vec<HaImageView>, memory: Box<dyn HaMemoryAbstract>)
+        -> HaImageRepository<M> {
 
         HaImageRepository {
+            phantom_type: PhantomData,
             device: Some(device),
             memory: Some(memory),
             images, views,

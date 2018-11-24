@@ -25,7 +25,7 @@ impl FramebufferBuilder {
     pub fn new(extent: vkDim2D, layers: vkuint) -> FramebufferBuilder {
 
         FramebufferBuilder {
-            attachments: Vec::new(),
+            attachments: vec![],
             extent, layers,
         }
     }

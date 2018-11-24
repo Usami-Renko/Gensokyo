@@ -1,7 +1,12 @@
 
 use ash::vk;
 
-use types::vkDim3D;
+use core::device::HaDevice;
+
+use types::{ vkbytes, vkDim3D };
+
+use memory::{ HaMemoryType, MemorySelector, HaMemoryAbstract };
+use memory::MemoryError;
 
 pub struct ImageCopyInfo {
 
@@ -40,4 +45,10 @@ pub trait ImageInstance: ImageCopiable {}
 pub trait ImageCopiable {
 
     fn copy_info(&self) -> ImageCopyInfo;
+}
+
+pub trait ImageMemoryTypeAbs {
+
+    fn memory_type(&self) -> HaMemoryType;
+    fn allot_memory(&self, device: &HaDevice, size: vkbytes, selector: &MemorySelector) -> Result<Box<dyn HaMemoryAbstract>, MemoryError>;
 }

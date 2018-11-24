@@ -24,7 +24,7 @@ impl MemorySelector {
 
         MemorySelector {
             physical: physical.clone(),
-            candidate_memories: Vec::new(),
+            candidate_memories: vec![],
             dst_memory,
             memory_flag,
         }

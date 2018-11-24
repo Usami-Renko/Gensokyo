@@ -2,7 +2,6 @@
 pub use self::target::{ HaImage, ImageDescInfo , ImagePropertyInfo, ImageSpecificInfo };
 pub use self::view::{ HaImageView, ImageViewDescInfo };
 pub use self::traits::{ ImageInstance, ImageCopiable, ImageCopyInfo };
-pub use self::enums::ImageStorageType;
 pub use self::sampler::{ HaSampler, SamplerDescInfo };
 pub use self::barrier::HaImageBarrier;
 pub use self::entity::ImageEntity;
@@ -12,7 +11,13 @@ mod target;
 mod view;
 mod entity;
 mod enums;
+mod storage;
+mod repository;
 mod sampler;
 mod barrier;
+mod utils;
 mod traits;
 mod error;
+
+pub mod instance;
+pub mod allocator;

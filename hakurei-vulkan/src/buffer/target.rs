@@ -76,7 +76,7 @@ impl BufferDescInfo {
 
         let (sharing_mode, indices) = match sharing_queue_families {
             | Some(families) => (vk::SharingMode::CONCURRENT, families),
-            | None           => (vk::SharingMode::EXCLUSIVE, Vec::new()),
+            | None           => (vk::SharingMode::EXCLUSIVE, vec![]),
         };
 
         let create_info = vk::BufferCreateInfo {

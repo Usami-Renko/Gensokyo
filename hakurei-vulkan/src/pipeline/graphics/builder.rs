@@ -78,7 +78,7 @@ impl GraphicsPipelineBuilder {
 
         let builder = GraphicsPipelineBuilder {
             device : device.clone(),
-            configs: Vec::new(),
+            configs: vec![],
             shaderc: HaShaderCompiler::setup(ShaderCompilePrefab::Vulkan)?,
         };
 
@@ -104,7 +104,7 @@ impl GraphicsPipelineBuilder {
     pub fn build(&mut self) -> Result<GraphicsPipelineContainer, PipelineError> {
 
         for config in self.configs.iter_mut() {
-            let mut shader_modules = Vec::new();
+            let mut shader_modules = vec![];
             for shader in config.shaders.iter() {
                 let module = shader.build(&self.device, &mut self.shaderc)?;
                 shader_modules.push(module);
@@ -112,8 +112,8 @@ impl GraphicsPipelineBuilder {
             config.shader_modules = shader_modules;
         }
 
-        let mut layouts = Vec::new();
-        let mut infos = Vec::new();
+        let mut layouts = vec![];
+        let mut infos = vec![];
 
         for config in self.configs.iter() {
 

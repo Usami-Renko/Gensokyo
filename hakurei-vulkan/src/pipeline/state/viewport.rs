@@ -27,8 +27,8 @@ impl HaViewportState {
 
     pub fn multi(infos: Vec<ViewportStateInfo>) -> HaViewportState {
 
-        let mut ports = Vec::new();
-        let mut scissors = Vec::new();
+        let mut ports = vec![];
+        let mut scissors = vec![];
         let length = infos.len();
 
         for info in infos.into_iter() {
@@ -97,15 +97,15 @@ impl ViewportStateType {
             },
             | ViewportStateType::Dynamic { count } => {
                 HaViewportState {
-                    ports: Vec::new(),
-                    scissors: Vec::new(),
+                    ports: vec![],
+                    scissors: vec![],
                     length: count,
                 }
             },
             | ViewportStateType::DynamicViewportFixedScissor { scissors } => {
                 let length = scissors.len();
                 HaViewportState {
-                    ports: Vec::new(),
+                    ports: vec![],
                     scissors: scissors.into_iter().map(|s| s.content).collect(),
                     length,
                 }
@@ -114,7 +114,7 @@ impl ViewportStateType {
                 let length = viewports.len();
                 HaViewportState {
                     ports: viewports.into_iter().map(|v| v.content).collect(),
-                    scissors: Vec::new(),
+                    scissors: vec![],
                     length,
                 }
             },

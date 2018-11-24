@@ -74,20 +74,15 @@ impl MemoryDstEntity for HaImage {
     }
 }
 
+
+#[derive(Debug, Clone)]
 pub struct ImageDescInfo {
 
-    property: ImagePropertyInfo,
-    specific: ImageSpecificInfo,
+    pub property: ImagePropertyInfo,
+    pub specific: ImageSpecificInfo,
 }
 
 impl ImageDescInfo {
-
-    pub fn new(property: ImagePropertyInfo, specific: ImageSpecificInfo) -> ImageDescInfo {
-
-        ImageDescInfo {
-            specific, property,
-        }
-    }
 
     pub fn build(&self, device: &HaDevice) -> Result<HaImage, ImageError> {
 
@@ -142,6 +137,7 @@ pub struct ImagePropertyInfo {
     pub initial_layout: vk::ImageLayout,
 }
 
+#[derive(Debug, Clone)]
 pub struct ImageSpecificInfo {
 
     /// `dimension` describes the number of data elements in each dimension of the base level.
@@ -198,10 +194,10 @@ impl Default for ImageSpecificInfo {
             dimension: vkDim3D {
                 width: 0,
                 height: 0,
-                depth: 0
+                depth: 0,
             },
             sharing: vk::SharingMode::EXCLUSIVE,
-            queue_family_indices: Vec::new(),
+            queue_family_indices: vec![],
         }
     }
 }

@@ -1,23 +1,22 @@
 
-use vk::core::device::HaDevice;
-use vk::core::physical::HaPhyDevice;
+use ash::vk;
 
-use vk::pipeline::stages::PipelineStageFlag;
-use vk::pipeline::pass::AccessFlag;
-use vk::resources::buffer::{ BufferStorageType, BufferBlockEntity };
-use vk::resources::image::{ HaImageBarrier, ImageLayout };
-use vk::resources::error::AllocatorError;
-use vk::resources::transfer::DataCopyer;
+use core::device::HaDevice;
+use core::physical::HaPhyDevice;
 
-use resources::allocator::image::ImageAllocateInfo;
-use resources::allocator::buffer::HaBufferAllocator;
-use resources::buffer::{ HaImgsrcBlock, ImgsrcBlockInfo };
-use resources::image::enums::ImagePipelineStage;
-use resources::image::io::ImageSource;
-use resources::image::traits::ImageBarrierBundleAbs;
-use resources::repository::HaBufferRepository;
+use buffer::{ BufferInstance, BufferStorageType };
+use buffer::allocator::HaBufferAllocator;
+use buffer::instance::{ HaImgsrcBlock, ImgsrcBlockInfo };
+use buffer::HaBufferRepository;
 
-use std::ptr;
+use image::barrier::HaImageBarrier;
+use image::storage::ImageSource;
+use image::enums::ImagePipelineStage;
+use image::instance::traits::ImageBarrierBundleAbs;
+use image::allocator::ImageAllocateInfo;
+
+use memory::transfer::DataCopyer;
+use memory::AllocatorError;
 
 pub struct SampleImageBarrierBundle {
 
@@ -40,24 +39,24 @@ impl ImageBarrierBundleAbs for SampleImageBarrierBundle {
         let transfer_barriers = self.info_indices.iter()
             .map(|&index| self.transfer_barrier(&mut infos[index])).collect();
         copyer.recorder().image_pipeline_barrrier(
-            PipelineStageFlag::TopOfPipeBit,
-            PipelineStageFlag::TransferBit,
-            &[], // dependencies specifying how execution and memory dependencies are formed.
+            vk::PipelineStageFlags::TOP_OF_PIPE,
+            vk::PipelineStageFlags::TRANSFER,
+            vk::DependencyFlags::empty(), // dependencies specifying how execution and memory dependencies are formed.
             transfer_barriers
         );
 
         // copy buffer to image.
         for (i, &index) in self.info_indices.iter().enumerate() {
-            copyer.copy_buffer_to_image(buffer_blocks[i].item(), &infos[index]);
+            copyer.copy_buffer_to_image(buffer_blocks[i].as_block_ref(), &infos[index]);
         }
 
         // make image barrier transition for final layout.
         let final_barriers = self.info_indices.iter()
             .map(|&index| self.final_barrier(&mut infos[index])).collect();
         let _ = copyer.recorder().image_pipeline_barrrier(
-            PipelineStageFlag::TransferBit,
-            self.dst_stage.to_stage_flag(),
-            &[],
+            vk::PipelineStageFlags::TRANSFER,
+            self.dst_stage.to_raw_flag(),
+            vk::DependencyFlags::empty(),
             final_barriers
         );
 
@@ -127,25 +126,25 @@ impl SampleImageBarrierBundle {
 
     fn transfer_barrier(&self, info: &mut ImageAllocateInfo) -> HaImageBarrier {
 
-        info.final_layout = ImageLayout::TransferDstOptimal;
+        info.final_layout = vk::ImageLayout::TRANSFER_DST_OPTIMAL;
 
-        HaImageBarrier::new(&info.image, &info.view_desc.subrange)
+        HaImageBarrier::new(&info.image, info.view_desc.subrange)
             .access_mask(
-                &[],
-                &[AccessFlag::TransferWriteBit])
-            .layout(info.image_desc.initial_layout, info.final_layout)
+                vk::AccessFlags::empty(),
+                vk::AccessFlags::TRANSFER_WRITE)
+            .layout(info.image_desc.property.initial_layout, info.final_layout)
             .build()
     }
 
     fn final_barrier(&self, info: &mut ImageAllocateInfo) -> HaImageBarrier {
 
         let previous_layout = info.final_layout;
-        info.final_layout = ImageLayout::ShaderReadOnlyOptimal;
+        info.final_layout = vk::ImageLayout::SHADER_READ_ONLY_OPTIMAL;
 
-        HaImageBarrier::new(&info.image, &info.view_desc.subrange)
+        HaImageBarrier::new(&info.image, info.view_desc.subrange)
             .access_mask(
-                &[AccessFlag::TransferWriteBit],
-                &[AccessFlag::ShaderReadBit])
+                vk::AccessFlags::TRANSFER_WRITE,
+                vk::AccessFlags::SHADER_READ)
             .layout(previous_layout, info.final_layout)
             .build()
     }

@@ -23,7 +23,7 @@ impl DescriptorSetLayoutInfo {
     pub fn setup(flags: vk::DescriptorSetLayoutCreateFlags) -> DescriptorSetLayoutInfo {
         DescriptorSetLayoutInfo {
             flags,
-            bindings: Vec::new(),
+            bindings: vec![],
         }
     }
 
