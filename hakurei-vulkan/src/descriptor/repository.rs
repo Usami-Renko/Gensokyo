@@ -1,8 +1,8 @@
 
-use vk::core::device::HaDevice;
+use core::device::HaDevice;
 
-use vk::resources::descriptor::HaDescriptorPool;
-use vk::resources::descriptor::HaDescriptorSet;
+use descriptor::HaDescriptorPool;
+use descriptor::HaDescriptorSet;
 
 pub struct HaDescriptorRepository {
 
@@ -12,15 +12,6 @@ pub struct HaDescriptorRepository {
 }
 
 impl HaDescriptorRepository {
-
-    pub fn empty() -> HaDescriptorRepository {
-
-        HaDescriptorRepository {
-            device: None,
-            pool  : HaDescriptorPool::uninitialize(),
-            sets  : vec![],
-        }
-    }
 
     pub(crate) fn store(device: HaDevice, pool: HaDescriptorPool, sets: Vec<HaDescriptorSet>)
         -> HaDescriptorRepository {
@@ -36,7 +27,6 @@ impl HaDescriptorRepository {
         if let Some(ref device) = self.device {
 
             self.pool.cleanup(&device);
-            self.pool = HaDescriptorPool::uninitialize();
 
             self.sets.iter()
                 .for_each(|set| set.cleanup(&device));

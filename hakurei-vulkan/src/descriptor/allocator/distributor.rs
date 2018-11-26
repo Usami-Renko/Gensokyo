@@ -1,12 +1,11 @@
 
-use vk::core::device::HaDevice;
+use core::device::HaDevice;
 
-use vk::resources::descriptor::{ HaDescriptorPool, HaDescriptorSet, DescriptorSetConfig };
-use vk::resources::descriptor::DescriptorSetItem;
+use descriptor::{ HaDescriptorPool, HaDescriptorSet, DescriptorSetConfig };
 
-use resources::descriptor::DescriptorSet;
-use resources::repository::HaDescriptorRepository;
-use resources::allocator::descriptor::index::DescriptorSetIndex;
+use descriptor::set::DescriptorSet;
+use descriptor::repository::HaDescriptorRepository;
+use descriptor::allocator::index::DescriptorSetIndex;
 
 pub struct HaDescriptorDistributor {
 
@@ -53,9 +52,9 @@ impl HaDescriptorDistributor {
             let config = &self.configs[set_index.value];
             let update_set = &self.sets[set_index.value];
 
-            let set_write_infos = config.iter_binding()
+            let set_write_infos: Vec<_> = config.iter_binding()
                 .map(|binding| binding.write_set(update_set))
-                .collect::<Vec<_>>();
+                .collect();
             write_infos.extend(set_write_infos);
         }
 

@@ -1,32 +1,34 @@
 
-use vk::core::device::HaDevice;
+use ash::vk;
 
-use vk::resources::descriptor::{ DescriptorSetConfig, DescriptorSetLayoutInfo };
-use vk::resources::descriptor::{ DescriptorPoolInfo, DescriptorPoolFlag };
-use vk::resources::descriptor::HaDescriptorType;
-use vk::resources::error::AllocatorError;
-use vk::utils::types::vkint;
+use core::device::HaDevice;
 
-use resources::allocator::descriptor::index::DescriptorSetIndex;
-use resources::allocator::descriptor::HaDescriptorDistributor;
+use descriptor::DescriptorSetConfig;
+use descriptor::DescriptorPoolInfo;
+use descriptor::HaDescriptorType;
+use descriptor::allocator::index::DescriptorSetIndex;
+use descriptor::allocator::distributor::HaDescriptorDistributor;
+
+use memory::AllocatorError;
+use types::vkuint;
 
 use std::collections::HashMap;
 
 pub struct HaDescriptorAllocator {
 
     device: HaDevice,
-    pool_flag: Vec<DescriptorPoolFlag>,
+    pool_flag: vk::DescriptorPoolCreateFlags,
 
     set_configs: Vec<DescriptorSetConfig>,
 }
 
 impl HaDescriptorAllocator {
 
-    pub(crate) fn new(device: &HaDevice, flags: &[DescriptorPoolFlag]) -> HaDescriptorAllocator {
+    pub(crate) fn new(device: &HaDevice, flags: vk::DescriptorPoolCreateFlags) -> HaDescriptorAllocator {
 
         HaDescriptorAllocator {
             device   : device.clone(),
-            pool_flag: flags.into(),
+            pool_flag: flags,
 
             set_configs: vec![],
         }
@@ -46,7 +48,7 @@ impl HaDescriptorAllocator {
 
         // descriptor pool
         let pool_sizes = self.pool_sizes();
-        let mut pool_info = DescriptorPoolInfo::new(&self.pool_flag);
+        let mut pool_info = DescriptorPoolInfo::new(self.pool_flag);
 
         pool_sizes.iter().for_each(|pool_size| {
             pool_info.add_pool_size(pool_size.0, pool_size.1);
@@ -68,14 +70,14 @@ impl HaDescriptorAllocator {
         Ok(repository)
     }
 
-    fn pool_sizes(&self) -> Vec<(HaDescriptorType, vkint)> {
+    fn pool_sizes(&self) -> Vec<(HaDescriptorType, vkuint)> {
 
         let mut map = HashMap::new();
         for config in self.set_configs.iter() {
             for info in config.iter_binding() {
 
                 let count = map.entry(info.binding_content().descriptor_type)
-                    .or_insert(0 as vkint);
+                    .or_insert(0 as vkuint);
                 *count += 1;
             }
         }
@@ -84,9 +86,9 @@ impl HaDescriptorAllocator {
         result
     }
 
-    pub fn reset(&mut self, flags: &[DescriptorPoolFlag]) {
+    pub fn reset(&mut self, flags: vk::DescriptorPoolCreateFlags) {
 
-        self.pool_flag = flags.into();
+        self.pool_flag = flags;
         self.set_configs.clear();
     }
 }
