@@ -4,9 +4,12 @@ use core::physical::HaPhyDevice;
 
 use buffer::BufferBlock;
 use buffer::allocator::BufferAllocateInfos;
-use memory::{ HaMemory, HaMemoryType, HaMemoryAbstract, MemorySelector };
+use memory::structs::HaMemoryType;
+use memory::target::HaMemory;
+use memory::traits::{ HaMemoryAbstract, MemoryMapable };
+use memory::selector::MemorySelector;
 use memory::structs::MemoryRange;
-use memory::instance::{ HaMemoryEntityAbs, MemoryDataUploadable };
+use memory::instance::traits::{ HaImageMemoryAbs, HaBufferMemoryAbs, MemoryDataUploadable };
 use memory::instance::staging::{ StagingUploader, UploadStagingResource };
 use memory::error::MemoryError;
 
@@ -18,7 +21,9 @@ pub struct HaDeviceMemory {
     target: HaMemory,
 }
 
-impl HaMemoryEntityAbs for HaDeviceMemory {}
+impl HaBufferMemoryAbs for HaDeviceMemory {}
+
+impl HaImageMemoryAbs for HaDeviceMemory {}
 
 impl HaMemoryAbstract for HaDeviceMemory {
 
@@ -38,6 +43,10 @@ impl HaMemoryAbstract for HaDeviceMemory {
             target,
         };
         Ok(memory)
+    }
+
+    fn as_mut_mapable(&mut self) -> Option<&mut MemoryMapable> {
+        None
     }
 }
 

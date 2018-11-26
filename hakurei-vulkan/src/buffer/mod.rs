@@ -1,5 +1,5 @@
 
-pub use self::target::{ HaBuffer, BufferStorageType };
+pub use self::target::HaBuffer;
 pub use self::entity::{ BufferBlock, BufferSlice };
 pub use self::traits::{ BufferInstance, BufferCopiable, BufferCopyInfo, BufferHandleEntity };
 pub use self::repository::HaBufferRepository;

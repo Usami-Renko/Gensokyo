@@ -3,7 +3,8 @@ use ash::vk;
 
 use image::view::HaImageView;
 use image::entity::ImageEntity;
-use image::traits::{ ImageInstance, ImageCopiable, ImageCopyInfo };
+use image::traits::{ ImageInstance, ImageCopiable };
+use image::utils::ImageCopyInfo;
 use image::instance::ImageInstanceInfoDesc;
 use image::instance::depth::DepthStencilAttachmentInfo;
 use image::allocator::ImageAllocateInfo;

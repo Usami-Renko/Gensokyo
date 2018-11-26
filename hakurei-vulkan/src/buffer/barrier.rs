@@ -3,7 +3,7 @@ use ash::vk;
 
 use command::IntoVKBarrier;
 
-pub struct HaBufferBarrier {
+struct HaBufferBarrier {
 
 }
 

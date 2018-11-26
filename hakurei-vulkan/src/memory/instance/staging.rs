@@ -2,17 +2,21 @@
 use core::device::HaDevice;
 use core::physical::HaPhyDevice;
 
-use buffer::{ HaBuffer, BufferBlock, BufferStorageType };
-use memory::{ HaMemory, HaMemoryType, HaMemoryAbstract, MemorySelector };
-use memory::{ MemoryMapable, MemoryMapStatus, MemoryRange };
-use memory::error::{ MemoryError, AllocatorError };
+use buffer::{ HaBuffer, BufferBlock };
+use buffer::allocator::BufferAllocateInfos;
+use buffer::allocator::types::Staging;
+
+use memory::structs::{ HaMemoryType, MemoryMapStatus, MemoryRange };
+use memory::target::HaMemory;
+use memory::traits::{ HaMemoryAbstract, MemoryMapable };
+use memory::selector::MemorySelector;
 use memory::transfer::DataCopyer;
+use memory::instance::{ HaBufferMemoryAbs, MemoryDataUploadable };
+use memory::error::{ MemoryError, AllocatorError };
 
 use utils::memory::MemoryWritePtr;
 use types::vkbytes;
 
-use memory::instance::{ HaMemoryEntityAbs, MemoryDataUploadable };
-use buffer::allocator::BufferAllocateInfos;
 
 pub struct HaStagingMemory {
 
@@ -20,9 +24,14 @@ pub struct HaStagingMemory {
     map_status: MemoryMapStatus,
 }
 
-impl MemoryMapable for HaStagingMemory {}
+impl MemoryMapable for HaStagingMemory {
 
-impl HaMemoryEntityAbs for HaStagingMemory {}
+    fn mut_status(&mut self) -> &mut MemoryMapStatus {
+        &mut self.map_status
+    }
+}
+
+impl HaBufferMemoryAbs for HaStagingMemory {}
 
 impl HaMemoryAbstract for HaStagingMemory {
 
@@ -37,12 +46,17 @@ impl HaMemoryAbstract for HaStagingMemory {
     fn allocate(device: &HaDevice, size: vkbytes, selector: &MemorySelector) -> Result<HaStagingMemory, MemoryError> {
 
         let target = HaMemory::allocate(device, size, selector)?;
+        let memory_boundary = target.size;
 
         let memory = HaStagingMemory {
             target,
-            map_status: MemoryMapStatus::from_unmap(),
+            map_status: MemoryMapStatus::from_unmap(memory_boundary),
         };
         Ok(memory)
+    }
+
+    fn as_mut_mapable(&mut self) -> Option<&mut MemoryMapable> {
+        Some(self)
     }
 }
 
@@ -50,15 +64,14 @@ impl HaStagingMemory {
 
     fn enable_map(&mut self, device: &HaDevice, is_enable: bool) -> Result<(), MemoryError> {
 
+        // TODO: Refactor this logic.
         if is_enable {
-            if !self.map_status.is_map {
-                let ptr = self.map_range(device, None)?;
-                self.map_status.set_map(ptr);
+            if self.map_status.is_range_available(None) {
+                self.map_range(device, None)?;
             }
         } else {
-            if self.map_status.is_map {
+            if self.map_status.is_range_available(None) == false {
                 self.unmap(device);
-                self.map_status.invaild_map();
             }
         }
 
@@ -78,7 +91,9 @@ impl MemoryDataUploadable for HaStagingMemory {
     fn map_memory_ptr(&mut self, _: &mut Option<UploadStagingResource>, block: &BufferBlock, offset: vkbytes) -> Result<(MemoryWritePtr, MemoryRange), MemoryError> {
 
         let ptr = unsafe {
-            self.map_status.data_ptr.offset(offset as isize)
+            self.map_status.data_ptr
+                .ok_or(MemoryError::MemoryPtrInvalidError)?
+                .offset(offset as isize)
         };
 
         let writer = MemoryWritePtr::new(ptr, block.size);
@@ -161,7 +176,7 @@ impl UploadStagingResource {
             let mut buffers = vec![];
             for buffer_desc in allo_infos.infos.iter() {
 
-                let buffer = buffer_desc.build(device, BufferStorageType::Staging, None)
+                let buffer = buffer_desc.build(device, Staging, None)
                     .or(Err(MemoryError::AllocateMemoryError))?;
 
                 memory_selector.try(&buffer)?;
@@ -234,7 +249,7 @@ impl UploadStagingResource {
         Ok(())
     }
 
-    pub fn cleanup(&self, device: &HaDevice) {
+    pub fn cleanup(&mut self, device: &HaDevice) {
 
         self.buffers.iter()
             .for_each(|buffer| buffer.cleanup(device));

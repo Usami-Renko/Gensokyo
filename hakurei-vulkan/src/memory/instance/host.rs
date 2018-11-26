@@ -4,11 +4,13 @@ use core::physical::HaPhyDevice;
 
 use buffer::BufferBlock;
 use buffer::allocator::BufferAllocateInfos;
-use memory::{ HaMemory, HaMemoryType, HaMemoryAbstract, MemorySelector };
-use memory::{ MemoryMapable, MemoryMapStatus, MemoryRange };
-use memory::instance::{ HaMemoryEntityAbs, MemoryDataUploadable };
+use memory::structs::{ HaMemoryType, MemoryMapStatus, MemoryRange };
+use memory::target::HaMemory;
+use memory::traits::{ HaMemoryAbstract, MemoryMapable };
+use memory::selector::MemorySelector;
+use memory::instance::{ HaBufferMemoryAbs, MemoryDataUploadable };
 use memory::instance::staging::UploadStagingResource;
-use memory::MemoryError;
+use memory::error::MemoryError;
 
 use utils::memory::MemoryWritePtr;
 use types::vkbytes;
@@ -19,9 +21,14 @@ pub struct HaHostMemory {
     map_status: MemoryMapStatus,
 }
 
-impl MemoryMapable for HaHostMemory {}
+impl MemoryMapable for HaHostMemory {
 
-impl HaMemoryEntityAbs for HaHostMemory {}
+    fn mut_status(&mut self) -> &mut MemoryMapStatus {
+        &mut self.map_status
+    }
+}
+
+impl HaBufferMemoryAbs for HaHostMemory {}
 
 impl HaMemoryAbstract for HaHostMemory {
 
@@ -36,15 +43,20 @@ impl HaMemoryAbstract for HaHostMemory {
     fn allocate(device: &HaDevice, size: vkbytes, selector: &MemorySelector) -> Result<HaHostMemory, MemoryError> {
 
         let target = HaMemory::allocate(device, size, selector)?;
+        let memory_boundary = target.size;
 
         let memory = HaHostMemory {
             target,
-            map_status: MemoryMapStatus::from_unmap(),
+            map_status: MemoryMapStatus::from_unmap(memory_boundary),
         };
         Ok(memory)
     }
 
-    fn cleanup(&self, device: &HaDevice) {
+    fn as_mut_mapable(&mut self) -> Option<&mut MemoryMapable> {
+        Some(self)
+    }
+
+    fn cleanup(&mut self, device: &HaDevice) {
 
         self.unmap(device);
         self.target.cleanup(device);
@@ -62,7 +74,9 @@ impl MemoryDataUploadable for HaHostMemory {
         -> Result<(MemoryWritePtr, MemoryRange), MemoryError> {
 
         let ptr = unsafe {
-            self.map_status.data_ptr.offset(offset as isize)
+            self.map_status.data_ptr
+                .ok_or(MemoryError::MemoryPtrInvalidError)?
+                .offset(offset as isize)
         };
 
         let writer = MemoryWritePtr::new(ptr, block.size);
@@ -77,19 +91,6 @@ impl MemoryDataUploadable for HaHostMemory {
         if !self.target.is_coherent_memroy() {
             // FIXME: the VkPhysicalDeviceLimits::nonCoherentAtomSize is not satified for flushing range.
             self.flush_ranges(device, ranges_to_flush)?;
-        }
-
-        Ok(())
-    }
-}
-
-impl HaHostMemory {
-
-    pub fn map_whole(&mut self, device: &HaDevice) -> Result<(), MemoryError> {
-
-        if !self.map_status.is_map {
-            let ptr = self.map_range(device, None)?;
-            self.map_status.set_map(ptr);
         }
 
         Ok(())

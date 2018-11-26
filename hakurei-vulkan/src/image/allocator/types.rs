@@ -3,11 +3,19 @@ use core::device::HaDevice;
 
 use types::vkbytes;
 
-use image::traits::ImageMemoryTypeAbs;
-
-use memory::{ HaMemoryType, MemorySelector, HaMemoryAbstract };
-use memory::instance::{ HaCachedMemory, HaDeviceMemory };
+use memory::{ HaMemoryType, HaMemoryAbstract, MemorySelector };
+use memory::instance::{ HaImageMemory, HaCachedMemory, HaDeviceMemory };
 use memory::MemoryError;
+
+pub trait ImageMemoryTypeAbs {
+    const MEMORY_TYPE: HaMemoryType;
+
+    fn memory_type(&self) -> HaMemoryType {
+        Self::MEMORY_TYPE
+    }
+
+    fn allot_memory(&self, device: &HaDevice, size: vkbytes, selector: &MemorySelector) -> Result<HaImageMemory, MemoryError>;
+}
 
 pub struct Device;
 pub struct Cached;
@@ -21,30 +29,24 @@ impl ImageStorageType {
 }
 
 impl ImageMemoryTypeAbs for Device {
+    const MEMORY_TYPE: HaMemoryType = HaMemoryType::DeviceMemory;
 
-    fn memory_type(&self) -> HaMemoryType {
-        HaMemoryType::DeviceMemory
-    }
-
-    fn allot_memory(&self, device: &HaDevice, size: vkbytes, selector: &MemorySelector) -> Result<Box<dyn HaMemoryAbstract>, MemoryError> {
+    fn allot_memory(&self, device: &HaDevice, size: vkbytes, selector: &MemorySelector) -> Result<HaImageMemory, MemoryError> {
 
         let device_memory = HaDeviceMemory::allocate(device, size, selector)?;
-        let memory_abs = Box::new(device_memory) as Box<dyn HaMemoryAbstract>;
+        let memory_abs = Box::new(device_memory) as HaImageMemory;
 
         Ok(memory_abs)
     }
 }
 
 impl ImageMemoryTypeAbs for Cached {
+    const MEMORY_TYPE: HaMemoryType = HaMemoryType::CachedMemory;
 
-    fn memory_type(&self) -> HaMemoryType {
-        HaMemoryType::CachedMemory
-    }
-
-    fn allot_memory(&self, device: &HaDevice, size: vkbytes, selector: &MemorySelector) -> Result<Box<dyn HaMemoryAbstract>, MemoryError> {
+    fn allot_memory(&self, device: &HaDevice, size: vkbytes, selector: &MemorySelector) -> Result<HaImageMemory, MemoryError> {
 
         let cached_memory = HaCachedMemory::allocate(device, size, selector)?;
-        let memory_abs = Box::new(cached_memory) as Box<dyn HaMemoryAbstract>;
+        let memory_abs = Box::new(cached_memory) as HaImageMemory;
 
         Ok(memory_abs)
     }

@@ -4,8 +4,9 @@ use ash::vk;
 use core::device::HaDevice;
 use core::physical::HaPhyDevice;
 
-use buffer::{ BufferInstance, BufferStorageType };
+use buffer::BufferInstance;
 use buffer::allocator::HaBufferAllocator;
+use buffer::allocator::types::Staging;
 use buffer::instance::{ HaImgsrcBlock, ImgsrcBlockInfo };
 use buffer::HaBufferRepository;
 
@@ -23,7 +24,7 @@ pub struct SampleImageBarrierBundle {
     info_indices: Vec<usize>,
     dst_stage: ImagePipelineStage,
 
-    staging_repository: Option<HaBufferRepository>,
+    staging_repository: Option<HaBufferRepository<Staging>>,
 }
 
 impl ImageBarrierBundleAbs for SampleImageBarrierBundle {
@@ -82,11 +83,11 @@ impl SampleImageBarrierBundle {
         }
     }
 
-    fn create_staging_repository(&mut self, physical: &HaPhyDevice, device: &HaDevice, infos: &Vec<ImageAllocateInfo>) -> Result<(HaBufferRepository, Vec<HaImgsrcBlock>), AllocatorError> {
+    fn create_staging_repository(&mut self, physical: &HaPhyDevice, device: &HaDevice, infos: &Vec<ImageAllocateInfo>) -> Result<(HaBufferRepository<Staging>, Vec<HaImgsrcBlock>), AllocatorError> {
 
         let mut staging_indices = vec![];
 
-        let mut staging_allocator = HaBufferAllocator::new(physical, device, BufferStorageType::Staging);
+        let mut staging_allocator = HaBufferAllocator::new(physical, device, Staging);
 
         for &index in self.info_indices.iter() {
             let img_info = ImgsrcBlockInfo::new(infos[index].space);
@@ -105,7 +106,7 @@ impl SampleImageBarrierBundle {
         Ok((distributor.into_repository(), staging_buffers))
     }
 
-    fn upload_staging_data(&self, staging_repository: &mut HaBufferRepository, img_data_blocks: &[HaImgsrcBlock], infos: &Vec<ImageAllocateInfo>) -> Result<(), AllocatorError> {
+    fn upload_staging_data(&self, staging_repository: &mut HaBufferRepository<Staging>, img_data_blocks: &[HaImgsrcBlock], infos: &Vec<ImageAllocateInfo>) -> Result<(), AllocatorError> {
 
         let mut uploader = staging_repository.data_uploader()?;
 

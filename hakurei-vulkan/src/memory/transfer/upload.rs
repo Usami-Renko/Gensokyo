@@ -5,7 +5,7 @@ use core::physical::HaPhyDevice;
 use buffer::BufferInstance;
 use buffer::allocator::BufferAllocateInfos;
 use memory::structs::MemoryRange;
-use memory::instance::HaMemoryEntity;
+use memory::instance::HaBufferMemory;
 use memory::instance::UploadStagingResource;
 use memory::error::AllocatorError;
 
@@ -15,7 +15,7 @@ pub struct BufferDataUploader<'a> {
 
     device: HaDevice,
     // TODO: change this to MemoryDataUploadable.
-    dst_memory: &'a mut HaMemoryEntity,
+    dst_memory: &'a mut HaBufferMemory,
     ranges : Vec<MemoryRange>,
 
     staging: Option<UploadStagingResource>,
@@ -23,7 +23,7 @@ pub struct BufferDataUploader<'a> {
 
 impl<'a> BufferDataUploader<'a> {
 
-    pub(crate) fn new(physical: &HaPhyDevice, device: &HaDevice, memory: &'a mut HaMemoryEntity, allocate_infos: &Option<BufferAllocateInfos>) -> Result<BufferDataUploader<'a>, AllocatorError> {
+    pub(crate) fn new(physical: &HaPhyDevice, device: &HaDevice, memory: &'a mut HaBufferMemory, allocate_infos: &Option<BufferAllocateInfos>) -> Result<BufferDataUploader<'a>, AllocatorError> {
 
         let staging = memory.prepare_data_transfer(physical, device, &allocate_infos)?;
 
@@ -68,14 +68,14 @@ impl<'a> BufferDataUploader<'a> {
 pub struct BufferDataUpdater<'a> {
 
     device : HaDevice,
-    memory : &'a mut HaMemoryEntity,
+    memory : &'a mut HaBufferMemory,
     offsets: &'a Vec<vkbytes>,
     ranges : Vec<MemoryRange>,
 }
 
 impl<'a> BufferDataUpdater<'a> {
 
-    pub(crate) fn new(device: &HaDevice, memory: &'a mut HaMemoryEntity, offsets: &'a Vec<vkbytes>) -> BufferDataUpdater<'a> {
+    pub(crate) fn new(device: &HaDevice, memory: &'a mut HaBufferMemory, offsets: &'a Vec<vkbytes>) -> BufferDataUpdater<'a> {
 
         BufferDataUpdater {
             device: device.clone(),

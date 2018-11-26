@@ -7,11 +7,13 @@ use core::physical::HaPhyDevice;
 use image::target::{ HaImage, ImageDescInfo };
 use image::view::ImageViewDescInfo;
 use image::enums::ImageInstanceType;
-use image::traits::{ ImageMemoryTypeAbs, ImageCopiable, ImageCopyInfo };
+use image::traits::ImageCopiable;
+use image::utils::ImageCopyInfo;
 use image::storage::ImageStorageInfo;
 use image::instance::{ ImageBarrierBundleAbs, ImageInstanceInfoAbs, ImageInstanceInfoDesc };
 use image::instance::sample::{ SampleImageInfo, SampleImageBarrierBundle };
 use image::instance::depth::{ DepthStencilAttachmentInfo, DepSteImageBarrierBundle };
+use image::allocator::types::ImageMemoryTypeAbs;
 use image::allocator::distributor::HaImageDistributor;
 use image::error::ImageError;
 
@@ -41,13 +43,13 @@ pub struct HaImageAllocator<M> where M: ImageMemoryTypeAbs {
 
 impl<M> HaImageAllocator<M> where M: ImageMemoryTypeAbs {
 
-    pub(crate) fn new(physical: &HaPhyDevice, device: &HaDevice, typ: M) -> HaImageAllocator<M> {
+    pub(crate) fn new(physical: &HaPhyDevice, device: &HaDevice, storage_type: M) -> HaImageAllocator<M> {
 
-        let memory_selector = MemorySelector::init(physical, typ.memory_type());
+        let memory_selector = MemorySelector::init(physical, storage_type.memory_type());
 
         HaImageAllocator {
             phantom_type: PhantomData,
-            storage_type: typ,
+            storage_type,
 
             physical: physical.clone(),
             device  : device.clone(),

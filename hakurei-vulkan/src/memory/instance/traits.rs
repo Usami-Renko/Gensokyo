@@ -12,9 +12,11 @@ use utils::memory::MemoryWritePtr;
 use buffer::allocator::BufferAllocateInfos;
 use memory::instance::staging::UploadStagingResource;
 
-pub type HaMemoryEntity = Box<dyn HaMemoryEntityAbs>;
+pub type HaBufferMemory = Box<dyn HaBufferMemoryAbs>;
+pub type HaImageMemory  = Box<dyn HaImageMemoryAbs>;
 
-pub trait HaMemoryEntityAbs: HaMemoryAbstract + MemoryDataUploadable {}
+pub trait HaBufferMemoryAbs: HaMemoryAbstract + MemoryDataUploadable {}
+pub trait HaImageMemoryAbs : HaMemoryAbstract {}
 
 pub trait MemoryDataUploadable {
 

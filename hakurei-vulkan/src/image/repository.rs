@@ -1,7 +1,7 @@
 
 use core::device::HaDevice;
 
-use memory::HaMemoryAbstract;
+use memory::instance::HaImageMemory;
 use image::target::HaImage;
 use image::view::HaImageView;
 
@@ -15,19 +15,20 @@ pub struct HaImageRepository<M> {
     device : Option<HaDevice>,
     images : Vec<HaImage>,
     views  : Vec<HaImageView>,
-    memory : Option<Box<dyn HaMemoryAbstract>>,
+    memory : Option<HaImageMemory>,
 }
 
 impl<M> HaImageRepository<M> {
 
-    pub(crate) fn store(_: PhantomData<M>, device: HaDevice, images: Vec<HaImage>, views: Vec<HaImageView>, memory: Box<dyn HaMemoryAbstract>)
+    pub(crate) fn store(_: PhantomData<M>, device: HaDevice, images: Vec<HaImage>, views: Vec<HaImageView>, memory: HaImageMemory)
         -> HaImageRepository<M> {
 
         HaImageRepository {
             phantom_type: PhantomData,
             device: Some(device),
+            images,
+            views,
             memory: Some(memory),
-            images, views,
         }
     }
 
@@ -35,10 +36,12 @@ impl<M> HaImageRepository<M> {
 
         if let Some(ref device) = self.device {
 
-            self.images.iter().for_each(|image| image.cleanup(device));
-            self.views.iter().for_each(|view| view.cleanup(device));
+            self.images.iter()
+                .for_each(|image| image.cleanup(device));
+            self.views.iter()
+                .for_each(|view| view.cleanup(device));
 
-            if let Some(ref memory) = self.memory {
+            if let Some(ref mut memory) = self.memory {
                 memory.cleanup(device);
             }
         }

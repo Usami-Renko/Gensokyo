@@ -4,20 +4,24 @@ use core::physical::HaPhyDevice;
 
 use buffer::target::HaBuffer;
 use buffer::allocator::BufferAllocateInfos;
+
 use memory::HaMemoryType;
-use memory::instance::HaMemoryEntity;
+use memory::instance::HaBufferMemory;
 use memory::transfer::{ BufferDataUploader, BufferDataUpdater };
 use memory::{ AllocatorError, MemoryError };
 
 use types::vkbytes;
+use std::marker::PhantomData;
 
 #[derive(Default)]
-pub struct HaBufferRepository {
+pub struct HaBufferRepository<M> {
+
+    phantom_type: PhantomData<M>,
 
     device  : Option<HaDevice>,
     physical: Option<HaPhyDevice>,
     buffers : Vec<HaBuffer>,
-    memory  : Option<HaMemoryEntity>,
+    memory  : Option<HaBufferMemory>,
 
     /// The offset of each buffer in memory.
     offsets: Vec<vkbytes>,
@@ -25,18 +29,16 @@ pub struct HaBufferRepository {
     allocate_infos: Option<BufferAllocateInfos>,
 }
 
-impl HaBufferRepository {
+impl<M> HaBufferRepository<M> {
 
-    pub fn empty() -> HaBufferRepository {
-        HaBufferRepository::default()
-    }
-
-    pub(crate) fn store(device: HaDevice, physical: HaPhyDevice, buffers: Vec<HaBuffer>, memory: HaMemoryEntity, allocate_infos: BufferAllocateInfos) -> HaBufferRepository {
+    pub(crate) fn store(phantom_type: PhantomData<M>, device: HaDevice, physical: HaPhyDevice, buffers: Vec<HaBuffer>, memory: HaBufferMemory, allocate_infos: BufferAllocateInfos) -> HaBufferRepository<M> {
 
         use utils::memory::spaces_to_offsets;
         let offsets = spaces_to_offsets(&allocate_infos.spaces);
 
         HaBufferRepository {
+            phantom_type,
+
             device  : Some(device),
             physical: Some(physical),
             memory  : Some(memory),
@@ -89,7 +91,7 @@ impl HaBufferRepository {
         self.buffers.iter().for_each(|buffer|
             buffer.cleanup(&self.device.as_ref().unwrap()));
 
-        if let Some(ref memory) = self.memory {
+        if let Some(ref mut memory) = self.memory {
             memory.cleanup(&self.device.as_ref().unwrap());
         }
 

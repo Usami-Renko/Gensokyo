@@ -4,8 +4,10 @@ use ash::version::DeviceV1_0;
 
 use core::device::HaDevice;
 
-use memory::{ HaMemoryType, MemoryDstEntity };
+use buffer::allocator::types::BufferMemoryTypeAbs;
 use buffer::error::BufferError;
+
+use memory::MemoryDstEntity;
 
 use types::{ vkbytes, vkuint };
 use std::ptr;
@@ -72,7 +74,7 @@ impl BufferDescInfo {
     ///
     /// If the buffer is accessed by one queue family, set sharing_queue_families to None,
     /// or set it the queue family indices to share accessing.
-    pub fn build(&self, device: &HaDevice, storage: BufferStorageType, sharing_queue_families: Option<Vec<vkuint>>) -> Result<HaBuffer, BufferError> {
+    pub fn build(&self, device: &HaDevice, memory_abs: impl BufferMemoryTypeAbs, sharing_queue_families: Option<Vec<vkuint>>) -> Result<HaBuffer, BufferError> {
 
         let (sharing_mode, indices) = match sharing_queue_families {
             | Some(families) => (vk::SharingMode::CONCURRENT, families),
@@ -85,7 +87,7 @@ impl BufferDescInfo {
             // TODO: Add configuration for BufferCreateFlag.
             flags: self.flags,
             size : self.estimate_size,
-            usage: complement_buffer_usage(self.usage, storage),
+            usage: memory_abs.complement_usage(self.usage),
             sharing_mode,
             queue_family_index_count: indices.len() as vkuint,
             p_queue_family_indices  : indices.as_ptr(),
@@ -102,36 +104,5 @@ impl BufferDescInfo {
 
     pub fn with_flag(&mut self, flags: vk::BufferCreateFlags) {
         self.flags = flags;
-    }
-}
-
-#[derive(Debug, Clone, Copy, Eq, PartialEq)]
-pub enum BufferStorageType {
-    Host, Cached, Device, Staging,
-}
-
-impl BufferStorageType {
-
-    pub fn memory_type(&self) -> HaMemoryType {
-        match self {
-            | BufferStorageType::Host    => HaMemoryType::HostMemory,
-            | BufferStorageType::Cached  => HaMemoryType::CachedMemory,
-            | BufferStorageType::Device  => HaMemoryType::DeviceMemory,
-            | BufferStorageType::Staging => HaMemoryType::StagingMemory,
-        }
-    }
-}
-
-fn complement_buffer_usage(origin: vk::BufferUsageFlags, storage_type: BufferStorageType) -> vk::BufferUsageFlags {
-
-    match storage_type {
-        // No other specific flag is needed for Host Buffer.
-        | BufferStorageType::Host    => origin,
-        // Cached Buffer always need to be transfer dst.
-        | BufferStorageType::Cached  => origin | vk::BufferUsageFlags::TRANSFER_DST,
-        // Device Buffer always need to be transfer dst.
-        | BufferStorageType::Device  => origin | vk::BufferUsageFlags::TRANSFER_DST,
-        // Staging Buffer always need to be transfer src.
-        | BufferStorageType::Staging => origin | vk::BufferUsageFlags::TRANSFER_SRC,
     }
 }

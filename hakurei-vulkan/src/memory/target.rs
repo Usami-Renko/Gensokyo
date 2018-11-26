@@ -15,8 +15,8 @@ pub struct HaMemory {
 
     pub handle: vk::DeviceMemory,
 
-    typ : vk::MemoryType,
-    _size: vkbytes,
+    pub typ : vk::MemoryType,
+    pub size: vkbytes,
 }
 
 impl HaMemory {
@@ -40,7 +40,7 @@ impl HaMemory {
         };
 
         let target = HaMemory {
-            handle, typ, _size: size,
+            handle, typ, size,
         };
 
         Ok(target)

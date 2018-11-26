@@ -9,7 +9,7 @@ use image::instance::ImageInstanceInfoAbs;
 use image::repository::HaImageRepository;
 use image::ImageError;
 
-use memory::HaMemoryAbstract;
+use memory::instance::HaImageMemory;
 use memory::AllocatorError;
 
 use std::marker::PhantomData;
@@ -19,7 +19,7 @@ pub struct HaImageDistributor<M> {
     phantom_type: PhantomData<M>,
 
     device: HaDevice,
-    memory: Box<dyn HaMemoryAbstract>,
+    memory: HaImageMemory,
 
     views: Vec<HaImageView>,
     infos: Vec<ImageAllocateInfo>,
@@ -27,7 +27,7 @@ pub struct HaImageDistributor<M> {
 
 impl<M> HaImageDistributor<M> {
 
-    pub(super) fn new(_: PhantomData<M>, device: HaDevice, infos: Vec<ImageAllocateInfo>, memory: Box<dyn HaMemoryAbstract>) -> Result<HaImageDistributor<M>, AllocatorError> {
+    pub(super) fn new(_: PhantomData<M>, device: HaDevice, infos: Vec<ImageAllocateInfo>, memory: HaImageMemory) -> Result<HaImageDistributor<M>, AllocatorError> {
 
         let mut views = vec![];
         for info in infos.iter() {

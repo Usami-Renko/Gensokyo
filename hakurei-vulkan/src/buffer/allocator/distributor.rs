@@ -4,35 +4,38 @@ use core::physical::HaPhyDevice;
 
 use buffer::{ HaBuffer, BufferBlock };
 use buffer::allocator::BufferBlockIndex;
-use buffer::allocator::infos::BufferAllocateInfos;
+use buffer::allocator::memory::BufferAllocateInfos;
 use buffer::instance::{ HaVertexBlock, HaIndexBlock, HaUniformBlock, HaImgsrcBlock };
 use buffer::repository::HaBufferRepository;
-use memory::instance::HaMemoryEntity;
+use memory::instance::HaBufferMemory;
 
 use types::vkbytes;
+use std::marker::PhantomData;
 
-pub struct HaBufferDistributor {
+pub struct HaBufferDistributor<M> {
 
-    device  : HaDevice,
-    physical: HaPhyDevice,
-    memory  : HaMemoryEntity,
+    phantom_type: PhantomData<M>,
 
-    buffers: Vec<HaBuffer>,
-    spaces : Vec<vkbytes>,
-    offsets: Vec<vkbytes>,
-    allocate_infos: BufferAllocateInfos,
+    device   : HaDevice,
+    physical : HaPhyDevice,
+    memory   : HaBufferMemory,
+
+    buffers : Vec<HaBuffer>,
+    spaces  : Vec<vkbytes>,
+    offsets : Vec<vkbytes>,
+
+    allot_infos: BufferAllocateInfos,
 }
 
-impl HaBufferDistributor {
+impl<M> HaBufferDistributor<M> {
 
-    pub(super) fn new(device: HaDevice, physical: HaPhyDevice, memory: HaMemoryEntity, buffers: Vec<HaBuffer>, spaces: Vec<vkbytes>, allo_infos: BufferAllocateInfos) -> HaBufferDistributor {
+    pub(super) fn new(phantom_type: PhantomData<M>, device: HaDevice, physical: HaPhyDevice, memory: HaBufferMemory, buffers: Vec<HaBuffer>, spaces: Vec<vkbytes>, allot_infos: BufferAllocateInfos) -> HaBufferDistributor<M> {
 
         use utils::memory::spaces_to_offsets;
         let offsets = spaces_to_offsets(&spaces);
 
         HaBufferDistributor {
-            device, physical, memory, buffers, spaces, offsets,
-            allocate_infos: allo_infos,
+            phantom_type, device, physical, memory, buffers, spaces, offsets, allot_infos,
         }
     }
 
@@ -56,9 +59,9 @@ impl HaBufferDistributor {
         HaImgsrcBlock::new(self.gen_buffer_item(&index), index.0)
     }
 
-    pub fn into_repository(self) -> HaBufferRepository {
+    pub fn into_repository(self) -> HaBufferRepository<M> {
 
-        HaBufferRepository::store(self.device, self.physical, self.buffers, self.memory, self.allocate_infos)
+        HaBufferRepository::store(self.phantom_type, self.device, self.physical, self.buffers, self.memory, self.allot_infos)
     }
 
     fn gen_buffer_item(&self, index: &BufferBlockIndex) -> BufferBlock {

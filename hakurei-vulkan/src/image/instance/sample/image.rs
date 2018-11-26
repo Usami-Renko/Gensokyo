@@ -5,9 +5,9 @@ use core::device::HaDevice;
 
 use image::view::HaImageView;
 use image::entity::ImageEntity;
-use image::traits::{ ImageCopiable, ImageCopyInfo };
+use image::traits::{ ImageInstance, ImageCopiable };
 use image::sampler::HaSampler;
-use image::traits::ImageInstance;
+use image::utils::ImageCopyInfo;
 use image::instance::sample::SampleImageInfo;
 use image::instance::ImageInstanceInfoDesc;
 use image::allocator::ImageAllocateInfo;

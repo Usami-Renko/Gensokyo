@@ -2,29 +2,26 @@
 use core::device::HaDevice;
 use core::physical::HaPhyDevice;
 
-use buffer::target::{ HaBuffer, BufferStorageType };
+use buffer::target::HaBuffer;
 use buffer::traits::BufferBlockInfo;
 use buffer::instance::BufferInstanceType;
-use buffer::BufferError;
-use memory::MemorySelector;
-use memory::MemoryDstEntity;
+use buffer::error::BufferError;
+use memory::{ MemorySelector, MemoryDstEntity };
 use memory::AllocatorError;
 
-use buffer::allocator::BufferBlockIndex;
-use buffer::allocator::{
-    distributor::HaBufferDistributor,
-    traits::BufMemAlloAbstract,
-    host::HostBufMemAllocator,
-    cached::CachedBufMemAllocator,
-    device::DeviceBufMemAllocator,
-    staging::StagingBufMemAllocator,
-};
-
+use buffer::allocator::index::BufferBlockIndex;
+use buffer::allocator::types::BufferMemoryTypeAbs;
+use buffer::allocator::memory::{ BufferAllocateInfos, BufMemAllocator };
+use buffer::allocator::distributor::HaBufferDistributor;
 
 use types::vkbytes;
 
+use std::marker::PhantomData;
 
-pub struct HaBufferAllocator {
+pub struct HaBufferAllocator<M> where M: BufferMemoryTypeAbs + Copy {
+
+    phantom_type: PhantomData<M>,
+    storage_type: M,
 
     physical: HaPhyDevice,
     device  : HaDevice,
@@ -33,25 +30,26 @@ pub struct HaBufferAllocator {
     /// The size of each buffer occupy.
     spaces  : Vec<vkbytes>,
 
-    storage_type: BufferStorageType,
-    allocator: Box<BufMemAlloAbstract>,
+    allot_infos: BufferAllocateInfos,
     memory_selector : MemorySelector,
 }
 
-impl HaBufferAllocator {
+impl<M> HaBufferAllocator<M> where M: BufferMemoryTypeAbs + Copy {
 
-    pub(crate) fn new(physical: &HaPhyDevice, device: &HaDevice, storage_type: BufferStorageType) -> HaBufferAllocator {
+    pub(crate) fn new(physical: &HaPhyDevice, device: &HaDevice, typ: M) -> HaBufferAllocator<M> {
 
         HaBufferAllocator {
+            phantom_type: PhantomData,
+            storage_type: typ,
+
             physical: physical.clone(),
             device  : device.clone(),
 
             buffers: vec![],
             spaces : vec![],
 
-            storage_type,
-            allocator: gen_allocator(storage_type),
-            memory_selector: MemorySelector::init(physical, storage_type.memory_type()),
+            allot_infos: BufferAllocateInfos::new(),
+            memory_selector: MemorySelector::init(physical, typ.memory_type()),
         }
     }
 
@@ -63,14 +61,14 @@ impl HaBufferAllocator {
         self.spaces.push(buffer_info.aligment_space);
         self.buffers.push(buffer_info.buffer);
 
-        self.allocator.add_allocate(buffer_info.aligment_space, info.into_desc());
+        self.allot_infos.push(buffer_info.aligment_space, info.into_desc());
 
         Ok(index)
     }
 
     fn gen_buffer(&mut self, info: &impl BufferBlockInfo, typ: BufferInstanceType) -> Result<BufferGenInfo, AllocatorError> {
 
-        if typ.check_storage_validity(self.storage_type) == false {
+        if typ.check_storage_validity(self.storage_type.memory_type()) == false {
             return Err(AllocatorError::UnsupportBufferUsage)
         }
 
@@ -85,45 +83,38 @@ impl HaBufferAllocator {
         Ok(info)
     }
 
-    pub fn allocate(mut self) -> Result<HaBufferDistributor, AllocatorError> {
+    pub fn allocate(mut self) -> Result<HaBufferDistributor<M>, AllocatorError> {
 
         if self.buffers.is_empty() {
             return Err(AllocatorError::Buffer(BufferError::NoBufferAttachError))
         }
 
         // allocate memory
-        self.allocator.allocate(
-            &self.device, self.spaces.iter().sum(), &self.memory_selector
+        let mut memory_allocator = BufMemAllocator::allot_memory(
+            self.storage_type, &self.device, self.allot_infos, self.spaces.iter().sum(), &self.memory_selector
         )?;
 
         let mut buffers_to_distribute = vec![];
-        {
-            let memory_allocated = self.allocator.borrow_memory()?;
 
-            // bind buffers to memory
-            let mut offset = 0;
-            for (i, buffer) in self.buffers.drain(..).enumerate() {
-                memory_allocated.bind_to_buffer(&self.device, &buffer, offset)?;
-                offset += self.spaces[i];
-                buffers_to_distribute.push(buffer);
-            }
+        // bind buffers to memory
+        let mut offset = 0;
+        for (i, buffer) in self.buffers.drain(..).enumerate() {
+
+            memory_allocator.memory.bind_to_buffer(&self.device, &buffer, offset)?;
+            offset += self.spaces[i];
+            buffers_to_distribute.push(buffer);
         }
 
-        self.allocator.memory_map_if_need(&self.device)?;
+        memory_allocator.memory_map_if_need(&self.device)?;
+
+        let (memory, allot_infos) = memory_allocator.take();
 
         let distributor = HaBufferDistributor::new(
-            self.device, self.physical,
-            self.allocator.take_memory()?,
-            buffers_to_distribute,
-            self.spaces,
-            self.allocator.take_info()
+            self.phantom_type,
+            self.device, self.physical, memory, buffers_to_distribute, self.spaces, allot_infos
         );
 
         Ok(distributor)
-    }
-
-    pub fn storage_type(&self) -> BufferStorageType {
-        self.storage_type
     }
 
     pub fn reset(&mut self) {
@@ -141,14 +132,4 @@ struct BufferGenInfo {
 
     buffer: HaBuffer,
     aligment_space: vkbytes,
-}
-
-fn gen_allocator(storage: BufferStorageType) -> Box<BufMemAlloAbstract> {
-
-    match storage {
-        | BufferStorageType::Host    => Box::new(HostBufMemAllocator::new()),
-        | BufferStorageType::Cached  => Box::new(CachedBufMemAllocator::new()),
-        | BufferStorageType::Device  => Box::new(DeviceBufMemAllocator::new()),
-        | BufferStorageType::Staging => Box::new(StagingBufMemAllocator::new()),
-    }
 }

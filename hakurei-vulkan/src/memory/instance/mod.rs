@@ -5,7 +5,8 @@ pub use self::device::HaDeviceMemory;
 pub use self::staging::HaStagingMemory;
 
 pub use self::staging::UploadStagingResource;
-pub use self::traits::{ HaMemoryEntity, HaMemoryEntityAbs, MemoryDataUploadable };
+pub use self::traits::{ HaBufferMemory, HaImageMemory };
+pub use self::traits::{ HaBufferMemoryAbs, MemoryDataUploadable };
 
 mod traits;
 mod host;

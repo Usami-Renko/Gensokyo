@@ -1,7 +1,7 @@
 
 pub use self::target::{ HaImage, ImageDescInfo , ImagePropertyInfo, ImageSpecificInfo };
 pub use self::view::{ HaImageView, ImageViewDescInfo };
-pub use self::traits::{ ImageInstance, ImageCopiable, ImageCopyInfo };
+pub use self::traits::{ ImageInstance, ImageCopiable };
 pub use self::sampler::{ HaSampler, SamplerDescInfo };
 pub use self::barrier::HaImageBarrier;
 pub use self::entity::ImageEntity;

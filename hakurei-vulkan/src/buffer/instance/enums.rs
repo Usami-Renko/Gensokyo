@@ -1,5 +1,5 @@
 
-use buffer::target::BufferStorageType;
+use memory::HaMemoryType;
 
 #[derive(Debug, Clone, Copy, Eq, PartialEq)]
 pub enum BufferInstanceType {
@@ -12,34 +12,34 @@ pub enum BufferInstanceType {
 
 impl BufferInstanceType {
 
-    pub fn check_storage_validity(&self, storage: BufferStorageType) -> bool {
-        check_buffer_usage(storage, self.clone())
+    pub fn check_storage_validity(&self, memory_type: HaMemoryType) -> bool {
+        check_buffer_usage(memory_type, self.clone())
     }
 }
 
-fn check_buffer_usage(storage: BufferStorageType, instance: BufferInstanceType) -> bool {
+fn check_buffer_usage(memory_type: HaMemoryType, instance: BufferInstanceType) -> bool {
 
-    match storage {
-        | BufferStorageType::Host => {
+    match memory_type {
+        | HaMemoryType::HostMemory => {
             [
                 BufferInstanceType::VertexBuffer,
                 BufferInstanceType::IndexBuffer,
                 BufferInstanceType::UniformBuffer,
             ].contains(&instance)
         },
-        | BufferStorageType::Cached  => {
+        | HaMemoryType::CachedMemory  => {
             [
                 BufferInstanceType::VertexBuffer,
                 BufferInstanceType::IndexBuffer,
             ].contains(&instance)
         },
-        | BufferStorageType::Device  => {
+        | HaMemoryType::DeviceMemory  => {
             [
                 BufferInstanceType::VertexBuffer,
                 BufferInstanceType::IndexBuffer,
             ].contains(&instance)
         },
-        | BufferStorageType::Staging => {
+        | HaMemoryType::StagingMemory => {
             [
                 BufferInstanceType::VertexBuffer,
                 BufferInstanceType::IndexBuffer,
