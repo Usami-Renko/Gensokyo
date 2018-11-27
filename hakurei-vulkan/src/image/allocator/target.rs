@@ -28,7 +28,7 @@ use std::marker::PhantomData;
 
 // TODO: Currently not support multi imageview for an image.
 
-pub struct HaImageAllocator<M> where M: ImageMemoryTypeAbs {
+pub struct HaImageAllocator<M> where M: ImageMemoryTypeAbs + Copy {
 
     phantom_type: PhantomData<M>,
     storage_type: M,
@@ -41,11 +41,9 @@ pub struct HaImageAllocator<M> where M: ImageMemoryTypeAbs {
     memory_selector : MemorySelector,
 }
 
-impl<M> HaImageAllocator<M> where M: ImageMemoryTypeAbs {
+impl<M> HaImageAllocator<M> where M: ImageMemoryTypeAbs + Copy {
 
-    pub(crate) fn new(physical: &HaPhyDevice, device: &HaDevice, storage_type: M) -> HaImageAllocator<M> {
-
-        let memory_selector = MemorySelector::init(physical, storage_type.memory_type());
+    pub fn new(physical: &HaPhyDevice, device: &HaDevice, storage_type: M) -> HaImageAllocator<M> {
 
         HaImageAllocator {
             phantom_type: PhantomData,
@@ -56,7 +54,7 @@ impl<M> HaImageAllocator<M> where M: ImageMemoryTypeAbs {
 
             image_infos: vec![],
 
-            memory_selector,
+            memory_selector: MemorySelector::init(physical, storage_type.memory_type()),
         }
     }
 

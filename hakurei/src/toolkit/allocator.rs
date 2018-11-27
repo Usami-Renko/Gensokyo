@@ -1,18 +1,21 @@
 
+use ash::vk;
+
 use config::resources::ResourceConfig;
 
-use vk::core::physical::HaPhyDevice;
-use vk::core::device::HaDevice;
-use vk::core::swapchain::HaSwapchain;
+use gsvk::core::physical::HaPhyDevice;
+use gsvk::core::device::HaDevice;
+use gsvk::core::swapchain::HaSwapchain;
 
-use vk::resources::buffer::BufferStorageType;
-use vk::resources::image::ImageStorageType;
-use vk::resources::descriptor::DescriptorPoolFlag;
-use vk::utils::types::vkDimension2D;
+use gsvk::buffer::allocator::HaBufferAllocator;
+use gsvk::buffer::allocator::types::BufferMemoryTypeAbs;
 
-use resources::allocator::buffer::HaBufferAllocator;
-use resources::allocator::descriptor::HaDescriptorAllocator;
-use resources::allocator::image::HaImageAllocator;
+use gsvk::image::allocator::HaImageAllocator;
+use gsvk::image::allocator::types::ImageMemoryTypeAbs;
+
+use gsvk::descriptor::allocator::HaDescriptorAllocator;
+
+use gsvk::types::vkDim2D;
 
 use assets::model::ModelGltfLoader;
 
@@ -21,13 +24,14 @@ pub struct AllocatorKit {
     physical: HaPhyDevice,
     device  : HaDevice,
 
-    dimension: vkDimension2D,
+    dimension: vkDim2D,
     config: ResourceConfig,
 }
 
 impl AllocatorKit {
 
     pub(crate) fn init(physical: &HaPhyDevice, device: &HaDevice, swapchain: &HaSwapchain, config: ResourceConfig) -> AllocatorKit {
+
         AllocatorKit {
             physical: physical.clone(),
             device  : device.clone(),
@@ -37,19 +41,19 @@ impl AllocatorKit {
         }
     }
 
-    pub fn buffer(&self, ty: BufferStorageType) -> HaBufferAllocator {
-        HaBufferAllocator::new(&self.physical, &self.device, ty)
+    pub fn buffer<B: BufferMemoryTypeAbs + Copy>(&self, typ: B) -> HaBufferAllocator<B> {
+        HaBufferAllocator::new(&self.physical, &self.device, typ)
     }
 
-    pub fn descriptor(&self, flags: &[DescriptorPoolFlag]) -> HaDescriptorAllocator {
+    pub fn descriptor(&self, flags: vk::DescriptorPoolCreateFlags) -> HaDescriptorAllocator {
         HaDescriptorAllocator::new(&self.device, flags)
     }
 
-    pub fn image(&self, ty: ImageStorageType) -> HaImageAllocator {
-        HaImageAllocator::new(&self.physical, &self.device, ty, self.config.image_load.clone())
+    pub fn image<I: ImageMemoryTypeAbs  + Copy>(&self, typ: I) -> HaImageAllocator<I> {
+        HaImageAllocator::new(&self.physical, &self.device, typ)
     }
 
-    pub fn swapchain_dimension(&self) -> vkDimension2D {
+    pub fn swapchain_dimension(&self) -> vkDim2D {
         self.dimension
     }
 

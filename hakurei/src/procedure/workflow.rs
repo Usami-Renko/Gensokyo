@@ -2,15 +2,15 @@
 use winit;
 
 use config::engine::EngineConfig;
-use vk::core::instance::HaInstance;
-use vk::core::debug::HaDebugger;
-use vk::core::physical::HaPhysicalDevice;
-use vk::core::surface::HaSurface;
-use vk::core::device::{ HaDevice, HaLogicalDevice, LogicalDeviceBuilder };
-use vk::core::swapchain::HaSwapchain;
-use vk::core::swapchain::SwapchainBuilder;
-use vk::core::swapchain::error::{ SwapchainError, SwapchainRuntimeError };
-use vk::resources::sync::{ HaFence, HaSemaphore };
+use gsvk::core::instance::HaInstance;
+use gsvk::core::debug::HaDebugger;
+use gsvk::core::physical::{ HaPhysicalDevice, PhysicalInspector };
+use gsvk::core::surface::HaSurface;
+use gsvk::core::device::{ HaDevice, HaLogicalDevice, LogicalDeviceBuilder, DeviceQueueIdentifier };
+use gsvk::core::swapchain::HaSwapchain;
+use gsvk::core::swapchain::SwapchainBuilder;
+use gsvk::core::swapchain::error::{ SwapchainError, SwapchainRuntimeError };
+use gsvk::sync::{ HaFence, HaSemaphore };
 
 use toolkit::{ AllocatorKit, PipelineKit, CommandKit };
 
@@ -66,14 +66,16 @@ impl<'win, T> ProgramEnv<T> where T: ProgramProc {
         let instance = HaInstance::new(&self.config.core.instance, &self.config.core.validation)?;
 
         let debugger = if self.config.core.validation.is_enable {
-            let debugger = HaDebugger::setup(&instance, &self.config.core.validation.flags)?;
+            let debugger = HaDebugger::setup(&instance, &self.config.core.validation)?;
             Some(debugger)
         } else {
             None
         };
 
         let surface = HaSurface::new(&instance, window)?;
-        let physical = HaPhysicalDevice::new(&instance, &surface, &config.core, &config.pipeline)?;
+
+        let physical_inspector = PhysicalInspector::new(&config.core.physical);
+        let physical = physical_inspector.inspect(&instance, &surface)?;
         // Initialize the device with default queues. (one graphics queue, one present queue, one transfer queue)
         let device = LogicalDeviceBuilder::init(&instance, &physical, &config.core.device)?
             .build()?;
@@ -120,8 +122,7 @@ impl<'win, T> ProgramEnv<T> where T: ProgramProc {
             | Ok(result) => result,
             | Err(e) =>
                 match e {
-                    | SwapchainRuntimeError::SurfaceOutOfDateError
-                    | SwapchainRuntimeError::SurfaceSubOptimalError => {
+                    | SwapchainRuntimeError::SubOptimal => {
                         return Err(ProcedureError::SwapchainRecreate)
                     },
                     | _ => return Err(ProcedureError::Swapchain(SwapchainError::Runtime(e))),
@@ -136,14 +137,14 @@ impl<'win, T> ProgramEnv<T> where T: ProgramProc {
         // see https://github.com/KhronosGroup/Vulkan-Docs/wiki/Synchronization-Examples.
         // or see https://software.intel.com/en-us/articles/api-without-secrets-introduction-to-vulkan-part-3#inpage-nav-6-3
         let present_result = resources.swapchain.present(
+            &core.device,
             &[present_available],
             image_index,
-            &core.device.graphics_queue
+            DeviceQueueIdentifier::Graphics
         );
         if let Err(e) = present_result {
             match e {
-                | SwapchainRuntimeError::SurfaceOutOfDateError
-                | SwapchainRuntimeError::SurfaceSubOptimalError => {
+                | SwapchainRuntimeError::SubOptimal => {
                     return Err(ProcedureError::SwapchainRecreate)
                 },
                 | _ => return Err(ProcedureError::Swapchain(SwapchainError::Runtime(e))),
@@ -203,8 +204,10 @@ impl HaResources {
     pub fn cleanup(&self, device: &HaDevice) {
 
         self.swapchain.cleanup(device);
-        self.image_awaits.iter().for_each(|i| i.cleanup());
-        self.sync_fences.iter().for_each(|f| f.cleanup());
+        self.image_awaits.iter()
+            .for_each(|i| i.cleanup());
+        self.sync_fences.iter()
+            .for_each(|f| f.cleanup());
     }
 
     pub fn clear(&mut self) {

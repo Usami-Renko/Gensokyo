@@ -1,9 +1,10 @@
 
 use toml;
+use ash::vk;
 
-use vk::core::swapchain::SwapchainConfig;
-use vk::core::swapchain::{ ColorSpace, PresentMode };
-use vk::utils::types::vkint;
+use gsvk::core::swapchain::SwapchainConfig;
+
+use gsvk::types::vkuint;
 
 use config::engine::ConfigMirror;
 use config::error::{ ConfigError, MappingError };
@@ -14,8 +15,8 @@ use std::time::Duration;
 #[derive(Deserialize, Default)]
 pub(crate) struct SwapchainConfigMirror {
     
-    image_count: vkint,
-    framebuffer_layers: vkint,
+    image_count: vkuint,
+    framebuffer_layers: vkuint,
     prefer_surface_format     : String,
     prefer_surface_color_space: String,
     present_mode_primary  : String,
@@ -29,7 +30,7 @@ impl ConfigMirror for SwapchainConfigMirror {
 
     fn into_config(self) -> Result<Self::ConfigType, ConfigError> {
 
-        use vk::utils::format::vk_string_to_format;
+        use gsvk::utils::format::vk_string_to_format;
 
         let config = SwapchainConfig {
             image_count: self.image_count,
@@ -86,23 +87,23 @@ impl ConfigMirror for SwapchainConfigMirror {
     }
 }
 
-fn vk_raw2colorspace(raw: &String) -> Result<ColorSpace, ConfigError> {
+fn vk_raw2colorspace(raw: &String) -> Result<vk::ColorSpaceKHR, ConfigError> {
 
     let color_space = match raw.as_str() {
-        | "SrgbNonlinear" => ColorSpace::SrgbNonlinear,
+        | "SrgbNonlinear" => vk::ColorSpaceKHR::SRGB_NONLINEAR,
         | _ => return Err(ConfigError::Mapping(MappingError::ColorspaceMappingError)),
     };
 
     Ok(color_space)
 }
 
-fn vk_raw2presentmode(raw: &String) -> Result<PresentMode, ConfigError> {
+fn vk_raw2presentmode(raw: &String) -> Result<vk::PresentModeKHR, ConfigError> {
 
     let present_mode = match raw.as_str() {
-        | "Immediate"   => PresentMode::Immediate,
-        | "Mailbox"     => PresentMode::Mailbox,
-        | "Fifo"        => PresentMode::Fifo,
-        | "FifoRelaxed" => PresentMode::FifoRelaxed,
+        | "Immediate"   => vk::PresentModeKHR::IMMEDIATE,
+        | "Mailbox"     => vk::PresentModeKHR::MAILBOX,
+        | "Fifo"        => vk::PresentModeKHR::FIFO,
+        | "FifoRelaxed" => vk::PresentModeKHR::FIFO_RELAXED,
         | _ => return Err(ConfigError::Mapping(MappingError::SwapchainPresentModeError)),
     };
 

@@ -1,18 +1,17 @@
 
 use gltf;
+use ash::vk;
 
-use vk::utils::types::{ vkint, vkformat, vkMemorySize };
-use vk::utils::format::VKFormat;
+use gsvk::types::{ vkuint, vkbytes };
 
-use vk::pipeline::shader::HaVertexInputAttribute;
-use vk::pipeline::shader::HaVertexInputBinding;
-use vk::pipeline::shader::VertexInputDescription;
-use vk::pipeline::shader::VertexInputRate;
-use vk::resources::error::AllocatorError;
+use gsvk::pipeline::shader::HaVertexInputAttribute;
+use gsvk::pipeline::shader::HaVertexInputBinding;
+use gsvk::pipeline::shader::VertexInputDescription;
+use gsvk::memory::AllocatorError;
 
-use resources::buffer::{ VertexBlockInfo, HaVertexBlock };
-use resources::buffer::{ IndexBlockInfo, HaIndexBlock };
-use resources::repository::BufferDataUploader;
+use gsvk::buffer::instance::{ VertexBlockInfo, HaVertexBlock };
+use gsvk::buffer::instance::{ IndexBlockInfo, HaIndexBlock };
+use gsvk::memory::transfer::BufferDataUploader;
 
 use assets::model::GltfRawData;
 use assets::model::{ ModelGltfLoadingError, GltfAttributeMissing };
@@ -20,7 +19,7 @@ use assets::model::{ ModelGltfLoadingError, GltfAttributeMissing };
 pub(crate) struct GltfPrimitive {
 
     vertexs: Vec<Vertex>,
-    indices: Vec<vkint>,
+    indices: Vec<vkuint>,
 }
 
 impl GltfPrimitive {
@@ -75,7 +74,7 @@ impl GltfPrimitive {
 
     #[inline]
     pub fn index_info(&self) -> IndexBlockInfo {
-        let data_size = data_size!(self.indices, vkint);
+        let data_size = data_size!(self.indices, vkuint);
         IndexBlockInfo::new(data_size)
     }
 

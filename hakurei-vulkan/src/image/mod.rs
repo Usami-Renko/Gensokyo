@@ -11,7 +11,6 @@ mod target;
 mod view;
 mod entity;
 mod enums;
-mod storage;
 mod repository;
 mod sampler;
 mod barrier;
@@ -21,3 +20,4 @@ mod error;
 
 pub mod instance;
 pub mod allocator;
+pub mod storage;

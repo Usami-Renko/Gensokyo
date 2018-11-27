@@ -3,12 +3,12 @@ use winit;
 
 use config::error::ConfigError;
 
-use vk::core::error::{ InstanceError, ValidationError, PhysicalDeviceError, SurfaceError, LogicalDeviceError };
-use vk::core::swapchain::error::{ SwapchainError, SwapchainInitError, SwapchainRuntimeError };
-use vk::pipeline::error::PipelineError;
-use vk::resources::error::CommandError;
-use vk::resources::error::AllocatorError;
-use vk::resources::error::SyncError;
+use gsvk::core::error::{ InstanceError, ValidationError, PhysicalDeviceError, SurfaceError, LogicalDeviceError };
+use gsvk::core::swapchain::error::{ SwapchainError, SwapchainInitError, SwapchainRuntimeError };
+use gsvk::pipeline::error::PipelineError;
+use gsvk::command::CommandError;
+use gsvk::memory::AllocatorError;
+use gsvk::sync::SyncError;
 use assets::model::ModelLoadingErr;
 
 use std::fmt;

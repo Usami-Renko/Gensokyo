@@ -1,37 +1,40 @@
 
+use ash::vk;
 use gltf;
 
-use vk::utils::types::vkint;
-use vk::resources::buffer::BufferStorageType;
-use vk::resources::command::{ HaCommandRecorder, CmdBufferBindingInfo };
-use vk::pipeline::shader::{ VertexInputDescription, HaVertexInputAttribute, VertexInputRate, HaVertexInputBinding };
-use vk::utils::types::vkformat;
-use vk::utils::format::VKFormat;
-use vk::resources::error::AllocatorError;
+use gsvk::buffer::HaBufferRepository;
+use gsvk::buffer::instance::{ HaVertexBlock, HaIndexBlock };
+use gsvk::buffer::allocator::types::BufferMemoryTypeAbs;
+
+use gsvk::pipeline::shader::{ VertexInputDescription, HaVertexInputAttribute, HaVertexInputBinding };
+use gsvk::command::HaCommandRecorder;
+use gsvk::memory::AllocatorError;
+
+use gsvk::types::vkuint;
 
 use assets::model::{ GltfResources, GltfRawData };
 use assets::model::GltfScene;
 use assets::model::GltfHierarchyAbstract;
 use assets::model::{ ModelLoadingErr, ModelGltfLoadingError };
 
-use resources::buffer::{ HaIndexBlock, HaVertexBlock };
-use resources::repository::HaBufferRepository;
 use toolkit::AllocatorKit;
 
 use std::path::Path;
 
 #[derive(Default)]
-pub struct GltfEntity {
+pub struct GltfEntity<M> where M: BufferMemoryTypeAbs + Copy {
+
+    phantom_type: M,
 
     _scenes: Vec<GltfScene>,
     resources: GltfResources,
 
-    allo_res: Option<AllocateResource>,
+    allo_res: Option<AllocateResource<M>>,
 }
 
-impl GltfEntity {
+impl<M> GltfEntity<M> where M: BufferMemoryTypeAbs + Copy {
 
-    pub(crate) fn load(path: impl AsRef<Path>) -> Result<GltfEntity, ModelLoadingErr> {
+    pub(crate) fn load(path: impl AsRef<Path>, typ: M) -> Result<GltfEntity<M>, ModelLoadingErr> {
 
         let mut resources = GltfResources::default();
 
@@ -49,15 +52,16 @@ impl GltfEntity {
         }
 
         let entity = GltfEntity {
+            phantom_type: typ,
             _scenes: scenes, resources, allo_res: None,
         };
 
         Ok(entity)
     }
 
-    pub fn config_buffer(&mut self, kit: &AllocatorKit, storage: BufferStorageType) -> Result<(), AllocatorError> {
+    pub fn config_buffer(&mut self, kit: &AllocatorKit) -> Result<(), AllocatorError> {
 
-        let mut allocator = kit.buffer(storage);
+        let mut allocator = kit.buffer(self.phantom_type);
 
         let mut vertex_indices = vec![];
         let mut index_indices  = vec![];
@@ -135,9 +139,9 @@ impl GltfEntity {
             let index_buffer = &res.indices[i];
 
             recorder
-                .bind_vertex_buffers(0,&[CmdBufferBindingInfo { block: vertex_buffer, sub_block_index: None }])
-                .bind_index_buffer(CmdBufferBindingInfo { block: index_buffer, sub_block_index: None })
-                .draw_indexed(res.index_counts[i] as vkint, 1, 0, 0, 0);
+                .bind_vertex_buffers(0, &[vertex_buffer])
+                .bind_index_buffer(index_buffer)
+                .draw_indexed(res.index_counts[i] as vkuint, 1, 0, 0, 0);
         }
     }
 
@@ -153,12 +157,12 @@ impl GltfEntity {
     }
 }
 
-struct AllocateResource {
+struct AllocateResource<M> {
 
     vertexs: Vec<HaVertexBlock>,
     indices: Vec<HaIndexBlock>,
     index_counts: Vec<usize>,
-    repository: HaBufferRepository,
+    repository: HaBufferRepository<M>,
 }
 
 

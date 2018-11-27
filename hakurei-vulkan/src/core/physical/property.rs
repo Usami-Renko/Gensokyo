@@ -18,7 +18,7 @@ pub(crate) struct PhysicalProperties {
 #[derive(Debug, Clone)]
 pub struct PhysicalPropertiesConfig {
 
-    require_device_types: Vec<vk::PhysicalDeviceType>,
+    pub require_device_types: Vec<vk::PhysicalDeviceType>,
 }
 
 impl PhysicalProperties {

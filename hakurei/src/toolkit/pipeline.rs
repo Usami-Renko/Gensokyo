@@ -1,11 +1,10 @@
 
-use vk::core::device::HaDevice;
+use gsvk::core::device::HaDevice;
 
-use vk::pipeline::graphics::GraphicsPipelineBuilder;
-use vk::pipeline::pass::RenderPassBuilder;
-use vk::pipeline::stages::PipelineType;
+use gsvk::pipeline::graphics::GraphicsPipelineBuilder;
+use gsvk::pipeline::pass::RenderPassBuilder;
 
-use vk::pipeline::error::PipelineError;
+use gsvk::pipeline::error::PipelineError;
 
 pub struct PipelineKit {
 
@@ -25,11 +24,8 @@ impl PipelineKit {
         RenderPassBuilder::new(&self.device)
     }
 
-    pub fn pipeline_builder(&self, typ: PipelineType) -> Result<GraphicsPipelineBuilder, PipelineError> {
+    pub fn pipeline_graphics_builder(&self) -> Result<GraphicsPipelineBuilder, PipelineError> {
 
-        match typ {
-            | PipelineType::Graphics => GraphicsPipelineBuilder::new(&self.device),
-            | PipelineType::Compute  => unimplemented!()
-        }
+        GraphicsPipelineBuilder::new(&self.device)
     }
 }

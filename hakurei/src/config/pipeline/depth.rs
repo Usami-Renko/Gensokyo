@@ -1,9 +1,8 @@
 
 use toml;
+use ash::vk;
 
-use vk::resources::image::ImageTiling;
-use vk::pipeline::config::DepthStencilConfig;
-use vk::utils::types::vkformat;
+use gsvk::pipeline::config::DepthStencilConfig;
 
 use config::engine::ConfigMirror;
 use config::error::{ ConfigError, MappingError };
@@ -22,7 +21,7 @@ impl ConfigMirror for DepthStencilConfigMirror {
         let mut prefer_depth_stencil_formats = vec![];
         for raw_format in self.prefer_depth_stencil_formats.iter() {
 
-            use vk::utils::format::vk_string_to_format;
+            use gsvk::utils::format::vk_string_to_format;
             prefer_depth_stencil_formats.push(vk_string_to_format(raw_format));
         }
 
@@ -59,11 +58,11 @@ impl ConfigMirror for DepthStencilConfigMirror {
     }
 }
 
-fn vk_raw2image_tiling(raw: &String) -> Result<ImageTiling, ConfigError> {
+fn vk_raw2image_tiling(raw: &String) -> Result<vk::ImageTiling, ConfigError> {
 
     let tiling = match raw.as_str() {
-        | "Optimal" => ImageTiling::Optimal,
-        | "Linear"  => ImageTiling::Linear,
+        | "Optimal" => vk::ImageTiling::OPTIMAL,
+        | "Linear"  => vk::ImageTiling::LINEAR,
         | _ => return Err(ConfigError::Mapping(MappingError::ImgTilingMappingError)),
     };
 

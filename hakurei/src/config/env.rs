@@ -1,5 +1,5 @@
 
-use vk::utils::types::vkDimension2D;
+use gsvk::types::vkDim2D;
 
 pub struct HaEnv {
 
@@ -9,5 +9,5 @@ pub struct HaEnv {
 pub struct EnvWindow {
 
     pub title: String,
-    pub dimension: vkDimension2D,
+    pub dimension: vkDim2D,
 }

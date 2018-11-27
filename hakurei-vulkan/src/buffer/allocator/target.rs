@@ -31,16 +31,16 @@ pub struct HaBufferAllocator<M> where M: BufferMemoryTypeAbs + Copy {
     spaces  : Vec<vkbytes>,
 
     allot_infos: BufferAllocateInfos,
-    memory_selector : MemorySelector,
+    memory_selector: MemorySelector,
 }
 
 impl<M> HaBufferAllocator<M> where M: BufferMemoryTypeAbs + Copy {
 
-    pub(crate) fn new(physical: &HaPhyDevice, device: &HaDevice, typ: M) -> HaBufferAllocator<M> {
+    pub fn new(physical: &HaPhyDevice, device: &HaDevice, storage_type: M) -> HaBufferAllocator<M> {
 
         HaBufferAllocator {
             phantom_type: PhantomData,
-            storage_type: typ,
+            storage_type,
 
             physical: physical.clone(),
             device  : device.clone(),
@@ -49,24 +49,25 @@ impl<M> HaBufferAllocator<M> where M: BufferMemoryTypeAbs + Copy {
             spaces : vec![],
 
             allot_infos: BufferAllocateInfos::new(),
-            memory_selector: MemorySelector::init(physical, typ.memory_type()),
+            memory_selector: MemorySelector::init(physical, storage_type.memory_type()),
         }
     }
 
     pub fn append_buffer(&mut self, info: impl BufferBlockInfo) -> Result<BufferBlockIndex, AllocatorError> {
 
-        let buffer_info = self.gen_buffer(&info, info.typ())?;
+        let buffer = self.gen_buffer(&info, info.typ())?;
+        let aligment_space = buffer.aligment_size();
+
         let index = BufferBlockIndex(self.buffers.len());
 
-        self.spaces.push(buffer_info.aligment_space);
-        self.buffers.push(buffer_info.buffer);
-
-        self.allot_infos.push(buffer_info.aligment_space, info.into_desc());
+        self.spaces.push(aligment_space);
+        self.buffers.push(buffer);
+        self.allot_infos.push(aligment_space, info.into_desc());
 
         Ok(index)
     }
 
-    fn gen_buffer(&mut self, info: &impl BufferBlockInfo, typ: BufferInstanceType) -> Result<BufferGenInfo, AllocatorError> {
+    fn gen_buffer(&mut self, info: &impl BufferBlockInfo, typ: BufferInstanceType) -> Result<HaBuffer, AllocatorError> {
 
         if typ.check_storage_validity(self.storage_type.memory_type()) == false {
             return Err(AllocatorError::UnsupportBufferUsage)
@@ -75,12 +76,7 @@ impl<M> HaBufferAllocator<M> where M: BufferMemoryTypeAbs + Copy {
         let buffer = info.as_desc_ref().build(&self.device, self.storage_type, None)?;
         self.memory_selector.try(&buffer)?;
 
-        let aligment_space = buffer.aligment_size();
-
-        let info = BufferGenInfo {
-            buffer, aligment_space,
-        };
-        Ok(info)
+        Ok(buffer)
     }
 
     pub fn allocate(mut self) -> Result<HaBufferDistributor<M>, AllocatorError> {
@@ -126,10 +122,4 @@ impl<M> HaBufferAllocator<M> where M: BufferMemoryTypeAbs + Copy {
         self.spaces.clear();
         self.memory_selector.reset();
     }
-}
-
-struct BufferGenInfo {
-
-    buffer: HaBuffer,
-    aligment_space: vkbytes,
 }

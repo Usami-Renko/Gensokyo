@@ -10,7 +10,7 @@ use procedure::workflow::{ CoreInfrastructure, HaResources, ProgramProc };
 use procedure::error::{ RuntimeError, ProcedureError };
 
 use utils::fps::HaFpsTimer;
-use vk::utils::types::vkDimension2D;
+use gsvk::types::vkDim2D;
 
 use input::{ ActionNerve, SceneReaction };
 
@@ -65,7 +65,7 @@ impl<T> ProgramEnv<T> where T: ProgramProc {
                         // update current window size.
                         // TODO: Handle unwrap().
                         let window_size = window.get_inner_size().unwrap();
-                        let dimension = vkDimension2D {
+                        let dimension = vkDim2D {
                             width : window_size.width  as u32,
                             height: window_size.height as u32,
                         };

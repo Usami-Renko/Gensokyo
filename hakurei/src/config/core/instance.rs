@@ -1,6 +1,5 @@
 
-use vk::core::instance::InstanceConfig;
-use vk::utils::types::vkint;
+use gsvk::core::instance::InstanceConfig;
 
 use config::engine::ConfigMirror;
 use config::error::ConfigError;

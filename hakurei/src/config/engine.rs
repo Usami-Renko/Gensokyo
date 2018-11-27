@@ -1,8 +1,8 @@
 
 use toml;
 
-use vk::core::config::CoreConfig;
-use vk::pipeline::config::PipelineConfig;
+use gsvk::core::config::CoreConfig;
+use gsvk::pipeline::config::PipelineConfig;
 
 use config::manifest;
 use config::core::CoreConfigMirror;

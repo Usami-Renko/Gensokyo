@@ -43,11 +43,10 @@ impl HaMemoryAbstract for HaHostMemory {
     fn allocate(device: &HaDevice, size: vkbytes, selector: &MemorySelector) -> Result<HaHostMemory, MemoryError> {
 
         let target = HaMemory::allocate(device, size, selector)?;
-        let memory_boundary = target.size;
+        let map_status = MemoryMapStatus::from_unmap(target.size);
 
         let memory = HaHostMemory {
-            target,
-            map_status: MemoryMapStatus::from_unmap(memory_boundary),
+            target, map_status,
         };
         Ok(memory)
     }

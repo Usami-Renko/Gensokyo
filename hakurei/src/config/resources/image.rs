@@ -1,9 +1,8 @@
 
 use toml;
+use ash::vk;
 
-use vk::utils::types::vkformat;
-use vk::utils::format::VKFormat;
-use resources::image::io::ImageLoadConfig;
+use assets::io::ImageLoadConfig;
 
 use config::engine::ConfigMirror;
 use config::error::ConfigError;
@@ -28,7 +27,7 @@ impl ConfigMirror for ImageLoadConfigMirror {
             byte_per_pixel : self.byte_per_pixel,
             force_rgba     : self.force_rgba,
             // TODO: Reset this member from tom setting.
-            img_format     : VKFormat::R8g8b8a8Unorm,
+            img_format     : vk::Format::R8G8B8A8_UNORM,
         };
 
         Ok(config)

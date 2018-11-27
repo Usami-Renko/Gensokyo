@@ -1,11 +1,11 @@
 
 use toml;
+use ash::vk;
 
 use config::engine::ConfigMirror;
 use config::error::{ ConfigError, MappingError };
 
-use vk::core::debug::ValidationConfig;
-use vk::core::debug::DebugReportFlag;
+use gsvk::core::debug::ValidationConfig;
 
 #[derive(Deserialize, Default)]
 pub(crate) struct ValidationConfigMirror {
@@ -19,9 +19,9 @@ impl ConfigMirror for ValidationConfigMirror {
 
     fn into_config(self) -> Result<Self::ConfigType, ConfigError> {
 
-        let mut flags = vec![];
+        let mut flags = vk::DebugReportFlagsEXT::empty();
         for raw_flag in self.flags.iter() {
-            flags.push(vk_raw2debug_reqport_flag(raw_flag)?);
+            flags |= vk_raw2debug_reqport_flag(raw_flag)?;
         }
 
         let config = ValidationConfig {
@@ -73,14 +73,14 @@ impl ConfigMirror for ValidationConfigMirror {
     }
 }
 
-fn vk_raw2debug_reqport_flag(raw: &String) -> Result<DebugReportFlag, ConfigError> {
+fn vk_raw2debug_reqport_flag(raw: &String) -> Result<vk::DebugReportFlagsEXT, ConfigError> {
 
     let flag = match raw.as_str() {
-        | "Error"              => DebugReportFlag::ErrorBit,
-        | "Warning"            => DebugReportFlag::WarningBit,
-        | "PerformanceWarning" => DebugReportFlag::PerformanceWarningBit,
-        | "Debug"              => DebugReportFlag::DebugBit,
-        | "Information"        => DebugReportFlag::InformationBit,
+        | "Error"              => vk::DebugReportFlagsEXT::ERROR,
+        | "Warning"            => vk::DebugReportFlagsEXT::WARNING,
+        | "PerformanceWarning" => vk::DebugReportFlagsEXT::PERFORMANCE_WARNING,
+        | "Debug"              => vk::DebugReportFlagsEXT::DEBUG,
+        | "Information"        => vk::DebugReportFlagsEXT::INFORMATION,
         | _ => return Err(ConfigError::Mapping(MappingError::DebugReportError)),
     };
 

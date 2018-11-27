@@ -20,13 +20,15 @@ pub(super) fn manifest_toml() -> toml::Value {
         flags  = ["Error", "Warning", "PerformanceWarning"]
 
         [core.device]
-        types      = ["CPU", "IntegratedGPU", "DiscreteGPU"]
-        features   = []
-        extensions = ["swapchain"]
-        queue_ops  = []
         queue_request_strategy = "SingleFamilySingleQueue"
         transfer_time_out = "Infinte"
         transfer_duration = 1000
+
+        [core.physical]
+        device_types       = ["CPU", "IntegratedGPU", "DiscreteGPU"]
+        features           = []
+        extensions         = ["swapchain"]
+        queue_capabilities = []
 
         [core.swapchain]
         image_count = 2

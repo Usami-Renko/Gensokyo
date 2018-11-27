@@ -1,7 +1,7 @@
 
 use toml;
 
-use vk::pipeline::config::{ PipelineConfig, DepthStencilConfig };
+use gsvk::pipeline::config::PipelineConfig;
 
 use config::engine::ConfigMirror;
 use config::pipeline::DepthStencilConfigMirror;

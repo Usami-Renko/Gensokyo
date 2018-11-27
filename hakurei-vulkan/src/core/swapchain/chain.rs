@@ -2,8 +2,8 @@
 use ash;
 use ash::vk;
 
-use core::device::HaDevice;
-use core::device::queue::{ HaGraphicsQueue, HaQueueAbstract };
+use core::device::{ HaDevice, DeviceQueueIdentifier };
+use core::device::queue::HaQueueAbstract;
 use core::swapchain::error::SwapchainRuntimeError;
 
 use image::{ HaImage, HaImageView };
@@ -82,7 +82,7 @@ impl HaSwapchain {
     /// Generally it's a `vk::Queue` that is support `vk::QUEUE_GRAPHICS_BIT`.
     ///
     /// `image_index` is the index of swapchain’s presentable images.
-    pub fn present(&self, wait_semaphores: &[&HaSemaphore], image_index: vkuint, queue: &HaGraphicsQueue)
+    pub fn present(&self, device: &HaDevice, wait_semaphores: &[&HaSemaphore], image_index: vkuint, queue: DeviceQueueIdentifier)
         -> Result<(), SwapchainRuntimeError> {
 
         let semaphores: Vec<vk::Semaphore> = collect_handle!(wait_semaphores);
@@ -101,7 +101,7 @@ impl HaSwapchain {
         };
 
         let is_sub_optimal = unsafe {
-            self.loader.queue_present_khr(queue.queue().handle, &present_info)
+            self.loader.queue_present_khr(device.queue_handle_by_identifier(queue).handle, &present_info)
                 .or(Err(SwapchainRuntimeError::Unknown))?
         };
 

@@ -27,7 +27,7 @@ pub struct HaDebugger {
 impl HaDebugger {
 
     /// Initialize debug extension loader and `vk::DebugReport` object.
-    pub fn setup(instance: &HaInstance, flags: vk::DebugReportFlagsEXT) -> Result<HaDebugger, ValidationError> {
+    pub fn setup(instance: &HaInstance, config: &ValidationConfig) -> Result<HaDebugger, ValidationError> {
 
         // load the debug extension
         let loader = DebugReport::new(&instance.entry, &instance.handle);
@@ -37,8 +37,8 @@ impl HaDebugger {
             s_type      : vk::StructureType::DEBUG_REPORT_CALLBACK_CREATE_INFO_EXT,
             p_next      : ptr::null(),
             // Enum DebugReportFlags enumerate all available flags.
-            flags,
-            pfn_callback: Some(vulkan_debug_report_callback),
+            flags       : config.flags,
+            pfn_callback: if config.is_enable { Some(vulkan_debug_report_callback) } else { None },
             p_user_data : ptr::null_mut(),
         };
 

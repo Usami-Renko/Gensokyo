@@ -6,8 +6,9 @@ authors = ["usami-renko <usami-ssc@protonmail.com>"]
 description = "Basic examples of hakurei Engine."
 
 [dependencies]
-hakurei = { path = "../../hakurei" }
+hakurei-vulkan = { path = "../../hakurei-vulkan" }
 hakurei-macros = { path = "../../hakurei-macros" }
+hakurei = { path = "../../hakurei" }
 cgmath = "0.16.1"
 
 [[bin]]

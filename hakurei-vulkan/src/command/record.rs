@@ -5,13 +5,13 @@ use ash::version::DeviceV1_0;
 use core::device::HaDevice;
 
 use command::buffer::{ HaCommandBuffer, CmdBufferUsage };
-use command::infos::CmdBufferBindingInfo;
 use command::infos::{ CmdViewportInfo, CmdScissorInfo, CmdDepthBiasInfo, CmdDepthBoundInfo };
 use command::traits::ToDescriptorSetEntity;
 use command::traits::IntoVKBarrier;
 use command::error::CommandError;
-use image::HaImageBarrier;
 
+use buffer::BufferInstance;
+use image::HaImageBarrier;
 use pipeline::graphics::HaGraphicsPipeline;
 
 use types::{ vkuint, vksint, vkfloat };
@@ -197,43 +197,33 @@ impl HaCommandRecorder {
         self
     }
 
-    pub fn bind_vertex_buffers(&self, _first_binding: vkuint, _infos: &[CmdBufferBindingInfo]) -> &HaCommandRecorder {
+    pub fn bind_vertex_buffers(&self, first_binding: vkuint, instances: &[&impl BufferInstance]) -> &HaCommandRecorder {
 
-//        let mut handles = vec![];
-//        let mut offsets  = vec![];
-//
-//        for info in infos.into_iter() {
-//
-//            handles.push(info.block.handle());
-//
-//            let starting_offset = info.sub_block_index
-//                .map(|i| info.block.offset(i))
-//                .unwrap_or(0);
-//            offsets.push(starting_offset);
-//        }
-//
-//        unsafe {
-//            self.device.handle.cmd_bind_vertex_buffers(self.handle, first_binding, &handles, &offsets)
-//        };
-//        self
+        let mut handles = vec![];
+        let mut offsets  = vec![];
 
-        unimplemented!()
+        for instance in instances.into_iter() {
+
+            let block = instance.as_block_ref();
+            handles.push(block.handle);
+            offsets.push(block.memory_offset);
+        }
+
+        unsafe {
+            self.device.handle.cmd_bind_vertex_buffers(self.handle, first_binding, &handles, &offsets)
+        };
+        self
     }
 
-    pub fn bind_index_buffer(&self, _info: CmdBufferBindingInfo) -> &HaCommandRecorder {
+    pub fn bind_index_buffer(&self, instance: &impl BufferInstance) -> &HaCommandRecorder {
 
-//        let item = info.block.item();
-//        let starting_offset = info.sub_block_index
-//            .map(|i| info.block.offset(i))
-//            .unwrap_or(0);
-//
-//        unsafe {
-//            // TODO: Add configuration for IndexType.
-//            self.device.handle.cmd_bind_index_buffer(self.handle, item.handle, starting_offset, vk::IndexType::UINT32)
-//        };
-//        self
+        let block = instance.as_block_ref();
 
-        unimplemented!()
+        unsafe {
+            // TODO: Add configuration for IndexType.
+            self.device.handle.cmd_bind_index_buffer(self.handle, block.handle, block.memory_offset, vk::IndexType::UINT32)
+        };
+        self
     }
 
     pub fn bind_descriptor_sets(&self, pipeline: &HaGraphicsPipeline, first_set: vkuint, sets: &[&impl ToDescriptorSetEntity]) -> &HaCommandRecorder {

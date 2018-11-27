@@ -1,6 +1,7 @@
 
 use std::time::Duration;
-use vk::utils::types::vklint;
+
+use gsvk::types::vklint;
 
 #[derive(Debug, Copy, Clone)]
 pub enum TimePeriod {

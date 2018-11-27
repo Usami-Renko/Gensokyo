@@ -20,7 +20,7 @@ pub(crate) struct PhysicalExtension {
 #[derive(Debug, Clone)]
 pub struct PhysicalExtensionConfig {
 
-    require_extensions: Vec<DeviceExtensionType>,
+    pub require_extensions: Vec<DeviceExtensionType>,
 }
 
 impl PhysicalExtension {

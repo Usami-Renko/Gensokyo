@@ -1,7 +1,7 @@
 
 use toml;
 
-use resources::image::io::ImageLoadConfig;
+use assets::io::ImageLoadConfig;
 
 use config::engine::ConfigMirror;
 use config::resources::ImageLoadConfigMirror;

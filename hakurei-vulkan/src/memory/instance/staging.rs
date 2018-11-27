@@ -46,11 +46,10 @@ impl HaMemoryAbstract for HaStagingMemory {
     fn allocate(device: &HaDevice, size: vkbytes, selector: &MemorySelector) -> Result<HaStagingMemory, MemoryError> {
 
         let target = HaMemory::allocate(device, size, selector)?;
-        let memory_boundary = target.size;
+        let map_status = MemoryMapStatus::from_unmap(target.size);
 
         let memory = HaStagingMemory {
-            target,
-            map_status: MemoryMapStatus::from_unmap(memory_boundary),
+            target, map_status,
         };
         Ok(memory)
     }
@@ -198,8 +197,7 @@ impl UploadStagingResource {
             src_memory.prepare_data_transfer(physical, device, &None)?;
 
             let resource = UploadStagingResource {
-                buffers,
-                src_memory,
+                buffers, src_memory,
                 src_blocks: vec![],
                 dst_blocks: vec![],
             };
@@ -213,23 +211,21 @@ impl UploadStagingResource {
 
     fn append_dst_block(&mut self, dst: &BufferBlock) -> Result<(MemoryWritePtr, MemoryRange), MemoryError> {
 
-//        let block = dst.clone();
-//
-//        let src_item = BufferItem {
-//            handle: self.buffers[dst.buffer_index].handle,
-//            size: dst.size,
-//            memory_offset: dst.memory_offset,
-//        };
-//
-//        // get memory wirte pointer of staging buffer.
-//        let (writer, range) = self.src_memory.map_memory_ptr(&mut None, &src_item, dst_item.memory_offset)?;
-//
-//        self.src_items.push(src_item);
-//        self.dst_items.push(dst_item);
-//
-//        Ok((writer, range))
+        let dst_block = dst.clone();
 
-        unimplemented!()
+        let src_block = BufferBlock {
+            handle: self.buffers[dst.buffer_index].handle,
+            size: dst.size,
+            memory_offset: dst.memory_offset,
+        };
+
+        // get memory wirte pointer of staging buffer.
+        let (writer, range) = self.src_memory.map_memory_ptr(&mut None, &src_block, dst_block.memory_offset)?;
+
+        self.src_blocks.push(src_block);
+        self.dst_blocks.push(dst_block);
+
+        Ok((writer, range))
     }
 
     pub fn finish_src_transfer(&mut self, device: &HaDevice, ranges_to_flush: &Vec<MemoryRange>) -> Result<(), MemoryError> {

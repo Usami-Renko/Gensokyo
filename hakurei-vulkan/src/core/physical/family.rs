@@ -38,7 +38,7 @@ pub(crate) struct PhysicalQueueFamilies {
 #[derive(Debug, Clone)]
 pub struct PhysicalQueueFamilyConfig {
 
-    require_capabilities: Vec<vk::QueueFlags>,
+    pub require_capabilities: Vec<vk::QueueFlags>,
 }
 
 impl PhysicalQueueFamilies {

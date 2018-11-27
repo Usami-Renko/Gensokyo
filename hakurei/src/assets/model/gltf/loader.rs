@@ -2,6 +2,8 @@
 use assets::model::GltfEntity;
 use assets::model::ModelLoadingErr;
 
+use gsvk::buffer::allocator::types::BufferMemoryTypeAbs;
+
 use std::path::Path;
 
 // An gltf model loader.
@@ -13,8 +15,8 @@ impl ModelGltfLoader {
         ModelGltfLoader {}
     }
 
-    pub fn load_model(&self, path: impl AsRef<Path>) -> Result<GltfEntity, ModelLoadingErr> {
+    pub fn load_model<M: BufferMemoryTypeAbs + Copy>(&self, path: impl AsRef<Path>, typ: M) -> Result<GltfEntity<M>, ModelLoadingErr> {
 
-        GltfEntity::load(path)
+        GltfEntity::load(path, typ)
     }
 }

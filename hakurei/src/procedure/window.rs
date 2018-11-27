@@ -4,11 +4,11 @@ use winit;
 use config::window::WindowConfig;
 use config::env::{ HaEnv, EnvWindow };
 
-use vk::utils::types::vkDimension2D;
+use gsvk::types::vkDim2D;
 
 pub(crate) struct WindowInfo {
 
-    window_size : vkDimension2D,
+    window_size : vkDim2D,
     window_title: String,
 
     config: WindowConfig,
@@ -26,7 +26,7 @@ impl WindowInfo {
         }
     }
 
-    pub fn reset_size(&mut self, dimension: vkDimension2D) {
+    pub fn reset_size(&mut self, dimension: vkDim2D) {
         self.window_size = dimension;
     }
 
@@ -47,8 +47,8 @@ impl WindowInfo {
         };
 
         builder = match self.config.mode.as_str() {
-            | "normal" => builder,
-            | "maximized" => builder.with_maximized(true),
+            | "normal"     => builder,
+            | "maximized"  => builder.with_maximized(true),
             | "fullscreen" => {
                 let primary_monitor = event_loop.get_primary_monitor();
                 builder.with_fullscreen(Some(primary_monitor))

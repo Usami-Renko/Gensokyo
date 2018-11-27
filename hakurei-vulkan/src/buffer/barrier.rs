@@ -3,6 +3,7 @@ use ash::vk;
 
 use command::IntoVKBarrier;
 
+#[allow(dead_code)]
 struct HaBufferBarrier {
 
 }

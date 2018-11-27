@@ -40,8 +40,8 @@ impl BufferBlockInfo for VertexBlockInfo {
 #[derive(Default)]
 pub struct HaVertexBlock {
 
-    repository_index: usize,
     block: BufferBlock,
+    repository_index: usize,
 }
 
 impl HaVertexBlock {

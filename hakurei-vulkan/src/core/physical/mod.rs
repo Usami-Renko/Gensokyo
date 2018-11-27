@@ -6,6 +6,7 @@ pub use self::enums::DeviceExtensionType;
 pub use self::target::HaPhysicalDevice;
 pub use self::inspector::PhysicalInspector;
 
+pub use self::config::PhysicalConfig;
 pub use self::features::PhysicalFeatureConfig;
 pub use self::property::PhysicalPropertiesConfig;
 pub use self::family::PhysicalQueueFamilyConfig;

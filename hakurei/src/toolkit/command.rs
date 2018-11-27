@@ -1,10 +1,12 @@
 
-use vk::core::device::HaDevice;
-use vk::core::device::DeviceQueueIdentifier;
+use ash::vk;
 
-use vk::resources::command::HaCommandPool;
-use vk::resources::command::{ HaCommandBuffer, HaCommandRecorder };
-use vk::resources::error::CommandError;
+use gsvk::core::device::HaDevice;
+use gsvk::core::device::DeviceQueueIdentifier;
+
+use gsvk::command::HaCommandPool;
+use gsvk::command::{ HaCommandBuffer, HaCommandRecorder };
+use gsvk::command::CommandError;
 
 pub struct CommandKit {
 
@@ -21,9 +23,9 @@ impl CommandKit {
     }
 
     // FIXME: Currently not support any commmand pool flag.
-    pub fn pool(&self, queue: DeviceQueueIdentifier) -> Result<HaCommandPool, CommandError> {
+    pub fn pool(&self, queue: DeviceQueueIdentifier, flags: vk::CommandPoolCreateFlags) -> Result<HaCommandPool, CommandError> {
 
-        HaCommandPool::setup(&self.device, queue, &[])
+        HaCommandPool::setup(&self.device, queue, flags)
     }
 
     pub fn recorder(&self, command: HaCommandBuffer) -> HaCommandRecorder {

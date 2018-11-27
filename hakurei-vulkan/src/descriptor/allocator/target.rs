@@ -24,7 +24,7 @@ pub struct HaDescriptorAllocator {
 
 impl HaDescriptorAllocator {
 
-    pub(crate) fn new(device: &HaDevice, flags: vk::DescriptorPoolCreateFlags) -> HaDescriptorAllocator {
+    pub fn new(device: &HaDevice, flags: vk::DescriptorPoolCreateFlags) -> HaDescriptorAllocator {
 
         HaDescriptorAllocator {
             device   : device.clone(),

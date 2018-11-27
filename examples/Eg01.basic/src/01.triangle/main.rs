@@ -1,14 +1,11 @@
 
 #[macro_use]
 extern crate hakurei_macros;
+extern crate hakurei_vulkan;
 extern crate hakurei;
 
 use hakurei::prelude::*;
-use hakurei::prelude::queue::*;
-use hakurei::prelude::pipeline::*;
-use hakurei::prelude::resources::*;
-use hakurei::prelude::sync::*;
-use hakurei::prelude::input::*;
+use hakurei_vulkan::buffer::HaBufferRepository;
 
 use std::path::{ Path, PathBuf };
 
