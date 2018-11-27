@@ -41,21 +41,33 @@ impl PhysicalInspector {
 
         for physical_device in alternative_devices.into_iter() {
 
-            let extensions = PhysicalExtension::query(instance, physical_device)?;
-            let is_extension_support = extensions.inspect(&self.config.extension);
-            if is_extension_support == false { continue }
+            let mut extensions = PhysicalExtension::query(instance, physical_device)?;
+            if extensions.inspect(&self.config.extension) {
+                extensions.set(&self.config.extension);
+            } else {
+                continue
+            }
 
-            let families = PhysicalQueueFamilies::query(instance, physical_device, surface)?;
-            let is_family_support = families.inspect(&self.config.queue_family);
-            if is_family_support == false { continue }
+            let mut families = PhysicalQueueFamilies::query(instance, physical_device, surface)?;
+            if families.inspect(&self.config.queue_family) {
+                families.set(&self.config.queue_family)
+            } else {
+                continue
+            }
 
-            let features = PhyscialFeatures::query(instance, physical_device);
-            let is_features_support = features.inspect(&self.config.features);
-            if is_features_support == false { continue }
+            let mut features = PhyscialFeatures::query(instance, physical_device);
+            if features.inspect(&self.config.features) {
+                features.set(&self.config.features)
+            } else {
+                continue
+            }
 
-            let properties = PhysicalProperties::query(instance, physical_device);
-            let is_properties_support = properties.inspect(&self.config.properties);
-            if is_properties_support == false { continue }
+            let mut properties = PhysicalProperties::query(instance, physical_device);
+            if properties.inspect(&self.config.properties) {
+                properties.set(&self.config.properties)
+            } else {
+                continue
+            }
 
             let memory = PhysicalMemory::query(instance, physical_device);
 

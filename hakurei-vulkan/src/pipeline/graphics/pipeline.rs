@@ -40,6 +40,10 @@ impl HaGraphicsPipeline {
         self.bind_point
     }
 
+    pub fn frame_count(&self) -> usize {
+        self.frame_count
+    }
+
     pub fn cleanup(&self) {
 
         if let Some(ref device) = self.device {

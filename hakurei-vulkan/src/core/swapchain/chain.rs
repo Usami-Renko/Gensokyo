@@ -129,6 +129,9 @@ impl HaSwapchain {
     pub fn extent(&self) -> vkDim2D {
         self.extent
     }
+    pub fn format(&self) -> vk::Format {
+        self.format
+    }
     // TODO: Remove the following function.
     pub(crate) fn views(&self) -> &Vec<HaImageView> {
         &self.views

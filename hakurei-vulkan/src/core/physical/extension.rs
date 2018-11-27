@@ -14,7 +14,7 @@ use std::ffi::CString;
 pub(crate) struct PhysicalExtension {
 
     handles: Vec<vk::ExtensionProperties>,
-    enable_extensions: Vec<DeviceExtensionType>,
+    enable_extensions: Vec<CString>,
 }
 
 #[derive(Debug, Clone)]
@@ -40,10 +40,9 @@ impl PhysicalExtension {
         Ok(result)
     }
 
-    pub fn enable_extensions(&self) -> Vec<CString> {
+    pub fn enable_extensions(&self) -> &Vec<CString> {
 
-        self.enable_extensions.iter()
-            .map(|e| e.name()).collect()
+        &self.enable_extensions
     }
 }
 
@@ -71,6 +70,7 @@ impl PhysicalInspectProperty for PhysicalExtension {
 
     fn set(&mut self, config: &Self::ConfigType) {
 
-        self.enable_extensions = config.require_extensions.clone();
+        self.enable_extensions = config.require_extensions.iter()
+            .map(|e| e.name()).collect();
     }
 }

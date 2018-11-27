@@ -31,8 +31,8 @@ pub struct GraphicsPipelineConfig {
 
     shaders        : Vec<HaShaderInfo>,
     states         : PipelineStates,
-    render_pass    : Option<HaRenderPass>,
     flags          : vk::PipelineCreateFlags,
+    render_pass    : HaRenderPass,
 
     shader_modules : Vec<HaShaderModule>,
     layout_builder : PipelineLayoutBuilder,
@@ -40,14 +40,14 @@ pub struct GraphicsPipelineConfig {
 
 impl GraphicsPipelineConfig {
 
-    pub fn new(shaders: impl Into<Vec<HaShaderInfo>>, input: VertexInputDescription, pass: HaRenderPass) -> GraphicsPipelineConfig {
+    pub fn new(shaders: impl Into<Vec<HaShaderInfo>>, input: VertexInputDescription, render_pass: HaRenderPass) -> GraphicsPipelineConfig {
 
         GraphicsPipelineConfig {
-            shaders    : shaders.into(),
-            states     : PipelineStates::setup(input),
-            render_pass: Some(pass),
-            flags      : vk::PipelineCreateFlags::empty(),
+            shaders : shaders.into(),
+            states  : PipelineStates::setup(input),
+            flags   : vk::PipelineCreateFlags::empty(),
 
+            render_pass,
             shader_modules: vec![],
             layout_builder: PipelineLayoutBuilder::default(),
         }
@@ -101,7 +101,7 @@ impl GraphicsPipelineBuilder {
         pipeline_index
     }
 
-    pub fn build(&mut self) -> Result<GraphicsPipelineContainer, PipelineError> {
+    pub fn build(mut self) -> Result<GraphicsPipelineContainer, PipelineError> {
 
         for config in self.configs.iter_mut() {
             let mut shader_modules = vec![];
@@ -144,7 +144,7 @@ impl GraphicsPipelineBuilder {
                 p_tessellation_state  : tessellation_info,
                 p_dynamic_state       : dynamic_info,
                 layout: pipeline_layout,
-                render_pass: config.render_pass.as_ref().unwrap().handle,
+                render_pass: config.render_pass.handle,
                 // TODO: Add configuration for this field.
                 subpass: 0,
                 // TODO: Add configuration for this field.
@@ -160,14 +160,13 @@ impl GraphicsPipelineBuilder {
             self.device.handle.create_graphics_pipelines(vk::PipelineCache::null(), infos.as_slice(), None).unwrap()
         };
 
+        self.clean_shader_modules();
+
         let mut pipelines = vec![];
-        for (i, config) in self.configs.iter_mut().enumerate() {
-            let render_pass = config.render_pass.take().unwrap(); // take ownership of HaRenderPass.
-            let pipeline = HaGraphicsPipeline::new(&self.device, handles[i], layouts[i], render_pass);
+        for (i, config) in self.configs.into_iter().enumerate() {
+            let pipeline = HaGraphicsPipeline::new(&self.device, handles[i], layouts[i], config.render_pass);
             pipelines.push(pipeline);
         }
-
-        self.clean_shader_modules();
 
         let container = GraphicsPipelineContainer::new(pipelines);
         Ok(container)

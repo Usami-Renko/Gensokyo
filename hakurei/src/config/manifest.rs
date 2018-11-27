@@ -6,7 +6,7 @@ pub(super) fn manifest_toml() -> toml::Value {
     toml! {
         [core]
         [core.version]
-        api         = "1.0.85"
+        api         = "1.0.92"
         application = "1.0.0"
         engine      = "1.0.0"
 
@@ -27,13 +27,13 @@ pub(super) fn manifest_toml() -> toml::Value {
         [core.physical]
         device_types       = ["CPU", "IntegratedGPU", "DiscreteGPU"]
         features           = []
-        extensions         = ["swapchain"]
+        extensions         = ["VK_KHR_swapchain"]
         queue_capabilities = []
 
         [core.swapchain]
         image_count = 2
         framebuffer_layers = 1
-        prefer_surface_format = "B8g8r8a8Unorm"
+        prefer_surface_format = "B8G8R8A8_UNORM"
         prefer_surface_color_space = "SrgbNonlinear"
         present_mode_primary   = "Mailbox"
         present_mode_secondary = "Fifo"
@@ -61,7 +61,7 @@ pub(super) fn manifest_toml() -> toml::Value {
         [pipeline]
 
         [pipeline.depth_stencil]
-        prefer_depth_stencil_formats = ["D32Sfloat", "D32SfloatS8Uint", "D24UnormS8Uint"]
+        prefer_depth_stencil_formats = ["D32_SFLOAT", "D32_SFLOAT_S8_UINT", "D24_UNORM_S8_UINT"]
         prefer_image_tiling = "Optimal"
 
         [resources]

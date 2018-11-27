@@ -52,7 +52,7 @@ impl ConfigMirror for CoreConfigMirror {
         }
 
         if let Some(v) = toml.get("physical") {
-            self.device.parse(v)?;
+            self.physical.parse(v)?;
         }
 
         if let Some(v) = toml.get("swapchain") {

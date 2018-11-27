@@ -23,9 +23,9 @@ impl CommandKit {
     }
 
     // FIXME: Currently not support any commmand pool flag.
-    pub fn pool(&self, queue: DeviceQueueIdentifier, flags: vk::CommandPoolCreateFlags) -> Result<HaCommandPool, CommandError> {
+    pub fn pool(&self, queue: DeviceQueueIdentifier) -> Result<HaCommandPool, CommandError> {
 
-        HaCommandPool::setup(&self.device, queue, flags)
+        HaCommandPool::setup(&self.device, queue, vk::CommandPoolCreateFlags::empty())
     }
 
     pub fn recorder(&self, command: HaCommandBuffer) -> HaCommandRecorder {

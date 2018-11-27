@@ -1,5 +1,6 @@
 
 use types::vkchar;
+
 use std::ffi::{ CStr, CString };
 
 /// Helper function to convert [c_char; SIZE] to string

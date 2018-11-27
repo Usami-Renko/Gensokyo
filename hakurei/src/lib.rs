@@ -22,5 +22,3 @@ pub mod assets;
 pub mod procedure;
 pub mod toolkit;
 pub mod utils;
-
-pub mod prelude;

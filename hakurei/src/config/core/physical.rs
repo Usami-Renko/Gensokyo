@@ -123,7 +123,7 @@ impl ConfigMirror for PhysicalConfigMirror {
 fn vk_raw2device_extension(raw: &String) -> Result<DeviceExtensionType, ConfigError> {
 
     let extension_type = match raw.as_str() {
-        | "swapchain" => DeviceExtensionType::Swapchain,
+        | "VK_KHR_swapchain" => DeviceExtensionType::Swapchain,
         | _ => return Err(ConfigError::Mapping(MappingError::PhysicalExtensionError)),
     };
 

@@ -68,7 +68,7 @@ macro_rules! impl_physical_features {
             fn inspect(&self, config: &Self::ConfigType) -> bool {
 
                 $(
-                    if config.require_features.$feature == 0 || self.availables.$feature == 0 {
+                    if config.require_features.$feature == 1 && self.availables.$feature == 0 {
                         return false
                     }
                 )*

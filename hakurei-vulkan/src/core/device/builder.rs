@@ -115,13 +115,14 @@ impl<'a, 'b> LogicalDeviceBuilder<'a, 'b> {
         // Configurate device features, layers and extensions.
         let enable_features = self.physical.features.enable_features();
         let enable_layer_names = cast::to_array_ptr(&self.instance.enable_layer_names);
-        let enable_extension_names = cast::to_array_ptr(&self.physical.extensions.enable_extensions());
+        let enable_extension_names = cast::to_array_ptr(self.physical.extensions.enable_extensions());
 
         // Create the logical device.
         let device_create_info = vk::DeviceCreateInfo {
             s_type                     : vk::StructureType::DEVICE_CREATE_INFO,
             p_next                     : ptr::null(),
-            flags                      : vk::DeviceCreateFlags::empty(), // flags is reserved for future use in API version 1.1.82.
+            // flags is reserved for future use in API version 1.1.82.
+            flags                      : vk::DeviceCreateFlags::empty(),
             queue_create_info_count    : queue_create_infos.len() as vkuint,
             p_queue_create_infos       : queue_create_infos.as_ptr(),
             enabled_layer_count        : enable_layer_names.len() as vkuint,

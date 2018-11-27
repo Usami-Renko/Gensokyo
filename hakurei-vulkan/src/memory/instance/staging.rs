@@ -211,21 +211,22 @@ impl UploadStagingResource {
 
     fn append_dst_block(&mut self, dst: &BufferBlock) -> Result<(MemoryWritePtr, MemoryRange), MemoryError> {
 
-        let dst_block = dst.clone();
-
-        let src_block = BufferBlock {
-            handle: self.buffers[dst.buffer_index].handle,
-            size: dst.size,
-            memory_offset: dst.memory_offset,
-        };
-
-        // get memory wirte pointer of staging buffer.
-        let (writer, range) = self.src_memory.map_memory_ptr(&mut None, &src_block, dst_block.memory_offset)?;
-
-        self.src_blocks.push(src_block);
-        self.dst_blocks.push(dst_block);
-
-        Ok((writer, range))
+//        let dst_block = dst.clone();
+//
+//        let src_block = BufferBlock {
+//            handle: self.buffers[dst.buffer_index].handle,
+//            size: dst.size,
+//            memory_offset: dst.memory_offset,
+//        };
+//
+//        // get memory wirte pointer of staging buffer.
+//        let (writer, range) = self.src_memory.map_memory_ptr(&mut None, &src_block, dst_block.memory_offset)?;
+//
+//        self.src_blocks.push(src_block);
+//        self.dst_blocks.push(dst_block);
+//
+//        Ok((writer, range))
+        unimplemented!()
     }
 
     pub fn finish_src_transfer(&mut self, device: &HaDevice, ranges_to_flush: &Vec<MemoryRange>) -> Result<(), MemoryError> {
