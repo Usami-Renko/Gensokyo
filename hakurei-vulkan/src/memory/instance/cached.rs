@@ -8,22 +8,19 @@ use memory::structs::HaMemoryType;
 use memory::target::HaMemory;
 use memory::traits::{ HaMemoryAbstract, MemoryMapable };
 use memory::selector::MemorySelector;
-use memory::structs::MemoryRange;
-use memory::instance::traits::{ HaImageMemoryAbs, HaBufferMemoryAbs, MemoryDataUploadable };
-use memory::instance::staging::{ StagingUploader, UploadStagingResource };
-use memory::error::MemoryError;
+use memory::instance::traits::{ HaImageMemoryAbs, HaBufferMemoryAbs };
+use memory::instance::staging::UploadStagingResource;
+use memory::transfer::MemoryDataDelegate;
+use memory::error::{ MemoryError, AllocatorError };
 
 use types::vkbytes;
 use utils::memory::MemoryWritePtr;
+
 
 pub struct HaCachedMemory  {
 
     target: HaMemory,
 }
-
-impl HaBufferMemoryAbs for HaCachedMemory {}
-
-impl HaImageMemoryAbs for HaCachedMemory {}
 
 impl HaMemoryAbstract for HaCachedMemory {
 
@@ -37,10 +34,8 @@ impl HaMemoryAbstract for HaCachedMemory {
 
     fn allocate(device: &HaDevice, size: vkbytes, selector: &MemorySelector) -> Result<HaCachedMemory, MemoryError> {
 
-        let target = HaMemory::allocate(device, size, selector)?;
-
         let memory = HaCachedMemory {
-            target,
+            target: HaMemory::allocate(device, size, selector)?,
         };
         Ok(memory)
     }
@@ -50,23 +45,56 @@ impl HaMemoryAbstract for HaCachedMemory {
     }
 }
 
-impl MemoryDataUploadable for HaCachedMemory {
+impl HaBufferMemoryAbs for HaCachedMemory {
 
-    fn prepare_data_transfer(&mut self, physical: &HaPhyDevice, device: &HaDevice, allocate_infos: &Option<BufferAllocateInfos>)
-        -> Result<Option<UploadStagingResource>, MemoryError> {
+    fn to_agency(&self, device: &HaDevice, physical: &HaPhyDevice, allot_infos: &Option<BufferAllocateInfos>) -> Result<Box<dyn MemoryDataDelegate>, MemoryError> {
 
-        StagingUploader::prepare_data_transfer(physical, device, allocate_infos)
+        if let Some(allot_infos) = allot_infos {
+            let agency = CachedDataAgency::new(device, physical, allot_infos)?;
+            Ok(Box::new(agency))
+        } else {
+            Err(MemoryError::AllocateInfoMissing)
+        }
+    }
+}
+
+impl HaImageMemoryAbs for HaCachedMemory {}
+
+
+pub struct CachedDataAgency {
+
+    res: UploadStagingResource,
+}
+
+impl CachedDataAgency {
+
+    fn new(device: &HaDevice, physical: &HaPhyDevice, infos: &BufferAllocateInfos) -> Result<CachedDataAgency, MemoryError> {
+
+        let agency = CachedDataAgency {
+            res: UploadStagingResource::new(device, physical, infos)?,
+        };
+        Ok(agency)
+    }
+}
+
+impl MemoryDataDelegate for CachedDataAgency {
+
+    fn prepare(&mut self, _: &HaDevice) -> Result<(), MemoryError> {
+        Ok(())
     }
 
-    fn map_memory_ptr(&mut self, staging: &mut Option<UploadStagingResource>, block: &BufferBlock, offset: vkbytes)
-        -> Result<(MemoryWritePtr, MemoryRange), MemoryError> {
+    fn acquire_write_ptr(&mut self, block: &BufferBlock, repository_index: usize) -> Result<MemoryWritePtr, MemoryError> {
 
-        StagingUploader::map_memory_ptr(staging, block, offset)
+        let writer= self.res.append_dst_block(block, repository_index)?;
+        Ok(writer)
     }
 
-    fn terminate_transfer(&mut self, device: &HaDevice, staging: &Option<UploadStagingResource>, ranges_to_flush: &Vec<MemoryRange>)
-        -> Result<(), MemoryError> {
+    fn finish(&mut self, device: &HaDevice) -> Result<(), AllocatorError> {
 
-        StagingUploader::terminate_transfer(device, staging, ranges_to_flush)
+        self.res.finish_src_transfer(device)?;
+        self.res.transfer(device)?;
+        self.res.cleanup(device);
+
+        Ok(())
     }
 }

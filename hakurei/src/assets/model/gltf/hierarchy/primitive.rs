@@ -11,6 +11,7 @@ use gsvk::memory::AllocatorError;
 
 use gsvk::buffer::instance::{ VertexBlockInfo, HaVertexBlock };
 use gsvk::buffer::instance::{ IndexBlockInfo, HaIndexBlock };
+use gsvk::buffer::allocator::types::BufferMemoryTypeAbs;
 use gsvk::memory::transfer::BufferDataUploader;
 
 use assets::model::GltfRawData;
@@ -67,7 +68,7 @@ impl GltfPrimitive {
     }
 
     #[inline]
-    pub fn upload_vertex_data(&self, block: &HaVertexBlock, uploader: &mut BufferDataUploader) -> Result<(), AllocatorError> {
+    pub fn upload_vertex_data<M: BufferMemoryTypeAbs + Copy>(&self, block: &HaVertexBlock, uploader: &mut BufferDataUploader<M>) -> Result<(), AllocatorError> {
         uploader.upload(block, &self.vertexs)?;
         Ok(())
     }
@@ -79,7 +80,7 @@ impl GltfPrimitive {
     }
 
     #[inline]
-    pub fn upload_index_data(&self, block: &HaIndexBlock, uploader: &mut BufferDataUploader) -> Result<(), AllocatorError> {
+    pub fn upload_index_data<M: BufferMemoryTypeAbs + Copy>(&self, block: &HaIndexBlock, uploader: &mut BufferDataUploader<M>) -> Result<(), AllocatorError> {
         uploader.upload(block, &self.indices)?;
         Ok(())
     }

@@ -6,7 +6,7 @@ use core::physical::HaPhyDevice;
 
 use buffer::BufferInstance;
 use buffer::allocator::HaBufferAllocator;
-use buffer::allocator::types::Staging;
+use buffer::allocator::types::BufferStorageType;
 use buffer::instance::{ HaImgsrcBlock, ImgsrcBlockInfo };
 use buffer::HaBufferRepository;
 
@@ -17,6 +17,7 @@ use image::instance::traits::ImageBarrierBundleAbs;
 use image::allocator::ImageAllocateInfo;
 
 use memory::transfer::DataCopyer;
+use memory::types::Staging;
 use memory::AllocatorError;
 
 pub struct SampleImageBarrierBundle {
@@ -87,7 +88,7 @@ impl SampleImageBarrierBundle {
 
         let mut staging_indices = vec![];
 
-        let mut staging_allocator = HaBufferAllocator::new(physical, device, Staging);
+        let mut staging_allocator = HaBufferAllocator::new(physical, device, BufferStorageType::STAGING);
 
         for &index in self.info_indices.iter() {
             let img_info = ImgsrcBlockInfo::new(infos[index].space);
@@ -120,7 +121,7 @@ impl SampleImageBarrierBundle {
             }
         }
 
-        uploader.done()?;
+        uploader.finish()?;
 
         Ok(())
     }

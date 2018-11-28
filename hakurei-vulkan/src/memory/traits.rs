@@ -50,7 +50,9 @@ pub trait HaMemoryAbstract {
 }
 
 /// A trait indicate a Memory is able to map.
-pub trait MemoryMapable: HaMemoryAbstract {
+pub trait MemoryMapable {
+
+    fn map_handle(&self) -> vk::DeviceMemory;
 
     fn mut_status(&mut self) -> &mut MemoryMapStatus;
 
@@ -59,40 +61,28 @@ pub trait MemoryMapable: HaMemoryAbstract {
     /// If range is None, the function will map the whole memory.
     fn map_range(&mut self, device: &HaDevice, range: Option<MemoryRange>) -> Result<(), MemoryError> {
 
-        let memory_handle = self.target().handle;
-        let map_status = self.mut_status();
-
-        unsafe {
+        let data_ptr = unsafe {
 
             if let Some(range) = range {
-                if map_status.is_range_available(Some(range.clone())) {
 
-                    let data_ptr = device.handle.map_memory(
-                        memory_handle,
-                        // zero-based byte offset from the beginning of the memory object.
-                        range.offset,
-                        // the size of the memory range to map, or VK_WHOLE_SIZE to map from offset to the end of the allocation.
-                        range.size,
-                        // flags is reserved for future use in API version 1.1.82.
-                        vk::MemoryMapFlags::empty(),
-                    ).or(Err(MemoryError::MapMemoryError))?;
+                device.handle.map_memory(
+                    self.map_handle(),
+                    // zero-based byte offset from the beginning of the memory object.
+                    range.offset,
+                    // the size of the memory range to map, or VK_WHOLE_SIZE to map from offset to the end of the allocation.
+                    range.size,
+                    // flags is reserved for future use in API version 1.1.82.
+                    vk::MemoryMapFlags::empty(),
+                ).or(Err(MemoryError::MapMemoryError))?
 
-                    map_status.set_map(data_ptr, Some(range));
-                } else {
-                    return Err(MemoryError::DuplicateMapError)
-                }
             } else {
-                if map_status.is_range_available(None) {
-
-                    let data_ptr = device.handle.map_memory(memory_handle, 0, vk::WHOLE_SIZE, vk::MemoryMapFlags::empty())
-                        .or(Err(MemoryError::MapMemoryError))?;
-
-                    map_status.set_map(data_ptr, None);
-                } else {
-                    return Err(MemoryError::DuplicateMapError)
-                }
+                device.handle.map_memory(self.map_handle(), 0, vk::WHOLE_SIZE, vk::MemoryMapFlags::empty())
+                    .or(Err(MemoryError::MapMemoryError))?
             }
         };
+
+        let map_status = self.mut_status();
+        map_status.set_map(data_ptr);
 
         Ok(())
     }
@@ -104,7 +94,7 @@ pub trait MemoryMapable: HaMemoryAbstract {
                 vk::MappedMemoryRange {
                     s_type: vk::StructureType::MAPPED_MEMORY_RANGE,
                     p_next: ptr::null(),
-                    memory: self.target().handle,
+                    memory: self.map_handle(),
                     offset: range.offset,
                     size  : range.size,
                 }
@@ -119,7 +109,7 @@ pub trait MemoryMapable: HaMemoryAbstract {
     fn unmap(&mut self, device: &HaDevice) {
 
         unsafe {
-            device.handle.unmap_memory(self.target().handle)
+            device.handle.unmap_memory(self.map_handle())
         }
 
         let map_status = self.mut_status();

@@ -26,9 +26,10 @@ use hakurei_vulkan::{
     },
     buffer::{
         HaBufferRepository,
-        allocator::types::{ BufferStorageType, Host },
+        allocator::types::BufferStorageType,
         instance::{ HaVertexBlock, VertexBlockInfo },
     },
+    memory::types::Host,
     pipeline::{
         graphics::{ HaGraphicsPipeline, GraphicsPipelineConfig },
         shader::{ HaShaderInfo, VertexInputDescription, HaVertexInputBinding, HaVertexInputAttribute },
@@ -113,7 +114,7 @@ impl ProgramProc for TriangleProcedure {
 
         self.vertex_storage.as_mut().unwrap().data_uploader()?
             .upload(self.vertex_buffer.as_ref().unwrap(), &self.vertex_data)?
-            .done()?;
+            .finish()?;
 
         Ok(())
     }

@@ -5,14 +5,16 @@ use core::physical::HaPhyDevice;
 use buffer::{ HaBuffer, BufferBlock };
 use buffer::allocator::BufferBlockIndex;
 use buffer::allocator::memory::BufferAllocateInfos;
+use buffer::allocator::types::BufferMemoryTypeAbs;
 use buffer::instance::{ HaVertexBlock, HaIndexBlock, HaUniformBlock, HaImgsrcBlock };
+
 use buffer::repository::HaBufferRepository;
 use memory::instance::HaBufferMemory;
 
 use types::vkbytes;
 use std::marker::PhantomData;
 
-pub struct HaBufferDistributor<M> {
+pub struct HaBufferDistributor<M> where M: BufferMemoryTypeAbs {
 
     phantom_type: PhantomData<M>,
 
@@ -27,7 +29,7 @@ pub struct HaBufferDistributor<M> {
     allot_infos: BufferAllocateInfos,
 }
 
-impl<M> HaBufferDistributor<M> {
+impl<M> HaBufferDistributor<M> where M: BufferMemoryTypeAbs {
 
     pub(super) fn new(phantom_type: PhantomData<M>, device: HaDevice, physical: HaPhyDevice, memory: HaBufferMemory, buffers: Vec<HaBuffer>, spaces: Vec<vkbytes>, allot_infos: BufferAllocateInfos) -> HaBufferDistributor<M> {
 

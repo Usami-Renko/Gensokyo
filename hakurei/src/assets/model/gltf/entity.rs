@@ -113,7 +113,7 @@ impl<M> GltfEntity<M> where M: BufferMemoryTypeAbs + Copy {
                 }
             }
 
-            uploader.done()?;
+            uploader.finish()?;
         }
 
         let res = AllocateResource {
@@ -157,7 +157,7 @@ impl<M> GltfEntity<M> where M: BufferMemoryTypeAbs + Copy {
     }
 }
 
-struct AllocateResource<M> {
+struct AllocateResource<M> where M: BufferMemoryTypeAbs + Copy {
 
     vertexs: Vec<HaVertexBlock>,
     indices: Vec<HaIndexBlock>,

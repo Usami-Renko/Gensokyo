@@ -120,13 +120,13 @@ impl<'win, T> ProgramEnv<T> where T: ProgramProc {
         let image_result = resources.swapchain.next_image(Some(&resources.image_awaits[current_frame]), None);
         let image_index = match image_result {
             | Ok(result) => result,
-            | Err(e) =>
-                match e {
-                    | SwapchainRuntimeError::SubOptimal => {
-                        return Err(ProcedureError::SwapchainRecreate)
-                    },
-                    | _ => return Err(ProcedureError::Swapchain(SwapchainError::Runtime(e))),
-                }
+            | Err(e) => match e {
+                | SwapchainRuntimeError::SubOptimal
+                | SwapchainRuntimeError::SurfaceOutOfDate => {
+                    return Err(ProcedureError::SwapchainRecreate)
+                },
+                | _ => return Err(ProcedureError::Swapchain(SwapchainError::Runtime(e))),
+            }
         };
 
         fence_to_wait.reset()?;

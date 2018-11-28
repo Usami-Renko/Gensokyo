@@ -77,6 +77,7 @@ impl fmt::Display for SwapchainInitError {
 pub enum SwapchainRuntimeError {
 
     AcquireTimeOut,
+    SurfaceOutOfDate,
     SubOptimal,
     Unknown
 }
@@ -86,9 +87,10 @@ impl fmt::Display for SwapchainRuntimeError {
 
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
         let description = match self {
-            | SwapchainRuntimeError::AcquireTimeOut => "No image became available within the time allowed.",
-            | SwapchainRuntimeError::SubOptimal     => "Swapchain does not match the surface properties exactly.",
-            | SwapchainRuntimeError::Unknown        => "Get unknown error when acquiring image.",
+            | SwapchainRuntimeError::AcquireTimeOut   => "No image became available within the time allowed.",
+            | SwapchainRuntimeError::SurfaceOutOfDate => "Surface has changed and is not compatible with the swapchain.",
+            | SwapchainRuntimeError::SubOptimal       => "Swapchain does not match the surface properties exactly.",
+            | SwapchainRuntimeError::Unknown          => "Get unknown error when acquiring image.",
         };
 
         write!(f, "{}", description)

@@ -4,10 +4,11 @@ use core::device::HaDevice;
 use types::vkbytes;
 
 use memory::{ HaMemoryType, HaMemoryAbstract, MemorySelector };
+use memory::types::{ Device, Cached };
 use memory::instance::{ HaImageMemory, HaCachedMemory, HaDeviceMemory };
 use memory::MemoryError;
 
-pub trait ImageMemoryTypeAbs {
+pub trait ImageMemoryTypeAbs: Copy {
     const MEMORY_TYPE: HaMemoryType;
 
     fn memory_type(&self) -> HaMemoryType {
@@ -16,9 +17,6 @@ pub trait ImageMemoryTypeAbs {
 
     fn allot_memory(&self, device: &HaDevice, size: vkbytes, selector: &MemorySelector) -> Result<HaImageMemory, MemoryError>;
 }
-
-pub struct Device;
-pub struct Cached;
 
 #[derive(Debug, Clone, Copy, Eq, PartialEq)]
 pub enum ImageStorageType {}

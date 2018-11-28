@@ -41,7 +41,7 @@ impl AllocatorKit {
         }
     }
 
-    pub fn buffer<B: BufferMemoryTypeAbs + Copy>(&self, typ: B) -> HaBufferAllocator<B> {
+    pub fn buffer<B: BufferMemoryTypeAbs>(&self, typ: B) -> HaBufferAllocator<B> {
         HaBufferAllocator::new(&self.physical, &self.device, typ)
     }
 
@@ -49,7 +49,7 @@ impl AllocatorKit {
         HaDescriptorAllocator::new(&self.device, flags)
     }
 
-    pub fn image<I: ImageMemoryTypeAbs  + Copy>(&self, typ: I) -> HaImageAllocator<I> {
+    pub fn image<I: ImageMemoryTypeAbs>(&self, typ: I) -> HaImageAllocator<I> {
         HaImageAllocator::new(&self.physical, &self.device, typ)
     }
 

@@ -2,104 +2,57 @@
 use core::device::HaDevice;
 use core::physical::HaPhyDevice;
 
-use buffer::BufferInstance;
+use buffer::{ BufferBlock, BufferInstance };
 use buffer::allocator::BufferAllocateInfos;
-use memory::structs::MemoryRange;
+use buffer::allocator::types::BufferMemoryTypeAbs;
+
 use memory::instance::HaBufferMemory;
-use memory::instance::UploadStagingResource;
-use memory::error::AllocatorError;
+use memory::error::{ MemoryError, AllocatorError };
 
-use types::vkbytes;
+use utils::memory::MemoryWritePtr;
+use std::marker::PhantomData;
 
-pub struct BufferDataUploader<'a> {
+pub struct BufferDataUploader<M> where M: BufferMemoryTypeAbs {
 
     device: HaDevice,
-    // TODO: change this to MemoryDataUploadable.
-    dst_memory: &'a mut HaBufferMemory,
-    ranges : Vec<MemoryRange>,
-
-    staging: Option<UploadStagingResource>,
+    phantom_type: PhantomData<M>,
+    agency: Box<dyn MemoryDataDelegate>,
 }
 
-impl<'a> BufferDataUploader<'a> {
+impl<M> BufferDataUploader<M> where M: BufferMemoryTypeAbs {
 
-    pub(crate) fn new(physical: &HaPhyDevice, device: &HaDevice, memory: &'a mut HaBufferMemory, allocate_infos: &Option<BufferAllocateInfos>) -> Result<BufferDataUploader<'a>, AllocatorError> {
+    pub(crate) fn new(phantom_type: PhantomData<M>, physical: &HaPhyDevice, device: &HaDevice, memory: &HaBufferMemory, allocate_infos: &Option<BufferAllocateInfos>) -> Result<BufferDataUploader<M>, AllocatorError> {
 
-        let staging = memory.prepare_data_transfer(physical, device, &allocate_infos)?;
+        let mut agency = memory.to_agency(device, physical, allocate_infos)?;
+        agency.prepare(device)?;
 
         let uploader = BufferDataUploader {
+            phantom_type,
             device: device.clone(),
-            dst_memory: memory,
-            ranges: vec![],
-            staging,
+            agency,
         };
         Ok(uploader)
     }
 
-    pub fn upload(&mut self, to: &impl BufferInstance, data: &[impl Copy]) -> Result<&mut BufferDataUploader<'a>, AllocatorError> {
+    pub fn upload(&mut self, to: &impl BufferInstance, data: &[impl Copy]) -> Result<&mut BufferDataUploader<M>, AllocatorError> {
 
-        let block = to.as_block_ref();
-
-        let (writer, range) = self.dst_memory.map_memory_ptr(&mut self.staging, block, block.memory_offset)?;
+        let writer = self.agency.acquire_write_ptr(to.as_block_ref(), to.repository_index())?;
         writer.write_data(data);
-
-        self.ranges.push(range);
 
         Ok(self)
     }
 
-    pub fn done(&mut self) -> Result<(), AllocatorError> {
+    pub fn finish(&mut self) -> Result<(), AllocatorError> {
 
-        if let Some(ref mut staging) = self.staging {
-            staging.finish_src_transfer(&self.device, &self.ranges)?;
-        }
-
-        self.dst_memory.terminate_transfer(&self.device, &self.staging, &self.ranges)?;
-
-        if let Some(ref mut staging) = self.staging {
-            staging.cleanup(&self.device);
-        }
-
-        Ok(())
+        self.agency.finish(&self.device)
     }
 }
 
-// TODO: Use MemoryDataUpdatable instead of HaMemoryAbstract as bound trait.
-pub struct BufferDataUpdater<'a> {
+pub trait MemoryDataDelegate {
 
-    device : HaDevice,
-    memory : &'a mut HaBufferMemory,
-    offsets: &'a Vec<vkbytes>,
-    ranges : Vec<MemoryRange>,
+    fn prepare(&mut self, device: &HaDevice) -> Result<(), MemoryError>;
+
+    fn acquire_write_ptr(&mut self, block: &BufferBlock, repository_index: usize) -> Result<MemoryWritePtr, MemoryError>;
+
+    fn finish(&mut self, device: &HaDevice) -> Result<(), AllocatorError>;
 }
-
-impl<'a> BufferDataUpdater<'a> {
-
-    pub(crate) fn new(device: &HaDevice, memory: &'a mut HaBufferMemory, offsets: &'a Vec<vkbytes>) -> BufferDataUpdater<'a> {
-
-        BufferDataUpdater {
-            device: device.clone(),
-            memory, offsets, ranges: vec![],
-        }
-    }
-
-    pub fn update(&mut self, to: &impl BufferInstance, data: &[impl Copy]) -> Result<&mut BufferDataUpdater<'a>, AllocatorError> {
-
-        let block = to.as_block_ref();
-
-        let (writer, range) = self.memory.map_memory_ptr(&mut None, block, block.memory_offset)?;
-        writer.write_data(data);
-
-        self.ranges.push(range);
-
-        Ok(self)
-    }
-
-    pub fn done(&mut self) -> Result<(), AllocatorError> {
-
-        self.memory.terminate_transfer(&self.device, &None, &self.ranges)?;
-
-        Ok(())
-    }
-}
-

@@ -11,6 +11,7 @@ pub trait BufferInstance: BufferCopiable {
     fn typ(&self) -> BufferInstanceType;
 
     fn as_block_ref(&self) -> &BufferBlock;
+    fn repository_index(&self) -> usize;
 }
 
 pub trait BufferBlockInfo {

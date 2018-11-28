@@ -1,6 +1,8 @@
 
 use ash::vk;
 
+use memory::traits::MemoryMapable;
+
 use types::{ vkptr, vkbytes };
 
 #[derive(Debug, Clone, Copy)]
@@ -38,53 +40,59 @@ impl HaMemoryType {
     }
 }
 
+#[derive(Debug, Clone)]
 pub struct MemoryMapStatus {
 
-    pub data_ptr: Option<vkptr>,
-
-    ranges: Vec<MemoryRange>,
-    boundary: vkbytes,
+    /// The begining data ptr of the whole memory.
+    data_ptr: Option<vkptr>,
 }
 
 impl MemoryMapStatus {
 
-    pub fn from_unmap(boundary: vkbytes) -> MemoryMapStatus {
+    pub fn from_unmap() -> MemoryMapStatus {
+
         MemoryMapStatus {
             data_ptr: None,
-            ranges  : vec![],
-            boundary,
         }
     }
 
-    pub fn set_map(&mut self, ptr: vkptr, range: Option<MemoryRange>) {
+    pub unsafe fn data_ptr(&self, offset: vkbytes) -> Option<vkptr> {
+
+        self.data_ptr.and_then(|ptr| {
+            Some(ptr.offset(offset as isize))
+        })
+    }
+
+    pub fn set_map(&mut self, ptr: vkptr) {
 
         self.data_ptr = Some(ptr);
-
-        if let Some(range) = range {
-            self.ranges.push(range);
-        } else {
-            let whole_range = MemoryRange {
-                offset: 0,
-                size  : self.boundary,
-            };
-            self.ranges.push(whole_range);
-        }
     }
 
     pub fn invaild_map(&mut self) {
 
         self.data_ptr = None;
-        self.ranges.clear();
-    }
-
-    // TODO: This function has not implemented yet.
-    pub fn is_range_available(&self, _range: Option<MemoryRange>) -> bool {
-
-        self.ranges.is_empty()
     }
 
     pub fn is_mapping(&self) -> bool {
 
         self.data_ptr.is_some()
+    }
+}
+
+pub struct MemoryMapAlias {
+
+    pub handle: vk::DeviceMemory,
+    pub status: MemoryMapStatus,
+    pub is_coherent: bool,
+}
+
+impl MemoryMapable for MemoryMapAlias {
+
+    fn map_handle(&self) -> vk::DeviceMemory {
+        self.handle
+    }
+
+    fn mut_status(&mut self) -> &mut MemoryMapStatus {
+        &mut self.status
     }
 }

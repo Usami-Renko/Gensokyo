@@ -3,7 +3,6 @@ use ash;
 use ash::vk;
 
 use core::device::{ HaDevice, DeviceQueueIdentifier };
-use core::device::queue::HaQueueAbstract;
 use core::swapchain::error::SwapchainRuntimeError;
 
 use image::{ HaImage, HaImageView };
@@ -63,6 +62,7 @@ impl HaSwapchain {
             self.loader.acquire_next_image_khr(self.handle, self.image_acquire_time, semaphore, fence)
                 .map_err(|error| match error {
                     | vk::Result::TIMEOUT => SwapchainRuntimeError::AcquireTimeOut,
+                    | vk::Result::ERROR_OUT_OF_DATE_KHR => SwapchainRuntimeError::SurfaceOutOfDate,
                     | _ => SwapchainRuntimeError::Unknown,
                 })?
         };

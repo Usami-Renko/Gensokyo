@@ -1,17 +1,20 @@
 
+use ash::vk;
+
 use core::device::HaDevice;
 use core::physical::HaPhyDevice;
 
 use buffer::{ HaBuffer, BufferBlock };
 use buffer::allocator::BufferAllocateInfos;
-use buffer::allocator::types::Staging;
 
-use memory::structs::{ HaMemoryType, MemoryMapStatus, MemoryRange };
 use memory::target::HaMemory;
+use memory::structs::{ HaMemoryType, MemoryMapStatus, MemoryRange, MemoryMapAlias };
+use memory::types::Staging;
 use memory::traits::{ HaMemoryAbstract, MemoryMapable };
 use memory::selector::MemorySelector;
 use memory::transfer::DataCopyer;
-use memory::instance::{ HaBufferMemoryAbs, MemoryDataUploadable };
+use memory::instance::HaBufferMemoryAbs;
+use memory::transfer::MemoryDataDelegate;
 use memory::error::{ MemoryError, AllocatorError };
 
 use utils::memory::MemoryWritePtr;
@@ -26,12 +29,14 @@ pub struct HaStagingMemory {
 
 impl MemoryMapable for HaStagingMemory {
 
+    fn map_handle(&self) -> vk::DeviceMemory {
+        self.target.handle
+    }
+
     fn mut_status(&mut self) -> &mut MemoryMapStatus {
         &mut self.map_status
     }
 }
-
-impl HaBufferMemoryAbs for HaStagingMemory {}
 
 impl HaMemoryAbstract for HaStagingMemory {
 
@@ -46,7 +51,7 @@ impl HaMemoryAbstract for HaStagingMemory {
     fn allocate(device: &HaDevice, size: vkbytes, selector: &MemorySelector) -> Result<HaStagingMemory, MemoryError> {
 
         let target = HaMemory::allocate(device, size, selector)?;
-        let map_status = MemoryMapStatus::from_unmap(target.size);
+        let map_status = MemoryMapStatus::from_unmap();
 
         let memory = HaStagingMemory {
             target, map_status,
@@ -59,95 +64,66 @@ impl HaMemoryAbstract for HaStagingMemory {
     }
 }
 
-impl HaStagingMemory {
+impl HaBufferMemoryAbs for HaStagingMemory {
 
-    fn enable_map(&mut self, device: &HaDevice, is_enable: bool) -> Result<(), MemoryError> {
+    fn to_agency(&self, _: &HaDevice, _: &HaPhyDevice, _: &Option<BufferAllocateInfos>) -> Result<Box<dyn MemoryDataDelegate>, MemoryError> {
 
-        // TODO: Refactor this logic.
-        if is_enable {
-            if self.map_status.is_range_available(None) {
-                self.map_range(device, None)?;
-            }
-        } else {
-            if self.map_status.is_range_available(None) == false {
-                self.unmap(device);
-            }
-        }
-
-        Ok(())
+        let agency = StagingDataAgency::new(self)?;
+        Ok(Box::new(agency))
     }
 }
 
+pub struct StagingDataAgency {
 
-impl MemoryDataUploadable for HaStagingMemory {
+    map_alias: MemoryMapAlias,
+    ranges_to_flush: Vec<MemoryRange>,
+}
 
-    fn prepare_data_transfer(&mut self, _: &HaPhyDevice, device: &HaDevice, _: &Option<BufferAllocateInfos>) -> Result<Option<UploadStagingResource>, MemoryError> {
+impl StagingDataAgency {
 
-        self.enable_map(device, true)?;
-        Ok(None)
-    }
+    pub fn new(memory: &HaStagingMemory) -> Result<StagingDataAgency, MemoryError> {
 
-    fn map_memory_ptr(&mut self, _: &mut Option<UploadStagingResource>, block: &BufferBlock, offset: vkbytes) -> Result<(MemoryWritePtr, MemoryRange), MemoryError> {
-
-        let ptr = unsafe {
-            self.map_status.data_ptr
-                .ok_or(MemoryError::MemoryPtrInvalidError)?
-                .offset(offset as isize)
+        let agency = StagingDataAgency {
+            map_alias: MemoryMapAlias {
+                handle: memory.target.handle,
+                status: memory.map_status.clone(),
+                is_coherent: memory.target.is_coherent_memroy(),
+            },
+            ranges_to_flush: vec![],
         };
-
-        let writer = MemoryWritePtr::new(ptr, block.size);
-        let range = MemoryRange { offset, size: block.size };
-
-        Ok((writer, range))
-    }
-
-    fn terminate_transfer(&mut self, device: &HaDevice, _: &Option<UploadStagingResource>, ranges_to_flush: &Vec<MemoryRange>)
-        -> Result<(), MemoryError> {
-
-        if !self.target.is_coherent_memroy() {
-            // FIXME: the VkPhysicalDeviceLimits::nonCoherentAtomSize is not satified for flushing range.
-            self.flush_ranges(device, ranges_to_flush)?;
-        }
-
-        self.enable_map(device, false)?;
-
-        Ok(())
+        Ok(agency)
     }
 }
 
-pub struct StagingUploader {}
+impl MemoryDataDelegate for StagingDataAgency {
 
-impl StagingUploader {
+    fn prepare(&mut self, device: &HaDevice) -> Result<(), MemoryError> {
 
-    pub fn prepare_data_transfer(physical: &HaPhyDevice, device: &HaDevice, allocate_infos: &Option<BufferAllocateInfos>)
-        -> Result<Option<UploadStagingResource>, MemoryError> {
+        self.map_alias.map_range(device, None)?;
 
-        let staging = UploadStagingResource::new(physical, device, allocate_infos)?;
-
-        Ok(Some(staging))
+        Ok(())
     }
 
-    pub fn map_memory_ptr(staging: &mut Option<UploadStagingResource>, block: &BufferBlock, _offset: vkbytes)
-        -> Result<(MemoryWritePtr, MemoryRange), MemoryError> {
+    fn acquire_write_ptr(&mut self, block: &BufferBlock, _: usize) -> Result<MemoryWritePtr, MemoryError> {
 
-        if let Some(ref mut staging) = staging {
+        self.ranges_to_flush.push(MemoryRange { offset: block.memory_offset, size: block.size });
 
-            let result = staging.append_dst_block(block)?;
-            Ok(result)
-        } else {
-            Err(MemoryError::AllocateInfoMissing)
-        }
+        let data_ptr = unsafe {
+            self.map_alias.status.data_ptr(block.memory_offset)
+        }.ok_or(MemoryError::MemoryPtrInvalidError)?;
+
+        let writer = MemoryWritePtr::new(data_ptr, block.size);
+        Ok(writer)
     }
 
-    pub fn terminate_transfer(device: &HaDevice, staging: &Option<UploadStagingResource>, _ranges_to_flush: &Vec<MemoryRange>)
-        -> Result<(), MemoryError> {
+    fn finish(&mut self, device: &HaDevice) -> Result<(), AllocatorError> {
 
-        if let Some(staging) = staging {
-            staging.transfer(device)
-                .or(Err(MemoryError::BufferToBufferCopyError))?
-        } else {
-            return Err(MemoryError::AllocateInfoMissing)
+        if !self.map_alias.is_coherent {
+            // FIXME: the VkPhysicalDeviceLimits::nonCoherentAtomSize is not satified for flushing range.
+            self.map_alias.flush_ranges(device, &self.ranges_to_flush)?;
         }
+
+        self.map_alias.unmap(device);
 
         Ok(())
     }
@@ -156,85 +132,94 @@ impl StagingUploader {
 
 pub struct UploadStagingResource {
 
-    buffers   : Vec<HaBuffer>,
+    buffers: Vec<HaBuffer>,
     src_memory: HaStagingMemory,
 
     src_blocks: Vec<BufferBlock>,
     dst_blocks: Vec<BufferBlock>,
+
+    ranges_to_flush: Vec<MemoryRange>,
 }
 
 impl UploadStagingResource {
 
-    fn new(physical: &HaPhyDevice, device: &HaDevice, allocate_infos: &Option<BufferAllocateInfos>) -> Result<UploadStagingResource, MemoryError> {
+    pub fn new(device: &HaDevice, physical: &HaPhyDevice, allocate_infos: &BufferAllocateInfos) -> Result<UploadStagingResource, MemoryError> {
 
-        if let Some(allo_infos) = allocate_infos {
+        let mut memory_selector = MemorySelector::init(physical, HaMemoryType::StagingMemory);
 
-            let mut memory_selector = MemorySelector::init(physical, HaMemoryType::StagingMemory);
+        // generate buffers
+        let mut buffers = vec![];
+        for buffer_desc in allocate_infos.infos.iter() {
 
-            // generate buffers
-            let mut buffers = vec![];
-            for buffer_desc in allo_infos.infos.iter() {
+            let buffer = buffer_desc.build(device, Staging, None)
+                .or(Err(MemoryError::AllocateMemoryError))?;
 
-                let buffer = buffer_desc.build(device, Staging, None)
-                    .or(Err(MemoryError::AllocateMemoryError))?;
-
-                memory_selector.try(&buffer)?;
-                buffers.push(buffer);
-            }
-
-            // allocate memory
-            let mut src_memory = HaStagingMemory::allocate(
-                device, allo_infos.spaces.iter().sum(), &memory_selector
-            )?;
-
-            // bind buffers to memory
-            let mut offset = 0;
-            for (i, buffer) in buffers.iter().enumerate() {
-                src_memory.bind_to_buffer(device, &buffer, offset)?;
-                offset += allo_infos.spaces[i];
-            }
-
-            src_memory.prepare_data_transfer(physical, device, &None)?;
-
-            let resource = UploadStagingResource {
-                buffers, src_memory,
-                src_blocks: vec![],
-                dst_blocks: vec![],
-            };
-
-            Ok(resource)
-        } else {
-
-            Err(MemoryError::AllocateInfoMissing)
+            memory_selector.try(&buffer)?;
+            buffers.push(buffer);
         }
+
+        // allocate memory
+        let mut src_memory = HaStagingMemory::allocate(
+            device, allocate_infos.spaces.iter().sum(), &memory_selector
+        )?;
+
+        // bind buffers to memory
+        let mut offset = 0;
+        for (i, buffer) in buffers.iter().enumerate() {
+            src_memory.bind_to_buffer(device, &buffer, offset)?;
+            offset += allocate_infos.spaces[i];
+        }
+
+        src_memory.map_range(device, None)?;
+
+        let resource = UploadStagingResource {
+            buffers, src_memory,
+            src_blocks: vec![],
+            dst_blocks: vec![],
+            ranges_to_flush: vec![],
+        };
+
+        Ok(resource)
     }
 
-    fn append_dst_block(&mut self, dst: &BufferBlock) -> Result<(MemoryWritePtr, MemoryRange), MemoryError> {
+    pub fn append_dst_block(&mut self, to: &BufferBlock, repository_index: usize) -> Result<MemoryWritePtr, MemoryError> {
 
-//        let dst_block = dst.clone();
-//
-//        let src_block = BufferBlock {
-//            handle: self.buffers[dst.buffer_index].handle,
-//            size: dst.size,
-//            memory_offset: dst.memory_offset,
-//        };
-//
-//        // get memory wirte pointer of staging buffer.
-//        let (writer, range) = self.src_memory.map_memory_ptr(&mut None, &src_block, dst_block.memory_offset)?;
-//
-//        self.src_blocks.push(src_block);
-//        self.dst_blocks.push(dst_block);
-//
-//        Ok((writer, range))
-        unimplemented!()
+        let dst_block = to.clone();
+
+        let src_block = BufferBlock {
+            handle: self.buffers[repository_index].handle,
+            size: dst_block.size,
+            memory_offset: dst_block.memory_offset,
+        };
+
+        self.ranges_to_flush.push(MemoryRange { offset: dst_block.memory_offset, size: dst_block.size });
+
+        let data_ptr = unsafe {
+            self.src_memory.map_status.data_ptr(src_block.memory_offset)
+                .ok_or(MemoryError::MemoryPtrInvalidError)?
+        };
+
+        let writer = MemoryWritePtr::new(data_ptr, src_block.size);
+
+        self.src_blocks.push(src_block);
+        self.dst_blocks.push(dst_block);
+
+        Ok(writer)
     }
 
-    pub fn finish_src_transfer(&mut self, device: &HaDevice, ranges_to_flush: &Vec<MemoryRange>) -> Result<(), MemoryError> {
+    pub fn finish_src_transfer(&mut self, device: &HaDevice) -> Result<(), AllocatorError> {
 
-        self.src_memory.terminate_transfer(device, &None, ranges_to_flush)
+        if !self.src_memory.target.is_coherent_memroy() {
+            // FIXME: the VkPhysicalDeviceLimits::nonCoherentAtomSize is not satified for flushing range.
+            self.src_memory.flush_ranges(device, &self.ranges_to_flush)?;
+        }
+
+        self.src_memory.unmap(device);
+
+        Ok(())
     }
 
-    fn transfer(&self, device: &HaDevice) -> Result<(), AllocatorError> {
+    pub fn transfer(&self, device: &HaDevice) -> Result<(), AllocatorError> {
 
         let mut data_copyer = DataCopyer::new(device)?;
         for (src, dst) in self.src_blocks.iter().zip(self.dst_blocks.iter()) {

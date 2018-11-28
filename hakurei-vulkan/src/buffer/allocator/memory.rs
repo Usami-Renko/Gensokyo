@@ -31,7 +31,7 @@ impl BufferAllocateInfos {
 }
 
 
-pub struct BufMemAllocator<M> where M: BufferMemoryTypeAbs + Copy {
+pub struct BufMemAllocator<M> where M: BufferMemoryTypeAbs {
 
     phantom_type: M,
 
@@ -39,7 +39,7 @@ pub struct BufMemAllocator<M> where M: BufferMemoryTypeAbs + Copy {
     pub memory: HaBufferMemory,
 }
 
-impl<M> BufMemAllocator<M> where M: BufferMemoryTypeAbs + Copy {
+impl<M> BufMemAllocator<M> where M: BufferMemoryTypeAbs {
 
     pub fn allot_memory(phantom_type: M, device: &HaDevice, infos: BufferAllocateInfos, size: vkbytes, selector: &MemorySelector) -> Result<BufMemAllocator<M>, MemoryError> {
 

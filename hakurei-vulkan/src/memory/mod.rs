@@ -13,5 +13,6 @@ mod selector;
 mod barrier;
 mod error;
 
+pub mod types;
 pub mod instance;
 pub mod transfer;

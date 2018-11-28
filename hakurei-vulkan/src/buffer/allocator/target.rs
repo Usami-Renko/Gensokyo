@@ -18,7 +18,7 @@ use types::vkbytes;
 
 use std::marker::PhantomData;
 
-pub struct HaBufferAllocator<M> where M: BufferMemoryTypeAbs + Copy {
+pub struct HaBufferAllocator<M> where M: BufferMemoryTypeAbs {
 
     phantom_type: PhantomData<M>,
     storage_type: M,
@@ -34,7 +34,7 @@ pub struct HaBufferAllocator<M> where M: BufferMemoryTypeAbs + Copy {
     memory_selector: MemorySelector,
 }
 
-impl<M> HaBufferAllocator<M> where M: BufferMemoryTypeAbs + Copy {
+impl<M> HaBufferAllocator<M> where M: BufferMemoryTypeAbs {
 
     pub fn new(physical: &HaPhyDevice, device: &HaDevice, storage_type: M) -> HaBufferAllocator<M> {
 

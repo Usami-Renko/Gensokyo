@@ -63,6 +63,10 @@ impl BufferInstance for HaIndexBlock {
     fn as_block_ref(&self) -> &BufferBlock {
         &self.block
     }
+
+    fn repository_index(&self) -> usize {
+        self.repository_index
+    }
 }
 
 impl BufferCopiable for HaIndexBlock {

@@ -4,18 +4,10 @@ use ash::vk;
 use core::device::HaDevice;
 
 use memory::{ HaMemoryType, MemoryMapable };
+use memory::types::{ Host, Device, Cached, Staging };
 use memory::MemoryError;
 
-#[derive(Debug, Clone, Copy)]
-pub struct Host;
-#[derive(Debug, Clone, Copy)]
-pub struct Cached;
-#[derive(Debug, Clone, Copy)]
-pub struct Device;
-#[derive(Debug, Clone, Copy)]
-pub struct Staging;
-
-pub trait BufferMemoryTypeAbs {
+pub trait BufferMemoryTypeAbs: Copy {
     const MEMORY_TYPE: HaMemoryType;
 
     fn memory_type(&self) -> HaMemoryType {
@@ -24,9 +16,7 @@ pub trait BufferMemoryTypeAbs {
 
     fn complement_usage(&self, origin: vk::BufferUsageFlags) -> vk::BufferUsageFlags;
 
-    fn map_memory_if_need(&self, _device: &HaDevice, _mapable_memory: &mut MemoryMapable) -> Result<(), MemoryError> {
-        Ok(())
-    }
+    fn map_memory_if_need(&self, _device: &HaDevice, _mapable_memory: &mut MemoryMapable) -> Result<(), MemoryError> { Ok(()) }
 }
 
 #[derive(Debug, Clone, Copy, Eq, PartialEq)]
