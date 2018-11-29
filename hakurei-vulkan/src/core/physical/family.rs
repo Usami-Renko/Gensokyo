@@ -45,6 +45,7 @@ impl PhysicalQueueFamilies {
 
     pub fn query(instance: &HaInstance, physical_device: vk::PhysicalDevice, surface: &HaSurface)
         -> Result<PhysicalQueueFamilies, PhysicalDeviceError> {
+
         let families = unsafe {
             instance.handle.get_physical_device_queue_family_properties(physical_device)
         };

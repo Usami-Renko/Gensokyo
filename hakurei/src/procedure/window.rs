@@ -2,8 +2,6 @@
 use winit;
 
 use config::window::WindowConfig;
-use config::env::{ HaEnv, EnvWindow };
-
 use gsvk::types::vkDim2D;
 
 pub(crate) struct WindowInfo {
@@ -74,15 +72,5 @@ impl WindowInfo {
         }
 
         Ok(window)
-    }
-
-    pub fn gen_env(&self) -> HaEnv {
-
-        HaEnv {
-            window: EnvWindow {
-                title: self.window_title.clone(),
-                dimension: self.window_size,
-            }
-        }
     }
 }

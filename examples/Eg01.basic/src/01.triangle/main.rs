@@ -8,8 +8,9 @@ extern crate hakurei;
 use ash::vk;
 use hakurei::{
     procedure::{
-        loops::ProgramEnv,
-        workflow::ProgramProc,
+        env::ProgramEnv,
+        loader::AssetsLoader,
+        workflow::GraphicsRoutine,
         error::ProcedureError,
     },
     toolkit::{ AllocatorKit, PipelineKit, CommandKit },
@@ -41,8 +42,6 @@ use hakurei_vulkan::{
     types::{ vkuint, vkbytes },
 };
 
-// TODO: Fix all the unwrap.
-
 use std::path::{ Path, PathBuf };
 
 const MANIFEST_PATH: &str = "src/01.triangle/hakurei.toml";
@@ -68,12 +67,12 @@ const VERTEX_DATA: [Vertex; 3] = [
 struct TriangleProcedure {
 
     vertex_data: Vec<Vertex>,
-    vertex_storage: Option<HaBufferRepository<Host>>,
-    vertex_buffer : Option<HaVertexBlock>,
+    vertex_storage: HaBufferRepository<Host>,
+    vertex_buffer : HaVertexBlock,
 
-    graphics_pipeline: Option<HaGraphicsPipeline>,
+    graphics_pipeline: HaGraphicsPipeline,
 
-    command_pool   : Option<HaCommandPool>,
+    command_pool   : HaCommandPool,
     command_buffers: Vec<HaCommandBuffer>,
 
     present_availables: Vec<HaSemaphore>,
@@ -81,45 +80,57 @@ struct TriangleProcedure {
 
 impl TriangleProcedure {
 
-    fn new() -> TriangleProcedure {
-        TriangleProcedure {
-            vertex_data: VERTEX_DATA.to_vec(),
-            vertex_storage: None,
-            vertex_buffer : None,
+    fn new(loader: AssetsLoader) -> Result<TriangleProcedure, ProcedureError> {
 
-            graphics_pipeline: None,
+        let vertex_data = VERTEX_DATA.to_vec();
 
-            command_pool: None,
-            command_buffers: vec![],
+        let (vertex_buffer, vertex_storage) = loader.assets(|kit| {
+            TriangleProcedure::assets(kit, &vertex_data)
+        })?;
 
-            present_availables: vec![],
-        }
+        let graphics_pipeline = loader.pipelines(|kit, swapchain| {
+            TriangleProcedure::pipelines(kit, swapchain)
+        })?;
+
+        let present_availables = loader.subresources(|device| {
+            TriangleProcedure::subresources(device, &graphics_pipeline)
+        })?;
+
+        let (command_pool, command_buffers) = loader.commands(|kit| {
+            TriangleProcedure::commands(kit, &graphics_pipeline, &vertex_buffer, &vertex_data)
+        })?;
+
+        let procecure = TriangleProcedure {
+            vertex_data, vertex_storage, vertex_buffer,
+            graphics_pipeline,
+            command_pool, command_buffers,
+            present_availables,
+        };
+
+        Ok(procecure)
     }
-}
 
-impl ProgramProc for TriangleProcedure {
-
-    fn assets(&mut self, kit: AllocatorKit) -> Result<(), ProcedureError> {
+    fn assets(kit: AllocatorKit, vertex_data: &Vec<Vertex>) -> Result<(HaVertexBlock, HaBufferRepository<Host>), ProcedureError> {
 
         // vertex buffer
         let mut vertex_allocator = kit.buffer(BufferStorageType::HOST);
 
-        let vertex_info = VertexBlockInfo::new(data_size!(self.vertex_data, Vertex));
+        let vertex_info = VertexBlockInfo::new(data_size!(vertex_data, Vertex));
         let block_index = vertex_allocator.append_buffer(vertex_info)?;
 
         let buffer_distributor = vertex_allocator.allocate()?;
-        self.vertex_buffer = Some(buffer_distributor.acquire_vertex(block_index));
+        let vertex_buffer = buffer_distributor.acquire_vertex(block_index);
 
-        self.vertex_storage = Some(buffer_distributor.into_repository());
+        let mut vertex_storage = buffer_distributor.into_repository();
 
-        self.vertex_storage.as_mut().unwrap().data_uploader()?
-            .upload(self.vertex_buffer.as_ref().unwrap(), &self.vertex_data)?
+        vertex_storage.data_uploader()?
+            .upload(&vertex_buffer, vertex_data)?
             .finish()?;
 
-        Ok(())
+        Ok((vertex_buffer, vertex_storage))
     }
 
-    fn pipelines(&mut self, kit: PipelineKit, swapchain: &HaSwapchain) -> Result<(), ProcedureError> {
+    fn pipelines(kit: PipelineKit, swapchain: &HaSwapchain) -> Result<HaGraphicsPipeline, ProcedureError> {
 
         // shaders
         let vertex_shader = HaShaderInfo::from_spirv(
@@ -159,48 +170,53 @@ impl ProgramProc for TriangleProcedure {
         let pipeline_index = pipeline_builder.add_config(pipeline_config);
 
         let mut pipelines = pipeline_builder.build()?;
-        self.graphics_pipeline = Some(pipelines.take_at(pipeline_index)?);
+        let graphics_pipeline = pipelines.take_at(pipeline_index)?;
 
-        Ok(())
+        Ok(graphics_pipeline)
     }
 
-    fn subresources(&mut self, device: &HaDevice) -> Result<(), ProcedureError> {
+    fn subresources(device: &HaDevice, graphics_pipeline: &HaGraphicsPipeline) -> Result<Vec<HaSemaphore>, ProcedureError> {
+
         // sync
-        for _ in 0..self.graphics_pipeline.as_ref().unwrap().frame_count() {
+        let mut present_availables = vec![];
+        for _ in 0..graphics_pipeline.frame_count() {
             let present_available = HaSemaphore::setup(device)?;
-            self.present_availables.push(present_available);
+            present_availables.push(present_available);
         }
 
-        Ok(())
+        Ok(present_availables)
     }
 
-    fn commands(&mut self, kit: CommandKit) -> Result<(), ProcedureError> {
+    fn commands(kit: CommandKit, graphics_pipeline: &HaGraphicsPipeline, vertex_buffer: &HaVertexBlock, data: &Vec<Vertex>) -> Result<(HaCommandPool, Vec<HaCommandBuffer>), ProcedureError> {
 
-        self.command_pool = Some(kit.pool(DeviceQueueIdentifier::Graphics)?);
+        let command_pool = kit.pool(DeviceQueueIdentifier::Graphics)?;
+        let mut command_buffers = vec![];
 
-        let command_buffer_count = self.graphics_pipeline.as_ref().unwrap().frame_count();
-        let raw_commands = self.command_pool.as_ref().unwrap()
+        let command_buffer_count = graphics_pipeline.frame_count();
+        let raw_commands = command_pool
             .allocate(CmdBufferUsage::UnitaryCommand, command_buffer_count)?;
 
         for (frame_index, command) in raw_commands.into_iter().enumerate() {
             let mut recorder = kit.recorder(command);
 
             recorder.begin_record(vk::CommandBufferUsageFlags::SIMULTANEOUS_USE)?
-                .begin_render_pass(&self.graphics_pipeline.as_ref().unwrap(), frame_index)
-                .bind_pipeline(&self.graphics_pipeline.as_ref().unwrap())
-                .bind_vertex_buffers(0, &[self.vertex_buffer.as_ref().unwrap()])
-                .draw(self.vertex_data.len() as vkuint, 1, 0, 0)
+                .begin_render_pass(graphics_pipeline, frame_index)
+                .bind_pipeline(graphics_pipeline)
+                .bind_vertex_buffers(0, &[vertex_buffer])
+                .draw(data.len() as vkuint, 1, 0, 0)
                 .end_render_pass();
 
             let command_recorded = recorder.end_record()?;
-            self.command_buffers.push(command_recorded);
+            command_buffers.push(command_recorded);
         }
 
-        Ok(())
+        Ok((command_pool, command_buffers))
     }
+}
 
-    fn draw(&mut self, device: &HaDevice, device_available: &HaFence, image_available: &HaSemaphore, image_index: usize, _: f32)
-            -> Result<&HaSemaphore, ProcedureError> {
+impl GraphicsRoutine for TriangleProcedure {
+
+    fn draw(&mut self, device: &HaDevice, device_available: &HaFence, image_available: &HaSemaphore, image_index: usize, _: f32) -> Result<&HaSemaphore, ProcedureError> {
 
         let submit_infos = [
             QueueSubmitBundle {
@@ -222,19 +238,38 @@ impl ProgramProc for TriangleProcedure {
             .for_each(|semaphore| semaphore.cleanup());
         self.present_availables.clear();
         self.command_buffers.clear();
-        self.graphics_pipeline.as_ref().unwrap().cleanup();
-        self.command_pool.as_ref().unwrap().cleanup();
+        self.graphics_pipeline.cleanup();
+        self.command_pool.cleanup();
 
         Ok(())
     }
 
-    fn cleanup(&mut self, _: &HaDevice) {
+    fn reload_res(&mut self, loader: AssetsLoader) -> Result<(), ProcedureError> {
+
+        self.graphics_pipeline = loader.pipelines(|kit, swapchain| {
+            TriangleProcedure::pipelines(kit, swapchain)
+        })?;
+
+        self.present_availables = loader.subresources(|device| {
+            TriangleProcedure::subresources(device, &self.graphics_pipeline)
+        })?;
+
+        let (command_pool, command_buffers) = loader.commands(|kit| {
+            TriangleProcedure::commands(kit, &self.graphics_pipeline, &self.vertex_buffer, &self.vertex_data)
+        })?;
+        self.command_pool = command_pool;
+        self.command_buffers = command_buffers;
+
+        Ok(())
+    }
+
+    fn clean_routine(&mut self, _device: &HaDevice) {
 
         self.present_availables.iter()
             .for_each(|semaphore| semaphore.cleanup());
-        self.graphics_pipeline.as_ref().unwrap().cleanup();
-        self.command_pool.as_ref().unwrap().cleanup();
-        self.vertex_storage.as_mut().unwrap().cleanup();
+        self.graphics_pipeline.cleanup();
+        self.command_pool.cleanup();
+        self.vertex_storage.cleanup();
     }
 
     fn react_input(&mut self, inputer: &ActionNerve, _: f32) -> SceneAction {
@@ -249,13 +284,23 @@ impl ProgramProc for TriangleProcedure {
 
 fn main() {
 
-    let procecure = TriangleProcedure::new();
+    // TODO: handle unwrap().
 
     let manifest = PathBuf::from(MANIFEST_PATH);
-    // TODO: handle the Result.
-    let mut program = ProgramEnv::new(Some(manifest), procecure).unwrap();
+    let mut program_env = ProgramEnv::new(Some(manifest)).unwrap();
 
-    match program.launch() {
+    let mut routine_flow = {
+        let builder = program_env.routine().unwrap();
+
+        let routine = {
+            let asset_loader = builder.assets_loader();
+
+            TriangleProcedure::new(asset_loader).unwrap()
+        };
+        builder.build(routine)
+    };
+
+    match routine_flow.launch(program_env) {
         | Ok(_) => (),
         | Err(err) => {
             panic!("[Error] {}", err)

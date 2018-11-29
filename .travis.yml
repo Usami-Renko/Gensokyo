@@ -6,4 +6,4 @@ rust:
 script:
 - cargo build --manifest-path ./hakurei/Cargo.toml
 - cargo build --manifest-path ./hakurei-macros/Cargo.toml
-- cargo build --manifest-path ./examples/Eg01.basic/Cargo.toml
+#- cargo build --manifest-path ./examples/Eg01.basic/Cargo.toml
