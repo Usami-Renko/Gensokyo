@@ -1,7 +1,7 @@
 
 use ash::vk;
 
-use memory::traits::MemoryMapable;
+use memory::traits::MemoryMappable;
 
 use types::{ vkptr, vkbytes };
 
@@ -86,7 +86,7 @@ pub struct MemoryMapAlias {
     pub is_coherent: bool,
 }
 
-impl MemoryMapable for MemoryMapAlias {
+impl MemoryMappable for MemoryMapAlias {
 
     fn map_handle(&self) -> vk::DeviceMemory {
         self.handle

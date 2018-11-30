@@ -1,6 +1,6 @@
 
 pub use self::target::HaMemory;
-pub use self::traits::{ HaMemoryAbstract, MemoryMapable };
+pub use self::traits::{ HaMemoryAbstract, MemoryMappable };
 pub use self::structs::{ HaMemoryType, MemoryRange, MemoryMapStatus };
 pub use self::selector::MemorySelector;
 pub use self::traits::MemoryDstEntity;

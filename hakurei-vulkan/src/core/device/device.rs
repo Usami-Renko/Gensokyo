@@ -11,7 +11,6 @@ use core::error::LogicalDeviceError;
 
 use sync::HaFence;
 use descriptor::DescriptorWriteInfo;
-use command::CommandError;
 use sync::SyncError;
 
 use types::{ vklint, vkuint };
@@ -74,7 +73,7 @@ impl HaLogicalDevice {
         device.transfer_queue.transfer(device)
     }
 
-    pub fn submit(&self, bundles: &[QueueSubmitBundle], fence: Option<&HaFence>, queue_ident: DeviceQueueIdentifier) -> Result<(), CommandError> {
+    pub fn submit(&self, bundles: &[QueueSubmitBundle], fence: Option<&HaFence>, queue_ident: DeviceQueueIdentifier) -> Result<(), SyncError> {
 
         // TODO: Add configuration to select submit queue family
         // TODO: Add Speed test to this function.
@@ -107,11 +106,11 @@ impl HaLogicalDevice {
         let queue = self.queue_handle_by_identifier(queue_ident);
         let fence = fence
             .and_then(|f| Some(f.handle))
-            .unwrap_or(HaFence::null_handle());
+            .unwrap_or(vk::Fence::null());
 
         unsafe {
             self.handle.queue_submit(queue.handle, &submit_infos, fence)
-                .or(Err(CommandError::QueueSubmitError))?;
+                .or(Err(SyncError::QueueSubmitError))?;
         }
 
         Ok(())

@@ -3,7 +3,7 @@ use ash::vk;
 
 use core::device::HaDevice;
 
-use memory::{ HaMemoryType, MemoryMapable };
+use memory::{ HaMemoryType, MemoryMappable };
 use memory::types::{ Host, Device, Cached, Staging };
 use memory::MemoryError;
 
@@ -16,7 +16,7 @@ pub trait BufferMemoryTypeAbs: Copy {
 
     fn complement_usage(&self, origin: vk::BufferUsageFlags) -> vk::BufferUsageFlags;
 
-    fn map_memory_if_need(&self, _device: &HaDevice, _mapable_memory: &mut MemoryMapable) -> Result<(), MemoryError> { Ok(()) }
+    fn map_memory_if_need(&self, _device: &HaDevice, _mapable_memory: &mut MemoryMappable) -> Result<(), MemoryError> { Ok(()) }
 }
 
 #[derive(Debug, Clone, Copy, Eq, PartialEq)]
@@ -37,7 +37,7 @@ impl BufferMemoryTypeAbs for Host {
         origin
     }
 
-    fn map_memory_if_need(&self, device: &HaDevice, mapable_memory: &mut MemoryMapable) -> Result<(), MemoryError> {
+    fn map_memory_if_need(&self, device: &HaDevice, mapable_memory: &mut MemoryMappable) -> Result<(), MemoryError> {
         mapable_memory.map_range(device, None)
     }
 }

@@ -90,7 +90,7 @@ impl WindowEnv {
 pub(super) struct VulkanEnv {
 
     instance: HaInstance,
-    debugger: Option<HaDebugger>,
+    debugger: HaDebugger,
 
     surface: HaSurface,
 
@@ -103,11 +103,7 @@ impl VulkanEnv {
     pub fn build(config: &EngineConfig, win: &winit::Window) -> Result<VulkanEnv, ProcedureError> {
         let instance = HaInstance::new(&config.core.instance, &config.core.validation)?;
 
-        let debugger = if config.core.validation.is_enable {
-            Some(HaDebugger::setup(&instance, &config.core.validation)?)
-        } else {
-            None
-        };
+        let debugger = HaDebugger::new(&instance, &config.core.validation)?;
 
         let surface = HaSurface::new(&instance, win)?;
 
@@ -138,12 +134,10 @@ impl VulkanEnv {
 
         self.physical.cleanup();
         self.device.cleanup();
+
         self.surface.cleanup();
 
-        if let Some(ref debugger) = self.debugger {
-            debugger.cleanup();
-        }
-
+        self.debugger.cleanup();
         self.instance.clenaup();
     }
 }

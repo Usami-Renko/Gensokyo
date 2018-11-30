@@ -24,7 +24,7 @@ pub trait HaMemoryAbstract {
 
     fn allocate(device: &HaDevice, size: vkbytes, selector: &MemorySelector) -> Result<Self, MemoryError> where Self: Sized;
 
-    fn as_mut_mapable(&mut self) -> Option<&mut MemoryMapable>;
+    fn as_mut_mapable(&mut self) -> Option<&mut MemoryMappable>;
 
     fn bind_to_buffer(&self, device: &HaDevice, buffer: &HaBuffer, memory_offset: vkbytes) -> Result<(), MemoryError> {
 
@@ -50,7 +50,7 @@ pub trait HaMemoryAbstract {
 }
 
 /// A trait indicate a Memory is able to map.
-pub trait MemoryMapable {
+pub trait MemoryMappable {
 
     fn map_handle(&self) -> vk::DeviceMemory;
 

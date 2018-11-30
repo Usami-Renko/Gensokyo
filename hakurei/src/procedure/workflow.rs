@@ -1,7 +1,6 @@
 
 use gsvk::core::device::HaDevice;
 use gsvk::sync::{ HaFence, HaSemaphore };
-use gsvk::types::vkuint;
 
 use procedure::env::ProgramEnv;
 use procedure::chain::ChainResource;

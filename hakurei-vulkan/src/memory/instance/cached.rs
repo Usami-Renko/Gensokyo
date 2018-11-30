@@ -6,7 +6,7 @@ use buffer::BufferBlock;
 use buffer::allocator::BufferAllocateInfos;
 use memory::structs::HaMemoryType;
 use memory::target::HaMemory;
-use memory::traits::{ HaMemoryAbstract, MemoryMapable };
+use memory::traits::{ HaMemoryAbstract, MemoryMappable };
 use memory::selector::MemorySelector;
 use memory::instance::traits::{ HaImageMemoryAbs, HaBufferMemoryAbs };
 use memory::instance::staging::UploadStagingResource;
@@ -40,7 +40,7 @@ impl HaMemoryAbstract for HaCachedMemory {
         Ok(memory)
     }
 
-    fn as_mut_mapable(&mut self) -> Option<&mut MemoryMapable> {
+    fn as_mut_mapable(&mut self) -> Option<&mut MemoryMappable> {
         None
     }
 }

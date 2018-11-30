@@ -7,7 +7,7 @@ use core::device::device::{ HaLogicalDevice, DeviceConfig };
 use core::device::queue::{ HaQueue, HaQueueAbstract };
 use core::error::LogicalDeviceError;
 
-use sync::HaFence;
+use sync::{ HaFence, SyncError };
 use command::{ HaCommandBuffer, CmdBufferUsage };
 use command::CommandError;
 
@@ -83,8 +83,8 @@ impl HaTransfer {
     }
 
     pub fn commits(&mut self, commands: Vec<HaCommandBuffer>) {
-        commands.into_iter()
-            .for_each(|command| self.command_buffers.push(command));
+
+        self.command_buffers.extend(commands);
     }
 
     pub fn command(&self) -> Result<HaCommandBuffer, CommandError> {
@@ -98,14 +98,13 @@ impl HaTransfer {
         self.command_buffers.push(command);
     }
 
-    pub fn excute(&mut self) -> Result<(), CommandError> {
+    pub fn excute(&mut self) -> Result<(), SyncError> {
 
         if self.command_buffers.is_empty() {
-            return Err(CommandError::NoCommandAvailable)?;
+            return Ok(())
         }
 
-        // TODO: handle unwrap().
-        self.fence.reset().unwrap();
+        self.fence.reset()?;
 
         let submit_commands: Vec<vk::CommandBuffer> = collect_handle!(self.command_buffers);
 
@@ -125,11 +124,10 @@ impl HaTransfer {
 
         unsafe {
             self.device.handle.queue_submit(transfer_queue.queue.handle, &[submit_info], self.fence.handle)
-                .or(Err(CommandError::QueueSubmitError))?;
+                .or(Err(SyncError::QueueSubmitError))?;
         }
 
-        // TODO: handle unwrap().
-        self.fence.wait(self.transfer_wait_time).unwrap();
+        self.fence.wait(self.transfer_wait_time)?;
         transfer_queue.pool.free(&self.device, &self.command_buffers);
         self.command_buffers.clear();
 

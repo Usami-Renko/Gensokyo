@@ -37,12 +37,6 @@ impl HaSemaphore {
         Ok(semaphore)
     }
 
-    // TODO: Remove this function.
-    #[inline]
-    pub fn null_handle() -> vk::Semaphore {
-        vk::Semaphore::null()
-    }
-
     pub fn cleanup(&self) {
         unsafe {
             self.device.handle.destroy_semaphore(self.handle, None);

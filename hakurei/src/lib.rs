@@ -1,4 +1,6 @@
 
+#![recursion_limit = "128"]
+
 extern crate winit;
 #[macro_use]
 extern crate ash;

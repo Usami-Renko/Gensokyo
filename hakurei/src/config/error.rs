@@ -36,7 +36,9 @@ impl_from_err!(Mapping(MappingError) -> ConfigError);
 #[derive(Debug, Clone, Copy, Eq, PartialEq)]
 pub enum MappingError {
 
+    DebugInstanceTypeError,
     DebugReportError,
+    DebugUtilsError,
     DeviceTypeError,
     DeviceQueueOperationError,
     DeviceTransferTimeError,
@@ -56,7 +58,9 @@ impl fmt::Display for MappingError {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
 
         let description = match self {
+            | MappingError::DebugInstanceTypeError         => "Failed to recognize request debug instance type",
             | MappingError::DebugReportError               => "Failed to recognize request debug report flag.",
+            | MappingError::DebugUtilsError                => "Failed to recognize request debug utils flag.",
             | MappingError::DeviceTypeError                => "Failed to recognize request device type.",
             | MappingError::DeviceQueueOperationError      => "Failed to recognize request device queue operation.",
             | MappingError::DeviceTransferTimeError        => "Failed to recognize request device transfer time.",

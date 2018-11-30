@@ -10,6 +10,8 @@ pub enum SyncError {
 
     FenceTimeOutError,
     FenceResetError,
+
+    QueueSubmitError,
 }
 
 impl Error for SyncError {}
@@ -23,6 +25,8 @@ impl fmt::Display for SyncError {
 
             | SyncError::FenceTimeOutError      => "Fence timeout has expired.",
             | SyncError::FenceResetError        => "Failed to reset fence.",
+
+            | SyncError::QueueSubmitError       => "Failed to submit command to device.",
         };
 
         write!(f, "{}", description)

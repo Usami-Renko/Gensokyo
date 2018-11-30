@@ -104,11 +104,6 @@ impl<'a, 'chain> ChainResource where 'chain: 'a {
         Ok(())
     }
 
-    #[inline]
-    pub fn current_frame(&self) -> usize {
-        self.current_frame
-    }
-
     pub fn next_frame(&mut self) {
         self.current_frame = (self.current_frame + 1) % self.frame_in_flights;
     }

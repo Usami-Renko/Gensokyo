@@ -7,8 +7,6 @@ use std::fmt;
 pub enum CommandError {
 
     QueueFamilyUnavailable,
-    QueueSubmitError,
-    NoCommandAvailable,
     PoolCreationError,
     BufferAllocateError,
     RecordBeginError,
@@ -22,8 +20,6 @@ impl fmt::Display for CommandError {
 
         let description = match self {
             | CommandError::QueueFamilyUnavailable => "Graphics Queue Family is not available.",
-            | CommandError::QueueSubmitError       => "Failed to submit command to device.",
-            | CommandError::NoCommandAvailable     => "There must be command buffer to execute",
             | CommandError::PoolCreationError      => "Failed to create Command Pool.",
             | CommandError::BufferAllocateError    => "Failed to allocate Command Buffer.",
             | CommandError::RecordBeginError       => "Failed to begin Command Buffer recording.",

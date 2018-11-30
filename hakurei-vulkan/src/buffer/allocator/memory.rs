@@ -4,7 +4,7 @@ use core::device::HaDevice;
 use buffer::target::BufferDescInfo;
 use buffer::allocator::types::BufferMemoryTypeAbs;
 
-use memory::{ HaMemoryType, HaMemoryAbstract, MemoryMapable, MemorySelector };
+use memory::{ HaMemoryType, HaMemoryAbstract, MemoryMappable, MemorySelector };
 use memory::instance::{ HaBufferMemory, HaHostMemory, HaCachedMemory, HaDeviceMemory, HaStagingMemory };
 use memory::MemoryError;
 
@@ -55,7 +55,7 @@ impl<M> BufMemAllocator<M> where M: BufferMemoryTypeAbs {
     pub fn memory_map_if_need(&mut self, device: &HaDevice) -> Result<(), MemoryError> {
 
         if let Some(mapable_memory) = self.memory.as_mut_mapable() {
-            self.phantom_type.map_memory_if_need(device, mapable_memory as &mut MemoryMapable)
+            self.phantom_type.map_memory_if_need(device, mapable_memory as &mut MemoryMappable)
         } else {
             Ok(())
         }

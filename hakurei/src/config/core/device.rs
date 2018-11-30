@@ -25,7 +25,7 @@ impl ConfigMirror for DeviceConfigMirror {
 
         let config = DeviceConfig {
             queue_request_strategy: vk_raw2queue_request_strategy(&self.queue_request_strategy)?,
-            transfer_wait_time: vk_raw2transfer_wait_time(&self.transfer_time_out, self.transfer_duration)?.vulkan_time(),
+            transfer_wait_time    : vk_raw2transfer_wait_time(&self.transfer_time_out, self.transfer_duration)?.vulkan_time(),
         };
 
         Ok(config)

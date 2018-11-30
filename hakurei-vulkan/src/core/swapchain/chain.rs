@@ -53,9 +53,9 @@ impl HaSwapchain {
 
         // the the handle of semaphore and fence
         let semaphore = sign_semaphore.and_then(|s| Some(s.handle))
-            .unwrap_or(HaSemaphore::null_handle());
+            .unwrap_or(vk::Semaphore::null());
         let fence = sign_fence.and_then(|f| Some(f.handle))
-            .unwrap_or(HaFence::null_handle());
+            .unwrap_or(vk::Fence::null());
 
         // execute next image acquire operation.
         let (image_index, is_sub_optimal) = unsafe {

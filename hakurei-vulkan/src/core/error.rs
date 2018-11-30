@@ -35,7 +35,8 @@ impl fmt::Display for InstanceError {
 #[derive(Debug, Clone, Copy, Eq, PartialEq)]
 pub enum ValidationError {
 
-    DebugCallbackCreationError,
+    DebugReportCallbackCreationError,
+    DebugUtilsCallbackCreationEror,
 }
 
 impl Error for ValidationError {}
@@ -44,7 +45,8 @@ impl fmt::Display for ValidationError {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
 
         let description = match self {
-            | ValidationError::DebugCallbackCreationError => "Failed to create DebugReport Callback Object.",
+            | ValidationError::DebugReportCallbackCreationError => "Failed to create DebugReport Callback Object.",
+            | ValidationError::DebugUtilsCallbackCreationEror   => "Failed to create DebugUtils Callback Object.",
         };
 
         write!(f, "{}", description)

@@ -63,12 +63,6 @@ impl HaFence {
         Ok(())
     }
 
-    // TODO: Remove this function.
-    #[inline]
-    pub fn null_handle() -> vk::Fence {
-        vk::Fence::null()
-    }
-
     pub fn cleanup(&self) {
         unsafe {
             self.device.handle.destroy_fence(self.handle, None);

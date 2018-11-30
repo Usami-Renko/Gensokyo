@@ -9,7 +9,7 @@ use buffer::allocator::BufferAllocateInfos;
 
 use memory::structs::{ HaMemoryType, MemoryMapStatus, MemoryRange, MemoryMapAlias };
 use memory::target::HaMemory;
-use memory::traits::{ HaMemoryAbstract, MemoryMapable };
+use memory::traits::{ HaMemoryAbstract, MemoryMappable };
 use memory::selector::MemorySelector;
 use memory::instance::HaBufferMemoryAbs;
 use memory::transfer::MemoryDataDelegate;
@@ -25,7 +25,7 @@ pub struct HaHostMemory {
     map_status: MemoryMapStatus,
 }
 
-impl MemoryMapable for HaHostMemory {
+impl MemoryMappable for HaHostMemory {
 
     fn map_handle(&self) -> vk::DeviceMemory {
         self.target.handle
@@ -57,7 +57,7 @@ impl HaMemoryAbstract for HaHostMemory {
         Ok(memory)
     }
 
-    fn as_mut_mapable(&mut self) -> Option<&mut MemoryMapable> {
+    fn as_mut_mapable(&mut self) -> Option<&mut MemoryMappable> {
         Some(self)
     }
 

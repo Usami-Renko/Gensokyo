@@ -17,7 +17,15 @@ pub(super) fn manifest_toml() -> toml::Value {
         [core.validation]
         enable = true
         layers = ["VK_LAYER_LUNARG_standard_validation"]
-        flags  = ["Error", "Warning", "PerformanceWarning"]
+        types  = "DebugUtils"
+
+        [core.validation.report]
+        flags = ["Error", "Warning", "PerformanceWarning"]
+
+        [core.validation.utils]
+        flags    = []
+        severity = ["Verbose", "Warning", "Error", "Info"]
+        types    = ["General", "Performance", "Validation"]
 
         [core.device]
         queue_request_strategy = "SingleFamilySingleQueue"
