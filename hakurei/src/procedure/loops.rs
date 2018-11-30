@@ -49,8 +49,8 @@ impl<Routine> RoutineFlow<Routine> where Routine: GraphicsRoutine {
 
                         continue
                     },
-                    | _ => return Err(RuntimeError::Procedure(error))
-                }
+                    | _ => return Err(RuntimeError::Procedure(error)),
+                },
             }
         }
 

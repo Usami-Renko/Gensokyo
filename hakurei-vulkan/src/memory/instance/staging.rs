@@ -66,7 +66,7 @@ impl HaMemoryAbstract for HaStagingMemory {
 
 impl HaBufferMemoryAbs for HaStagingMemory {
 
-    fn to_agency(&self, _: &HaDevice, _: &HaPhyDevice, _: &Option<BufferAllocateInfos>) -> Result<Box<dyn MemoryDataDelegate>, MemoryError> {
+    fn to_agency(&self, _: &HaDevice, _: &HaPhyDevice, _: &BufferAllocateInfos) -> Result<Box<dyn MemoryDataDelegate>, MemoryError> {
 
         let agency = StagingDataAgency::new(self)?;
         Ok(Box::new(agency))

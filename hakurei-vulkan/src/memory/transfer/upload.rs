@@ -14,14 +14,15 @@ use std::marker::PhantomData;
 
 pub struct BufferDataUploader<M> where M: BufferMemoryTypeAbs {
 
-    device: HaDevice,
     phantom_type: PhantomData<M>,
+
+    device: HaDevice,
     agency: Box<dyn MemoryDataDelegate>,
 }
 
 impl<M> BufferDataUploader<M> where M: BufferMemoryTypeAbs {
 
-    pub(crate) fn new(phantom_type: PhantomData<M>, physical: &HaPhyDevice, device: &HaDevice, memory: &HaBufferMemory, allocate_infos: &Option<BufferAllocateInfos>) -> Result<BufferDataUploader<M>, AllocatorError> {
+    pub(crate) fn new(phantom_type: PhantomData<M>, physical: &HaPhyDevice, device: &HaDevice, memory: &HaBufferMemory, allocate_infos: &BufferAllocateInfos) -> Result<BufferDataUploader<M>, AllocatorError> {
 
         let mut agency = memory.to_agency(device, physical, allocate_infos)?;
         agency.prepare(device)?;

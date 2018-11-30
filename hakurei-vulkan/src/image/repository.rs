@@ -7,15 +7,14 @@ use image::view::HaImageView;
 
 use std::marker::PhantomData;
 
-#[derive(Default)]
 pub struct HaImageRepository<M> {
 
     phantom_type: PhantomData<M>,
 
-    device : Option<HaDevice>,
+    device : HaDevice,
     images : Vec<HaImage>,
     views  : Vec<HaImageView>,
-    memory : Option<HaImageMemory>,
+    memory : HaImageMemory,
 }
 
 impl<M> HaImageRepository<M> {
@@ -25,26 +24,18 @@ impl<M> HaImageRepository<M> {
 
         HaImageRepository {
             phantom_type: PhantomData,
-            device: Some(device),
-            images,
-            views,
-            memory: Some(memory),
+            device, images, views, memory,
         }
     }
 
     pub fn cleanup(&mut self) {
 
-        if let Some(ref device) = self.device {
+        self.images.iter()
+            .for_each(|image| image.cleanup(&self.device));
+        self.views.iter()
+            .for_each(|view| view.cleanup(&self.device));
 
-            self.images.iter()
-                .for_each(|image| image.cleanup(device));
-            self.views.iter()
-                .for_each(|view| view.cleanup(device));
-
-            if let Some(ref mut memory) = self.memory {
-                memory.cleanup(device);
-            }
-        }
+        self.memory.cleanup(&self.device);
 
         self.views.clear();
         self.images.clear();

@@ -108,6 +108,7 @@ impl HaLogicalDevice {
         let fence = fence
             .and_then(|f| Some(f.handle))
             .unwrap_or(HaFence::null_handle());
+
         unsafe {
             self.handle.queue_submit(queue.handle, &submit_infos, fence)
                 .or(Err(CommandError::QueueSubmitError))?;

@@ -13,7 +13,7 @@ pub type HaImageMemory  = Box<dyn HaImageMemoryAbs>;
 
 pub trait HaBufferMemoryAbs: HaMemoryAbstract {
 
-    fn to_agency(&self, device: &HaDevice, physical: &HaPhyDevice, allot_infos: &Option<BufferAllocateInfos>) -> Result<Box<dyn MemoryDataDelegate>, MemoryError>;
+    fn to_agency(&self, device: &HaDevice, physical: &HaPhyDevice, allot_infos: &BufferAllocateInfos) -> Result<Box<dyn MemoryDataDelegate>, MemoryError>;
 }
 
 pub trait HaImageMemoryAbs: HaMemoryAbstract {}

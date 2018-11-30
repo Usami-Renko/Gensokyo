@@ -70,7 +70,7 @@ impl HaMemoryAbstract for HaHostMemory {
 
 impl HaBufferMemoryAbs for HaHostMemory {
 
-    fn to_agency(&self, _: &HaDevice, _: &HaPhyDevice, _: &Option<BufferAllocateInfos>) -> Result<Box<dyn MemoryDataDelegate>, MemoryError> {
+    fn to_agency(&self, _: &HaDevice, _: &HaPhyDevice, _: &BufferAllocateInfos) -> Result<Box<dyn MemoryDataDelegate>, MemoryError> {
 
         let agency = HostDataAgency::new(self);
         Ok(Box::new(agency))

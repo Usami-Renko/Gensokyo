@@ -47,14 +47,10 @@ impl HaMemoryAbstract for HaCachedMemory {
 
 impl HaBufferMemoryAbs for HaCachedMemory {
 
-    fn to_agency(&self, device: &HaDevice, physical: &HaPhyDevice, allot_infos: &Option<BufferAllocateInfos>) -> Result<Box<dyn MemoryDataDelegate>, MemoryError> {
+    fn to_agency(&self, device: &HaDevice, physical: &HaPhyDevice, allot_infos: &BufferAllocateInfos) -> Result<Box<dyn MemoryDataDelegate>, MemoryError> {
 
-        if let Some(allot_infos) = allot_infos {
-            let agency = CachedDataAgency::new(device, physical, allot_infos)?;
-            Ok(Box::new(agency))
-        } else {
-            Err(MemoryError::AllocateInfoMissing)
-        }
+        let agency = CachedDataAgency::new(device, physical, allot_infos)?;
+        Ok(Box::new(agency))
     }
 }
 

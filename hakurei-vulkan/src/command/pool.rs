@@ -12,7 +12,7 @@ use std::ptr;
 
 pub struct HaCommandPool {
 
-    device: Option<HaDevice>,
+    device: HaDevice,
     handle: vk::CommandPool,
 }
 
@@ -37,7 +37,7 @@ impl HaCommandPool {
         };
 
         let pool = HaCommandPool {
-            device: Some(device.clone()),
+            device: device.clone(),
             handle,
         };
         Ok(pool)
@@ -56,10 +56,8 @@ impl HaCommandPool {
             command_buffer_count: count as vkuint,
         };
 
-        let device = self.device.as_ref().unwrap();
-
         let handles = unsafe {
-            device.handle.allocate_command_buffers(&allocate_info)
+            self.device.handle.allocate_command_buffers(&allocate_info)
                 .or(Err(CommandError::BufferAllocateError))?
         };
 
@@ -74,17 +72,13 @@ impl HaCommandPool {
         let buffer_handles = collect_handle!(buffers_to_free);
 
         unsafe {
-            // TODO: handle unwrap
-            self.device.as_ref().unwrap().handle
-                .free_command_buffers(self.handle, &buffer_handles);
+            self.device.handle.free_command_buffers(self.handle, &buffer_handles);
         }
     }
 
     pub fn cleanup(&self) {
         unsafe {
-            // TODO: handle unwrap
-            self.device.as_ref().unwrap().handle
-                .destroy_command_pool(self.handle, None);
+            self.device.handle.destroy_command_pool(self.handle, None);
         }
     }
 }

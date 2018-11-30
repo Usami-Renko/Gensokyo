@@ -27,7 +27,7 @@ pub struct HaImageDistributor<M> {
 
 impl<M> HaImageDistributor<M> {
 
-    pub(super) fn new(_: PhantomData<M>, device: HaDevice, infos: Vec<ImageAllocateInfo>, memory: HaImageMemory) -> Result<HaImageDistributor<M>, AllocatorError> {
+    pub(super) fn new(phantom_type: PhantomData<M>, device: HaDevice, infos: Vec<ImageAllocateInfo>, memory: HaImageMemory) -> Result<HaImageDistributor<M>, AllocatorError> {
 
         let mut views = vec![];
         for info in infos.iter() {
@@ -37,8 +37,7 @@ impl<M> HaImageDistributor<M> {
         }
 
         let distributor = HaImageDistributor {
-            phantom_type: PhantomData,
-            device, memory, infos, views,
+            phantom_type, device, memory, infos, views,
         };
 
         Ok(distributor)
@@ -67,7 +66,7 @@ impl<M> HaImageDistributor<M> {
         let image = HaDepthStencilAttachment::setup(
             info,
             &self.infos[allocate_index],
-            &self.views[allocate_index],
+            &self.views[allocate_index]
         );
 
         Ok(image)

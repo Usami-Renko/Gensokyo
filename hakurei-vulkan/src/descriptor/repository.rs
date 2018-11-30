@@ -6,7 +6,7 @@ use descriptor::HaDescriptorSet;
 
 pub struct HaDescriptorRepository {
 
-    device: Option<HaDevice>,
+    device: HaDevice,
     pool  : HaDescriptorPool,
     sets  : Vec<HaDescriptorSet>,
 }
@@ -17,20 +17,17 @@ impl HaDescriptorRepository {
         -> HaDescriptorRepository {
 
         HaDescriptorRepository {
-            device: Some(device.clone()),
+            device: device.clone(),
             pool, sets,
         }
     }
 
     pub fn cleanup(&mut self) {
 
-        if let Some(ref device) = self.device {
+        self.pool.cleanup(&self.device);
 
-            self.pool.cleanup(&device);
-
-            self.sets.iter()
-                .for_each(|set| set.cleanup(&device));
-        }
+        self.sets.iter()
+            .for_each(|set| set.cleanup(&self.device));
 
         self.sets.clear();
     }

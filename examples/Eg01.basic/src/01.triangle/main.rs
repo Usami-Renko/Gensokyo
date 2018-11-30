@@ -238,8 +238,8 @@ impl GraphicsRoutine for TriangleProcedure {
             .for_each(|semaphore| semaphore.cleanup());
         self.present_availables.clear();
         self.command_buffers.clear();
-        self.graphics_pipeline.cleanup();
         self.command_pool.cleanup();
+        self.graphics_pipeline.cleanup();
 
         Ok(())
     }

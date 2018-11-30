@@ -14,20 +14,19 @@ use memory::{ AllocatorError, MemoryError };
 use types::vkbytes;
 use std::marker::PhantomData;
 
-#[derive(Default)]
 pub struct HaBufferRepository<M> where M: BufferMemoryTypeAbs {
 
     phantom_type: PhantomData<M>,
 
-    device  : Option<HaDevice>,
-    physical: Option<HaPhyDevice>,
+    device  : HaDevice,
+    physical: HaPhyDevice,
     buffers : Vec<HaBuffer>,
-    memory  : Option<HaBufferMemory>,
+    memory  : HaBufferMemory,
 
     /// The offset of each buffer in memory.
     offsets: Vec<vkbytes>,
 
-    allocate_infos: Option<BufferAllocateInfos>,
+    allocate_infos: BufferAllocateInfos,
 }
 
 impl<M> HaBufferRepository<M> where M: BufferMemoryTypeAbs {
@@ -39,65 +38,39 @@ impl<M> HaBufferRepository<M> where M: BufferMemoryTypeAbs {
 
         HaBufferRepository {
             phantom_type,
-
-            device  : Some(device),
-            physical: Some(physical),
-            memory  : Some(memory),
+            device, physical, memory,
 
             buffers, offsets,
-            allocate_infos: Some(allocate_infos),
+            allocate_infos,
         }
     }
 
     pub fn data_uploader(&mut self) -> Result<BufferDataUploader<M>, AllocatorError> {
 
-        if let Some(ref mut memory) = self.memory {
-            BufferDataUploader::new(
-                self.phantom_type,
-                &self.physical.as_ref().unwrap(),
-                &self.device.as_ref().unwrap(),
-                memory,
-                &self.allocate_infos)
-        } else {
-            Err(AllocatorError::Memory(MemoryError::MemoryNotYetAllocateError))
-        }
+        BufferDataUploader::new(self.phantom_type, &self.physical, &self.device, &self.memory, &self.allocate_infos)
     }
 
     // TODO: Implement actual updater.
     pub fn data_updater(&mut self) -> Result<BufferDataUploader<M>, AllocatorError> {
 
-        if let Some(ref mut memory) = self.memory {
-
-            let updater = match memory.memory_type() {
-                | HaMemoryType::HostMemory => {
-                    BufferDataUploader::new(
-                        self.phantom_type,
-                        &self.physical.as_ref().unwrap(),
-                        &self.device.as_ref().unwrap(),
-                        memory,
-                        &self.allocate_infos)?
-                },
-                | HaMemoryType::StagingMemory
-                | HaMemoryType::CachedMemory
-                | HaMemoryType::DeviceMemory => {
-                    return Err(AllocatorError::Memory(MemoryError::MemoryUnableToUpdate))
-                },
-            };
-
-            Ok(updater)
-        } else {
-            Err(AllocatorError::Memory(MemoryError::MemoryNotYetAllocateError))
+        match self.memory.memory_type() {
+            | HaMemoryType::HostMemory => {
+                BufferDataUploader::new(self.phantom_type, &self.physical, &self.device, &self.memory, &self.allocate_infos)
+            },
+            | HaMemoryType::StagingMemory
+            | HaMemoryType::CachedMemory
+            | HaMemoryType::DeviceMemory => {
+                return Err(AllocatorError::Memory(MemoryError::MemoryUnableToUpdate))
+            },
         }
     }
 
     pub fn cleanup(&mut self) {
 
         self.buffers.iter().for_each(|buffer|
-            buffer.cleanup(&self.device.as_ref().unwrap()));
+            buffer.cleanup(&self.device));
 
-        if let Some(ref mut memory) = self.memory {
-            memory.cleanup(&self.device.as_ref().unwrap());
-        }
+        self.memory.cleanup(&self.device);
 
         self.buffers.clear();
         self.offsets.clear();
