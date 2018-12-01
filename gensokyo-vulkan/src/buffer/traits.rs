@@ -4,6 +4,7 @@ use ash::vk;
 use buffer::instance::BufferInstanceType;
 use buffer::entity::BufferBlock;
 use buffer::target::BufferDescInfo;
+use buffer::allocator::BufferBlockIndex;
 use types::vkbytes;
 
 pub trait BufferInstance: BufferCopiable {
@@ -24,6 +25,14 @@ pub trait BufferBlockInfo {
     fn as_desc_ref(&self) -> &BufferDescInfo;
 
     fn into_desc(self) -> BufferDescInfo;
+
+    fn to_block_index(&self, index: usize) -> BufferBlockIndex {
+
+        BufferBlockIndex {
+            value: index,
+            attachment: None,
+        }
+    }
 }
 
 pub trait BufferCopiable {

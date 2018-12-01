@@ -4,6 +4,7 @@ use ash::vk;
 use buffer::target::BufferDescInfo;
 use buffer::entity::BufferBlock;
 use buffer::instance::enums::BufferInstanceType;
+use buffer::allocator::BufferBlockIndex;
 use buffer::traits::{ BufferInstance, BufferBlockInfo };
 use buffer::traits::{ BufferCopiable, BufferCopyInfo };
 
@@ -46,11 +47,11 @@ pub struct GsVertexBlock {
 
 impl GsVertexBlock {
 
-    pub(crate) fn new(block: BufferBlock, repository_index: usize) -> GsVertexBlock {
+    pub(crate) fn new(block: BufferBlock, index: BufferBlockIndex) -> GsVertexBlock {
 
         GsVertexBlock {
             block,
-            repository_index,
+            repository_index: index.value,
         }
     }
 }

@@ -6,6 +6,9 @@ use buffer::entity::BufferBlock;
 use buffer::instance::enums::BufferInstanceType;
 use buffer::traits::{ BufferInstance, BufferBlockInfo };
 use buffer::traits::{ BufferCopiable, BufferCopyInfo };
+use buffer::allocator::{ BufferBlockIndex, BufferDistAttachment };
+use buffer::error::BufferError;
+
 use descriptor::DescriptorBufferBindableTarget;
 use descriptor::{ DescriptorBindingContent, DescriptorBufferBindingInfo };
 use descriptor::{ GsDescriptorType, BufferDescriptorType };
@@ -47,6 +50,19 @@ impl BufferBlockInfo for UniformBlockInfo {
     fn into_desc(self) -> BufferDescInfo {
         self.info
     }
+
+    fn to_block_index(&self, index: usize) -> BufferBlockIndex {
+
+        let attachment = UniformAttachment {
+            binding: self.binding.clone(),
+            element_size: self.element_size,
+        };
+
+        BufferBlockIndex {
+            value: index,
+            attachment: Some(BufferDistAttachment::Uniform(attachment)),
+        }
+    }
 }
 
 pub struct GsUniformBlock {
@@ -60,14 +76,22 @@ pub struct GsUniformBlock {
 
 impl GsUniformBlock {
 
-    pub(super) fn new(info: &UniformBlockInfo, block: BufferBlock, repository_index: usize) -> GsUniformBlock {
+    pub(crate) fn new(block: BufferBlock, index: BufferBlockIndex) -> Result<GsUniformBlock, BufferError> {
 
-        GsUniformBlock {
-            binding: info.binding.clone(),
-            element_size: info.element_size,
+        let repository_index = index.value;
+        let attachment = index.attachment
+            .and_then(|attachment| match attachment {
+                | BufferDistAttachment::Uniform(uniform_attachment) => Some(uniform_attachment),
+            }).ok_or(BufferError::NoBufferAttachError)?;
+
+        let block = GsUniformBlock {
+            binding      : attachment.binding,
+            element_size : attachment.element_size,
             block,
             repository_index,
-        }
+        };
+
+        Ok(block)
     }
 }
 
@@ -104,4 +128,10 @@ impl BufferCopiable for GsUniformBlock {
     fn copy_info(&self) -> BufferCopyInfo {
         BufferCopyInfo::new(&self.block, 0, self.block.size)
     }
+}
+
+pub struct UniformAttachment {
+
+    binding: DescriptorBindingContent,
+    element_size: vkbytes,
 }

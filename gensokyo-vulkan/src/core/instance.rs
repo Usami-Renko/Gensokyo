@@ -3,7 +3,7 @@ use ash::vk;
 use ash::version::EntryV1_0;
 use ash::version::InstanceV1_0;
 
-use core::debug::ValidationConfig;
+use core::debug::{ ValidationConfig, DebugInstanceType };
 use core::error::InstanceError;
 use core::platforms;
 use core::debug;
@@ -23,6 +23,13 @@ pub struct GsInstance {
     pub(crate) entry: ash::Entry,
     /// an array to store the names of vulkan layers enabled in instance creation.
     pub(crate) enable_layer_names: Vec<CString>,
+}
+
+enum InstanceExtensionType {
+    Surface,
+    PlatformSurface,
+    DebugReport,
+    DebugUtils,
 }
 
 impl GsInstance {
@@ -50,7 +57,8 @@ impl GsInstance {
         let enable_layer_names = required_layers(&entry, validation)?;
         let enable_layer_names_ptr = cast::to_array_ptr(&enable_layer_names);
         // get the names of required vulkan extensions.
-        let enable_extension_names = platforms::required_extension_names();
+        let require_extensions = GsInstance::require_instances(validation);
+        let enable_extension_names = instance_extension_to_names(&require_extensions);
 
         let instance_create_info = vk::InstanceCreateInfo {
             s_type                     : vk::StructureType::INSTANCE_CREATE_INFO,
@@ -75,6 +83,24 @@ impl GsInstance {
         };
 
         Ok(instance)
+    }
+
+    fn require_instances(validation: &ValidationConfig) -> Vec<InstanceExtensionType> {
+
+        let mut instance_extensions = vec![
+            InstanceExtensionType::Surface,
+            InstanceExtensionType::PlatformSurface,
+        ];
+
+        match validation.debug_type {
+            | DebugInstanceType::DebugReport =>
+                instance_extensions.push(InstanceExtensionType::DebugReport),
+            | DebugInstanceType::DebugUtils =>
+                instance_extensions.push(InstanceExtensionType::DebugUtils),
+            | DebugInstanceType::None => {},
+        }
+
+        instance_extensions
     }
 
     /// Some cleaning operations before this object was uninitialized.
@@ -114,6 +140,18 @@ fn required_layers(entry: &ash::Entry, validation: &ValidationConfig) -> Result<
 //    let raw_names = enable_layer_names.iter().map
 
     Ok(enable_layer_names)
+}
+
+fn instance_extension_to_names(extensions: &[InstanceExtensionType]) -> Vec<*const i8> {
+
+    extensions.iter().map(|extension| {
+        match extension {
+            | InstanceExtensionType::Surface         => ash::extensions::Surface::name().as_ptr(),
+            | InstanceExtensionType::PlatformSurface => platforms::platform_surface_names().as_ptr(),
+            | InstanceExtensionType::DebugReport     => ash::extensions::DebugReport::name().as_ptr(),
+            | InstanceExtensionType::DebugUtils      => ash::extensions::DebugUtils::name().as_ptr(),
+        }
+    }).collect()
 }
 
 pub struct InstanceConfig {

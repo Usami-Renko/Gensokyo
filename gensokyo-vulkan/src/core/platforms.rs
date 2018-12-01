@@ -3,8 +3,8 @@ use winit;
 use ash::vk;
 use ash::version::{ EntryV1_0, InstanceV1_0 };
 use std::os::raw::c_void;
+use std::ffi::CStr;
 
-use ash::extensions::{ Surface, DebugReport };
 #[cfg(target_os = "macos")]
 use ash::extensions::MacOSSurface;
 #[cfg(all(unix, not(target_os = "android"), not(target_os = "macos")))]
@@ -22,35 +22,25 @@ use cocoa::appkit::{ NSView, NSWindow };
 use objc::runtime::YES;
 
 /// get the names of required extension used in macOS.
+#[inline]
 #[cfg(target_os = "macos")]
-pub fn required_extension_names() -> Vec<*const i8> {
-    vec![
-        Surface::name().as_ptr(),
-        MacOSSurface::name().as_ptr(),
-        DebugReport::name().as_ptr(),
-    ]
+pub fn platform_surface_names() -> &'static CStr {
+    MacOSSurface::name()
 }
 
 /// get the names of required extension used in Windows.
+#[inline]
 #[cfg(all(windows))]
-pub fn required_extension_names() -> Vec<*const i8> {
-    vec![
-        Surface::name().as_ptr(),
-        Win32Surface::name().as_ptr(),
-        DebugReport::name().as_ptr(),
-    ]
+pub fn platform_surface_names() -> &'static CStr {
+    Win32Surface::name()
 }
 
 /// get the names of required extensions used in linux.
+#[inline]
 #[cfg(all(unix, not(target_os = "android"), not(target_os = "macos")))]
-pub fn required_extension_names() -> Vec<*const i8> {
-    vec![
-        Surface::name().as_ptr(),
-        XlibSurface::name().as_ptr(),
-        DebugReport::name().as_ptr(),
-    ]
+pub fn platform_surface_names() -> &'static CStr {
+    XlibSurface::name()
 }
-
 
 /// get the required surface used in linux.
 #[cfg(all(unix, not(target_os = "android"), not(target_os = "macos")))]

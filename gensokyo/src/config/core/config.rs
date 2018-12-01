@@ -28,12 +28,11 @@ impl ConfigMirror for CoreConfigMirror {
     fn into_config(self) -> Result<Self::ConfigType, ConfigError> {
 
         let config = CoreConfig {
-
-            instance  : self.instance.into_config()?,
-            validation: self.validation.into_config()?,
-            device    : self.device.into_config()?,
-            physical  : self.physical.into_config()?,
-            swapchain : self.swapchain.into_config()?,
+            instance   : self.instance.into_config()?,
+            validation : self.validation.into_config()?,
+            device     : self.device.into_config()?,
+            physical   : self.physical.into_config()?,
+            swapchain  : self.swapchain.into_config()?,
         };
 
         Ok(config)

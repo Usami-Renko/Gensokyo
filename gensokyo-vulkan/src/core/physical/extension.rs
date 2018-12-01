@@ -4,7 +4,6 @@ use ash::version::InstanceV1_0;
 
 use core::instance::GsInstance;
 use core::physical::config::PhysicalInspectProperty;
-use core::physical::DeviceExtensionType;
 use core::error::PhysicalDeviceError;
 
 use utils::cast;
@@ -15,6 +14,24 @@ pub(crate) struct PhysicalExtension {
 
     handles: Vec<vk::ExtensionProperties>,
     enable_extensions: Vec<CString>,
+}
+
+#[derive(Debug, Clone, Copy, Eq, PartialEq)]
+pub enum DeviceExtensionType {
+    Swapchain,
+}
+
+impl DeviceExtensionType {
+
+    pub(super) fn name(&self) -> CString {
+        match self {
+            | DeviceExtensionType::Swapchain => {
+                // FIXME: Use the comment code instead
+                // ash::extensions::Swapchain::name()
+                CString::new("VK_KHR_swapchain").unwrap()
+            },
+        }
+    }
 }
 
 #[derive(Debug, Clone)]

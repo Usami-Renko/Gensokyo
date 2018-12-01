@@ -58,7 +58,7 @@ impl<M> GsBufferAllocator<M> where M: BufferMemoryTypeAbs {
         let buffer = self.gen_buffer(&info, info.typ())?;
         let aligment_space = buffer.aligment_size();
 
-        let index = BufferBlockIndex(self.buffers.len());
+        let index = info.to_block_index(self.buffers.len());
 
         self.spaces.push(aligment_space);
         self.buffers.push(buffer);

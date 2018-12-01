@@ -17,7 +17,7 @@ impl fmt::Display for BufferError {
 
         let description = match self {
             | BufferError::BufferCreationError => "Failed to create Buffer object",
-            | BufferError::NoBufferAttachError => "There must be buffer attached to allocator before allocate memory.",
+            | BufferError::NoBufferAttachError => "Failed to get attchment content to the buffer",
         };
         write!(f, "{}", description)
     }

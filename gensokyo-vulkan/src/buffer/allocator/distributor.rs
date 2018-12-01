@@ -7,9 +7,9 @@ use buffer::allocator::BufferBlockIndex;
 use buffer::allocator::memory::BufferAllocateInfos;
 use buffer::allocator::types::BufferMemoryTypeAbs;
 use buffer::instance::{ GsVertexBlock, GsIndexBlock, GsUniformBlock, GsImgsrcBlock };
-
 use buffer::repository::GsBufferRepository;
 use memory::instance::GsBufferMemory;
+use memory::AllocatorError;
 
 use types::vkbytes;
 use std::marker::PhantomData;
@@ -43,22 +43,23 @@ impl<M> GsBufferDistributor<M> where M: BufferMemoryTypeAbs {
 
     pub fn acquire_vertex(&self, index: BufferBlockIndex) -> GsVertexBlock {
 
-        GsVertexBlock::new(self.gen_buffer_item(&index), index.0)
+        GsVertexBlock::new(self.gen_buffer_item(&index), index)
     }
 
     pub fn acquire_index(&self, index: BufferBlockIndex) -> GsIndexBlock {
 
-        GsIndexBlock::new(self.gen_buffer_item(&index), index.0)
+        GsIndexBlock::new(self.gen_buffer_item(&index), index)
     }
 
-    pub fn acquire_uniform(&self, index: BufferBlockIndex) -> GsUniformBlock {
+    pub fn acquire_uniform(&self, index: BufferBlockIndex) ->  Result<GsUniformBlock, AllocatorError> {
 
-        unimplemented!()
+        let block = GsUniformBlock::new(self.gen_buffer_item(&index), index)?;
+        Ok(block)
     }
 
     pub fn acquire_imgsrc(&self, index: BufferBlockIndex) -> GsImgsrcBlock {
 
-        GsImgsrcBlock::new(self.gen_buffer_item(&index), index.0)
+        GsImgsrcBlock::new(self.gen_buffer_item(&index), index)
     }
 
     pub fn into_repository(self) -> GsBufferRepository<M> {
@@ -69,9 +70,9 @@ impl<M> GsBufferDistributor<M> where M: BufferMemoryTypeAbs {
     fn gen_buffer_item(&self, index: &BufferBlockIndex) -> BufferBlock {
 
         BufferBlock::new(
-            &self.buffers[index.0],
-            self.spaces[index.0],
-            self.offsets[index.0],
+            &self.buffers[index.value],
+            self.spaces[index.value],
+            self.offsets[index.value],
         )
     }
 }

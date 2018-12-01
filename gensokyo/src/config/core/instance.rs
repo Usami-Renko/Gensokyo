@@ -7,8 +7,8 @@ use config::error::ConfigError;
 #[derive(Deserialize, Default)]
 pub struct InstanceConfigMirror {
 
-    version: Version,
-    name: Name,
+    version   : Version,
+    name      : Name,
 }
 
 impl ConfigMirror for InstanceConfigMirror {

@@ -24,7 +24,7 @@ pub(super) fn manifest_toml() -> toml::Value {
 
         [core.validation.utils]
         flags    = []
-        severity = ["Verbose", "Warning", "Error", "Info"]
+        severity = ["Warning", "Error"]
         types    = ["General", "Performance", "Validation"]
 
         [core.device]
@@ -49,7 +49,7 @@ pub(super) fn manifest_toml() -> toml::Value {
         acquire_image_duration = 1000
 
         [window]
-        title = "hakurei"
+        title = "Gensokyo"
         mode  = "normal"
         always_on_top = false
         is_resizable  = true
@@ -80,4 +80,84 @@ pub(super) fn manifest_toml() -> toml::Value {
         force_rgba      = true
         byte_per_pixel  = 4
     }
+}
+
+#[allow(dead_code)]
+fn complete_manifest_toml() {
+
+//    [core]
+//    [core.version]
+//    api         = "0.0.0"
+//    application = "0.0.0"
+//    engine      = "0.0.0"
+//
+//    [core.name]
+//    application = ""
+//    engine      = ""
+//
+//    [core.validation]
+//    enable = true
+//    layers = ["VK_LAYER_LUNARG_standard_validation"]
+//    types  = "DebugReport" | "DebugUtils"
+//
+//    [core.validation.report]
+//    flags = ["Error", "Warning", "PerformanceWarning"]
+//
+//    [core.validation.utils]
+//    flags    = []
+//    severity = ["Verbose", "Warning", "Error", "Info"]
+//    types    = ["General", "Performance", "Validation"]
+//
+//    [core.device]
+//    queue_request_strategy = "SingleFamilySingleQueue" | "SingleFamilyMultiQueues"
+//    transfer_time_out = "Infinte" | "Immediate" | "Timing"
+//    transfer_duration = 1000
+//
+//    [core.physical]
+//    device_types       = ["CPU", "IntegratedGPU", "DiscreteGPU", "VirtualGPU"]
+//    features           = [] // not cover here.
+//    extensions         = ["VK_KHR_swapchain"]
+//    queue_capabilities = ["Graphics", "Compute", "Transfer", "SparseBinding", "Protected"]
+//
+//    [core.swapchain]
+//    image_count = 2
+//    framebuffer_layers = 1
+//    prefer_surface_format = "B8G8R8A8_UNORM"
+//    prefer_surface_color_space = "SrgbNonlinear"
+//    present_mode_primary   = "Mailbox" | "Immediate" | "Fifo" | "FifoRelaxed"
+//    present_mode_secondary = "Mailbox" | "Immediate" | "Fifo" | "FifoRelaxed"
+//    acquire_image_time_out = "Infinte" | "Immediate" | "Timing"
+//    acquire_image_duration = 1000
+//
+//    [window]
+//    title = ""
+//    mode  = "normal" | "maximized" | "fullscreen"
+//    always_on_top = false
+//    is_resizable  = true
+//
+//    [window.dimension]
+//    width  = 800
+//    height = 600
+//    min_width  = 400
+//    min_height = 300
+//    max_width  = 1280
+//    min_width  = 720
+//
+//    [window.cursor]
+//    is_grab = false
+//    is_hide = false
+//
+//    [pipeline]
+//
+//    [pipeline.depth_stencil]
+//    prefer_depth_stencil_formats = ["D32_SFLOAT", "D32_SFLOAT_S8_UINT", "D24_UNORM_S8_UINT"]
+//    prefer_image_tiling = "Optimal" | "Linear"
+//
+//    [resources]
+//
+//    [resources.image_load]
+//    flip_vertical   = false
+//    flip_horizontal = false
+//    force_rgba      = true
+//    byte_per_pixel  = 4
 }

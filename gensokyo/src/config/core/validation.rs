@@ -27,7 +27,7 @@ impl ConfigMirror for ValidationConfigMirror {
             is_enable: self.enable,
             required_validation_layers: self.layers,
 
-            instance_type: vk_raw2debug_instance_type(&self.instance_type)?,
+            debug_type: vk_raw2debug_instance_type(&self.instance_type)?,
             report_config: if let Some(config) = self.report_config { Some(config.into_config()?) } else { None },
             utils_config : if let Some(config) = self.utils_config  { Some(config.into_config()?) } else { None },
         };

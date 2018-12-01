@@ -9,7 +9,7 @@ use core::error::{ InstanceError, ValidationError };
 use VERBOSE;
 use utils::cast;
 
-pub struct GsDebugger(Box<dyn DebugInstance>);
+pub struct GsDebugger(Option<Box<dyn DebugInstance>>);
 
 pub trait DebugInstance {
 
@@ -23,22 +23,22 @@ pub struct ValidationConfig {
     /// `required_validation_layers` is the layer names required for validation layer support.
     pub required_validation_layers: Vec<String>,
     /// `instance_type` is the type of debug tools to use(Debug Report or Debug Utils).
-    pub instance_type : DebugInstanceType,
+    pub debug_type: DebugInstanceType,
     /// `report_config` specifies the configuration paramaters used in Debug Report.
-    pub report_config : Option<DebugReportConfig>,
+    pub report_config: Option<DebugReportConfig>,
     /// `utils_config` specifies the configuration paramaters used in Debug Utils.
-    pub  utils_config : Option<DebugUtilsConfig>,
+    pub  utils_config: Option<DebugUtilsConfig>,
 }
 
 impl GsDebugger {
 
     pub fn new(instance: &GsInstance, config: &ValidationConfig) -> Result<GsDebugger, ValidationError> {
 
-        if config.is_enable {
-            return Ok(GsDebugger(Box::new(NoneDebug)))
+        if config.is_enable == false {
+            return Ok(GsDebugger(None))
         }
 
-        let instance = match config.instance_type {
+        let instance = match config.debug_type {
             | DebugInstanceType::DebugReport => {
                 if let Some(ref report_config) = config.report_config {
                     let report = GsDebugReport::setup(instance, report_config)?;
@@ -60,12 +60,14 @@ impl GsDebugger {
             | _ => None,
         };
 
-        let instance = instance.unwrap_or(Box::new(NoneDebug));
         Ok(GsDebugger(instance))
     }
 
     pub fn cleanup(&self) {
-        self.0.cleanup();
+
+        if let Some(ref debug_instance) = self.0 {
+            debug_instance.cleanup();
+        }
     }
 }
 
@@ -115,13 +117,4 @@ pub enum DebugInstanceType {
     DebugReport,
     DebugUtils,
     None,
-}
-
-struct NoneDebug;
-
-impl DebugInstance for NoneDebug {
-
-    fn cleanup(&self) {
-        // leave it empty...
-    }
 }
