@@ -1,15 +1,15 @@
 
 [package]
-name = "hakurei-ex01-baisc"
+name = "gensokyo-ex01-baisc"
 version = "0.1.0"
 authors = ["usami-renko <usami-ssc@protonmail.com>"]
-description = "Basic examples of hakurei Engine."
+description = "Basic examples of gensokyo Engine."
 
 [dependencies]
 ash = "0.26.0"
-hakurei-vulkan = { path = "../../hakurei-vulkan" }
-hakurei-macros = { path = "../../hakurei-macros" }
-hakurei = { path = "../../hakurei" }
+gensokyo-vulkan = { path = "../../gensokyo-vulkan" }
+gensokyo-macros = { path = "../../gensokyo-macros" }
+gensokyo = { path = "../../gensokyo" }
 cgmath = "0.16.1"
 
 [[bin]]

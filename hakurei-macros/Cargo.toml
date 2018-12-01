@@ -1,6 +1,0 @@
-
-[package]
-name = "hakurei-macros"
-version = "0.1.0"
-authors = ["usami-renko <usami-ssc@protonmail.com>"]
-description = "Practical macros for hakurei and application."

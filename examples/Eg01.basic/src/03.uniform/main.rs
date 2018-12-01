@@ -37,21 +37,21 @@ struct UboObject {
 struct UniformBufferProcedure {
 
     vertex_data   : Vec<Vertex>,
-    buffer_storage: HaBufferRepository,
+    buffer_storage: GsBufferRepository,
     vertex_buffer : HaVertexBlock,
 
     ubo_data  : Vec<UboObject>,
     ubo_buffer: HaUniformBlock,
 
-    desc_storage: HaDescriptorRepository,
+    desc_storage: GsDescriptorRepository,
     ubo_set: DescriptorSet,
 
-    graphics_pipeline: HaGraphicsPipeline,
+    graphics_pipeline: GsGraphicsPipeline,
 
-    command_pool   : HaCommandPool,
-    command_buffers: Vec<HaCommandBuffer>,
+    command_pool   : GsCommandPool,
+    command_buffers: Vec<GsCommandBuffer>,
 
-    present_availables: Vec<HaSemaphore>,
+    present_availables: Vec<GsSemaphore>,
 }
 
 impl UniformBufferProcedure {
@@ -63,7 +63,7 @@ impl UniformBufferProcedure {
                 Vertex { pos: [ 0.5,  0.5], color: [0.0, 1.0, 0.0, 1.0], },
                 Vertex { pos: [-0.5,  0.5], color: [0.0, 0.0, 1.0, 1.0], },
             ],
-            buffer_storage: HaBufferRepository::empty(),
+            buffer_storage: GsBufferRepository::empty(),
             vertex_buffer : HaVertexBlock::uninitialize(),
 
             ubo_data: vec![
@@ -73,12 +73,12 @@ impl UniformBufferProcedure {
             ],
             ubo_buffer: HaUniformBlock::uninitialize(),
 
-            desc_storage: HaDescriptorRepository::empty(),
+            desc_storage: GsDescriptorRepository::empty(),
             ubo_set: DescriptorSet::unset(),
 
-            graphics_pipeline: HaGraphicsPipeline::uninitialize(),
+            graphics_pipeline: GsGraphicsPipeline::uninitialize(),
 
-            command_pool: HaCommandPool::uninitialize(),
+            command_pool: GsCommandPool::uninitialize(),
             command_buffers: vec![],
 
             present_availables: vec![],
@@ -125,12 +125,12 @@ impl ProgramProc for UniformBufferProcedure {
 
     fn pipelines(&mut self, kit: PipelineKit, swapchain: &HaSwapchain) -> Result<(), ProcedureError> {
         // shaders
-        let vertex_shader = HaShaderInfo::from_source(
+        let vertex_shader = GsShaderInfo::from_source(
             ShaderStageFlag::VertexStage,
             Path::new(VERTEX_SHADER_SOURCE_PATH),
             None,
             "[Vertex Shader]");
-        let fragment_shader = HaShaderInfo::from_source(
+        let fragment_shader = GsShaderInfo::from_source(
             ShaderStageFlag::FragmentStage,
             Path::new(FRAGMENT_SHADER_SOURCE_PATH),
             None,
@@ -157,7 +157,7 @@ impl ProgramProc for UniformBufferProcedure {
         render_pass_builder.add_dependenty(dependency);
 
         let render_pass = render_pass_builder.build(swapchain)?;
-        let viewport = HaViewportState::single(ViewportStateInfo::new(swapchain.extent));
+        let viewport = GsViewportState::single(ViewportStateInfo::new(swapchain.extent));
 
         let pipeline_config = GraphicsPipelineConfig::new(shader_infos, vertex_input_desc, render_pass)
             .setup_viewport(ViewportStateType::Fixed { state: viewport })
@@ -173,10 +173,10 @@ impl ProgramProc for UniformBufferProcedure {
         Ok(())
     }
 
-    fn subresources(&mut self, device: &HaDevice) -> Result<(), ProcedureError> {
+    fn subresources(&mut self, device: &GsDevice) -> Result<(), ProcedureError> {
         // sync
         for _ in 0..self.graphics_pipeline.frame_count() {
-            let present_available = HaSemaphore::setup(device)?;
+            let present_available = GsSemaphore::setup(device)?;
             self.present_availables.push(present_available);
         }
         Ok(())
@@ -208,7 +208,7 @@ impl ProgramProc for UniformBufferProcedure {
         Ok(())
     }
 
-    fn draw(&mut self, device: &HaDevice, device_available: &HaFence, image_available: &HaSemaphore, image_index: usize, _: f32) -> Result<&HaSemaphore, ProcedureError> {
+    fn draw(&mut self, device: &GsDevice, device_available: &GsFence, image_available: &GsSemaphore, image_index: usize, _: f32) -> Result<&GsSemaphore, ProcedureError> {
 
         let submit_infos = [
             QueueSubmitBundle {
@@ -224,7 +224,7 @@ impl ProgramProc for UniformBufferProcedure {
         return Ok(&self.present_availables[image_index])
     }
 
-    fn clean_resources(&mut self, _: &HaDevice) -> Result<(), ProcedureError> {
+    fn clean_resources(&mut self, _: &GsDevice) -> Result<(), ProcedureError> {
 
         for semaphore in self.present_availables.iter() {
             semaphore.cleanup();
@@ -238,7 +238,7 @@ impl ProgramProc for UniformBufferProcedure {
         Ok(())
     }
 
-    fn cleanup(&mut self, _: &HaDevice) {
+    fn cleanup(&mut self, _: &GsDevice) {
 
         self.present_availables.iter()
             .for_each(|semaphore| semaphore.cleanup());
@@ -251,7 +251,7 @@ impl ProgramProc for UniformBufferProcedure {
 
     fn react_input(&mut self, inputer: &ActionNerve, _: f32) -> SceneAction {
 
-        if inputer.is_key_pressed(HaKeycode::Escape) {
+        if inputer.is_key_pressed(GsKeycode::Escape) {
             return SceneAction::Terminal
         }
 

@@ -1,0 +1,92 @@
+
+use core::device::GsDevice;
+
+use buffer::target::BufferDescInfo;
+use buffer::allocator::types::BufferMemoryTypeAbs;
+
+use memory::types::GsMemoryType;
+use memory::{ GsMemoryAbstract, MemoryMappable, MemorySelector };
+use memory::instance::{ GsBufferMemory, GsHostMemory, GsCachedMemory, GsDeviceMemory, GsStagingMemory };
+use memory::MemoryError;
+
+use types::vkbytes;
+
+#[derive(Default)]
+pub struct BufferAllocateInfos {
+
+    pub infos : Vec<BufferDescInfo>,
+    pub spaces: Vec<vkbytes>,
+}
+
+impl BufferAllocateInfos {
+
+    pub fn new() -> BufferAllocateInfos {
+        Default::default()
+    }
+
+    pub fn push(&mut self, space: vkbytes, desc_info: BufferDescInfo) {
+
+        self.spaces.push(space);
+        self.infos.push(desc_info);
+    }
+}
+
+
+pub struct BufMemAllocator<M> where M: BufferMemoryTypeAbs {
+
+    phantom_type: M,
+
+    pub infos : BufferAllocateInfos,
+    pub memory: GsBufferMemory,
+}
+
+impl<M> BufMemAllocator<M> where M: BufferMemoryTypeAbs {
+
+    pub fn allot_memory(phantom_type: M, device: &GsDevice, infos: BufferAllocateInfos, size: vkbytes, selector: &MemorySelector) -> Result<BufMemAllocator<M>, MemoryError> {
+
+        let allocator = BufMemAllocator {
+            phantom_type,
+            infos,
+            memory: phantom_type.memory_type().allot_buffer_memory(device, size, selector)?
+        };
+
+        Ok(allocator)
+    }
+
+    pub fn memory_map_if_need(&mut self, device: &GsDevice) -> Result<(), MemoryError> {
+
+        if let Some(mapable_memory) = self.memory.as_mut_mapable() {
+            self.phantom_type.map_memory_if_need(device, mapable_memory as &mut MemoryMappable)
+        } else {
+            Ok(())
+        }
+    }
+
+    pub fn take(self) -> (GsBufferMemory, BufferAllocateInfos) {
+
+        (self.memory, self.infos)
+    }
+}
+
+impl GsMemoryType {
+
+    fn allot_buffer_memory(&self, device: &GsDevice, size: vkbytes, selector: &MemorySelector) -> Result<GsBufferMemory, MemoryError> {
+
+        let memory = match self {
+            | GsMemoryType::HostMemory => {
+                Box::new(GsHostMemory::allocate(device, size, selector)?) as GsBufferMemory
+            },
+            | GsMemoryType::CachedMemory => {
+                Box::new(GsCachedMemory::allocate(device, size, selector)?) as GsBufferMemory
+            },
+            | GsMemoryType::DeviceMemory => {
+                Box::new(GsDeviceMemory::allocate(device, size, selector)?) as GsBufferMemory
+            },
+            | GsMemoryType::StagingMemory => {
+                Box::new(GsStagingMemory::allocate(device, size, selector)?) as GsBufferMemory
+            },
+        };
+
+        Ok(memory)
+    }
+}

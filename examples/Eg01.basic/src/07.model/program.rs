@@ -24,25 +24,25 @@ pub struct UboObject {
 pub struct ModelProcedure {
 
     model: GltfEntity,
-    buffer_storage: HaBufferRepository,
+    buffer_storage: GsBufferRepository,
 
-    graphics_pipeline: HaGraphicsPipeline,
+    graphics_pipeline: GsGraphicsPipeline,
 
     ubo_data: Vec<UboObject>,
-    ubo_storage: HaBufferRepository,
+    ubo_storage: GsBufferRepository,
     ubo_buffer : HaUniformBlock,
-    descriptor_storage: HaDescriptorRepository,
+    descriptor_storage: GsDescriptorRepository,
     descriptor_set    : DescriptorSet,
 
     depth_attachment: HaDepthStencilImage,
-    image_storage: HaImageRepository,
+    image_storage: GsImageRepository,
 
-    command_pool   : HaCommandPool,
-    command_buffers: Vec<HaCommandBuffer>,
+    command_pool   : GsCommandPool,
+    command_buffers: Vec<GsCommandBuffer>,
 
     camera: HaFlightCamera,
 
-    present_availables: Vec<HaSemaphore>,
+    present_availables: Vec<GsSemaphore>,
 }
 
 impl ModelProcedure {
@@ -57,9 +57,9 @@ impl ModelProcedure {
         ModelProcedure {
 
             model: GltfEntity::default(),
-            buffer_storage: HaBufferRepository::empty(),
+            buffer_storage: GsBufferRepository::empty(),
 
-            graphics_pipeline: HaGraphicsPipeline::uninitialize(),
+            graphics_pipeline: GsGraphicsPipeline::uninitialize(),
 
             ubo_data: vec![
                 UboObject {
@@ -68,15 +68,15 @@ impl ModelProcedure {
                     model     : Matrix4::identity(),
                 },
             ],
-            ubo_storage: HaBufferRepository::empty(),
+            ubo_storage: GsBufferRepository::empty(),
             ubo_buffer : HaUniformBlock::uninitialize(),
-            descriptor_storage: HaDescriptorRepository::empty(),
+            descriptor_storage: GsDescriptorRepository::empty(),
             descriptor_set: DescriptorSet::unset(),
 
             depth_attachment: HaDepthStencilImage::uninitialize(),
-            image_storage: HaImageRepository::empty(),
+            image_storage: GsImageRepository::empty(),
 
-            command_pool: HaCommandPool::uninitialize(),
+            command_pool: GsCommandPool::uninitialize(),
             command_buffers: vec![],
 
             camera,
@@ -150,12 +150,12 @@ impl ProgramProc for ModelProcedure {
     fn pipelines(&mut self, kit: PipelineKit, swapchain: &HaSwapchain) -> Result<(), ProcedureError> {
 
         // shaders
-        let vertex_shader = HaShaderInfo::from_source(
+        let vertex_shader = GsShaderInfo::from_source(
             ShaderStageFlag::VertexStage,
             Path::new(VERTEX_SHADER_SOURCE_PATH),
             None,
             "[Vertex Shader]");
-        let fragment_shader = HaShaderInfo::from_source(
+        let fragment_shader = GsShaderInfo::from_source(
             ShaderStageFlag::FragmentStage,
             Path::new(FRAGMENT_SHADER_SOURCE_PATH),
             None,
@@ -186,8 +186,8 @@ impl ProgramProc for ModelProcedure {
         render_pass_builder.add_dependenty(dependency);
 
         let render_pass = render_pass_builder.build(swapchain)?;
-        let viewport = HaViewportState::single(ViewportStateInfo::new(swapchain.extent));
-        let depth_stencil = HaDepthStencilState::setup(HaDepthStencilPrefab::EnableDepth);
+        let viewport = GsViewportState::single(ViewportStateInfo::new(swapchain.extent));
+        let depth_stencil = GsDepthStencilState::setup(GsDepthStencilPrefab::EnableDepth);
 
         let pipeline_config = GraphicsPipelineConfig::new(shader_infos, self.model.vertex_desc(), render_pass)
             .setup_viewport(ViewportStateType::Fixed { state: viewport })
@@ -204,11 +204,11 @@ impl ProgramProc for ModelProcedure {
         Ok(())
     }
 
-    fn subresources(&mut self, device: &HaDevice) -> Result<(), ProcedureError> {
+    fn subresources(&mut self, device: &GsDevice) -> Result<(), ProcedureError> {
 
         // sync
         for _ in 0..self.graphics_pipeline.frame_count() {
-            let present_available = HaSemaphore::setup(device)?;
+            let present_available = GsSemaphore::setup(device)?;
             self.present_availables.push(present_available);
         }
 
@@ -242,7 +242,7 @@ impl ProgramProc for ModelProcedure {
         Ok(())
     }
 
-    fn draw(&mut self, device: &HaDevice, device_available: &HaFence, image_available: &HaSemaphore, image_index: usize, _: f32) -> Result<&HaSemaphore, ProcedureError> {
+    fn draw(&mut self, device: &GsDevice, device_available: &GsFence, image_available: &GsSemaphore, image_index: usize, _: f32) -> Result<&GsSemaphore, ProcedureError> {
 
         self.update_uniforms()?;
 
@@ -260,7 +260,7 @@ impl ProgramProc for ModelProcedure {
         return Ok(&self.present_availables[image_index])
     }
 
-    fn clean_resources(&mut self, _: &HaDevice) -> Result<(), ProcedureError> {
+    fn clean_resources(&mut self, _: &GsDevice) -> Result<(), ProcedureError> {
 
         self.present_availables.iter()
             .for_each(|semaphore| semaphore.cleanup());
@@ -274,7 +274,7 @@ impl ProgramProc for ModelProcedure {
         Ok(())
     }
 
-    fn cleanup(&mut self, _device: &HaDevice) {
+    fn cleanup(&mut self, _device: &GsDevice) {
 
         self.present_availables.iter()
             .for_each(|semaphore| semaphore.cleanup());
@@ -290,7 +290,7 @@ impl ProgramProc for ModelProcedure {
 
     fn react_input(&mut self, inputer: &ActionNerve, delta_time: f32) -> SceneAction {
 
-        if inputer.is_key_pressed(HaKeycode::Escape) {
+        if inputer.is_key_pressed(GsKeycode::Escape) {
             return SceneAction::Terminal
         }
 

@@ -1,12 +1,12 @@
 
 extern crate ash;
 #[macro_use]
-extern crate hakurei_macros;
-extern crate hakurei_vulkan;
-extern crate hakurei;
+extern crate gensokyo_macros;
+extern crate gensokyo_vulkan;
+extern crate gensokyo;
 
 use ash::vk;
-use hakurei::{
+use gensokyo::{
     procedure::{
         env::ProgramEnv,
         loader::AssetsLoader,
@@ -14,37 +14,37 @@ use hakurei::{
         error::ProcedureError,
     },
     toolkit::{ AllocatorKit, PipelineKit, CommandKit },
-    input::{ ActionNerve, SceneAction, HaKeycode },
+    input::{ ActionNerve, SceneAction, GsKeycode },
 };
 
-use hakurei_vulkan::{
+use gensokyo_vulkan::{
     core::{
         device::{
-            HaDevice, DeviceQueueIdentifier,
+            GsDevice, DeviceQueueIdentifier,
             queue::QueueSubmitBundle,
         },
-        swapchain::HaSwapchain
+        swapchain::GsSwapchain
     },
     buffer::{
-        HaBufferRepository,
+        GsBufferRepository,
         allocator::types::BufferStorageType,
-        instance::{ HaVertexBlock, VertexBlockInfo },
+        instance::{ GsVertexBlock, VertexBlockInfo },
     },
     memory::types::Host,
     pipeline::{
-        graphics::{ HaGraphicsPipeline, GraphicsPipelineConfig },
-        shader::{ HaShaderInfo, VertexInputDescription, HaVertexInputBinding, HaVertexInputAttribute },
-        state::viewport::{ HaViewportState, ViewportStateInfo, ViewportStateType },
+        graphics::{ GsGraphicsPipeline, GraphicsPipelineConfig },
+        shader::{ GsShaderInfo, VertexInputDescription, GsVertexInputBinding, GsVertexInputAttribute },
+        state::viewport::{ GsViewportState, ViewportStateInfo, ViewportStateType },
         pass::{ RenderAttachement, RenderAttachementPrefab, AttachmentType, RenderDependency },
     },
-    command::{ HaCommandPool, HaCommandBuffer, CmdBufferUsage },
-    sync::{ HaSemaphore, HaFence },
+    command::{ GsCommandPool, GsCommandBuffer, CmdBufferUsage },
+    sync::{ GsSemaphore, GsFence },
     types::{ vkuint, vkbytes },
 };
 
 use std::path::{ Path, PathBuf };
 
-const MANIFEST_PATH: &str = "src/01.triangle/hakurei.toml";
+const MANIFEST_PATH: &str = "src/01.triangle/gensokyo.toml";
 const VERTEX_SHADER_SPIRV_PATH  : &str = "src/01.triangle/triangle.vert.spv";
 const FRAGMENT_SHADER_SPIRV_PATH: &str = "src/01.triangle/triangle.frag.spv";
 
@@ -67,15 +67,15 @@ const VERTEX_DATA: [Vertex; 3] = [
 struct TriangleProcedure {
 
     vertex_data: Vec<Vertex>,
-    vertex_storage: HaBufferRepository<Host>,
-    vertex_buffer : HaVertexBlock,
+    vertex_storage: GsBufferRepository<Host>,
+    vertex_buffer : GsVertexBlock,
 
-    graphics_pipeline: HaGraphicsPipeline,
+    graphics_pipeline: GsGraphicsPipeline,
 
-    command_pool   : HaCommandPool,
-    command_buffers: Vec<HaCommandBuffer>,
+    command_pool   : GsCommandPool,
+    command_buffers: Vec<GsCommandBuffer>,
 
-    present_availables: Vec<HaSemaphore>,
+    present_availables: Vec<GsSemaphore>,
 }
 
 impl TriangleProcedure {
@@ -110,7 +110,7 @@ impl TriangleProcedure {
         Ok(procecure)
     }
 
-    fn assets(kit: AllocatorKit, vertex_data: &Vec<Vertex>) -> Result<(HaVertexBlock, HaBufferRepository<Host>), ProcedureError> {
+    fn assets(kit: AllocatorKit, vertex_data: &Vec<Vertex>) -> Result<(GsVertexBlock, GsBufferRepository<Host>), ProcedureError> {
 
         // vertex buffer
         let mut vertex_allocator = kit.buffer(BufferStorageType::HOST);
@@ -130,14 +130,14 @@ impl TriangleProcedure {
         Ok((vertex_buffer, vertex_storage))
     }
 
-    fn pipelines(kit: PipelineKit, swapchain: &HaSwapchain) -> Result<HaGraphicsPipeline, ProcedureError> {
+    fn pipelines(kit: PipelineKit, swapchain: &GsSwapchain) -> Result<GsGraphicsPipeline, ProcedureError> {
 
         // shaders
-        let vertex_shader = HaShaderInfo::from_spirv(
+        let vertex_shader = GsShaderInfo::from_spirv(
             vk::ShaderStageFlags::VERTEX,
             Path::new(VERTEX_SHADER_SPIRV_PATH),
             None);
-        let fragment_shader = HaShaderInfo::from_spirv(
+        let fragment_shader = GsShaderInfo::from_spirv(
             vk::ShaderStageFlags::FRAGMENT,
             Path::new(FRAGMENT_SHADER_SPIRV_PATH),
             None);
@@ -161,7 +161,7 @@ impl TriangleProcedure {
         render_pass_builder.add_dependenty(dependency);
 
         let render_pass = render_pass_builder.build(swapchain)?;
-        let viewport = HaViewportState::single(ViewportStateInfo::new(swapchain.extent()));
+        let viewport = GsViewportState::single(ViewportStateInfo::new(swapchain.extent()));
         let pipeline_config = GraphicsPipelineConfig::new(shader_infos, vertex_input_desc, render_pass)
             .setup_viewport(ViewportStateType::Fixed { state: viewport })
             .finish();
@@ -175,19 +175,19 @@ impl TriangleProcedure {
         Ok(graphics_pipeline)
     }
 
-    fn subresources(device: &HaDevice, graphics_pipeline: &HaGraphicsPipeline) -> Result<Vec<HaSemaphore>, ProcedureError> {
+    fn subresources(device: &GsDevice, graphics_pipeline: &GsGraphicsPipeline) -> Result<Vec<GsSemaphore>, ProcedureError> {
 
         // sync
         let mut present_availables = vec![];
         for _ in 0..graphics_pipeline.frame_count() {
-            let present_available = HaSemaphore::setup(device)?;
+            let present_available = GsSemaphore::setup(device)?;
             present_availables.push(present_available);
         }
 
         Ok(present_availables)
     }
 
-    fn commands(kit: CommandKit, graphics_pipeline: &HaGraphicsPipeline, vertex_buffer: &HaVertexBlock, data: &Vec<Vertex>) -> Result<(HaCommandPool, Vec<HaCommandBuffer>), ProcedureError> {
+    fn commands(kit: CommandKit, graphics_pipeline: &GsGraphicsPipeline, vertex_buffer: &GsVertexBlock, data: &Vec<Vertex>) -> Result<(GsCommandPool, Vec<GsCommandBuffer>), ProcedureError> {
 
         let command_pool = kit.pool(DeviceQueueIdentifier::Graphics)?;
         let mut command_buffers = vec![];
@@ -216,7 +216,7 @@ impl TriangleProcedure {
 
 impl GraphicsRoutine for TriangleProcedure {
 
-    fn draw(&mut self, device: &HaDevice, device_available: &HaFence, image_available: &HaSemaphore, image_index: usize, _: f32) -> Result<&HaSemaphore, ProcedureError> {
+    fn draw(&mut self, device: &GsDevice, device_available: &GsFence, image_available: &GsSemaphore, image_index: usize, _: f32) -> Result<&GsSemaphore, ProcedureError> {
 
         let submit_infos = [
             QueueSubmitBundle {
@@ -232,7 +232,7 @@ impl GraphicsRoutine for TriangleProcedure {
         return Ok(&self.present_availables[image_index])
     }
 
-    fn clean_resources(&mut self, _: &HaDevice) -> Result<(), ProcedureError> {
+    fn clean_resources(&mut self, _: &GsDevice) -> Result<(), ProcedureError> {
 
         self.present_availables.iter()
             .for_each(|semaphore| semaphore.cleanup());
@@ -263,7 +263,7 @@ impl GraphicsRoutine for TriangleProcedure {
         Ok(())
     }
 
-    fn clean_routine(&mut self, _device: &HaDevice) {
+    fn clean_routine(&mut self, _device: &GsDevice) {
 
         self.present_availables.iter()
             .for_each(|semaphore| semaphore.cleanup());
@@ -274,7 +274,7 @@ impl GraphicsRoutine for TriangleProcedure {
 
     fn react_input(&mut self, inputer: &ActionNerve, _: f32) -> SceneAction {
 
-        if inputer.is_key_pressed(HaKeycode::Escape) {
+        if inputer.is_key_pressed(GsKeycode::Escape) {
             return SceneAction::Terminal
         }
 
