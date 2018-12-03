@@ -3,7 +3,7 @@ use ash::vk;
 use ash::version::DeviceV1_0;
 
 use core::device::GsDevice;
-use core::swapchain::GsSwapchain;
+use core::swapchain::GsChain;
 
 use pipeline::pass::render::GsRenderPass;
 use pipeline::pass::attachment::RenderAttachement;
@@ -21,6 +21,8 @@ use std::ptr;
 pub struct RenderPassBuilder {
 
     device: GsDevice,
+    chain : GsChain,
+
     attachments : Vec<RenderAttachement>,
     subpasses   : Vec<RenderSubpass>,
     dependencies: Vec<RenderDependency>,
@@ -31,10 +33,12 @@ pub struct RenderPassBuilder {
 
 impl RenderPassBuilder {
 
-    pub fn new(device: &GsDevice) -> RenderPassBuilder {
+    pub fn new(device: &GsDevice, chain: &GsChain) -> RenderPassBuilder {
 
         RenderPassBuilder {
             device: device.clone(),
+            chain : chain.clone(),
+
             attachments  : vec!(),
             subpasses    : vec!(),
             dependencies : vec!(),
@@ -96,7 +100,7 @@ impl RenderPassBuilder {
 //        self.depth_handle = Some(depth_view.get_item().view_handle);
 //    }
 
-    pub fn build(self, swapchain: &GsSwapchain) -> Result<GsRenderPass, PipelineError> {
+    pub fn build(self) -> Result<GsRenderPass, PipelineError> {
 
         let clear_values = self.attachments.iter()
             .map(|a| a.clear_value).collect();
@@ -125,16 +129,16 @@ impl RenderPassBuilder {
                 .or(Err(PipelineError::RenderPass(RenderPassError::RenderPassCreationError)))?
         };
 
-        let framebuffers = generate_framebuffers(&self.device, swapchain, handle, &self.depth_handle)
+        let framebuffers = generate_framebuffers(&self.device, &self.chain, handle, &self.depth_handle)
             .map_err(|e| PipelineError::RenderPass(e))?;
 
-        let render_pass = GsRenderPass::new(handle, framebuffers, swapchain.extent(), clear_values);
+        let render_pass = GsRenderPass::new(handle, framebuffers, self.chain.extent(), clear_values);
         Ok(render_pass)
     }
 }
 
 // TODO: Redesign this function, since this function is for temporarily used.
-fn generate_framebuffers(device: &GsDevice, swapchain: &GsSwapchain, render_pass: vk::RenderPass, depth: &Option<vk::ImageView>)
+fn generate_framebuffers(device: &GsDevice, swapchain: &GsChain, render_pass: vk::RenderPass, depth: &Option<vk::ImageView>)
     -> Result<Vec<GsFramebuffer>, RenderPassError> {
 
     let mut framebuffers = vec![];

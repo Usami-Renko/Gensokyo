@@ -29,6 +29,7 @@ pub mod sync;
 
 pub mod utils;
 pub mod types;
+pub mod prelude;
 
 // TODO: Remove this const variable.
 const VERBOSE: bool = false;

@@ -51,7 +51,7 @@ impl BufferCopiable for BufferBlock {
 
     fn copy_info(&self) -> BufferCopyInfo {
 
-        BufferCopyInfo::new(self, self.memory_offset, self.size)
+        BufferCopyInfo::new(self, 0, self.size)
     }
 }
 

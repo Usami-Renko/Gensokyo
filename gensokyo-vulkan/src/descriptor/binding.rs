@@ -3,8 +3,6 @@ use ash::vk;
 
 use descriptor::set::GsDescriptorSet;
 use descriptor::enums::GsDescriptorType;
-use buffer::{ BufferBlock, BufferHandleEntity };
-use image::{ ImageEntity, GsSampler };
 
 use types::{ vkuint, vkbytes };
 use utils::wrapper::VKWrapperInfo;
@@ -39,21 +37,21 @@ pub trait DescriptorImageBindableTarget {
     fn binding_info(&self) -> DescriptorImageBindingInfo;
 }
 
-pub struct DescriptorBufferBindingInfo<'a> {
+pub struct DescriptorBufferBindingInfo {
 
     pub content: DescriptorBindingContent,
     /// the element index of each descriptor to update.
     pub element_indices: Vec<vkuint>,
     /// the size of each element of descriptor.
     pub element_size: vkbytes,
-    /// the reference to buffer where the descriptor data stores.
-    pub buffer: &'a BufferBlock,
+    /// the handle of buffer where the descriptor data stores.
+    pub buffer_handle: vk::Buffer,
 }
 
 struct DescriptorWriteBufferContent(Vec<vk::DescriptorBufferInfo>);
 impl DescriptorWriteContent for DescriptorWriteBufferContent {}
 
-impl<'a> DescriptorBindingInfo for DescriptorBufferBindingInfo<'a> {
+impl DescriptorBindingInfo for DescriptorBufferBindingInfo {
 
     fn binding_content(&self) -> &DescriptorBindingContent {
         &self.content
@@ -65,7 +63,7 @@ impl<'a> DescriptorBindingInfo for DescriptorBufferBindingInfo<'a> {
         for &element_index in self.element_indices.iter() {
             let buffer_info = vk::DescriptorBufferInfo {
                 // buffer is the buffer resource.
-                buffer: self.buffer.handle(),
+                buffer: self.buffer_handle,
                 // offset is the offset in bytes from the start of buffer.
                 // Access to buffer memory via this descriptor uses addressing that is relative to this starting offset.
                 offset: (element_index as vkbytes) * self.element_size,
@@ -99,21 +97,21 @@ impl<'a> DescriptorBindingInfo for DescriptorBufferBindingInfo<'a> {
 }
 
 
-pub struct DescriptorImageBindingInfo<'a> {
+pub struct DescriptorImageBindingInfo {
 
     pub content: DescriptorBindingContent,
-    /// sampler information.
-    pub sampler: &'a GsSampler,
+    /// the handle of sampler.
+    pub sampler_handle: vk::Sampler,
     /// what the layout is for this descriptor in shader.
     pub dst_layout: vk::ImageLayout,
-    /// the reference to image view where the descriptor data stores.
-    pub entity: &'a ImageEntity,
+    /// the handle of image view where the descriptor data stores.
+    pub view_handle: vk::ImageView,
 }
 
 struct DescriptorWriteImageContent(Vec<vk::DescriptorImageInfo>);
 impl DescriptorWriteContent for DescriptorWriteImageContent {}
 
-impl<'a> DescriptorBindingInfo for DescriptorImageBindingInfo<'a> {
+impl DescriptorBindingInfo for DescriptorImageBindingInfo {
 
     fn binding_content(&self) -> &DescriptorBindingContent {
         &self.content
@@ -125,8 +123,8 @@ impl<'a> DescriptorBindingInfo for DescriptorImageBindingInfo<'a> {
         for _ in 0..(self.content.count as vkbytes) {
 
             let info = vk::DescriptorImageInfo {
-                sampler      : self.sampler.handle,
-                image_view   : self.entity.view,
+                sampler      : self.sampler_handle,
+                image_view   : self.view_handle,
                 image_layout : self.dst_layout,
             };
             image_infos.push(info);

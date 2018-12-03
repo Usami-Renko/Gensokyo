@@ -6,15 +6,16 @@ use core::device::GsDevice;
 
 use command::buffer::{ GsCommandBuffer, CmdBufferUsage };
 use command::infos::{ CmdViewportInfo, CmdScissorInfo, CmdDepthBiasInfo, CmdDepthBoundInfo };
-use command::traits::ToDescriptorSetEntity;
 use command::traits::IntoVKBarrier;
 use command::error::CommandError;
 
 use buffer::BufferInstance;
+use buffer::instance::{ GsVertexBlock, GsIndexBlock };
 use image::GsImageBarrier;
+use descriptor::DescriptorSet;
 use pipeline::graphics::GsGraphicsPipeline;
 
-use types::{ vkuint, vksint, vkfloat };
+use types::{ vkuint, vksint, vkfloat, vkbytes };
 
 use std::ptr;
 
@@ -197,14 +198,14 @@ impl GsCommandRecorder {
         self
     }
 
-    pub fn bind_vertex_buffers(&self, first_binding: vkuint, instances: &[&impl BufferInstance]) -> &GsCommandRecorder {
+    pub fn bind_vertex_buffers(&self, first_binding: vkuint, blocks: &[&GsVertexBlock]) -> &GsCommandRecorder {
 
         let mut handles = vec![];
         let mut offsets  = vec![];
 
-        for instance in instances.into_iter() {
+        for block in blocks.into_iter() {
 
-            let block = instance.as_block_ref();
+            let block = block.as_block_ref();
             handles.push(block.handle);
             offsets.push(block.memory_offset);
         }
@@ -215,21 +216,20 @@ impl GsCommandRecorder {
         self
     }
 
-    pub fn bind_index_buffer(&self, instance: &impl BufferInstance) -> &GsCommandRecorder {
+    pub fn bind_index_buffer(&self, block: &GsIndexBlock, offset: vkbytes) -> &GsCommandRecorder {
 
-        let block = instance.as_block_ref();
+        let block = block.as_block_ref();
 
         unsafe {
             // TODO: Add configuration for IndexType.
-            self.device.handle.cmd_bind_index_buffer(self.handle, block.handle, block.memory_offset, vk::IndexType::UINT32)
+            self.device.handle.cmd_bind_index_buffer(self.handle, block.handle, offset, vk::IndexType::UINT32)
         };
         self
     }
 
-    pub fn bind_descriptor_sets(&self, pipeline: &GsGraphicsPipeline, first_set: vkuint, sets: &[&impl ToDescriptorSetEntity]) -> &GsCommandRecorder {
+    pub fn bind_descriptor_sets(&self, pipeline: &GsGraphicsPipeline, first_set: vkuint, sets: &[&DescriptorSet]) -> &GsCommandRecorder {
 
-        let handles: Vec<vk::DescriptorSet> = sets.iter()
-            .map(|s| s.entity().handle).collect();
+        let handles: Vec<vk::DescriptorSet> = collect_handle!(sets, entity);
 
         unsafe {
             // TODO: Currently dynamic_offsets field is not configuration.

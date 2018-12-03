@@ -7,4 +7,5 @@ script:
 - cargo build --manifest-path ./gensokyo-vulkan/Cargo.toml
 - cargo build --manifest-path ./gensokyo/Cargo.toml
 - cargo build --manifest-path ./gensokyo-macros/Cargo.toml
-#- cargo build --manifest-path ./examples/Eg01.basic/Cargo.toml
+
+- cargo build --manifest-path ./examples/Eg01.basic/Cargo.toml

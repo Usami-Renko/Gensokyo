@@ -9,7 +9,10 @@ use core::error::{ InstanceError, ValidationError };
 use VERBOSE;
 use utils::cast;
 
-pub struct GsDebugger(Option<Box<dyn DebugInstance>>);
+pub struct GsDebugger {
+
+    target: Option<Box<dyn DebugInstance>>,
+}
 
 pub trait DebugInstance {
 
@@ -34,38 +37,43 @@ impl GsDebugger {
 
     pub fn new(instance: &GsInstance, config: &ValidationConfig) -> Result<GsDebugger, ValidationError> {
 
-        if config.is_enable == false {
-            return Ok(GsDebugger(None))
-        }
+        let target = if config.is_enable == false {
+            None
+        } else {
 
-        let instance = match config.debug_type {
-            | DebugInstanceType::DebugReport => {
-                if let Some(ref report_config) = config.report_config {
-                    let report = GsDebugReport::setup(instance, report_config)?;
-                    Some(Box::new(report) as Box<DebugInstance>)
-                } else {
-                    println!("The program require using DebugReport, but failed to obtain its configuration.");
-                    None
-                }
-            },
-            | DebugInstanceType::DebugUtils => {
-                if let Some(ref utils_config) = config.utils_config {
-                    let utils = GsDebugUtils::setup(instance, utils_config)?;
-                    Some(Box::new(utils) as Box<DebugInstance>)
-                } else {
-                    println!("The program require using DebugUtils, but failed to obtain its configuration.");
-                    None
-                }
-            },
-            | _ => None,
+            match config.debug_type {
+                | DebugInstanceType::DebugReport => {
+                    if let Some(ref report_config) = config.report_config {
+                        let report = GsDebugReport::setup(instance, report_config)?;
+                        Some(Box::new(report) as Box<DebugInstance>)
+                    } else {
+                        println!("The program require using DebugReport, but failed to obtain its configuration.");
+                        None
+                    }
+                },
+                | DebugInstanceType::DebugUtils => {
+                    if let Some(ref utils_config) = config.utils_config {
+                        let utils = GsDebugUtils::setup(instance, utils_config)?;
+                        Some(Box::new(utils) as Box<DebugInstance>)
+                    } else {
+                        println!("The program require using DebugUtils, but failed to obtain its configuration.");
+                        None
+                    }
+                },
+                | _ => None,
+            }
         };
 
-        Ok(GsDebugger(instance))
+        let debugger = GsDebugger {
+            target,
+        };
+
+        Ok(debugger)
     }
 
     pub fn cleanup(&self) {
 
-        if let Some(ref debug_instance) = self.0 {
+        if let Some(ref debug_instance) = self.target {
             debug_instance.cleanup();
         }
     }

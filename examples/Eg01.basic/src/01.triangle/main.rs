@@ -2,45 +2,16 @@
 extern crate ash;
 #[macro_use]
 extern crate gensokyo_macros;
-extern crate gensokyo_vulkan;
-extern crate gensokyo;
+extern crate gensokyo_vulkan as gsvk;
+extern crate gensokyo as gs;
 
 use ash::vk;
-use gensokyo::{
-    procedure::{
-        env::ProgramEnv,
-        loader::AssetsLoader,
-        workflow::GraphicsRoutine,
-        error::ProcedureError,
-    },
-    toolkit::{ AllocatorKit, PipelineKit, CommandKit },
-    input::{ ActionNerve, SceneAction, GsKeycode },
-};
-
-use gensokyo_vulkan::{
-    core::{
-        device::{
-            GsDevice, DeviceQueueIdentifier,
-            queue::QueueSubmitBundle,
-        },
-        swapchain::GsSwapchain
-    },
-    buffer::{
-        GsBufferRepository,
-        allocator::types::BufferStorageType,
-        instance::{ GsVertexBlock, VertexBlockInfo },
-    },
-    memory::types::Host,
-    pipeline::{
-        graphics::{ GsGraphicsPipeline, GraphicsPipelineConfig },
-        shader::{ GsShaderInfo, VertexInputDescription, GsVertexInputBinding, GsVertexInputAttribute },
-        state::viewport::{ GsViewportState, ViewportStateInfo, ViewportStateType },
-        pass::{ RenderAttachement, RenderAttachementPrefab, AttachmentType, RenderDependency },
-    },
-    command::{ GsCommandPool, GsCommandBuffer, CmdBufferUsage },
-    sync::{ GsSemaphore, GsFence },
-    types::{ vkuint, vkbytes },
-};
+use gs::prelude::*;
+use gsvk::prelude::common::*;
+use gsvk::prelude::buffer::*;
+use gsvk::prelude::pipeline::*;
+use gsvk::command::*;
+use gsvk::sync::*;
 
 use std::path::{ Path, PathBuf };
 
@@ -88,12 +59,12 @@ impl TriangleProcedure {
             TriangleProcedure::assets(kit, &vertex_data)
         })?;
 
-        let graphics_pipeline = loader.pipelines(|kit, swapchain| {
-            TriangleProcedure::pipelines(kit, swapchain)
+        let graphics_pipeline = loader.pipelines(|kit| {
+            TriangleProcedure::pipelines(kit)
         })?;
 
-        let present_availables = loader.subresources(|device| {
-            TriangleProcedure::subresources(device, &graphics_pipeline)
+        let present_availables = loader.syncs(|kit| {
+            TriangleProcedure::sync_resources(kit, &graphics_pipeline)
         })?;
 
         let (command_pool, command_buffers) = loader.commands(|kit| {
@@ -130,7 +101,7 @@ impl TriangleProcedure {
         Ok((vertex_buffer, vertex_storage))
     }
 
-    fn pipelines(kit: PipelineKit, swapchain: &GsSwapchain) -> Result<GsGraphicsPipeline, ProcedureError> {
+    fn pipelines(kit: PipelineKit) -> Result<GsGraphicsPipeline, ProcedureError> {
 
         // shaders
         let vertex_shader = GsShaderInfo::from_spirv(
@@ -151,19 +122,17 @@ impl TriangleProcedure {
         let mut render_pass_builder = kit.pass_builder();
         let first_subpass = render_pass_builder.new_subpass();
 
-        let color_attachment = RenderAttachement::setup(RenderAttachementPrefab::BackColorAttachment, swapchain.format())
-            .layout(vk::ImageLayout::UNDEFINED, vk::ImageLayout::COLOR_ATTACHMENT_OPTIMAL, vk::ImageLayout::PRESENT_SRC_KHR);
+        let color_attachment = kit.subpass_attachment(RenderAttachementPrefab::PresentAttachment);
         let _attachment_index = render_pass_builder.add_attachemnt(color_attachment, first_subpass, AttachmentType::Color);
 
-        let dependency = RenderDependency::setup(vk::SUBPASS_EXTERNAL, first_subpass)
+        let dependency = kit.subpass_dependency(vk::SUBPASS_EXTERNAL, first_subpass)
             .stage(vk::PipelineStageFlags::COLOR_ATTACHMENT_OUTPUT, vk::PipelineStageFlags::COLOR_ATTACHMENT_OUTPUT)
             .access(vk::AccessFlags::empty(), vk::AccessFlags::COLOR_ATTACHMENT_READ | vk::AccessFlags::COLOR_ATTACHMENT_WRITE);
         render_pass_builder.add_dependenty(dependency);
 
-        let render_pass = render_pass_builder.build(swapchain)?;
-        let viewport = GsViewportState::single(ViewportStateInfo::new(swapchain.extent()));
-        let pipeline_config = GraphicsPipelineConfig::new(shader_infos, vertex_input_desc, render_pass)
-            .setup_viewport(ViewportStateType::Fixed { state: viewport })
+        let render_pass = render_pass_builder.build()?;
+
+        let pipeline_config = kit.pipeline_config(shader_infos, vertex_input_desc, render_pass)
             .finish();
 
         let mut pipeline_builder = kit.pipeline_graphics_builder()?;
@@ -175,12 +144,12 @@ impl TriangleProcedure {
         Ok(graphics_pipeline)
     }
 
-    fn subresources(device: &GsDevice, graphics_pipeline: &GsGraphicsPipeline) -> Result<Vec<GsSemaphore>, ProcedureError> {
+    fn sync_resources(kit: SyncKit, graphics_pipeline: &GsGraphicsPipeline) -> Result<Vec<GsSemaphore>, ProcedureError> {
 
         // sync
         let mut present_availables = vec![];
         for _ in 0..graphics_pipeline.frame_count() {
-            let present_available = GsSemaphore::setup(device)?;
+            let present_available = kit.semaphore()?;
             present_availables.push(present_available);
         }
 
@@ -246,12 +215,12 @@ impl GraphicsRoutine for TriangleProcedure {
 
     fn reload_res(&mut self, loader: AssetsLoader) -> Result<(), ProcedureError> {
 
-        self.graphics_pipeline = loader.pipelines(|kit, swapchain| {
-            TriangleProcedure::pipelines(kit, swapchain)
+        self.graphics_pipeline = loader.pipelines(|kit| {
+            TriangleProcedure::pipelines(kit)
         })?;
 
-        self.present_availables = loader.subresources(|device| {
-            TriangleProcedure::subresources(device, &self.graphics_pipeline)
+        self.present_availables = loader.syncs(|kit| {
+            TriangleProcedure::sync_resources(kit, &self.graphics_pipeline)
         })?;
 
         let (command_pool, command_buffers) = loader.commands(|kit| {
@@ -292,11 +261,8 @@ fn main() {
     let mut routine_flow = {
         let builder = program_env.routine().unwrap();
 
-        let routine = {
-            let asset_loader = builder.assets_loader();
-
-            TriangleProcedure::new(asset_loader).unwrap()
-        };
+        let asset_loader = builder.assets_loader();
+        let routine = TriangleProcedure::new(asset_loader).unwrap();
         builder.build(routine)
     };
 
@@ -304,6 +270,6 @@ fn main() {
         | Ok(_) => (),
         | Err(err) => {
             panic!("[Error] {}", err)
-        }
+        },
     }
 }

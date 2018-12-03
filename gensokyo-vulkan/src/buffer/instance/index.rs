@@ -13,7 +13,7 @@ use types::vkbytes;
 #[derive(Debug, Clone)]
 pub struct IndexBlockInfo {
 
-    info: BufferDescInfo
+    info: BufferDescInfo,
 }
 
 impl IndexBlockInfo {

@@ -1,31 +1,33 @@
 
 use gsvk::core::device::GsDevice;
 use gsvk::core::physical::GsPhyDevice;
-use gsvk::core::swapchain::GsSwapchain;
+use gsvk::core::swapchain::GsChain;
+
+use gsvk::types::vkDim2D;
 
 use config::resources::ResourceConfig;
 
-use toolkit::{ AllocatorKit, PipelineKit, CommandKit };
+use toolkit::{ AllocatorKit, PipelineKit, CommandKit, SyncKit };
 
 use procedure::env::VulkanEnv;
 use procedure::error::ProcedureError;
 
-pub struct AssetsLoader<'a> {
+pub struct AssetsLoader {
 
     config: ResourceConfig,
 
     device    : GsDevice,
     physical  : GsPhyDevice,
-    swapchain : &'a GsSwapchain,
+    swapchain : GsChain,
 }
 
-impl<'a> AssetsLoader<'a> {
+impl AssetsLoader {
 
-    pub(super) fn new(env: &VulkanEnv, config: &ResourceConfig, swapchain: &'a GsSwapchain) -> AssetsLoader<'a> {
+    pub(super) fn new(env: &VulkanEnv, config: &ResourceConfig, swapchain: &GsChain) -> AssetsLoader {
 
         AssetsLoader {
             config: config.clone(),
-            swapchain,
+            swapchain: swapchain.clone(),
             device   : env.device.clone(),
             physical : env.physical.clone(),
         }
@@ -40,17 +42,19 @@ impl<'a> AssetsLoader<'a> {
     }
 
     pub fn pipelines<P, F>(&self, func: F) -> Result<P, ProcedureError>
-        where F: FnOnce(PipelineKit, &GsSwapchain) -> Result<P, ProcedureError> {
+        where F: FnOnce(PipelineKit) -> Result<P, ProcedureError> {
 
-        let kit = PipelineKit::init(&self.device);
+        let kit = PipelineKit::init(&self.device, &self.swapchain);
 
-        func(kit, &self.swapchain)
+        func(kit)
     }
 
-    pub fn subresources<R, F>(&self, func: F) -> Result<R, ProcedureError>
-        where F: FnOnce(&GsDevice) -> Result<R, ProcedureError> {
+    pub fn syncs<R, F>(&self, func: F) -> Result<R, ProcedureError>
+        where F: FnOnce(SyncKit) -> Result<R, ProcedureError> {
 
-        func(&self.device)
+        let kit = SyncKit::init(&self.device);
+
+        func(kit)
     }
 
     pub fn commands<C, F>(&self, func: F) -> Result<C, ProcedureError>
@@ -59,5 +63,9 @@ impl<'a> AssetsLoader<'a> {
         let kit = CommandKit::init(&self.device);
 
         func(kit)
+    }
+
+    pub fn screen_dimension(&self) -> vkDim2D {
+        self.swapchain.extent()
     }
 }

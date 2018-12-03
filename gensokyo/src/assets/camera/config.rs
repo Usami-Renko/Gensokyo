@@ -31,15 +31,15 @@ impl CameraConfigurator {
     pub fn view_distance(mut self, near: f32, far: f32) -> Self { self.near = near; self.far = far; self }
     pub fn screen_aspect_ratio(mut self, ratio: f32) -> Self { self.screen_aspect = ratio; self }
 
-    pub fn for_chase_camera(self) -> GsChaseCamera {
+    pub fn into_chase_camera(self) -> GsChaseCamera {
         unimplemented!()
     }
 
-    pub fn for_flight_camera(self) -> GsFlightCamera {
+    pub fn into_flight_camera(self) -> GsFlightCamera {
         GsFlightCamera::new(self.pos, self.world_up, self.yaw, self.pitch, self.near, self.far, self.screen_aspect)
     }
 
-    pub fn for_stage_camera(self) -> GsStageCamera {
+    pub fn into_stage_camera(self) -> GsStageCamera {
         GsStageCamera::new(self.pos, self.world_up, self.yaw, self.pitch, self.near, self.far, self.screen_aspect)
     }
 }

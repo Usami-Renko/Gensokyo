@@ -8,6 +8,7 @@ use core::physical::GsPhyDevice;
 use core::device::{ GsDevice, DeviceQueueIdentifier };
 use core::surface::GsSurface;
 
+use core::swapchain::GsChain;
 use core::swapchain::chain::{ GsSwapchain, SwapchainConfig };
 use core::swapchain::support::SwapchainSupport;
 use core::swapchain::error::SwapchainInitError;
@@ -20,7 +21,7 @@ use std::ptr;
 
 pub struct SwapchainBuilder<'vk> {
 
-    device:  GsDevice,
+    device : GsDevice,
     surface: &'vk GsSurface,
 
     support: SwapchainSupport,
@@ -52,7 +53,7 @@ impl<'vk> SwapchainBuilder<'vk> {
         Ok(builder)
     }
 
-    pub fn build(&self, instance: &GsInstance, old_chain: Option<&GsSwapchain>, window: &winit::Window)
+    pub fn build(&self, instance: &GsInstance, old_chain: Option<&GsChain>, window: &winit::Window)
         -> Result<GsSwapchain, SwapchainInitError> {
 
         let prefer_format = self.support.optimal_format();

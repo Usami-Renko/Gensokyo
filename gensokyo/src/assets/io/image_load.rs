@@ -4,9 +4,10 @@ use ash::vk;
 use image;
 use image::GenericImageView;
 
-use gsvk::image::ImageError;
 use gsvk::image::storage::{ ImageStorageInfo, ImageSource, ImageData };
 use gsvk::types::{ vkbytes, vkDim3D };
+
+use assets::error::{ IoError, AssetsError };
 
 use std::path::Path;
 use std::mem;
@@ -25,10 +26,10 @@ impl ImageLoader {
         }
     }
 
-    pub fn load_2d(&self, path: &Path) -> Result<ImageStorageInfo, ImageError> {
+    pub fn load_2d(&self, path: &Path) -> Result<ImageStorageInfo, AssetsError> {
 
         let mut image_obj = image::open(path)
-            .or(Err(ImageError::SourceLoadError))?;
+            .or(Err(IoError::ImageSourceLoadingError))?;
 
         if self.config.flip_vertical {
             image_obj = image_obj.flipv();

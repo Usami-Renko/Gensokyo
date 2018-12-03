@@ -18,9 +18,11 @@ extern crate gensokyo_vulkan as gsvk;
 #[macro_use]
 extern crate gensokyo_macros;
 
-pub mod config;
-pub mod input;
-pub mod assets;
-pub mod procedure;
-pub mod toolkit;
-pub mod utils;
+mod config;
+mod input;
+mod assets;
+mod procedure;
+mod toolkit;
+mod utils;
+
+pub mod prelude;

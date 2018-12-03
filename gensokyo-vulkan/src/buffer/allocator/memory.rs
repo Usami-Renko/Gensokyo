@@ -47,7 +47,7 @@ impl<M> BufMemAllocator<M> where M: BufferMemoryTypeAbs {
         let allocator = BufMemAllocator {
             phantom_type,
             infos,
-            memory: phantom_type.memory_type().allot_buffer_memory(device, size, selector)?
+            memory: phantom_type.memory_type().allot_buffer_memory(device, size, selector)?,
         };
 
         Ok(allocator)

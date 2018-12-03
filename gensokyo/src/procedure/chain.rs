@@ -6,7 +6,7 @@ use procedure::loader::AssetsLoader;
 use procedure::error::ProcedureError;
 
 use gsvk::core::device::{ GsDevice, DeviceQueueIdentifier };
-use gsvk::core::swapchain::{ GsSwapchain, SwapchainConfig };
+use gsvk::core::swapchain::{ GsChain, SwapchainConfig };
 use gsvk::core::swapchain::error::{ SwapchainError, SwapchainRuntimeError };
 use gsvk::sync::{ GsSemaphore, GsFence, SyncError };
 use gsvk::types::vkuint;
@@ -19,7 +19,7 @@ pub(super) struct ChainResource {
     window: winit::Window,
 
     // swapchain.
-    swapchain: GsSwapchain,
+    swapchain: GsChain,
     frame_in_flights: usize,
     current_frame: usize,
 
@@ -28,7 +28,7 @@ pub(super) struct ChainResource {
     sync_fences  : Vec<GsFence>,
 }
 
-impl<'a, 'chain> ChainResource where 'chain: 'a {
+impl ChainResource {
 
     pub fn new(env: &ProgramEnv, window: winit::Window) -> Result<ChainResource, ProcedureError> {
 
@@ -45,7 +45,7 @@ impl<'a, 'chain> ChainResource where 'chain: 'a {
         Ok(chain)
     }
 
-    pub fn assets_loader(&'chain self, env: &VulkanEnv, config: &ResourceConfig) -> AssetsLoader<'a> {
+    pub fn assets_loader(&self, env: &VulkanEnv, config: &ResourceConfig) -> AssetsLoader {
 
         AssetsLoader::new(&env, config, &self.swapchain)
     }

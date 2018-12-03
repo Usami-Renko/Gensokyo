@@ -3,7 +3,7 @@ use ash::vk;
 
 #[derive(Debug, Clone, Copy, Eq, PartialEq)]
 pub enum RenderAttachementPrefab {
-    BackColorAttachment,
+    PresentAttachment,
     DepthAttachment,
 }
 
@@ -20,7 +20,7 @@ impl RenderAttachement {
     /// `format` is a vk::Format value specifying the format of the image view that will be used for the attachment.
     pub fn setup(prefab: RenderAttachementPrefab, format: vk::Format) -> RenderAttachement {
 
-        let attachment = vk::AttachmentDescription {
+        let mut attachment = vk::AttachmentDescription {
             flags            : vk::AttachmentDescriptionFlags::empty(),
             format,
             samples          : vk::SampleCountFlags::TYPE_1,
@@ -33,7 +33,10 @@ impl RenderAttachement {
         };
 
         let (clear_value, layout) = match prefab {
-            | RenderAttachementPrefab::BackColorAttachment => {
+            | RenderAttachementPrefab::PresentAttachment => {
+
+                attachment.final_layout = vk::ImageLayout::PRESENT_SRC_KHR;
+
                 let clear_value = vk::ClearValue {
                     color: vk::ClearColorValue {
                         float32: [0.0, 0.0, 0.0, 1.0],

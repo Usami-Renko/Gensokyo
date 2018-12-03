@@ -8,6 +8,3 @@ pub(crate) mod resources;
 pub(crate) mod utils;
 pub(crate) mod input;
 pub(crate) mod error;
-
-// TODO: Remove this setting.
-pub(crate) const VERBOSE: bool = false;

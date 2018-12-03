@@ -4,7 +4,6 @@ use ash::vk;
 use types::{ vkuint, vksint, vkfloat, vkDim2D };
 use std::ptr;
 
-#[derive(Default)]
 pub struct GsViewportState {
 
     ports   : Vec<vk::Viewport>,

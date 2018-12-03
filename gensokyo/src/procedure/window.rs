@@ -24,10 +24,6 @@ impl WindowInfo {
         }
     }
 
-    pub fn reset_size(&mut self, dimension: vkDim2D) {
-        self.window_size = dimension;
-    }
-
     pub fn build(&self, event_loop: &winit::EventsLoop) -> Result<winit::Window, winit::CreationError> {
 
         let mut builder = winit::WindowBuilder::new()

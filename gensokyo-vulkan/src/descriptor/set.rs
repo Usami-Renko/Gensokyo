@@ -53,13 +53,13 @@ impl DescriptorSetConfig {
         }
     }
 
-    pub fn add_buffer_binding(&mut self, bind_target: &'static impl DescriptorBufferBindableTarget, stages: vk::ShaderStageFlags) {
+    pub fn add_buffer_binding(&mut self, bind_target: &impl DescriptorBufferBindableTarget, stages: vk::ShaderStageFlags) {
 
         let binding_info = bind_target.binding_info(None);
         self.add_binding(Box::new(binding_info), stages);
     }
 
-    pub fn add_image_binding(&mut self, bind_target: &'static impl DescriptorImageBindableTarget, stages: vk::ShaderStageFlags) {
+    pub fn add_image_binding(&mut self, bind_target: &impl DescriptorImageBindableTarget, stages: vk::ShaderStageFlags) {
 
         let binding_info = bind_target.binding_info();
         self.add_binding(Box::new(binding_info), stages);
@@ -89,9 +89,9 @@ impl DescriptorSetConfig {
 
 pub struct DescriptorSet {
 
-    entity: DescriptorSetEntity,
-    layout: GsDescriptorSetLayout,
-    set_index: usize,
+    pub(crate) entity: DescriptorSetEntity,
+    pub(crate) layout: GsDescriptorSetLayout,
+    _set_index: usize,
 }
 
 impl DescriptorSet {
@@ -105,7 +105,7 @@ impl DescriptorSet {
         DescriptorSet {
             entity: DescriptorSetEntity::new(from, binding_indices),
             layout: from.layout(),
-            set_index,
+            _set_index: set_index,
         }
     }
 }

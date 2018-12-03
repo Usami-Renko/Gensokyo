@@ -47,10 +47,10 @@ impl DescriptorImageBindableTarget for GsSampleImage {
     fn binding_info(&self) -> DescriptorImageBindingInfo {
 
         DescriptorImageBindingInfo {
-            content: self.binding.clone(),
-            sampler: &self.sampler,
-            dst_layout: vk::ImageLayout::SHADER_READ_ONLY_OPTIMAL,
-            entity: &self.entity,
+            content        : self.binding.clone(),
+            sampler_handle : self.sampler.handle,
+            dst_layout     : vk::ImageLayout::SHADER_READ_ONLY_OPTIMAL,
+            view_handle    : self.entity.view,
         }
     }
 }

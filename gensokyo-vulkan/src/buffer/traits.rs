@@ -47,9 +47,11 @@ pub trait BufferHandleEntity {
 
 pub struct BufferCopyInfo {
 
-    /// `handle` the handle of buffer whose data is copied from or copy to.
+    /// `handle` is the handle of buffer whose data is copied from or copy to.
     pub(crate) handle: vk::Buffer,
-    /// `offset` the starting offset in bytes from the start of source or destination buffer.
+    /// `offset` is the starting offset in bytes from the start of source or destination buffer.
+    ///
+    /// `offset` is not the starting offset of memory.
     pub(crate) offset: vkbytes,
     /// If this is the buffer for data source, `size` is the number of bytes to copy.
     ///

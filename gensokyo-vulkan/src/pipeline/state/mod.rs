@@ -23,14 +23,15 @@ pub(super) struct PipelineStates {
 }
 
 use pipeline::shader::VertexInputDescription;
+use types::vkDim2D;
 
 impl PipelineStates {
 
-    pub(super) fn setup(input: VertexInputDescription) -> PipelineStates {
+    pub(super) fn setup(input: VertexInputDescription, dimension: vkDim2D) -> PipelineStates {
         PipelineStates {
             vertex_input  : input.desc(),
             input_assembly: self::input_assembly::GsInputAssemblyState::default(),
-            viewport      : self::viewport::GsViewportState::default(),
+            viewport      : self::viewport::GsViewportState::single(self::viewport::ViewportStateInfo::new(dimension)),
             rasterizer    : self::rasterizer::GsRasterizerState::default(),
             multisample   : self::multisample::GsMultisampleState::default(),
             depth_stencil : self::depth_stencil::GsDepthStencilState::default(),

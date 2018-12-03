@@ -89,8 +89,3 @@ impl GsDescriptorSetLayout {
         }
     }
 }
-
-pub trait ToDescriptorSetLayout {
-
-    fn to_set_layout(&self) -> &GsDescriptorSetLayout;
-}

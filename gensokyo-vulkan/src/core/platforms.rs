@@ -2,7 +2,6 @@
 use winit;
 use ash::vk;
 use ash::version::{ EntryV1_0, InstanceV1_0 };
-use std::os::raw::c_void;
 use std::ffi::CStr;
 
 #[cfg(target_os = "macos")]
@@ -22,21 +21,18 @@ use cocoa::appkit::{ NSView, NSWindow };
 use objc::runtime::YES;
 
 /// get the names of required extension used in macOS.
-#[inline]
 #[cfg(target_os = "macos")]
 pub fn platform_surface_names() -> &'static CStr {
     MacOSSurface::name()
 }
 
 /// get the names of required extension used in Windows.
-#[inline]
 #[cfg(all(windows))]
 pub fn platform_surface_names() -> &'static CStr {
     Win32Surface::name()
 }
 
 /// get the names of required extensions used in linux.
-#[inline]
 #[cfg(all(unix, not(target_os = "android"), not(target_os = "macos")))]
 pub fn platform_surface_names() -> &'static CStr {
     XlibSurface::name()
@@ -76,6 +72,7 @@ pub unsafe fn generate_surface<E: EntryV1_0, I: InstanceV1_0>(
 ) -> Result<vk::SurfaceKHR, vk::Result> {
 
     use winit::os::macos::WindowExt;
+    use std::os::raw::c_void;
     use std::mem;
     use std::ptr;
 
@@ -116,6 +113,7 @@ pub unsafe fn generate_surface<E: EntryV1_0, I: InstanceV1_0>(
     use winapi::shared::windef::HWND;
     use winapi::um::libloaderapi::GetModuleHandleW;
     use winit::os::windows::WindowExt;
+    use std::os::raw::c_void;
     use std::ptr;
 
     let hwnd = window.get_hwnd() as HWND;
@@ -124,8 +122,8 @@ pub unsafe fn generate_surface<E: EntryV1_0, I: InstanceV1_0>(
         s_type    : vk::StructureType::WIN32_SURFACE_CREATE_INFO_KHR,
         p_next    : ptr::null(),
         flags     : Default::default(),
-        hinstance,
         hwnd      : hwnd as *const c_void,
+        hinstance,
     };
     let win32_surface_loader =
         Win32Surface::new(entry, instance);

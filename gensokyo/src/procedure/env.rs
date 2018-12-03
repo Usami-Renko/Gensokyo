@@ -12,7 +12,7 @@ use gsvk::core::debug::GsDebugger;
 use gsvk::core::surface::GsSurface;
 use gsvk::core::device::{ GsDevice, LogicalDeviceBuilder };
 use gsvk::core::physical::{ GsPhyDevice, PhysicalInspector };
-use gsvk::core::swapchain::{ GsSwapchain, SwapchainConfig, SwapchainBuilder };
+use gsvk::core::swapchain::{ GsChain, SwapchainConfig, SwapchainBuilder };
 
 use std::rc::Rc;
 use std::path::PathBuf;
@@ -32,7 +32,7 @@ pub(super) struct WindowEnv {
     test_window: Option<winit::Window>,
 }
 
-impl<'a, 'env> ProgramEnv {
+impl<'env> ProgramEnv {
 
     pub fn new(manifest: Option<PathBuf>) -> Result<ProgramEnv, RuntimeError> {
 
@@ -122,11 +122,11 @@ impl VulkanEnv {
         Ok(env)
     }
 
-    pub fn new_chain(&self, config: &SwapchainConfig, old_chain: Option<&GsSwapchain>, window: &winit::Window) -> Result<GsSwapchain, ProcedureError> {
+    pub fn new_chain(&self, config: &SwapchainConfig, old_chain: Option<&GsChain>, window: &winit::Window) -> Result<GsChain, ProcedureError> {
 
         let chain = SwapchainBuilder::init(config, &self.physical, &self.device, &self.surface)?
             .build(&self.instance, old_chain, window)?;
-        Ok(chain)
+        Ok(Rc::new(chain))
     }
 
     /// use cleanup function, so that the order of deinitialization can be customizable.

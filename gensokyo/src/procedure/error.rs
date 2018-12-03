@@ -9,7 +9,7 @@ use gsvk::pipeline::error::PipelineError;
 use gsvk::command::CommandError;
 use gsvk::memory::AllocatorError;
 use gsvk::sync::SyncError;
-use assets::model::ModelLoadingErr;
+use assets::error::AssetsError;
 
 use std::fmt;
 use std::error::Error;
@@ -23,8 +23,9 @@ pub enum RuntimeError {
 }
 
 impl Error for RuntimeError {
+
     fn cause(&self) -> Option<&Error> {
-        match *self {
+        match self {
             | RuntimeError::Config(ref e)    => Some(e),
             | RuntimeError::Window(ref e)    => Some(e),
             | RuntimeError::Procedure(ref e) => Some(e),
@@ -34,7 +35,7 @@ impl Error for RuntimeError {
 
 impl fmt::Display for RuntimeError {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
-        let description = match *self {
+        let description = match self {
             | RuntimeError::Config(ref e)    => e.to_string(),
             | RuntimeError::Window(ref e)    => e.to_string(),
             | RuntimeError::Procedure(ref e) => e.to_string(),
@@ -58,14 +59,14 @@ pub enum ProcedureError {
     Command(CommandError),
     Sync(SyncError),
     Allocator(AllocatorError),
-    Model(ModelLoadingErr),
+    Assets(AssetsError),
 
     SwapchainRecreate,
 }
 
 impl Error for ProcedureError {
     fn cause(&self) -> Option<&Error> {
-        match *self {
+        match self {
             | ProcedureError::Instance(ref e)       => Some(e),
             | ProcedureError::Validation(ref e)     => Some(e),
             | ProcedureError::Surface(ref e)        => Some(e),
@@ -76,7 +77,7 @@ impl Error for ProcedureError {
             | ProcedureError::Command(ref e)        => Some(e),
             | ProcedureError::Sync(ref e)           => Some(e),
             | ProcedureError::Allocator(ref e)      => Some(e),
-            | ProcedureError::Model(ref e)          => Some(e),
+            | ProcedureError::Assets(ref e)         => Some(e),
 
             | ProcedureError::SwapchainRecreate     => None,
         }
@@ -94,7 +95,7 @@ impl_from_err!(Pipeline(PipelineError)             -> ProcedureError);
 impl_from_err!(Command(CommandError)               -> ProcedureError);
 impl_from_err!(Sync(SyncError)                     -> ProcedureError);
 impl_from_err!(Allocator(AllocatorError)           -> ProcedureError);
-impl_from_err!(Model(ModelLoadingErr)              -> ProcedureError);
+impl_from_err!(Assets(AssetsError)                 -> ProcedureError);
 
 impl fmt::Display for ProcedureError {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {

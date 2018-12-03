@@ -1,11 +1,12 @@
 
-use hakurei::prelude::*;
-use hakurei::prelude::queue::*;
-use hakurei::prelude::pipeline::*;
-use hakurei::prelude::resources::*;
-use hakurei::prelude::sync::*;
-use hakurei::prelude::input::*;
-use hakurei::prelude::utility::*;
+use ash::vk;
+use gs::prelude::*;
+use gsvk::prelude::common::*;
+use gsvk::prelude::buffer::*;
+use gsvk::prelude::descriptor::*;
+use gsvk::prelude::pipeline::*;
+use gsvk::command::*;
+use gsvk::sync::*;
 
 use super::data::{ Vertex, UboObject };
 use super::data::{ VERTEX_DATA, INDEX_DATA };
@@ -18,68 +19,79 @@ const FRAGMENT_SHADER_SOURCE_PATH: &str = "src/05.cube/cube.frag";
 
 pub struct CubeProcedure {
 
-    vertex_data: Vec<Vertex>,
-    index_data : Vec<uint32_t>,
+    index_data : Vec<vkuint>,
+    ubo_data   : Vec<UboObject>,
 
-    buffer_storage: GsBufferRepository,
-    vertex_buffer : HaVertexBlock,
+    buffer_storage: GsBufferRepository<Host>,
+    vertex_buffer : GsVertexBlock,
     index_buffer  : GsIndexBlock,
+    ubo_buffer  : GsUniformBlock,
 
     graphics_pipeline: GsGraphicsPipeline,
 
-    ubo_data   : Vec<UboObject>,
-    ubo_storage: GsBufferRepository,
-    ubo_buffer : HaUniformBlock,
-
-    desc_storage: GsDescriptorRepository,
     ubo_set     : DescriptorSet,
+    desc_storage: GsDescriptorRepository,
 
     command_pool   : GsCommandPool,
     command_buffers: Vec<GsCommandBuffer>,
 
-    camera: HaStageCamera,
+    camera: GsStageCamera,
 
     present_availables: Vec<GsSemaphore>,
 }
 
 impl CubeProcedure {
 
-    pub fn new(dimension: Dimension2D) -> CubeProcedure {
+    pub fn new(loader: AssetsLoader) -> Result<CubeProcedure, ProcedureError> {
+
+        let screen_dimension = loader.screen_dimension();
+
         let camera = CameraConfigurator::config()
             .place_at(Point3::new(0.0, 0.0, 3.0))
-            .screen_aspect_ratio(dimension.width as f32 / dimension.height as f32)
-            .for_stage_camera();
+            .screen_aspect_ratio(screen_dimension.width as f32 / screen_dimension.height as f32)
+            .into_stage_camera();
 
-        CubeProcedure {
-            vertex_data: VERTEX_DATA.to_vec(),
-            index_data : INDEX_DATA.to_vec(),
+        let vertex_data = VERTEX_DATA.to_vec();
+        let index_data = INDEX_DATA.to_vec();
+        let ubo_data = vec![
+            UboObject {
+                projection: camera.proj_matrix(),
+                view      : camera.view_matrix(),
+                model     : Matrix4::identity(),
+            },
+        ];
 
-            buffer_storage: GsBufferRepository::empty(),
-            vertex_buffer : HaVertexBlock::uninitialize(),
-            index_buffer  : GsIndexBlock::uninitialize(),
+        let (vertex_buffer, index_buffer, ubo_buffer, buffer_storage) = loader.assets(|kit| {
+            CubeProcedure::buffers(kit, &vertex_data, &index_data, &ubo_data)
+        })?;
 
-            graphics_pipeline: GsGraphicsPipeline::uninitialize(),
+        let (ubo_set, desc_storage) = loader.assets(|kit| {
+            CubeProcedure::ubo(kit, &ubo_buffer)
+        })?;
 
-            ubo_data: vec![
-                UboObject {
-                    projection: camera.proj_matrix(),
-                    view      : camera.view_matrix(),
-                    model     : Matrix4::identity(),
-                },
-            ],
-            ubo_storage : GsBufferRepository::empty(),
-            desc_storage: GsDescriptorRepository::empty(),
+        let graphics_pipeline = loader.pipelines(|kit| {
+            CubeProcedure::pipelines(kit, &ubo_set)
+        })?;
 
-            ubo_buffer: HaUniformBlock::uninitialize(),
-            ubo_set   : DescriptorSet::unset(),
+        let present_availables = loader.syncs(|kit| {
+            CubeProcedure::sync_resources(kit, &graphics_pipeline)
+        })?;
 
-            command_pool: GsCommandPool::uninitialize(),
-            command_buffers: vec![],
+        let (command_pool, command_buffers) = loader.commands(|kit| {
+            CubeProcedure::commands(kit, &graphics_pipeline, &vertex_buffer, &index_buffer, &ubo_set, index_data.len())
+        })?;
 
+        let procecure = CubeProcedure {
+            index_data, ubo_data,
+            buffer_storage, vertex_buffer, index_buffer, ubo_buffer,
+            desc_storage, ubo_set,
+            graphics_pipeline,
+            command_pool, command_buffers,
             camera,
+            present_availables,
+        };
 
-            present_availables: vec![],
-        }
+        Ok(procecure)
     }
 
     fn update_uniforms(&mut self) -> Result<(), ProcedureError> {
@@ -87,70 +99,69 @@ impl CubeProcedure {
         self.ubo_data[0].model = self.camera.object_model_transformation();
         self.ubo_data[0].view  = self.camera.view_matrix();
 
-        self.ubo_storage.data_updater()?
-            .update(&self.ubo_buffer, &self.ubo_data)?
-            .done()?;
+        self.buffer_storage.data_updater()?
+            .upload(&self.ubo_buffer, &self.ubo_data)?
+            .finish()?;
 
         Ok(())
     }
-}
 
-impl ProgramProc for CubeProcedure {
+    fn buffers(kit: AllocatorKit, vertex_data: &Vec<Vertex>, index_data: &Vec<vkuint>, ubo_data: &Vec<UboObject>) -> Result<(GsVertexBlock, GsIndexBlock, GsUniformBlock, GsBufferRepository<Host>), ProcedureError> {
+        
+        let mut buffer_allocator = kit.buffer(BufferStorageType::HOST);
+        
+        let vertex_info = VertexBlockInfo::new(data_size!(vertex_data, Vertex));
+        let vertex_index = buffer_allocator.append_buffer(vertex_info)?;
+        
+        let index_info = IndexBlockInfo::new(data_size!(index_data, vkuint));
+        let index_index = buffer_allocator.append_buffer(index_info)?;
+        
+        let ubo_info = UniformBlockInfo::new(0, 1, data_size!(ubo_data, UboObject));
+        let ubo_index = buffer_allocator.append_buffer(ubo_info)?;
 
-    fn assets(&mut self, kit: AllocatorKit) -> Result<(), ProcedureError> {
-
-        // vertex, index buffer
-        let mut device_buffer_allocator = kit.buffer(BufferStorageType::Device);
-
-        let vertex_info = VertexBlockInfo::new(data_size!(self.vertex_data, Vertex));
-        self.vertex_buffer = device_buffer_allocator.append_vertex(vertex_info)?;
-
-        let index_info = IndexBlockInfo::new(data_size!(self.index_data, uint32_t));
-        self.index_buffer = device_buffer_allocator.append_index(index_info)?;
-
-        self.buffer_storage = device_buffer_allocator.allocate()?;
-        self.buffer_storage.data_uploader()?
-            .upload(&self.vertex_buffer, &self.vertex_data)?
-            .upload(&self.index_buffer, &self.index_data)?
-            .done()?;
-
-        // uniform buffer
-        let mut host_buffer_allocator = kit.buffer(BufferStorageType::Host);
-
-        let ubo_info = UniformBlockInfo::new(0, 1, data_size!(self.ubo_data, UboObject));
-        self.ubo_buffer = host_buffer_allocator.append_uniform(ubo_info)?;
-
-        self.ubo_storage = host_buffer_allocator.allocate()?;
-
-        self.ubo_storage.data_uploader()?
-            .upload(&self.ubo_buffer, &self.ubo_data)?
-            .done()?;
+        let buffer_distributor = buffer_allocator.allocate()?;
+        let vertex_buffer = buffer_distributor.acquire_vertex(vertex_index);
+        let index_buffer = buffer_distributor.acquire_index(index_index);
+        let ubo_buffer = buffer_distributor.acquire_uniform(ubo_index)?;
+        
+        let mut buffer_storage = buffer_distributor.into_repository();
+        
+        buffer_storage.data_uploader()?
+            .upload(&vertex_buffer, vertex_data)?
+            .upload(&index_buffer, index_data)?
+            .upload(&ubo_buffer, ubo_data)?
+            .finish()?;
+        
+        Ok((vertex_buffer, index_buffer, ubo_buffer, buffer_storage))
+    }
+    
+    fn ubo(kit :AllocatorKit, ubo_buffer: &GsUniformBlock) -> Result<(DescriptorSet, GsDescriptorRepository), ProcedureError> {
 
         // descriptor
-        let mut descriptor_set_config = DescriptorSetConfig::init(&[]);
-        descriptor_set_config.add_buffer_binding(&self.ubo_buffer, &[
-            ShaderStageFlag::VertexStage,
-        ]);
+        let mut descriptor_set_config = DescriptorSetConfig::init(vk::DescriptorSetLayoutCreateFlags::empty());
+        descriptor_set_config.add_buffer_binding(ubo_buffer, vk::ShaderStageFlags::VERTEX);
 
-        let mut descriptor_allocator = kit.descriptor(&[]);
+        let mut descriptor_allocator = kit.descriptor(vk::DescriptorPoolCreateFlags::empty());
         let desc_index = descriptor_allocator.append_set(descriptor_set_config);
 
         let mut descriptor_distributor = descriptor_allocator.allocate()?;
-        self.ubo_set = descriptor_distributor.acquire_set(desc_index);
-        self.desc_storage = descriptor_distributor.into_repository();
+        let ubo_set = descriptor_distributor.acquire_set(desc_index);
+        
+        let desc_storage = descriptor_distributor.into_repository();
 
-        Ok(())
+        Ok((ubo_set, desc_storage))
     }
 
-    fn pipelines(&mut self, kit: PipelineKit, swapchain: &HaSwapchain) -> Result<(), ProcedureError> {
+    fn pipelines(kit: PipelineKit, ubo_set: &DescriptorSet) -> Result<GsGraphicsPipeline, ProcedureError> {
+
         // shaders
         let vertex_shader = GsShaderInfo::from_source(
-            ShaderStageFlag::VertexStage,
+            vk::ShaderStageFlags::VERTEX,
             Path::new(VERTEX_SHADER_SOURCE_PATH),
             None,
             "[Vertex Shader]");
         let fragment_shader = GsShaderInfo::from_source(
-            ShaderStageFlag::FragmentStage,
+            vk::ShaderStageFlags::FRAGMENT,
             Path::new(FRAGMENT_SHADER_SOURCE_PATH),
             None,
             "[Fragment Shader]");
@@ -162,72 +173,73 @@ impl ProgramProc for CubeProcedure {
 
         // pipeline
         let mut render_pass_builder = kit.pass_builder();
-        let first_subpass = render_pass_builder.new_subpass(PipelineType::Graphics);
+        let first_subpass = render_pass_builder.new_subpass();
 
-        let color_attachment = RenderAttachement::setup(RenderAttachementPrefab::BackColorAttachment, swapchain.format);
+        let color_attachment = kit.subpass_attachment(RenderAttachementPrefab::PresentAttachment);
         let _attachment_index = render_pass_builder.add_attachemnt(color_attachment, first_subpass, AttachmentType::Color);
 
-        let mut dependency = RenderDependency::setup(RenderDependencyPrefab::Common, SUBPASS_EXTERAL, first_subpass);
-        dependency.set_stage(PipelineStageFlag::ColorAttachmentOutputBit, PipelineStageFlag::ColorAttachmentOutputBit);
-        dependency.set_access(&[], &[
-            AccessFlag::ColorAttachmentReadBit,
-            AccessFlag::ColorAttachmentWriteBit,
-        ]);
+        let dependency = kit.subpass_dependency(vk::SUBPASS_EXTERNAL, first_subpass)
+            .stage(vk::PipelineStageFlags::COLOR_ATTACHMENT_OUTPUT, vk::PipelineStageFlags::COLOR_ATTACHMENT_OUTPUT)
+            .access(vk::AccessFlags::empty(), vk::AccessFlags::COLOR_ATTACHMENT_READ | vk::AccessFlags::COLOR_ATTACHMENT_WRITE);
         render_pass_builder.add_dependenty(dependency);
 
-        let render_pass = render_pass_builder.build(swapchain)?;
-        let viewport = GsViewportState::single(ViewportStateInfo::new(swapchain.extent));
+        let render_pass = render_pass_builder.build()?;
 
-        let pipeline_config = GraphicsPipelineConfig::new(shader_infos, vertex_input_desc, render_pass)
-            .setup_viewport(ViewportStateType::Fixed { state: viewport })
-            .add_descriptor_set(&self.ubo_set)
+        let pipeline_config = kit.pipeline_config(shader_infos, vertex_input_desc, render_pass)
+            .add_descriptor_set(ubo_set)
             .finish();
 
-        let mut pipeline_builder = kit.pipeline_builder(PipelineType::Graphics)?;
+        let mut pipeline_builder = kit.pipeline_graphics_builder()?;
         let pipeline_index = pipeline_builder.add_config(pipeline_config);
 
         let mut pipelines = pipeline_builder.build()?;
-        self.graphics_pipeline = pipelines.take_at(pipeline_index)?;
-        
-        Ok(())
+        let graphics_pipeline = pipelines.take_at(pipeline_index)?;
+
+        Ok(graphics_pipeline)
     }
 
-    fn subresources(&mut self, device: &GsDevice) -> Result<(), ProcedureError> {
+    fn sync_resources(kit: SyncKit, graphics_pipeline: &GsGraphicsPipeline) -> Result<Vec<GsSemaphore>, ProcedureError> {
+
         // sync
-        for _ in 0..self.graphics_pipeline.frame_count() {
-            let present_available = GsSemaphore::setup(device)?;
-            self.present_availables.push(present_available);
+        let mut present_availables = vec![];
+        for _ in 0..graphics_pipeline.frame_count() {
+            let present_available = kit.semaphore()?;
+            present_availables.push(present_available);
         }
 
-        Ok(())
+        Ok(present_availables)
     }
 
-    fn commands(&mut self, kit: CommandKit) -> Result<(), ProcedureError> {
+    fn commands(kit: CommandKit, graphics_pipeline: &GsGraphicsPipeline, vertex_buffer: &GsVertexBlock, index_buffer: &GsIndexBlock, ubo_set: &DescriptorSet, index_count: usize) -> Result<(GsCommandPool, Vec<GsCommandBuffer>), ProcedureError> {
 
-        self.command_pool = kit.pool(DeviceQueueIdentifier::Graphics)?;
+        let command_pool = kit.pool(DeviceQueueIdentifier::Graphics)?;
+        let mut command_buffers = vec![];
 
-        let command_buffer_count = self.graphics_pipeline.frame_count();
-        let raw_commands = self.command_pool
-            .allocate(CommandBufferUsage::UnitaryCommand, command_buffer_count)?;
+        let command_buffer_count = graphics_pipeline.frame_count();
+        let raw_commands = command_pool
+            .allocate(CmdBufferUsage::UnitaryCommand, command_buffer_count)?;
 
         for (frame_index, command) in raw_commands.into_iter().enumerate() {
             let mut recorder = kit.recorder(command);
 
-            recorder.begin_record(&[CommandBufferUsageFlag::SimultaneousUseBit])?
-                .begin_render_pass(&self.graphics_pipeline, frame_index)
-                .bind_pipeline(&self.graphics_pipeline)
-                .bind_vertex_buffers(0, &[CmdVertexBindingInfo { block: &self.vertex_buffer, sub_block_index: None }])
-                .bind_index_buffer(CmdIndexBindingInfo { block: &self.index_buffer, sub_block_index: None })
-                .bind_descriptor_sets(&self.graphics_pipeline, 0, &[&self.ubo_set])
-                .draw_indexed(self.index_data.len() as uint32_t, 1, 0, 0, 0)
+            recorder.begin_record(vk::CommandBufferUsageFlags::SIMULTANEOUS_USE)?
+                .begin_render_pass(graphics_pipeline, frame_index)
+                .bind_pipeline(graphics_pipeline)
+                .bind_vertex_buffers(0, &[vertex_buffer])
+                .bind_index_buffer(index_buffer, 0)
+                .bind_descriptor_sets(graphics_pipeline, 0, &[ubo_set])
+                .draw_indexed(index_count as vkuint, 1, 0, 0, 0)
                 .end_render_pass();
 
             let command_recorded = recorder.end_record()?;
-            self.command_buffers.push(command_recorded);
+            command_buffers.push(command_recorded);
         }
 
-        Ok(())
+        Ok((command_pool, command_buffers))
     }
+}
+
+impl GraphicsRoutine for CubeProcedure {
 
     fn draw(&mut self, device: &GsDevice, device_available: &GsFence, image_available: &GsSemaphore, image_index: usize, _: f32) -> Result<&GsSemaphore, ProcedureError> {
 
@@ -237,7 +249,7 @@ impl ProgramProc for CubeProcedure {
             QueueSubmitBundle {
                 wait_semaphores: &[image_available],
                 sign_semaphores: &[&self.present_availables[image_index]],
-                wait_stages    : &[PipelineStageFlag::ColorAttachmentOutputBit],
+                wait_stages    : &[vk::PipelineStageFlags::COLOR_ATTACHMENT_OUTPUT],
                 commands       : &[&self.command_buffers[image_index]],
             },
         ];
@@ -251,25 +263,41 @@ impl ProgramProc for CubeProcedure {
 
         self.present_availables.iter()
             .for_each(|semaphore| semaphore.cleanup());
-
         self.present_availables.clear();
         self.command_buffers.clear();
-
-        self.graphics_pipeline.cleanup();
         self.command_pool.cleanup();
+        self.graphics_pipeline.cleanup();
 
         Ok(())
     }
 
-    fn cleanup(&mut self, _: &GsDevice) {
+    fn reload_res(&mut self, loader: AssetsLoader) -> Result<(), ProcedureError> {
+
+        self.graphics_pipeline = loader.pipelines(|kit| {
+            CubeProcedure::pipelines(kit, &self.ubo_set)
+        })?;
+
+        self.present_availables = loader.syncs(|kit| {
+            CubeProcedure::sync_resources(kit, &self.graphics_pipeline)
+        })?;
+
+        let (command_pool, command_buffers) = loader.commands(|kit| {
+            CubeProcedure::commands(kit, &self.graphics_pipeline, &self.vertex_buffer, &self.index_buffer, &self.ubo_set, self.index_data.len())
+        })?;
+        self.command_pool = command_pool;
+        self.command_buffers = command_buffers;
+
+        Ok(())
+    }
+
+    fn clean_routine(&mut self, _: &GsDevice) {
 
         self.present_availables.iter()
             .for_each(|semaphore| semaphore.cleanup());
-
         self.graphics_pipeline.cleanup();
         self.command_pool.cleanup();
+
         self.desc_storage.cleanup();
-        self.ubo_storage.cleanup();
         self.buffer_storage.cleanup();
     }
 

@@ -27,7 +27,7 @@ impl UniformBlockInfo {
 
     pub fn new(binding: vkuint, count: vkuint, element_size: vkbytes) -> UniformBlockInfo {
 
-        let estimate_size = (count * count) as vkbytes;
+        let estimate_size = (count as vkbytes) * element_size;
 
         UniformBlockInfo {
             info: BufferDescInfo::new(estimate_size, vk::BufferUsageFlags::UNIFORM_BUFFER),
@@ -103,7 +103,7 @@ impl DescriptorBufferBindableTarget for GsUniformBlock {
             content: self.binding.clone(),
             element_indices: sub_block_indices.unwrap_or(vec![0]),
             element_size: self.element_size,
-            buffer: &self.block,
+            buffer_handle: self.block.handle,
         }
     }
 }

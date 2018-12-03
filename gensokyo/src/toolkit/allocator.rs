@@ -5,7 +5,7 @@ use config::resources::ResourceConfig;
 
 use gsvk::core::physical::GsPhyDevice;
 use gsvk::core::device::GsDevice;
-use gsvk::core::swapchain::GsSwapchain;
+use gsvk::core::swapchain::GsChain;
 
 use gsvk::buffer::allocator::GsBufferAllocator;
 use gsvk::buffer::allocator::types::BufferMemoryTypeAbs;
@@ -17,6 +17,7 @@ use gsvk::descriptor::allocator::GsDescriptorAllocator;
 
 use gsvk::types::vkDim2D;
 
+use assets::io::ImageLoader;
 use assets::model::ModelGltfLoader;
 
 pub struct AllocatorKit {
@@ -30,7 +31,7 @@ pub struct AllocatorKit {
 
 impl AllocatorKit {
 
-    pub(crate) fn init(physical: &GsPhyDevice, device: &GsDevice, swapchain: &GsSwapchain, config: ResourceConfig) -> AllocatorKit {
+    pub(crate) fn init(physical: &GsPhyDevice, device: &GsDevice, swapchain: &GsChain, config: ResourceConfig) -> AllocatorKit {
 
         AllocatorKit {
             physical: physical.clone(),
@@ -55,6 +56,10 @@ impl AllocatorKit {
 
     pub fn swapchain_dimension(&self) -> vkDim2D {
         self.dimension
+    }
+
+    pub fn image_loader(&self) -> ImageLoader {
+        ImageLoader::new(self.config.image_load.clone())
     }
 
     pub fn gltf_loader(&self) -> ModelGltfLoader {

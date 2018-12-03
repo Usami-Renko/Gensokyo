@@ -6,20 +6,20 @@ use tobj::LoadError;
 use gltf::Error as GltfError;
 
 #[derive(Debug)]
-pub enum ModelLoadingErr {
+pub enum ModelLoadingError {
 
     Obj(ModelObjLoadingError),
     Gltf(ModelGltfLoadingError),
 }
 
-impl Error for ModelLoadingErr {}
-impl fmt::Display for ModelLoadingErr {
+impl Error for ModelLoadingError {}
+impl fmt::Display for ModelLoadingError {
 
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
 
         let description = match self {
-            | ModelLoadingErr::Obj(e)  => e.to_string(),
-            | ModelLoadingErr::Gltf(e) => e.to_string(),
+            | ModelLoadingError::Obj(e)  => e.to_string(),
+            | ModelLoadingError::Gltf(e) => e.to_string(),
         };
 
         write!(f, "{}", description)

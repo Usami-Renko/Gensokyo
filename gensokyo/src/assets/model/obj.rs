@@ -1,7 +1,7 @@
 
 use tobj;
 
-use assets::model::{ ModelLoadingErr, ModelObjLoadingError };
+use assets::model::{ModelLoadingError, ModelObjLoadingError };
 
 use std::path::Path;
 
@@ -14,10 +14,10 @@ impl ModelObjLoader {
         ModelObjLoader {}
     }
 
-    pub fn load_model(&self, from: impl AsRef<Path>, data_entity: &mut impl ObjDataEntity) -> Result<(), ModelLoadingErr> {
+    pub fn load_model(&self, from: impl AsRef<Path>, data_entity: &mut impl ObjDataEntity) -> Result<(), ModelLoadingError> {
 
         let (models, _materials) = tobj::load_obj(from.as_ref())
-            .map_err(|e| ModelLoadingErr::Obj(ModelObjLoadingError::Loading(e)))?;
+            .map_err(|e| ModelLoadingError::Obj(ModelObjLoadingError::Loading(e)))?;
 
         // TODO: Currently only support loading first model in obj file.
         let first_model = &models[0];

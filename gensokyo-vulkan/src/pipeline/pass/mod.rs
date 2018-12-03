@@ -4,8 +4,7 @@ pub use self::framebuffer::{ GsFramebuffer, FramebufferBuilder };
 pub use self::attachment::{ RenderAttachement, RenderAttachementPrefab };
 pub use self::subpass::AttachmentType;
 pub use self::dependency::RenderDependency;
-
-pub(crate) use self::render::GsRenderPass;
+pub use self::render::GsRenderPass;
 
 
 mod render;

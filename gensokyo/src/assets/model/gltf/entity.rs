@@ -15,7 +15,7 @@ use gsvk::types::vkuint;
 use assets::model::{ GltfResources, GltfRawData };
 use assets::model::GltfScene;
 use assets::model::GltfHierarchyAbstract;
-use assets::model::{ ModelLoadingErr, ModelGltfLoadingError };
+use assets::model::{ModelLoadingError, ModelGltfLoadingError };
 
 use toolkit::AllocatorKit;
 
@@ -34,12 +34,12 @@ pub struct GltfEntity<M> where M: BufferMemoryTypeAbs + Copy {
 
 impl<M> GltfEntity<M> where M: BufferMemoryTypeAbs + Copy {
 
-    pub(crate) fn load(path: impl AsRef<Path>, typ: M) -> Result<GltfEntity<M>, ModelLoadingErr> {
+    pub(crate) fn load(path: impl AsRef<Path>, typ: M) -> Result<GltfEntity<M>, ModelLoadingError> {
 
         let mut resources = GltfResources::default();
 
         let (document, buffers, images) = gltf::import(path)
-            .map_err(|e| ModelLoadingErr::Gltf(ModelGltfLoadingError::Gltf(e)))?;
+            .map_err(|e| ModelLoadingError::Gltf(ModelGltfLoadingError::Gltf(e)))?;
         let raw_data = GltfRawData {
             document, buffers, images,
         };
@@ -47,7 +47,7 @@ impl<M> GltfEntity<M> where M: BufferMemoryTypeAbs + Copy {
         let mut scenes = vec![];
         for raw_scene in raw_data.document.scenes() {
             let scene = GltfScene::from_hierarchy(raw_scene, &mut resources, &raw_data)
-                .map_err(|e| ModelLoadingErr::Gltf(e))?;
+                .map_err(|e| ModelLoadingError::Gltf(e))?;
             scenes.push(scene);
         }
 
@@ -140,7 +140,7 @@ impl<M> GltfEntity<M> where M: BufferMemoryTypeAbs + Copy {
 
             recorder
                 .bind_vertex_buffers(0, &[vertex_buffer])
-                .bind_index_buffer(index_buffer)
+                .bind_index_buffer(index_buffer, 0)
                 .draw_indexed(res.index_counts[i] as vkuint, 1, 0, 0, 0);
         }
     }

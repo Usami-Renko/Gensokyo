@@ -4,8 +4,8 @@ macro_rules! data_size {
     ($data:expr, $d_type:ty) => (
         (::std::mem::size_of::<$d_type>() * $data.len()) as vkbytes
     );
-    ($data:expr) => (
-        (::std::mem::size_of_value($data)) as vkbytes
+    ($d_type:ty) => (
+        (::std::mem::size_of::<$d_type>()) as vkbytes
     );
 }
 
@@ -30,10 +30,14 @@ macro_rules! offset_of {
 
 #[macro_export]
 macro_rules! collect_handle {
-    ($handle_wrapper:expr) => {
-
-        $handle_wrapper.iter()
+    ($wrapper:expr) => {
+        $wrapper.iter()
             .map(|wrapper| wrapper.handle)
+            .collect::<Vec<_>>()
+    };
+    ($wrapper:expr, $path1:ident) => {
+        $wrapper.iter()
+            .map(|wrapper| wrapper.$path1.handle)
             .collect::<Vec<_>>()
     };
 }

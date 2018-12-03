@@ -19,11 +19,11 @@ use pipeline::graphics::pipeline::{ GsGraphicsPipeline, GraphicsPipelineContaine
 use pipeline::layout::PipelineLayoutBuilder;
 use pipeline::error::PipelineError;
 
-use descriptor::ToDescriptorSetLayout;
+use descriptor::DescriptorSet;
 
 use pipeline::shader::shaderc::{ GsShaderCompiler, ShaderCompilePrefab, ShadercConfiguration };
 
-use types::vkuint;
+use types::{ vkuint, vkDim2D };
 
 use std::ptr;
 
@@ -40,11 +40,11 @@ pub struct GraphicsPipelineConfig {
 
 impl GraphicsPipelineConfig {
 
-    pub fn new(shaders: impl Into<Vec<GsShaderInfo>>, input: VertexInputDescription, render_pass: GsRenderPass) -> GraphicsPipelineConfig {
+    pub fn new(shaders: impl Into<Vec<GsShaderInfo>>, input: VertexInputDescription, render_pass: GsRenderPass, dimension: vkDim2D) -> GraphicsPipelineConfig {
 
         GraphicsPipelineConfig {
             shaders : shaders.into(),
-            states  : PipelineStates::setup(input),
+            states  : PipelineStates::setup(input, dimension),
             flags   : vk::PipelineCreateFlags::empty(),
 
             render_pass,
@@ -272,8 +272,8 @@ impl GraphicsPipelineConfig {
         self
     }
 
-    pub fn add_descriptor_set(mut self, set: &impl ToDescriptorSetLayout) -> GraphicsPipelineConfig {
-        self.layout_builder.add_descriptor_layout(&set.to_set_layout());
+    pub fn add_descriptor_set(mut self, set: &DescriptorSet) -> GraphicsPipelineConfig {
+        self.layout_builder.add_descriptor_layout(&set.layout);
         self
     }
 }

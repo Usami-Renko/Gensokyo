@@ -1,10 +1,10 @@
 
-pub use self::obj::{ ObjDataEntity, ModelObjLoader };
+// pub use self::obj::{ ObjDataEntity, ModelObjLoader };
 pub use self::gltf::{ GltfEntity, ModelGltfLoader };
-pub use self::error::ModelLoadingErr;
+pub use self::error::ModelLoadingError;
 
 pub(crate) use self::error::{
-    ModelObjLoadingError,
+    // ModelObjLoadingError,
     ModelGltfLoadingError, GltfAttributeMissing,
 };
 pub(crate) use self::gltf::{
@@ -14,5 +14,5 @@ pub(crate) use self::gltf::{
 };
 
 mod gltf;
-mod obj;
+// mod obj;
 mod error;

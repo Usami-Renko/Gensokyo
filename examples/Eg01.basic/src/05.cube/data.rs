@@ -1,6 +1,8 @@
 
-use hakurei::prelude::*;
-use hakurei::prelude::pipeline::*;
+use gsvk::prelude::common::*;
+use gsvk::prelude::pipeline::*;
+use ash::vk;
+
 
 use cgmath::Matrix4;
 
@@ -46,7 +48,7 @@ pub const VERTEX_DATA: [Vertex; 8] = [
     Vertex { pos: [-0.6,  0.6, -0.6, 1.0], color: [0.0, 0.0, 0.0, 1.0], }, // v6
     Vertex { pos: [-0.6, -0.6, -0.6, 1.0], color: [1.0, 1.0, 1.0, 1.0], }, // v7
 ];
-pub const INDEX_DATA: [uint32_t; 36] = [
+pub const INDEX_DATA: [vkuint; 36] = [
     0, 1, 2,
     0, 2, 3,
     0, 3, 4,

@@ -42,7 +42,7 @@ pub struct RoutineBuilder<'env> {
     chain: ChainResource,
 }
 
-impl<'env, 'a> RoutineBuilder<'env> where 'env: 'a {
+impl<'env> RoutineBuilder<'env> {
 
     pub(super) fn new(env: &'env mut ProgramEnv) -> Result<RoutineBuilder<'env>, RuntimeError> {
 
@@ -56,7 +56,7 @@ impl<'env, 'a> RoutineBuilder<'env> where 'env: 'a {
         Ok(builder)
     }
 
-    pub fn assets_loader(&'env self) -> AssetsLoader<'a> {
+    pub fn assets_loader(&self) -> AssetsLoader {
 
         self.chain.assets_loader(&self.env.vulkan_env, &self.env.config.resources)
     }

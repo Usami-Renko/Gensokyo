@@ -18,6 +18,7 @@ use types::vkbytes;
 
 use std::marker::PhantomData;
 
+
 pub struct GsBufferAllocator<M> where M: BufferMemoryTypeAbs {
 
     phantom_type: PhantomData<M>,
@@ -79,7 +80,7 @@ impl<M> GsBufferAllocator<M> where M: BufferMemoryTypeAbs {
         Ok(buffer)
     }
 
-    pub fn allocate(mut self) -> Result<GsBufferDistributor<M>, AllocatorError> {
+    pub fn allocate(self) -> Result<GsBufferDistributor<M>, AllocatorError> {
 
         if self.buffers.is_empty() {
             return Err(AllocatorError::Buffer(BufferError::NoBufferAttachError))
@@ -94,7 +95,7 @@ impl<M> GsBufferAllocator<M> where M: BufferMemoryTypeAbs {
 
         // bind buffers to memory
         let mut offset = 0;
-        for (i, buffer) in self.buffers.drain(..).enumerate() {
+        for (i, buffer) in self.buffers.into_iter().enumerate() {
 
             memory_allocator.memory.bind_to_buffer(&self.device, &buffer, offset)?;
             offset += self.spaces[i];
