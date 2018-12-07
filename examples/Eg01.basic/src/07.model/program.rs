@@ -1,11 +1,13 @@
 
-use hakurei::prelude::*;
-use hakurei::prelude::queue::*;
-use hakurei::prelude::pipeline::*;
-use hakurei::prelude::resources::*;
-use hakurei::prelude::sync::*;
-use hakurei::prelude::input::*;
-use hakurei::prelude::utility::*;
+use ash::vk;
+use gs::prelude::*;
+use gsvk::prelude::common::*;
+use gsvk::prelude::buffer::*;
+use gsvk::prelude::image::*;
+use gsvk::prelude::descriptor::*;
+use gsvk::prelude::pipeline::*;
+use gsvk::command::*;
+use gsvk::sync::*;
 
 use cgmath::{ Matrix4, SquareMatrix, Point3 };
 use std::path::Path;
@@ -23,18 +25,19 @@ pub struct UboObject {
 
 pub struct ModelProcedure {
 
-    model: GltfEntity,
-    buffer_storage: GsBufferRepository,
+    model: GltfEntity<Device>,
+    buffer_storage: GsBufferRepository<Device>,
 
     graphics_pipeline: GsGraphicsPipeline,
 
-    ubo_data: Vec<UboObject>,
-    ubo_storage: GsBufferRepository,
-    ubo_buffer : HaUniformBlock,
+    ubo_data   : Vec<UboObject>,
+    ubo_storage: GsBufferRepository<Host>,
+    ubo_buffer : GsUniformBlock,
+
     descriptor_storage: GsDescriptorRepository,
     descriptor_set    : DescriptorSet,
 
-    depth_attachment: HaDepthStencilImage,
+    depth_attachment: GsDepthStencilAttachment,
     image_storage: GsImageRepository,
 
     command_pool   : GsCommandPool,

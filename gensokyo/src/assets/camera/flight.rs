@@ -2,9 +2,9 @@
 use cgmath;
 use cgmath::{ Matrix4, Vector3, Point3, InnerSpace, Zero, Deg };
 use num;
-use winit::VirtualKeyCode;
 
 use input::ActionNerve;
+use input::GsKeycode;
 
 use config::utils;
 use assets::camera::traits::GsCameraAbstract;
@@ -57,15 +57,15 @@ impl GsCameraAbstract for GsFlightCamera {
         // keyboard
         let velocity = self.move_speed * delta_time;
 
-        if actioner.is_key_pressed_raw(VirtualKeyCode::Up) {
+        if actioner.is_key_pressed(GsKeycode::UP) {
             self.pos += self.front * velocity;
-        } else if actioner.is_key_pressed_raw(VirtualKeyCode::Down) {
+        } else if actioner.is_key_pressed(GsKeycode::DOWN) {
             self.pos -= self.front * velocity;
         }
 
-        if actioner.is_key_pressed_raw(VirtualKeyCode::Left) {
+        if actioner.is_key_pressed(GsKeycode::LEFT) {
             self.pos -= self.right * velocity;
-        } else if actioner.is_key_pressed_raw(VirtualKeyCode::Right) {
+        } else if actioner.is_key_pressed(GsKeycode::RIGHT) {
             self.pos += self.right * velocity;
         }
 

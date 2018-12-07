@@ -6,7 +6,7 @@ use core::device::GsDevice;
 
 use descriptor::set::GsDescriptorSet;
 use descriptor::layout::GsDescriptorSetLayout;
-use descriptor::enums::GsDescriptorType;
+use descriptor::types::GsDescriptorType;
 use descriptor::error::DescriptorError;
 
 use types::vkuint;

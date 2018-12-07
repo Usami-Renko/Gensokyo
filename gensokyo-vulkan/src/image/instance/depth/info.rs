@@ -49,7 +49,7 @@ impl DepthStencilAttachmentInfo {
         self.image_desc.specific.format
     }
 
-    pub fn gen_storage_info(&self) -> ImageStorageInfo {
+    pub(crate) fn gen_storage_info(&self) -> ImageStorageInfo {
 
         ImageStorageInfo {
             source    : ImageSource::NoSource,

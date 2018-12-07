@@ -5,12 +5,10 @@ use gsvk::core::swapchain::GsChain;
 use gsvk::pipeline::graphics::{ GraphicsPipelineBuilder, GraphicsPipelineConfig };
 use gsvk::pipeline::pass::{ GsRenderPass, RenderPassBuilder };
 use gsvk::pipeline::pass::{ RenderAttachement, RenderAttachementPrefab };
-use gsvk::pipeline::pass::RenderDependency;
+use gsvk::pipeline::pass::{ RenderDependency, SubpassStage };
 use gsvk::pipeline::shader::{ GsShaderInfo, VertexInputDescription };
 
 use gsvk::pipeline::error::PipelineError;
-
-use gsvk::types::vkuint;
 
 pub struct PipelineKit {
 
@@ -33,7 +31,7 @@ impl PipelineKit {
         RenderPassBuilder::new(&self.device, &self.chain)
     }
 
-    pub fn pipeline_graphics_builder(&self) -> Result<GraphicsPipelineBuilder, PipelineError> {
+    pub fn graphics_pipeline_builder(&self) -> Result<GraphicsPipelineBuilder, PipelineError> {
 
         GraphicsPipelineBuilder::new(&self.device)
     }
@@ -42,11 +40,11 @@ impl PipelineKit {
         GraphicsPipelineConfig::new(shaders, input, render_pass, self.chain.extent())
     }
 
-    pub fn subpass_attachment(&self, prefab: RenderAttachementPrefab) -> RenderAttachement {
-        RenderAttachement::setup(prefab, self.chain.format())
+    pub fn present_attachment(&self) -> RenderAttachement {
+        RenderAttachement::setup(RenderAttachementPrefab::PresentAttachment, self.chain.format())
     }
 
-    pub fn subpass_dependency(&self, src: vkuint, dst: vkuint) -> RenderDependency {
+    pub fn subpass_dependency(&self, src: SubpassStage, dst: SubpassStage) -> RenderDependency {
         RenderDependency::setup(src, dst)
     }
 }

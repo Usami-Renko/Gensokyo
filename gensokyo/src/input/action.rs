@@ -4,7 +4,6 @@ use winit::{ DeviceEvent, WindowEvent, ElementState, VirtualKeyCode };
 
 use input::key::KeyHeap;
 use input::mouse::{ MouseSensor, CursorMotion };
-use input::keycode::GsKeycode;
 
 pub struct ActionNerve {
 
@@ -73,12 +72,7 @@ impl ActionNerve {
         self.react = SceneReaction::Rendering;
     }
 
-    // TODO: this function may waste time to get the keycode.
-    pub fn is_key_pressed(&self, key_code: GsKeycode) -> bool {
-        self.key.is_key_pressed(VirtualKeyCode::from(key_code))
-    }
-
-    pub(crate) fn is_key_pressed_raw(&self, key_code: VirtualKeyCode) -> bool {
+    pub fn is_key_pressed(&self, key_code: VirtualKeyCode) -> bool {
         self.key.is_key_pressed(key_code)
     }
 

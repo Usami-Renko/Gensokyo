@@ -2,7 +2,7 @@
 use ash::vk;
 
 use descriptor::set::GsDescriptorSet;
-use descriptor::enums::GsDescriptorType;
+use descriptor::types::GsDescriptorType;
 
 use types::{ vkuint, vkbytes };
 use utils::wrapper::VKWrapperInfo;
@@ -24,7 +24,7 @@ pub struct DescriptorBindingContent {
 
 pub trait DescriptorBindingInfo {
 
-    fn binding_content(&self) -> &DescriptorBindingContent;
+    fn borrow_binding_content(&self) -> &DescriptorBindingContent;
     fn write_set(&self, set: &GsDescriptorSet) -> DescriptorWriteInfo;
 }
 
@@ -53,7 +53,7 @@ impl DescriptorWriteContent for DescriptorWriteBufferContent {}
 
 impl DescriptorBindingInfo for DescriptorBufferBindingInfo {
 
-    fn binding_content(&self) -> &DescriptorBindingContent {
+    fn borrow_binding_content(&self) -> &DescriptorBindingContent {
         &self.content
     }
 
@@ -113,7 +113,7 @@ impl DescriptorWriteContent for DescriptorWriteImageContent {}
 
 impl DescriptorBindingInfo for DescriptorImageBindingInfo {
 
-    fn binding_content(&self) -> &DescriptorBindingContent {
+    fn borrow_binding_content(&self) -> &DescriptorBindingContent {
         &self.content
     }
 

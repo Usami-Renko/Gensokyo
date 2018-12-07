@@ -1,6 +1,8 @@
 
 use ash::vk;
 
+use pipeline::pass::subpass::AttachmentType;
+
 #[derive(Debug, Clone, Copy, Eq, PartialEq)]
 pub enum RenderAttachementPrefab {
     PresentAttachment,
@@ -12,9 +14,11 @@ pub struct RenderAttachement {
 
     attachment: vk::AttachmentDescription,
 
+    pub(crate) attach_type: AttachmentType,
     pub(crate) layout: vk::ImageLayout,
     pub(crate) clear_value: vk::ClearValue,
 }
+
 impl RenderAttachement {
 
     /// `format` is a vk::Format value specifying the format of the image view that will be used for the attachment.
@@ -32,7 +36,7 @@ impl RenderAttachement {
             final_layout     : vk::ImageLayout::UNDEFINED,
         };
 
-        let (clear_value, layout) = match prefab {
+        let (clear_value, layout, attach_type) = match prefab {
             | RenderAttachementPrefab::PresentAttachment => {
 
                 attachment.final_layout = vk::ImageLayout::PRESENT_SRC_KHR;
@@ -44,9 +48,11 @@ impl RenderAttachement {
                 };
 
                 let layout = vk::ImageLayout::COLOR_ATTACHMENT_OPTIMAL;
-                (clear_value, layout)
+                (clear_value, layout, AttachmentType::Color)
             },
             | RenderAttachementPrefab::DepthAttachment => {
+
+                attachment.final_layout = vk::ImageLayout::DEPTH_STENCIL_ATTACHMENT_OPTIMAL;
 
                 let clear_value = vk::ClearValue {
                     depth_stencil: vk::ClearDepthStencilValue {
@@ -56,12 +62,13 @@ impl RenderAttachement {
                 };
 
                 let layout = vk::ImageLayout::DEPTH_STENCIL_ATTACHMENT_OPTIMAL;
-                (clear_value, layout)
+                (clear_value, layout, AttachmentType::DepthStencil)
             },
         };
 
         RenderAttachement {
-            attachment, layout, clear_value,
+            attachment, attach_type,
+            layout, clear_value,
         }
     }
 

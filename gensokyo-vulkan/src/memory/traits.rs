@@ -118,7 +118,7 @@ pub trait MemoryMappable {
     }
 }
 
-pub trait MemoryDstEntity {
+pub trait MemoryDstEntity where Self: Sized {
 
     fn type_bytes(&self) -> vkuint;
     fn aligment_size(&self) -> vkbytes;

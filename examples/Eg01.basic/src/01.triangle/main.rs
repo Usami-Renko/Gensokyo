@@ -122,10 +122,10 @@ impl TriangleProcedure {
         let mut render_pass_builder = kit.pass_builder();
         let first_subpass = render_pass_builder.new_subpass();
 
-        let color_attachment = kit.subpass_attachment(RenderAttachementPrefab::PresentAttachment);
-        let _attachment_index = render_pass_builder.add_attachemnt(color_attachment, first_subpass, AttachmentType::Color);
+        let color_attachment = kit.present_attachment();
+        let _attachment_index = render_pass_builder.add_attachemnt(color_attachment, first_subpass);
 
-        let dependency = kit.subpass_dependency(vk::SUBPASS_EXTERNAL, first_subpass)
+        let dependency = kit.subpass_dependency(SubpassStage::External, SubpassStage::AtIndex(first_subpass))
             .stage(vk::PipelineStageFlags::COLOR_ATTACHMENT_OUTPUT, vk::PipelineStageFlags::COLOR_ATTACHMENT_OUTPUT)
             .access(vk::AccessFlags::empty(), vk::AccessFlags::COLOR_ATTACHMENT_READ | vk::AccessFlags::COLOR_ATTACHMENT_WRITE);
         render_pass_builder.add_dependenty(dependency);
@@ -135,7 +135,7 @@ impl TriangleProcedure {
         let pipeline_config = kit.pipeline_config(shader_infos, vertex_input_desc, render_pass)
             .finish();
 
-        let mut pipeline_builder = kit.pipeline_graphics_builder()?;
+        let mut pipeline_builder = kit.graphics_pipeline_builder()?;
         let pipeline_index = pipeline_builder.add_config(pipeline_config);
 
         let mut pipelines = pipeline_builder.build()?;
@@ -243,7 +243,7 @@ impl GraphicsRoutine for TriangleProcedure {
 
     fn react_input(&mut self, inputer: &ActionNerve, _: f32) -> SceneAction {
 
-        if inputer.is_key_pressed(GsKeycode::Escape) {
+        if inputer.is_key_pressed(GsKeycode::ESCAPE) {
             return SceneAction::Terminal
         }
 

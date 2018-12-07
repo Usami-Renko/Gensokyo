@@ -142,7 +142,7 @@ impl TextureMappingProcedure {
     fn descriptor(kit: AllocatorKit, sample_image: &GsSampleImage) -> Result<(DescriptorSet, GsDescriptorRepository), ProcedureError> {
 
         let mut descriptor_set_config = DescriptorSetConfig::init(vk::DescriptorSetLayoutCreateFlags::empty());
-        descriptor_set_config.add_image_binding(sample_image, vk::ShaderStageFlags::FRAGMENT);
+        descriptor_set_config.add_image_binding(sample_image, GsDescBindingStage::FRAGMENT);
 
         let mut descriptor_allocator = kit.descriptor(vk::DescriptorPoolCreateFlags::empty());
         let descriptor_index = descriptor_allocator.append_set(descriptor_set_config);
@@ -178,10 +178,10 @@ impl TextureMappingProcedure {
         let mut render_pass_builder = kit.pass_builder();
         let first_subpass = render_pass_builder.new_subpass();
 
-        let color_attachment = kit.subpass_attachment(RenderAttachementPrefab::PresentAttachment);
-        let _attachment_index = render_pass_builder.add_attachemnt(color_attachment, first_subpass, AttachmentType::Color);
+        let color_attachment = kit.present_attachment();
+        let _attachment_index = render_pass_builder.add_attachemnt(color_attachment, first_subpass);
 
-        let dependency = kit.subpass_dependency(vk::SUBPASS_EXTERNAL, first_subpass)
+        let dependency = kit.subpass_dependency(SubpassStage::External, SubpassStage::AtIndex(first_subpass))
             .stage(vk::PipelineStageFlags::COLOR_ATTACHMENT_OUTPUT, vk::PipelineStageFlags::COLOR_ATTACHMENT_OUTPUT)
             .access(vk::AccessFlags::empty(), vk::AccessFlags::COLOR_ATTACHMENT_READ | vk::AccessFlags::COLOR_ATTACHMENT_WRITE);
         render_pass_builder.add_dependenty(dependency);
@@ -192,7 +192,7 @@ impl TextureMappingProcedure {
             .add_descriptor_set(sampler_set)
             .finish();
 
-        let mut pipeline_builder = kit.pipeline_graphics_builder()?;
+        let mut pipeline_builder = kit.graphics_pipeline_builder()?;
         let pipeline_index = pipeline_builder.add_config(pipeline_config);
 
         let mut pipelines = pipeline_builder.build()?;
@@ -305,7 +305,7 @@ impl GraphicsRoutine for TextureMappingProcedure {
 
     fn react_input(&mut self, inputer: &ActionNerve, _: f32) -> SceneAction {
 
-        if inputer.is_key_pressed(GsKeycode::Escape) {
+        if inputer.is_key_pressed(GsKeycode::ESCAPE) {
             return SceneAction::Terminal
         }
 

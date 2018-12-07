@@ -76,8 +76,8 @@ impl GsDescriptorAllocator {
         for config in self.set_configs.iter() {
             for info in config.iter_binding() {
 
-                let count = map.entry(info.binding_content().descriptor_type)
-                    .or_insert(0 as vkuint);
+                let count = map.entry(info.borrow_binding_content().descriptor_type)
+                    .or_insert(0);
                 *count += 1;
             }
         }

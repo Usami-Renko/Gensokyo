@@ -15,5 +15,4 @@ pub use pipeline::state::{
     tessellation::GsTessellationState,
 };
 
-pub use pipeline::pass::{ RenderAttachementPrefab, AttachmentType };
-
+pub use pipeline::pass::SubpassStage;

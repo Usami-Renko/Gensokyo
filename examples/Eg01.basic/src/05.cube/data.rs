@@ -3,7 +3,6 @@ use gsvk::prelude::common::*;
 use gsvk::prelude::pipeline::*;
 use ash::vk;
 
-
 use cgmath::Matrix4;
 
 define_input! {

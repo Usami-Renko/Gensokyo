@@ -1,9 +1,9 @@
 
 use cgmath;
 use cgmath::{ Matrix4, Vector3, Point3, InnerSpace, Zero, Deg, Rad };
-use winit::VirtualKeyCode;
 
 use input::ActionNerve;
+use input::GsKeycode;
 
 use config::utils;
 use assets::camera::traits::GsCameraAbstract;
@@ -51,15 +51,15 @@ impl GsCameraAbstract for GsStageCamera {
 
     fn react_input(&mut self, actioner: &ActionNerve, delta_time: f32) {
 
-        if actioner.is_key_pressed_raw(VirtualKeyCode::Up) {
+        if actioner.is_key_pressed(GsKeycode::UP) {
             self.vertical_rotate -= delta_time * self.rotate_sensitive;
-        } else if actioner.is_key_pressed_raw(VirtualKeyCode::Down) {
+        } else if actioner.is_key_pressed(GsKeycode::DOWN) {
             self.vertical_rotate += delta_time * self.rotate_sensitive;
         }
 
-        if actioner.is_key_pressed_raw(VirtualKeyCode::Right) {
+        if actioner.is_key_pressed(GsKeycode::RIGHT) {
             self.horizontal_rotate -= delta_time * self.rotate_sensitive;
-        } else if actioner.is_key_pressed_raw(VirtualKeyCode::Left) {
+        } else if actioner.is_key_pressed(GsKeycode::LEFT) {
             self.horizontal_rotate += delta_time * self.rotate_sensitive;
         }
 

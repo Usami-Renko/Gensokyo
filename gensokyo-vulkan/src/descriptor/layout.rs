@@ -29,7 +29,7 @@ impl DescriptorSetLayoutInfo {
 
     pub fn add_binding(&mut self, info: &Box<DescriptorBindingInfo>, stages: vk::ShaderStageFlags) -> usize {
 
-        let binding_contnet = info.binding_content();
+        let binding_contnet = info.borrow_binding_content();
 
         let binding = vk::DescriptorSetLayoutBinding {
             // binding is the binding number of this entry and corresponds to a resource of the same binding number in the shader stages.

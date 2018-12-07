@@ -25,9 +25,9 @@ pub struct CubeProcedure {
     buffer_storage: GsBufferRepository<Host>,
     vertex_buffer : GsVertexBlock,
     index_buffer  : GsIndexBlock,
-    ubo_buffer  : GsUniformBlock,
+    ubo_buffer    : GsUniformBlock,
 
-    graphics_pipeline: GsGraphicsPipeline,
+    pipeline: GsGraphicsPipeline,
 
     ubo_set     : DescriptorSet,
     desc_storage: GsDescriptorRepository,
@@ -69,23 +69,23 @@ impl CubeProcedure {
             CubeProcedure::ubo(kit, &ubo_buffer)
         })?;
 
-        let graphics_pipeline = loader.pipelines(|kit| {
+        let pipeline = loader.pipelines(|kit| {
             CubeProcedure::pipelines(kit, &ubo_set)
         })?;
 
         let present_availables = loader.syncs(|kit| {
-            CubeProcedure::sync_resources(kit, &graphics_pipeline)
+            CubeProcedure::sync_resources(kit, &pipeline)
         })?;
 
         let (command_pool, command_buffers) = loader.commands(|kit| {
-            CubeProcedure::commands(kit, &graphics_pipeline, &vertex_buffer, &index_buffer, &ubo_set, index_data.len())
+            CubeProcedure::commands(kit, &pipeline, &vertex_buffer, &index_buffer, &ubo_set, index_data.len())
         })?;
 
         let procecure = CubeProcedure {
             index_data, ubo_data,
             buffer_storage, vertex_buffer, index_buffer, ubo_buffer,
             desc_storage, ubo_set,
-            graphics_pipeline,
+            pipeline,
             command_pool, command_buffers,
             camera,
             present_availables,
@@ -107,7 +107,8 @@ impl CubeProcedure {
     }
 
     fn buffers(kit: AllocatorKit, vertex_data: &Vec<Vertex>, index_data: &Vec<vkuint>, ubo_data: &Vec<UboObject>) -> Result<(GsVertexBlock, GsIndexBlock, GsUniformBlock, GsBufferRepository<Host>), ProcedureError> {
-        
+
+        // vertex, index and uniform buffers.
         let mut buffer_allocator = kit.buffer(BufferStorageType::HOST);
         
         let vertex_info = VertexBlockInfo::new(data_size!(vertex_data, Vertex));
@@ -116,7 +117,7 @@ impl CubeProcedure {
         let index_info = IndexBlockInfo::new(data_size!(index_data, vkuint));
         let index_index = buffer_allocator.append_buffer(index_info)?;
         
-        let ubo_info = UniformBlockInfo::new(0, 1, data_size!(ubo_data, UboObject));
+        let ubo_info = UniformBlockInfo::new(0, 1, data_size!(UboObject));
         let ubo_index = buffer_allocator.append_buffer(ubo_info)?;
 
         let buffer_distributor = buffer_allocator.allocate()?;
@@ -135,11 +136,11 @@ impl CubeProcedure {
         Ok((vertex_buffer, index_buffer, ubo_buffer, buffer_storage))
     }
     
-    fn ubo(kit :AllocatorKit, ubo_buffer: &GsUniformBlock) -> Result<(DescriptorSet, GsDescriptorRepository), ProcedureError> {
+    fn ubo(kit: AllocatorKit, ubo_buffer: &GsUniformBlock) -> Result<(DescriptorSet, GsDescriptorRepository), ProcedureError> {
 
         // descriptor
         let mut descriptor_set_config = DescriptorSetConfig::init(vk::DescriptorSetLayoutCreateFlags::empty());
-        descriptor_set_config.add_buffer_binding(ubo_buffer, vk::ShaderStageFlags::VERTEX);
+        descriptor_set_config.add_buffer_binding(ubo_buffer, GsDescBindingStage::VERTEX);
 
         let mut descriptor_allocator = kit.descriptor(vk::DescriptorPoolCreateFlags::empty());
         let desc_index = descriptor_allocator.append_set(descriptor_set_config);
@@ -175,10 +176,10 @@ impl CubeProcedure {
         let mut render_pass_builder = kit.pass_builder();
         let first_subpass = render_pass_builder.new_subpass();
 
-        let color_attachment = kit.subpass_attachment(RenderAttachementPrefab::PresentAttachment);
-        let _attachment_index = render_pass_builder.add_attachemnt(color_attachment, first_subpass, AttachmentType::Color);
+        let color_attachment = kit.present_attachment();
+        let _attachment_index = render_pass_builder.add_attachemnt(color_attachment, first_subpass);
 
-        let dependency = kit.subpass_dependency(vk::SUBPASS_EXTERNAL, first_subpass)
+        let dependency = kit.subpass_dependency(SubpassStage::External, SubpassStage::AtIndex(first_subpass))
             .stage(vk::PipelineStageFlags::COLOR_ATTACHMENT_OUTPUT, vk::PipelineStageFlags::COLOR_ATTACHMENT_OUTPUT)
             .access(vk::AccessFlags::empty(), vk::AccessFlags::COLOR_ATTACHMENT_READ | vk::AccessFlags::COLOR_ATTACHMENT_WRITE);
         render_pass_builder.add_dependenty(dependency);
@@ -189,7 +190,7 @@ impl CubeProcedure {
             .add_descriptor_set(ubo_set)
             .finish();
 
-        let mut pipeline_builder = kit.pipeline_graphics_builder()?;
+        let mut pipeline_builder = kit.graphics_pipeline_builder()?;
         let pipeline_index = pipeline_builder.add_config(pipeline_config);
 
         let mut pipelines = pipeline_builder.build()?;
@@ -266,23 +267,23 @@ impl GraphicsRoutine for CubeProcedure {
         self.present_availables.clear();
         self.command_buffers.clear();
         self.command_pool.cleanup();
-        self.graphics_pipeline.cleanup();
+        self.pipeline.cleanup();
 
         Ok(())
     }
 
     fn reload_res(&mut self, loader: AssetsLoader) -> Result<(), ProcedureError> {
 
-        self.graphics_pipeline = loader.pipelines(|kit| {
+        self.pipeline = loader.pipelines(|kit| {
             CubeProcedure::pipelines(kit, &self.ubo_set)
         })?;
 
         self.present_availables = loader.syncs(|kit| {
-            CubeProcedure::sync_resources(kit, &self.graphics_pipeline)
+            CubeProcedure::sync_resources(kit, &self.pipeline)
         })?;
 
         let (command_pool, command_buffers) = loader.commands(|kit| {
-            CubeProcedure::commands(kit, &self.graphics_pipeline, &self.vertex_buffer, &self.index_buffer, &self.ubo_set, self.index_data.len())
+            CubeProcedure::commands(kit, &self.pipeline, &self.vertex_buffer, &self.index_buffer, &self.ubo_set, self.index_data.len())
         })?;
         self.command_pool = command_pool;
         self.command_buffers = command_buffers;
@@ -294,7 +295,7 @@ impl GraphicsRoutine for CubeProcedure {
 
         self.present_availables.iter()
             .for_each(|semaphore| semaphore.cleanup());
-        self.graphics_pipeline.cleanup();
+        self.pipeline.cleanup();
         self.command_pool.cleanup();
 
         self.desc_storage.cleanup();
@@ -303,7 +304,7 @@ impl GraphicsRoutine for CubeProcedure {
 
     fn react_input(&mut self, inputer: &ActionNerve, delta_time: f32) -> SceneAction {
 
-        if inputer.is_key_pressed(GsKeycode::Escape) {
+        if inputer.is_key_pressed(GsKeycode::ESCAPE) {
             return SceneAction::Terminal
         }
 

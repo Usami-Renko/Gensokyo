@@ -53,22 +53,22 @@ impl DescriptorSetConfig {
         }
     }
 
-    pub fn add_buffer_binding(&mut self, bind_target: &impl DescriptorBufferBindableTarget, stages: vk::ShaderStageFlags) {
+    pub fn add_buffer_binding(&mut self, bind_target: &impl DescriptorBufferBindableTarget, stage: GsDescBindingStage) {
 
         let binding_info = bind_target.binding_info(None);
-        self.add_binding(Box::new(binding_info), stages);
+        self.add_binding(Box::new(binding_info), stage);
     }
 
-    pub fn add_image_binding(&mut self, bind_target: &impl DescriptorImageBindableTarget, stages: vk::ShaderStageFlags) {
+    pub fn add_image_binding(&mut self, bind_target: &impl DescriptorImageBindableTarget, stage: GsDescBindingStage) {
 
         let binding_info = bind_target.binding_info();
-        self.add_binding(Box::new(binding_info), stages);
+        self.add_binding(Box::new(binding_info), stage);
     }
 
-    fn add_binding(&mut self, binding: Box<dyn DescriptorBindingInfo>, stages: vk::ShaderStageFlags) {
+    fn add_binding(&mut self, binding: Box<dyn DescriptorBindingInfo>, stage: GsDescBindingStage) {
 
         self.bindings.push(binding);
-        self.stage_flags.push(stages);
+        self.stage_flags.push(stage.0);
     }
 
     pub fn to_layout_info(&self) -> DescriptorSetLayoutInfo {
@@ -99,7 +99,7 @@ impl DescriptorSet {
     pub fn new(from: &GsDescriptorSet, config: &DescriptorSetConfig, set_index: usize) -> DescriptorSet {
 
         let binding_indices = config.iter_binding()
-            .map(|b| b.binding_content().binding)
+            .map(|b| b.borrow_binding_content().binding)
             .collect();
 
         DescriptorSet {
@@ -108,4 +108,12 @@ impl DescriptorSet {
             _set_index: set_index,
         }
     }
+}
+
+
+pub struct GsDescBindingStage(vk::ShaderStageFlags);
+
+impl GsDescBindingStage {
+    pub const VERTEX  : GsDescBindingStage = GsDescBindingStage(vk::ShaderStageFlags::VERTEX);
+    pub const FRAGMENT: GsDescBindingStage = GsDescBindingStage(vk::ShaderStageFlags::FRAGMENT);
 }

@@ -30,7 +30,7 @@ impl FramebufferBuilder {
         }
     }
 
-    pub fn build(&self, device: &GsDevice, render_pass: vk::RenderPass) -> Result<GsFramebuffer, RenderPassError> {
+    pub fn build(self, device: &GsDevice, render_pass: vk::RenderPass) -> Result<GsFramebuffer, RenderPassError> {
 
         let info = vk::FramebufferCreateInfo {
             s_type: vk::StructureType::FRAMEBUFFER_CREATE_INFO,

@@ -7,9 +7,11 @@ use std::ptr;
 
 #[derive(Debug, Clone, Copy, Eq, PartialEq)]
 pub enum AttachmentType {
-    
+
+    #[allow(dead_code)]
     Input,
     Color,
+    #[allow(dead_code)]
     Resolve,
     DepthStencil,
 }

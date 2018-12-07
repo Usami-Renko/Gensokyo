@@ -9,12 +9,14 @@ use image::instance::ImageInstanceInfoDesc;
 use image::instance::depth::DepthStencilAttachmentInfo;
 use image::allocator::ImageAllocateInfo;
 
+use pipeline::pass::{ RenderAttachement, RenderAttachementPrefab };
+
 #[derive(Debug, Default)]
 pub struct GsDepthStencilAttachment {
 
-    format: vk::Format,
+    pub(crate) entity: ImageEntity,
+    pub(crate) format: vk::Format,
 
-    entity: ImageEntity,
     desc: ImageInstanceInfoDesc,
 }
 
@@ -23,14 +25,14 @@ impl GsDepthStencilAttachment {
     pub(crate) fn setup(info: DepthStencilAttachmentInfo, allocate_info: &ImageAllocateInfo, view: &GsImageView) -> GsDepthStencilAttachment {
 
         GsDepthStencilAttachment {
-            format: info.format(),
             entity: ImageEntity::new(&allocate_info.image, view),
+            format: info.format(),
             desc: allocate_info.gen_desc(),
         }
     }
 
-    pub fn get_format(&self) -> vk::Format {
-        self.format
+    pub fn to_subpass_attachment(&self) -> RenderAttachement {
+        RenderAttachement::setup(RenderAttachementPrefab::DepthAttachment, self.format)
     }
 }
 

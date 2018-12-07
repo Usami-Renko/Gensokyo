@@ -9,10 +9,10 @@ use pipeline::pass::render::GsRenderPass;
 use pipeline::pass::attachment::RenderAttachement;
 use pipeline::pass::subpass::{ RenderSubpass, AttachmentType };
 use pipeline::pass::dependency::RenderDependency;
-use pipeline::pass::framebuffer::{ GsFramebuffer, FramebufferBuilder };
+use pipeline::pass::framebuffer::FramebufferBuilder;
 use pipeline::error::{ RenderPassError, PipelineError };
 
-//use resources::image::GsDepthStencilImage;
+use image::instance::depth::GsDepthStencilAttachment;
 
 use types::vkuint;
 
@@ -27,8 +27,7 @@ pub struct RenderPassBuilder {
     subpasses   : Vec<RenderSubpass>,
     dependencies: Vec<RenderDependency>,
 
-    // TODO: Remove the following field.
-    depth_handle: Option<vk::ImageView>,
+    depth: Option<vk::ImageView>,
 }
 
 impl RenderPassBuilder {
@@ -42,7 +41,8 @@ impl RenderPassBuilder {
             attachments  : vec!(),
             subpasses    : vec!(),
             dependencies : vec!(),
-            depth_handle : None,
+
+            depth: None,
         }
     }
 
@@ -59,14 +59,14 @@ impl RenderPassBuilder {
     }
 
     /// create a attachment and set its reference to subpass, return the index of this attachment.
-    pub fn add_attachemnt(&mut self, attachment: RenderAttachement, subpass_index: vkuint, typ: AttachmentType) -> usize {
+    pub fn add_attachemnt(&mut self, attachment: RenderAttachement, subpass_index: vkuint) -> usize {
 
         let attachment_ref = vk::AttachmentReference {
             attachment: self.attachments.len() as vkuint,
             layout: attachment.layout,
         };
 
-        match typ {
+        match attachment.attach_type {
             | AttachmentType::Input => {
                 self.subpasses[subpass_index as usize].add_input(attachment_ref)
             },
@@ -91,14 +91,13 @@ impl RenderPassBuilder {
         self.subpasses[subpass_index].add_preserve(attachment_index as vkuint);
     }
 
+    pub fn set_depth_attachment(&mut self, image: &GsDepthStencilAttachment) {
+        self.depth = Some(image.entity.view)
+    }
+
     pub fn add_dependenty(&mut self, dependency: RenderDependency) {
         self.dependencies.push(dependency);
     }
-
-    // TODO: Fix this function
-//    pub fn set_depth_attachment(&mut self, depth_view: &GsDepthStencilImage) {
-//        self.depth_handle = Some(depth_view.get_item().view_handle);
-//    }
 
     pub fn build(self) -> Result<GsRenderPass, PipelineError> {
 
@@ -129,38 +128,23 @@ impl RenderPassBuilder {
                 .or(Err(PipelineError::RenderPass(RenderPassError::RenderPassCreationError)))?
         };
 
-        let framebuffers = generate_framebuffers(&self.device, &self.chain, handle, &self.depth_handle)
-            .map_err(|e| PipelineError::RenderPass(e))?;
+        // generate framebuffers ---------------------------------------
+        let mut framebuffers = vec![];
+
+        for view in self.chain.views().iter() {
+            let mut builder = FramebufferBuilder::new(self.chain.extent(), 1);
+            builder.add_attachment(&view.handle);
+
+            if let Some(depth) = self.depth {
+                builder.add_attachment(&depth);
+            }
+
+            let framebuffer = builder.build(&self.device, handle)?;
+            framebuffers.push(framebuffer);
+        }
+        // ------------------------------------------------------------
 
         let render_pass = GsRenderPass::new(handle, framebuffers, self.chain.extent(), clear_values);
         Ok(render_pass)
     }
-}
-
-// TODO: Redesign this function, since this function is for temporarily used.
-fn generate_framebuffers(device: &GsDevice, swapchain: &GsChain, render_pass: vk::RenderPass, depth: &Option<vk::ImageView>)
-    -> Result<Vec<GsFramebuffer>, RenderPassError> {
-
-    let mut framebuffers = vec![];
-
-    if let Some(depth_view) = depth {
-
-        for view in swapchain.views().iter() {
-            let mut builder = FramebufferBuilder::new(swapchain.extent(), 1);
-            builder.add_attachment(&view.handle);
-            builder.add_attachment(depth_view);
-            let framebuffer = builder.build(device, render_pass)?;
-            framebuffers.push(framebuffer);
-        }
-    } else {
-
-        for view in swapchain.views().iter() {
-            let mut builder = FramebufferBuilder::new(swapchain.extent(), 1);
-            builder.add_attachment(&view.handle);
-            let framebuffer = builder.build(device, render_pass)?;
-            framebuffers.push(framebuffer);
-        }
-    }
-
-    Ok(framebuffers)
 }

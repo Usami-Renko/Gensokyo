@@ -5,3 +5,4 @@ pub use descriptor::GsDescriptorRepository;
 
 pub use descriptor::DescriptorSetConfig;
 pub use descriptor::DescriptorSet;
+pub use descriptor::GsDescBindingStage;

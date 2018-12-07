@@ -12,11 +12,11 @@ impl RenderDependency {
     /// `src_subpass` is the subpass index of the first subpass in the dependency, or vk::SUBPASS_EXTERNAL.
     ///
     /// `dst_subpass` is the subpass index of the second subpass in the dependency, or vk::SUBPASS_EXTERNAL.
-    pub fn setup(src_subpass: vkuint, dst_subpass: vkuint) -> RenderDependency {
+    pub fn setup(src_subpass: SubpassStage, dst_subpass: SubpassStage) -> RenderDependency {
 
         let dependency = vk::SubpassDependency {
-            src_subpass,
-            dst_subpass,
+            src_subpass: src_subpass.into_index(),
+            dst_subpass: dst_subpass.into_index(),
             dependency_flags: vk::DependencyFlags::empty(),
             src_stage_mask: vk::PipelineStageFlags::COLOR_ATTACHMENT_OUTPUT,
             dst_stage_mask: vk::PipelineStageFlags::COLOR_ATTACHMENT_OUTPUT,
@@ -54,5 +54,20 @@ impl RenderDependency {
 
     pub(crate) fn build(self) -> vk::SubpassDependency {
         self.0
+    }
+}
+
+pub enum SubpassStage {
+    External,
+    AtIndex(vkuint),
+}
+
+impl SubpassStage {
+
+    fn into_index(self) -> vkuint {
+        match self {
+            | SubpassStage::External => vk::SUBPASS_EXTERNAL,
+            | SubpassStage::AtIndex(index) => index,
+        }
     }
 }

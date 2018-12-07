@@ -11,3 +11,4 @@ pub use image::SamplerDescInfo;
 pub use image::allocator::types::ImageStorageType;
 
 pub use image::ImagePipelineStage;
+pub use image::DepthStencilImageFormat;
