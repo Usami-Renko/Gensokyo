@@ -1,5 +1,5 @@
 
-use buffer::instance::UniformAttachment;
+use crate::buffer::instance::UniformAttachment;
 
 pub struct BufferBlockIndex {
 

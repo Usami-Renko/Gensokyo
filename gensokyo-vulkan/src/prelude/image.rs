@@ -1,14 +1,14 @@
 
-pub use image::allocator::GsImageAllocator;
-pub use image::allocator::GsImageDistributor;
-pub use image::GsImageRepository;
+pub use crate::image::allocator::GsImageAllocator;
+pub use crate::image::allocator::GsImageDistributor;
+pub use crate::image::GsImageRepository;
 
-pub use image::instance::sample::{ GsSampleImage, SampleImageInfo };
-pub use image::instance::depth::{ GsDepthStencilAttachment, DepthStencilAttachmentInfo };
+pub use crate::image::instance::sample::{ GsSampleImage, SampleImageInfo };
+pub use crate::image::instance::depth::{ GsDepthStencilAttachment, DepthStencilAttachmentInfo };
 
-pub use image::SamplerDescInfo;
+pub use crate::image::SamplerDescInfo;
 
-pub use image::allocator::types::ImageStorageType;
+pub use crate::image::allocator::types::ImageStorageType;
 
-pub use image::ImagePipelineStage;
-pub use image::DepthStencilImageFormat;
+pub use crate::image::ImagePipelineStage;
+pub use crate::image::DepthStencilImageFormat;

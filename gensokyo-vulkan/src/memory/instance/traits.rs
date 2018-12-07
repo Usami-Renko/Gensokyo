@@ -1,12 +1,12 @@
 
-use core::physical::GsPhyDevice;
-use core::device::GsDevice;
+use crate::core::physical::GsPhyDevice;
+use crate::core::device::GsDevice;
 
-use memory::GsMemoryAbstract;
-use memory::transfer::MemoryDataDelegate;
-use memory::error::MemoryError;
+use crate::memory::GsMemoryAbstract;
+use crate::memory::transfer::MemoryDataDelegate;
+use crate::memory::error::MemoryError;
 
-use buffer::allocator::BufferAllocateInfos;
+use crate::buffer::allocator::BufferAllocateInfos;
 
 pub type GsBufferMemory = Box<dyn GsBufferMemoryAbs>;
 pub type GsImageMemory  = Box<dyn GsImageMemoryAbs>;

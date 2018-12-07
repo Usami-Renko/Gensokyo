@@ -1,12 +1,11 @@
 
 use ash::vk;
-use ash::extensions::DebugUtils;
 
-use core::instance::GsInstance;
-use core::debug::debugger::DebugInstance;
-use core::error::ValidationError;
+use crate::core::instance::GsInstance;
+use crate::core::debug::debugger::DebugInstance;
+use crate::core::error::ValidationError;
 
-use types::{ vkbool, vkptr, VK_FALSE };
+use crate::types::{ vkbool, vkptr, VK_FALSE };
 
 use std::ffi::CStr;
 use std::ptr;
@@ -31,7 +30,7 @@ unsafe extern "system" fn vulkan_debug_utils_callback(
 pub struct GsDebugUtils {
 
     /// the handle of `vk::DebugUtils` object.
-    loader: DebugUtils,
+    loader: ash::extensions::DebugUtils,
     /// the handle of callback function used in Validation Layer.
     utils_messager: vk::DebugUtilsMessengerEXT,
 }
@@ -48,7 +47,7 @@ impl GsDebugUtils {
     /// Initialize debug report extension loader and `vk::DebugUtilsMessagerExt` object.
     pub fn setup(instance: &GsInstance, config: &DebugUtilsConfig) -> Result<GsDebugUtils, ValidationError> {
 
-        let loader = DebugUtils::new(&instance.entry, &instance.handle);
+        let loader = ash::extensions::DebugUtils::new(&instance.entry, &instance.handle);
 
         let messager_create_info = vk::DebugUtilsMessengerCreateInfoEXT {
             s_type: vk::StructureType::DEBUG_UTILS_MESSENGER_CREATE_INFO_EXT,

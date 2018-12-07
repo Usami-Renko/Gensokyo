@@ -4,8 +4,8 @@ use ash::vk;
 
 use gsvk::pipeline::config::DepthStencilConfig;
 
-use config::engine::ConfigMirror;
-use config::error::{ ConfigError, MappingError };
+use crate::config::engine::ConfigMirror;
+use crate::config::error::{ ConfigError, MappingError };
 
 #[derive(Deserialize, Default)]
 pub(crate) struct DepthStencilConfigMirror {

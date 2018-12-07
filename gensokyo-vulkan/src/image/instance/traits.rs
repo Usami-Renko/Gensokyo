@@ -1,17 +1,17 @@
 
 use ash::vk;
 
-use core::device::GsDevice;
-use core::physical::GsPhyDevice;
+use crate::core::device::GsDevice;
+use crate::core::physical::GsPhyDevice;
 
-use image::target::GsImage;
-use image::storage::ImageStorageInfo;
-use image::allocator::ImageAllocateInfo;
-use image::error::ImageError;
-use memory::transfer::DataCopyer;
-use memory::AllocatorError;
+use crate::image::target::GsImage;
+use crate::image::storage::ImageStorageInfo;
+use crate::image::allocator::ImageAllocateInfo;
+use crate::image::error::ImageError;
+use crate::memory::transfer::DataCopyer;
+use crate::memory::AllocatorError;
 
-use types::vkuint;
+use crate::types::vkuint;
 
 pub trait ImageInstanceInfoAbs where Self: Sized {
 

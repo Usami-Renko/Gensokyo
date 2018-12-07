@@ -1,7 +1,7 @@
 
-use assets::model::GltfResources;
-use assets::model::GltfRawData;
-use assets::model::ModelGltfLoadingError;
+use crate::assets::model::GltfResources;
+use crate::assets::model::GltfRawData;
+use crate::assets::model::ModelGltfLoadingError;
 
 pub(crate) trait GltfHierarchyAbstract<'a> {
     type HierarchyType;

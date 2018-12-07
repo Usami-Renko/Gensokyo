@@ -2,11 +2,11 @@
 use ash::vk;
 use ash::version::DeviceV1_0;
 
-use core::device::GsDevice;
+use crate::core::device::GsDevice;
 
-use image::error::ImageError;
+use crate::image::error::ImageError;
 
-use types::{ vkfloat, VK_TRUE, VK_FALSE };
+use crate::types::{ vkfloat, VK_TRUE, VK_FALSE };
 
 use std::ptr;
 

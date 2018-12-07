@@ -1,9 +1,9 @@
 
 use shaderc;
 
-use pipeline::shader::shaderc::options::GsShadercOptions;
-use pipeline::shader::shaderc::vulkan::VulkanShadercOptions;
-use pipeline::shader::shaderc::error::ShaderCompileError;
+use crate::pipeline::shader::shaderc::options::GsShadercOptions;
+use crate::pipeline::shader::shaderc::vulkan::VulkanShadercOptions;
+use crate::pipeline::shader::shaderc::error::ShaderCompileError;
 
 pub struct GsShaderCompiler {
 
@@ -38,7 +38,7 @@ impl GsShaderCompiler {
 
         let compiler = match configuration {
             | ShadercConfiguration::Vulkan(options) => {
-                let mut compiler = shaderc::Compiler::new()
+                let compiler = shaderc::Compiler::new()
                     .ok_or(ShaderCompileError::CompilerInitializeError)?;
                 let options = options.to_shaderc_options();
 

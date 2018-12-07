@@ -1,16 +1,16 @@
 
-use core::device::GsDevice;
+use crate::core::device::GsDevice;
 
-use image::view::GsImageView;
-use image::allocator::ImageAllocateInfo;
-use image::instance::sample::{ GsSampleImage, SampleImageInfo };
-use image::instance::depth::{ GsDepthStencilAttachment, DepthStencilAttachmentInfo };
-use image::instance::ImageInstanceInfoAbs;
-use image::repository::GsImageRepository;
-use image::error::ImageError;
+use crate::image::view::GsImageView;
+use crate::image::allocator::ImageAllocateInfo;
+use crate::image::instance::sample::{ GsSampleImage, SampleImageInfo };
+use crate::image::instance::depth::{ GsDepthStencilAttachment, DepthStencilAttachmentInfo };
+use crate::image::instance::ImageInstanceInfoAbs;
+use crate::image::repository::GsImageRepository;
+use crate::image::error::ImageError;
 
-use memory::instance::GsImageMemory;
-use memory::AllocatorError;
+use crate::memory::instance::GsImageMemory;
+use crate::memory::AllocatorError;
 
 use std::marker::PhantomData;
 

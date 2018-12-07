@@ -2,13 +2,6 @@
 mod data;
 mod program;
 
-extern crate ash;
-#[macro_use]
-extern crate gensokyo_macros;
-extern crate gensokyo_vulkan as gsvk;
-extern crate gensokyo as gs;
-extern crate cgmath;
-
 use gs::prelude::*;
 
 const MANIFEST_PATH: &str = "src/06.depth/gensokyo.toml";
@@ -21,13 +14,11 @@ fn main() {
     let manifest = PathBuf::from(MANIFEST_PATH);
     let mut program_env = ProgramEnv::new(Some(manifest)).unwrap();
 
-    let mut routine_flow = {
-        let builder = program_env.routine().unwrap();
+    let builder = program_env.routine().unwrap();
 
-        let asset_loader = builder.assets_loader();
-        let routine = DepthProcedure::new(asset_loader).unwrap();
-        builder.build(routine)
-    };
+    let asset_loader = builder.assets_loader();
+    let routine = DepthProcedure::new(asset_loader).unwrap();
+    let mut routine_flow = builder.build(routine);
 
     match routine_flow.launch(program_env) {
         | Ok(_) => (),

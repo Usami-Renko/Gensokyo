@@ -1,5 +1,5 @@
 
-use types::vkbytes;
+use crate::types::vkbytes;
 
 #[inline]
 pub fn bind_to_alignment(bind_value: vkbytes, alignment: vkbytes) -> vkbytes {

@@ -2,19 +2,19 @@
 use ash::vk;
 use ash::version::DeviceV1_0;
 
-use core::device::GsDevice;
-use core::swapchain::GsChain;
+use crate::core::device::GsDevice;
+use crate::core::swapchain::GsChain;
 
-use pipeline::pass::render::GsRenderPass;
-use pipeline::pass::attachment::RenderAttachement;
-use pipeline::pass::subpass::{ RenderSubpass, AttachmentType };
-use pipeline::pass::dependency::RenderDependency;
-use pipeline::pass::framebuffer::FramebufferBuilder;
-use pipeline::error::{ RenderPassError, PipelineError };
+use crate::pipeline::pass::render::GsRenderPass;
+use crate::pipeline::pass::attachment::RenderAttachement;
+use crate::pipeline::pass::subpass::{ RenderSubpass, AttachmentType };
+use crate::pipeline::pass::dependency::RenderDependency;
+use crate::pipeline::pass::framebuffer::FramebufferBuilder;
+use crate::pipeline::error::{ RenderPassError, PipelineError };
 
-use image::instance::depth::GsDepthStencilAttachment;
+use crate::image::instance::depth::GsDepthStencilAttachment;
 
-use types::vkuint;
+use crate::types::vkuint;
 
 use std::ptr;
 

@@ -1,11 +1,11 @@
 
 use ash::vk;
 
-use core::physical::GsPhyDevice;
+use crate::core::physical::GsPhyDevice;
 
-use memory::types::GsMemoryType;
-use memory::traits::MemoryDstEntity;
-use memory::error::MemoryError;
+use crate::memory::types::GsMemoryType;
+use crate::memory::traits::MemoryDstEntity;
+use crate::memory::error::MemoryError;
 
 pub struct MemorySelector {
 
@@ -31,7 +31,7 @@ impl MemorySelector {
         }
     }
 
-    pub fn try(&mut self, dst_enitty: &impl MemoryDstEntity) -> Result<(), MemoryError> {
+    pub fn filter(&mut self, dst_enitty: &impl MemoryDstEntity) -> Result<(), MemoryError> {
 
         let new_candidates = self.physical.memory.find_memory_type(
             dst_enitty.type_bytes(),

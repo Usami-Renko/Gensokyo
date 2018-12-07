@@ -1,10 +1,4 @@
 
-extern crate ash;
-#[macro_use]
-extern crate gensokyo_macros;
-extern crate gensokyo_vulkan as gsvk;
-extern crate gensokyo as gs;
-
 use ash::vk;
 use gs::prelude::*;
 use gsvk::prelude::common::*;
@@ -12,6 +6,8 @@ use gsvk::prelude::buffer::*;
 use gsvk::prelude::pipeline::*;
 use gsvk::command::*;
 use gsvk::sync::*;
+
+use gsma::{ define_input, offset_of, vk_format, vertex_rate, data_size };
 
 use std::path::{ Path, PathBuf };
 
@@ -273,13 +269,11 @@ fn main() {
     let manifest = PathBuf::from(MANIFEST_PATH);
     let mut program_env = ProgramEnv::new(Some(manifest)).unwrap();
 
-    let mut routine_flow = {
-        let builder = program_env.routine().unwrap();
+    let builder = program_env.routine().unwrap();
 
-        let asset_loader = builder.assets_loader();
-        let routine = DrawIndexProcedure::new(asset_loader).unwrap();
-        builder.build(routine)
-    };
+    let asset_loader = builder.assets_loader();
+    let routine = DrawIndexProcedure::new(asset_loader).unwrap();
+    let mut routine_flow = builder.build(routine);
 
     match routine_flow.launch(program_env) {
         | Ok(_) => (),

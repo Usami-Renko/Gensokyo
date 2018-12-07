@@ -2,13 +2,13 @@
 use ash::vk;
 use ash::version::DeviceV1_0;
 
-use core::device::GsDevice;
+use crate::core::device::GsDevice;
 
-use image::traits::ImageHandleEntity;
-use memory::MemoryDstEntity;
-use image::error::ImageError;
+use crate::image::traits::ImageHandleEntity;
+use crate::memory::MemoryDstEntity;
+use crate::image::error::ImageError;
 
-use types::{ vkuint, vkbytes, vkDim3D };
+use crate::types::{ vkuint, vkbytes, vkDim3D };
 
 use std::ptr;
 
@@ -69,7 +69,7 @@ impl MemoryDstEntity for GsImage {
 
     fn aligment_size(&self) -> vkbytes {
 
-        use utils::memory::bind_to_alignment;
+        use crate::utils::memory::bind_to_alignment;
         bind_to_alignment(self.requirement.size, self.requirement.alignment)
     }
 }

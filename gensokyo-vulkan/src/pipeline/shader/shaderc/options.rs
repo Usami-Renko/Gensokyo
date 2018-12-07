@@ -1,8 +1,8 @@
 
 use shaderc;
 
-use pipeline::shader::shaderc::vulkan::GLSLVersion;
-use pipeline::shader::shaderc::error::ShaderCompileError;
+use crate::pipeline::shader::shaderc::vulkan::GLSLVersion;
+use crate::pipeline::shader::shaderc::error::ShaderCompileError;
 
 pub type ShadercTargetVertion = u32;
 

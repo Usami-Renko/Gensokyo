@@ -2,18 +2,18 @@
 use ash::vk;
 use ash::version::DeviceV1_0;
 
-use core::device::GsDevice;
+use crate::core::device::GsDevice;
 
-use memory::target::GsMemory;
-use memory::selector::MemorySelector;
-use memory::types::GsMemoryType;
-use memory::utils::{ MemoryRange, MemoryMapStatus };
-use memory::error::MemoryError;
+use crate::memory::target::GsMemory;
+use crate::memory::selector::MemorySelector;
+use crate::memory::types::GsMemoryType;
+use crate::memory::utils::{ MemoryRange, MemoryMapStatus };
+use crate::memory::error::MemoryError;
 
-use buffer::GsBuffer;
-use image::GsImage;
+use crate::buffer::GsBuffer;
+use crate::image::GsImage;
 
-use types::{ vkuint, vkbytes };
+use crate::types::{ vkuint, vkbytes };
 
 use std::ptr;
 

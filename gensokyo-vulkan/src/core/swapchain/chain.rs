@@ -1,14 +1,15 @@
 
-use ash;
 use ash::vk;
 
-use core::device::{ GsDevice, DeviceQueueIdentifier };
-use core::swapchain::error::SwapchainRuntimeError;
+use gsma::collect_handle;
 
-use image::{ GsImage, GsImageView };
-use sync::{ GsFence, GsSemaphore };
+use crate::core::device::{ GsDevice, DeviceQueueIdentifier };
+use crate::core::swapchain::error::SwapchainRuntimeError;
 
-use types::{ vkuint, vklint, vkDim2D };
+use crate::image::{ GsImage, GsImageView };
+use crate::sync::{ GsFence, GsSemaphore };
+
+use crate::types::{ vkuint, vklint, vkDim2D };
 
 use std::ptr;
 

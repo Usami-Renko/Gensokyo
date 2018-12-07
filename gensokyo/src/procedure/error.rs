@@ -1,15 +1,17 @@
 
 use winit;
 
-use config::error::ConfigError;
-
 use gsvk::core::error::{ InstanceError, ValidationError, PhysicalDeviceError, SurfaceError, LogicalDeviceError };
 use gsvk::core::swapchain::error::{ SwapchainError, SwapchainInitError, SwapchainRuntimeError };
 use gsvk::pipeline::error::PipelineError;
 use gsvk::command::CommandError;
 use gsvk::memory::AllocatorError;
 use gsvk::sync::SyncError;
-use assets::error::AssetsError;
+
+use gsma::impl_from_err;
+
+use crate::config::error::ConfigError;
+use crate::assets::error::AssetsError;
 
 use std::fmt;
 use std::error::Error;

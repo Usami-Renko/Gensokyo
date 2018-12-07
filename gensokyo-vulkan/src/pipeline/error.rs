@@ -2,7 +2,9 @@
 use std::fmt;
 use std::error::Error;
 
-use pipeline::shader::shaderc::ShaderCompileError;
+use gsma::impl_from_err;
+
+use crate::pipeline::shader::shaderc::ShaderCompileError;
 
 #[derive(Debug, Clone, Copy, Eq, PartialEq)]
 pub enum ShaderError {
@@ -44,9 +46,9 @@ impl fmt::Display for PipelineError {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
 
         match self {
-            | PipelineError::Shader(ref e)         => write!(f, "{}", e),
-            | PipelineError::Shaderc(ref e)        => write!(f, "{}", e),
-            | PipelineError::RenderPass(ref e)     => write!(f, "{}", e),
+            | PipelineError::Shader(e)     => write!(f, "{}", e),
+            | PipelineError::Shaderc(e)    => write!(f, "{}", e),
+            | PipelineError::RenderPass(e) => write!(f, "{}", e),
             | PipelineError::PipelineCreationError => write!(f, "Failed to create Pipeline."),
             | PipelineError::LayoutCreationError   => write!(f, "Failed to create Pipeline Layout."),
             | PipelineError::PipelineTakeError     => write!(f, "The pipeline has been taken."),

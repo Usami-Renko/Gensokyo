@@ -1,11 +1,11 @@
 
 use toml;
 
-use assets::io::ImageLoadConfig;
+use crate::assets::io::ImageLoadConfig;
 
-use config::engine::ConfigMirror;
-use config::resources::ImageLoadConfigMirror;
-use config::error::ConfigError;
+use crate::config::engine::ConfigMirror;
+use crate::config::resources::ImageLoadConfigMirror;
+use crate::config::error::ConfigError;
 
 #[derive(Debug, Clone)]
 pub(crate) struct ResourceConfig {

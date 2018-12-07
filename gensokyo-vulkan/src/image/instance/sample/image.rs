@@ -1,19 +1,19 @@
 
 use ash::vk;
 
-use core::device::GsDevice;
+use crate::core::device::GsDevice;
 
-use image::view::GsImageView;
-use image::entity::ImageEntity;
-use image::traits::{ ImageInstance, ImageCopiable };
-use image::sampler::GsSampler;
-use image::utils::ImageCopyInfo;
-use image::instance::sample::SampleImageInfo;
-use image::instance::ImageInstanceInfoDesc;
-use image::allocator::ImageAllocateInfo;
+use crate::image::view::GsImageView;
+use crate::image::entity::ImageEntity;
+use crate::image::traits::{ ImageInstance, ImageCopiable };
+use crate::image::sampler::GsSampler;
+use crate::image::utils::ImageCopyInfo;
+use crate::image::instance::sample::SampleImageInfo;
+use crate::image::instance::ImageInstanceInfoDesc;
+use crate::image::allocator::ImageAllocateInfo;
 
-use descriptor::{ DescriptorImageBindingInfo, DescriptorImageBindableTarget };
-use descriptor::DescriptorBindingContent;
+use crate::descriptor::{ DescriptorImageBindingInfo, DescriptorImageBindableTarget };
+use crate::descriptor::DescriptorBindingContent;
 
 pub struct GsSampleImage {
 
@@ -61,7 +61,7 @@ impl ImageCopiable for GsSampleImage {
 
     fn copy_info(&self) -> ImageCopyInfo {
 
-        use image::utils::image_subrange_to_layers;
+        use crate::image::utils::image_subrange_to_layers;
         let subrange_layers = image_subrange_to_layers(&self.desc.subrange);
 
         ImageCopyInfo::new(&self.entity, subrange_layers, self.desc.current_layout, self.desc.dimension)

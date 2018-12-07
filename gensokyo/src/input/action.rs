@@ -2,8 +2,8 @@
 use winit;
 use winit::{ DeviceEvent, WindowEvent, ElementState, VirtualKeyCode };
 
-use input::key::KeyHeap;
-use input::mouse::{ MouseSensor, CursorMotion };
+use crate::input::key::KeyHeap;
+use crate::input::mouse::{ MouseSensor, CursorMotion };
 
 pub struct ActionNerve {
 

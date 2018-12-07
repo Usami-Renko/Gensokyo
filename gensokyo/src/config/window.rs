@@ -1,8 +1,8 @@
 
 use toml;
 
-use config::engine::ConfigMirror;
-use config::error::ConfigError;
+use crate::config::engine::ConfigMirror;
+use crate::config::error::ConfigError;
 
 use gsvk::types::{ vkuint, vkDim2D };
 

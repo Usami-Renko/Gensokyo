@@ -1,13 +1,14 @@
 
 use toml;
 
-use config::engine::ConfigMirror;
-use config::error::{ ConfigError, MappingError };
+use crate::config::engine::ConfigMirror;
+use crate::config::error::{ ConfigError, MappingError };
 
 use gsvk::core::device::DeviceConfig;
 use gsvk::core::device::QueueRequestStrategy;
 
-use utils::time::TimePeriod;
+use crate::utils::time::TimePeriod;
+
 use std::time::Duration;
 
 #[derive(Deserialize, Default)]

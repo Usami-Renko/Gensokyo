@@ -1,9 +1,7 @@
 
-use ash;
-
-use core::device::device::{ GsLogicalDevice, DeviceConfig };
-use core::device::queue::GsQueue;
-use core::error::LogicalDeviceError;
+use crate::core::device::device::{ GsLogicalDevice, DeviceConfig };
+use crate::core::device::queue::GsQueue;
+use crate::core::error::LogicalDeviceError;
 
 use std::rc::Rc;
 

@@ -2,7 +2,9 @@
 use std::fmt;
 use std::error::Error;
 
-use command::CommandError;
+use gsma::impl_from_err;
+
+use crate::command::CommandError;
 
 /// possible error may occur during the creation of vk::Instance.
 #[derive(Debug, Clone, Copy, Eq, PartialEq)]
@@ -151,7 +153,7 @@ impl fmt::Display for LogicalDeviceError {
             | LogicalDeviceError::WaitIdleError        => write!(f, "Device failed to wait idle."),
             | LogicalDeviceError::QueueOpsUnsupport    => write!(f, "Not all the operations is support for Device Queues."),
             | LogicalDeviceError::QueueCountNotEnough  => write!(f, "No enough queue available on this Device."),
-            | LogicalDeviceError::Command(ref e)       => write!(f, "{}", e.to_string()),
+            | LogicalDeviceError::Command(e)           => write!(f, "{}", e.to_string()),
         }
     }
 }

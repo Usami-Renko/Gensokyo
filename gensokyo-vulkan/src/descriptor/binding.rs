@@ -1,11 +1,11 @@
 
 use ash::vk;
 
-use descriptor::set::GsDescriptorSet;
-use descriptor::types::GsDescriptorType;
+use crate::descriptor::set::GsDescriptorSet;
+use crate::descriptor::types::GsDescriptorType;
 
-use types::{ vkuint, vkbytes };
-use utils::wrapper::VKWrapperInfo;
+use crate::types::{ vkuint, vkbytes };
+use crate::utils::wrapper::VKWrapperInfo;
 
 use std::ptr;
 

@@ -1,7 +1,7 @@
 
 use ash::vk;
 
-use types::vkuint;
+use crate::types::vkuint;
 
 /// Using sub pass dependencies also adds implicit layout transitions for the attachment used.
 /// So we don't need to add explicit image memory barriers to transform them.

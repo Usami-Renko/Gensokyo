@@ -1,24 +1,24 @@
 
 use ash::vk;
 
-use core::device::GsDevice;
-use core::physical::GsPhyDevice;
+use crate::core::device::GsDevice;
+use crate::core::physical::GsPhyDevice;
 
-use buffer::{ GsBuffer, BufferBlock };
-use buffer::allocator::BufferAllocateInfos;
+use crate::buffer::{ GsBuffer, BufferBlock };
+use crate::buffer::allocator::BufferAllocateInfos;
 
-use memory::target::GsMemory;
-use memory::types::GsMemoryType;
-use memory::utils::{ MemoryMapStatus, MemoryRange, MemoryMapAlias, MemoryWritePtr };
-use memory::types::Staging;
-use memory::traits::{ GsMemoryAbstract, MemoryMappable };
-use memory::selector::MemorySelector;
-use memory::transfer::DataCopyer;
-use memory::instance::GsBufferMemoryAbs;
-use memory::transfer::MemoryDataDelegate;
-use memory::error::{ MemoryError, AllocatorError };
+use crate::memory::target::GsMemory;
+use crate::memory::types::GsMemoryType;
+use crate::memory::utils::{ MemoryMapStatus, MemoryRange, MemoryMapAlias, MemoryWritePtr };
+use crate::memory::types::Staging;
+use crate::memory::traits::{ GsMemoryAbstract, MemoryMappable };
+use crate::memory::selector::MemorySelector;
+use crate::memory::transfer::DataCopyer;
+use crate::memory::instance::GsBufferMemoryAbs;
+use crate::memory::transfer::MemoryDataDelegate;
+use crate::memory::error::{ MemoryError, AllocatorError };
 
-use types::vkbytes;
+use crate::types::vkbytes;
 
 
 pub struct GsStagingMemory {
@@ -154,7 +154,7 @@ impl UploadStagingResource {
             let buffer = buffer_desc.build(device, Staging, None)
                 .or(Err(MemoryError::AllocateMemoryError))?;
 
-            memory_selector.try(&buffer)?;
+            memory_selector.filter(&buffer)?;
             buffers.push(buffer);
         }
 

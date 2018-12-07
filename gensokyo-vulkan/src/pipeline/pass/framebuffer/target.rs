@@ -2,7 +2,7 @@
 use ash::vk;
 use ash::version::DeviceV1_0;
 
-use core::device::GsDevice;
+use crate::core::device::GsDevice;
 
 pub struct GsFramebuffer {
 

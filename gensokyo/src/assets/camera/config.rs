@@ -1,9 +1,9 @@
 
 use cgmath::{ Vector3, Point3 };
 
-use assets::camera::chase::GsChaseCamera;
-use assets::camera::flight::GsFlightCamera;
-use assets::camera::stage::GsStageCamera;
+use crate::assets::camera::chase::GsChaseCamera;
+use crate::assets::camera::flight::GsFlightCamera;
+use crate::assets::camera::stage::GsStageCamera;
 
 pub struct CameraConfigurator {
 

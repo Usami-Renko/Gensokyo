@@ -1,9 +1,9 @@
 
-use core::instance::InstanceConfig;
-use core::debug::ValidationConfig;
-use core::device::DeviceConfig;
-use core::physical::PhysicalConfig;
-use core::swapchain::SwapchainConfig;
+use crate::core::instance::InstanceConfig;
+use crate::core::debug::ValidationConfig;
+use crate::core::device::DeviceConfig;
+use crate::core::physical::PhysicalConfig;
+use crate::core::swapchain::SwapchainConfig;
 
 pub struct CoreConfig {
 

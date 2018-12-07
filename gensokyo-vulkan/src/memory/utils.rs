@@ -1,9 +1,9 @@
 
 use ash::vk;
 
-use memory::traits::MemoryMappable;
+use crate::memory::traits::MemoryMappable;
 
-use types::{ vkptr, vkbytes };
+use crate::types::{ vkptr, vkbytes };
 
 #[derive(Debug, Clone, Copy)]
 pub struct MemoryRange {
@@ -83,7 +83,6 @@ impl MemoryWritePtr {
 
     pub fn write_data<D: Copy>(&self, data: &[D]) {
 
-        use ash;
         use std::mem;
 
         let mut vert_algn = unsafe {

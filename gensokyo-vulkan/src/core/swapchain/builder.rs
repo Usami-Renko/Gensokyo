@@ -1,21 +1,20 @@
 
 use winit;
-use ash;
 use ash::vk;
 
-use core::instance::GsInstance;
-use core::physical::GsPhyDevice;
-use core::device::{ GsDevice, DeviceQueueIdentifier };
-use core::surface::GsSurface;
+use crate::core::instance::GsInstance;
+use crate::core::physical::GsPhyDevice;
+use crate::core::device::{ GsDevice, DeviceQueueIdentifier };
+use crate::core::surface::GsSurface;
 
-use core::swapchain::GsChain;
-use core::swapchain::chain::{ GsSwapchain, SwapchainConfig };
-use core::swapchain::support::SwapchainSupport;
-use core::swapchain::error::SwapchainInitError;
+use crate::core::swapchain::GsChain;
+use crate::core::swapchain::chain::{ GsSwapchain, SwapchainConfig };
+use crate::core::swapchain::support::SwapchainSupport;
+use crate::core::swapchain::error::SwapchainInitError;
 
-use image::{ GsImage, ImageViewDescInfo };
+use crate::image::{ GsImage, ImageViewDescInfo };
 
-use types::{ vkuint, vklint, VK_TRUE };
+use crate::types::{ vkuint, vklint, VK_TRUE };
 
 use std::ptr;
 
@@ -89,7 +88,7 @@ impl<'vk> SwapchainBuilder<'vk> {
             // set this true to discard the pixels out of surface
             clipped                  : VK_TRUE,
             // pass the old swapchain may help vulkan to reuse some resources.
-            old_swapchain            : if let Some(chain) = old_chain { chain.handle } else { vk::SwapchainKHR::null() },
+            old_swapchain: old_chain.and_then(|c| Some(c.handle)).unwrap_or(vk::SwapchainKHR::null()),
         };
 
         let loader = ash::extensions::Swapchain::new(&instance.handle, &self.device.handle);

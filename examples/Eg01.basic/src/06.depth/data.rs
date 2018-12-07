@@ -3,6 +3,8 @@ use gsvk::prelude::common::*;
 use gsvk::prelude::pipeline::*;
 use ash::vk;
 
+use gsma::{ define_input, offset_of, vk_format, vertex_rate };
+
 use cgmath::Matrix4;
 
 define_input! {

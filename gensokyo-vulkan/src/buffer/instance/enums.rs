@@ -1,5 +1,5 @@
 
-use memory::types::GsMemoryType;
+use crate::memory::types::GsMemoryType;
 
 #[derive(Debug, Clone, Copy, Eq, PartialEq)]
 pub enum BufferInstanceType {

@@ -2,20 +2,22 @@
 use ash::vk;
 use ash::version::DeviceV1_0;
 
-use core::device::GsDevice;
+use gsma::collect_handle;
 
-use command::buffer::{ GsCommandBuffer, CmdBufferUsage };
-use command::infos::{ CmdViewportInfo, CmdScissorInfo, CmdDepthBiasInfo, CmdDepthBoundInfo };
-use command::traits::IntoVKBarrier;
-use command::error::CommandError;
+use crate::core::device::GsDevice;
 
-use buffer::BufferInstance;
-use buffer::instance::{ GsVertexBlock, GsIndexBlock };
-use image::GsImageBarrier;
-use descriptor::DescriptorSet;
-use pipeline::graphics::GsGraphicsPipeline;
+use crate::command::buffer::{ GsCommandBuffer, CmdBufferUsage };
+use crate::command::infos::{ CmdViewportInfo, CmdScissorInfo, CmdDepthBiasInfo, CmdDepthBoundInfo };
+use crate::command::traits::IntoVKBarrier;
+use crate::command::error::CommandError;
 
-use types::{ vkuint, vksint, vkfloat, vkbytes };
+use crate::buffer::BufferInstance;
+use crate::buffer::instance::{ GsVertexBlock, GsIndexBlock };
+use crate::image::GsImageBarrier;
+use crate::descriptor::DescriptorSet;
+use crate::pipeline::graphics::GsGraphicsPipeline;
+
+use crate::types::{ vkuint, vksint, vkfloat, vkbytes };
 
 use std::ptr;
 

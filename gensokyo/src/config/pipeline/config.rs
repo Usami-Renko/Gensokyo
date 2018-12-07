@@ -3,9 +3,9 @@ use toml;
 
 use gsvk::pipeline::config::PipelineConfig;
 
-use config::engine::ConfigMirror;
-use config::pipeline::DepthStencilConfigMirror;
-use config::error::ConfigError;
+use crate::config::engine::ConfigMirror;
+use crate::config::pipeline::DepthStencilConfigMirror;
+use crate::config::error::ConfigError;
 
 #[derive(Deserialize, Default)]
 pub(crate) struct PipelineConfigMirror {

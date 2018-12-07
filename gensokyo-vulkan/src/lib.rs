@@ -1,22 +1,4 @@
 
-#[macro_use]
-extern crate ash;
-extern crate winit;
-extern crate num;
-extern crate shaderc;
-#[macro_use]
-extern crate gensokyo_macros;
-
-#[cfg(target_os = "macos")]
-extern crate metal;
-#[cfg(target_os = "macos")]
-extern crate cocoa;
-#[cfg(target_os = "macos")]
-extern crate objc;
-
-#[cfg(target_os = "windows")]
-extern crate winapi;
-
 pub mod core;
 pub mod pipeline;
 

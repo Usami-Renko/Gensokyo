@@ -1,13 +1,14 @@
 
 use ash::vk;
+use ash::{ vk_version_major, vk_version_minor, vk_version_patch };
 use ash::version::InstanceV1_0;
 
-use core::instance::GsInstance;
-use core::physical::config::PhysicalInspectProperty;
+use crate::core::instance::GsInstance;
+use crate::core::physical::config::PhysicalInspectProperty;
 
-use types::vkuint;
+use crate::types::vkuint;
 
-use utils::cast;
+use crate::utils::cast;
 
 pub(crate) struct PhysicalProperties {
 

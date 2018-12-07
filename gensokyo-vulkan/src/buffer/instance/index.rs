@@ -1,14 +1,14 @@
 
 use ash::vk;
 
-use buffer::target::BufferDescInfo;
-use buffer::entity::BufferBlock;
-use buffer::instance::enums::BufferInstanceType;
-use buffer::allocator::BufferBlockIndex;
-use buffer::traits::{ BufferInstance, BufferBlockInfo };
-use buffer::traits::{ BufferCopiable, BufferCopyInfo };
+use crate::buffer::target::BufferDescInfo;
+use crate::buffer::entity::BufferBlock;
+use crate::buffer::instance::enums::BufferInstanceType;
+use crate::buffer::allocator::BufferBlockIndex;
+use crate::buffer::traits::{ BufferInstance, BufferBlockInfo };
+use crate::buffer::traits::{ BufferCopiable, BufferCopyInfo };
 
-use types::vkbytes;
+use crate::types::vkbytes;
 
 #[derive(Debug, Clone)]
 pub struct IndexBlockInfo {

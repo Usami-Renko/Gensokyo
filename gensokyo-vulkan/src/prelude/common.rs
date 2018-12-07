@@ -1,10 +1,10 @@
 
-pub use core::device::{ GsDevice, DeviceQueueIdentifier };
-pub use core::device::queue::QueueSubmitBundle;
+pub use crate::core::device::{ GsDevice, DeviceQueueIdentifier };
+pub use crate::core::device::queue::QueueSubmitBundle;
 
-pub use types::{ vkuint, vkbytes, vkfloat, vkDim2D, vkDim3D };
+pub use crate::types::{ vkuint, vkbytes, vkfloat, vkDim2D, vkDim3D };
 
-pub use memory::types::Host;
-pub use memory::types::Cached;
-pub use memory::types::Device;
-pub use memory::types::Staging;
+pub use crate::memory::types::Host;
+pub use crate::memory::types::Cached;
+pub use crate::memory::types::Device;
+pub use crate::memory::types::Staging;

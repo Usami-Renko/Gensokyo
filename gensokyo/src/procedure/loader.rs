@@ -5,12 +5,12 @@ use gsvk::core::swapchain::GsChain;
 
 use gsvk::types::vkDim2D;
 
-use config::resources::ResourceConfig;
+use crate::config::resources::ResourceConfig;
 
-use toolkit::{ AllocatorKit, PipelineKit, CommandKit, SyncKit };
+use crate::toolkit::{ AllocatorKit, PipelineKit, CommandKit, SyncKit };
 
-use procedure::env::VulkanEnv;
-use procedure::error::ProcedureError;
+use crate::procedure::env::VulkanEnv;
+use crate::procedure::error::ProcedureError;
 
 pub struct AssetsLoader {
 

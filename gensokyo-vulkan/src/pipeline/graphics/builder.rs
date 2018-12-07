@@ -2,28 +2,28 @@
 use ash::vk;
 use ash::version::DeviceV1_0;
 
-use core::device::GsDevice;
+use crate::core::device::GsDevice;
 
-use pipeline::shader::{ GsShaderModule, GsShaderInfo, VertexInputDescription };
-use pipeline::state::PipelineStates;
-use pipeline::state::vertex_input::GsVertexInputState;
-use pipeline::state::input_assembly::GsInputAssemblyState;
-use pipeline::state::viewport::ViewportStateType;
-use pipeline::state::rasterizer::GsRasterizerState;
-use pipeline::state::multisample::GsMultisampleState;
-use pipeline::state::depth_stencil::GsDepthStencilState;
-use pipeline::state::blend::GsBlendState;
-use pipeline::state::tessellation::GsTessellationState;
-use pipeline::pass::GsRenderPass;
-use pipeline::graphics::pipeline::{ GsGraphicsPipeline, GraphicsPipelineContainer };
-use pipeline::layout::PipelineLayoutBuilder;
-use pipeline::error::PipelineError;
+use crate::pipeline::shader::{ GsShaderModule, GsShaderInfo, VertexInputDescription };
+use crate::pipeline::state::PipelineStates;
+use crate::pipeline::state::vertex_input::GsVertexInputState;
+use crate::pipeline::state::input_assembly::GsInputAssemblyState;
+use crate::pipeline::state::viewport::ViewportStateType;
+use crate::pipeline::state::rasterizer::GsRasterizerState;
+use crate::pipeline::state::multisample::GsMultisampleState;
+use crate::pipeline::state::depth_stencil::GsDepthStencilState;
+use crate::pipeline::state::blend::GsBlendState;
+use crate::pipeline::state::tessellation::GsTessellationState;
+use crate::pipeline::pass::GsRenderPass;
+use crate::pipeline::graphics::pipeline::{ GsGraphicsPipeline, GraphicsPipelineContainer };
+use crate::pipeline::layout::PipelineLayoutBuilder;
+use crate::pipeline::error::PipelineError;
 
-use descriptor::DescriptorSet;
+use crate::descriptor::DescriptorSet;
 
-use pipeline::shader::shaderc::{ GsShaderCompiler, ShaderCompilePrefab, ShadercConfiguration };
+use crate::pipeline::shader::shaderc::{ GsShaderCompiler, ShaderCompilePrefab, ShadercConfiguration };
 
-use types::{ vkuint, vkDim2D };
+use crate::types::{ vkuint, vkDim2D };
 
 use std::ptr;
 

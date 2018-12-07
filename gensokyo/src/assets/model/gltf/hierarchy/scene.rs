@@ -1,11 +1,11 @@
 
 use gltf;
 
-use assets::model::GltfHierarchyAbstract;
-use assets::model::GltfResources;
-use assets::model::GltfNode;
-use assets::model::GltfRawData;
-use assets::model::ModelGltfLoadingError;
+use crate::assets::model::GltfHierarchyAbstract;
+use crate::assets::model::GltfResources;
+use crate::assets::model::GltfNode;
+use crate::assets::model::GltfRawData;
+use crate::assets::model::ModelGltfLoadingError;
 
 pub(crate) struct GltfScene {
 

@@ -2,7 +2,7 @@
 use std::fmt;
 use std::error::Error;
 
-use core::error::SurfaceError;
+use crate::core::error::SurfaceError;
 
 #[derive(Debug, Clone, Eq, PartialEq)]
 pub enum SwapchainError {
@@ -13,9 +13,9 @@ pub enum SwapchainError {
 
 impl Error for SwapchainError {
     fn cause(&self) -> Option<&Error> {
-        match *self {
-            | SwapchainError::Init(ref e)    => Some(e),
-            | SwapchainError::Runtime(ref e) => Some(e),
+        match self {
+            | SwapchainError::Init(e)    => Some(e),
+            | SwapchainError::Runtime(e) => Some(e),
         }
     }
 }
@@ -62,13 +62,13 @@ impl fmt::Display for SwapchainInitError {
 
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
         match self {
-            | SwapchainInitError::SwapchianCreationError        => write!(f, "Failed to create Swapchain Object."),
-            | SwapchainInitError::SurfaceNotExistError          => write!(f, "Surface does not exist."),
-            | SwapchainInitError::SurfacePropertiesQuery(ref e) => write!(f, "Failed to query surface property. {}", e),
-            | SwapchainInitError::GraphicsQueueNotAvailable     => write!(f, "Graphics Queue is not available"),
-            | SwapchainInitError::PresentQueueNotAvailable      => write!(f, "Present Queue is not available"),
-            | SwapchainInitError::SwapchainImageGetError        => write!(f, "Failed to get swapchain image from swapchain."),
-            | SwapchainInitError::ImageViewCreationError        => write!(f, "Failed to create Swapchain ImageView."),
+            | SwapchainInitError::SwapchianCreationError    => write!(f, "Failed to create Swapchain Object."),
+            | SwapchainInitError::SurfaceNotExistError      => write!(f, "Surface does not exist."),
+            | SwapchainInitError::SurfacePropertiesQuery(e) => write!(f, "Failed to query surface property. {}", e),
+            | SwapchainInitError::GraphicsQueueNotAvailable => write!(f, "Graphics Queue is not available"),
+            | SwapchainInitError::PresentQueueNotAvailable  => write!(f, "Present Queue is not available"),
+            | SwapchainInitError::SwapchainImageGetError    => write!(f, "Failed to get swapchain image from swapchain."),
+            | SwapchainInitError::ImageViewCreationError    => write!(f, "Failed to create Swapchain ImageView."),
         }
     }
 }

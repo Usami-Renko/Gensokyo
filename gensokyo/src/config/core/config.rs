@@ -3,13 +3,13 @@ use toml;
 
 use gsvk::core::config::CoreConfig;
 
-use config::engine::ConfigMirror;
-use config::core::instance::InstanceConfigMirror;
-use config::core::validation::ValidationConfigMirror;
-use config::core::device::DeviceConfigMirror;
-use config::core::physical::PhysicalConfigMirror;
-use config::core::swapchain::SwapchainConfigMirror;
-use config::error::ConfigError;
+use crate::config::engine::ConfigMirror;
+use crate::config::core::instance::InstanceConfigMirror;
+use crate::config::core::validation::ValidationConfigMirror;
+use crate::config::core::device::DeviceConfigMirror;
+use crate::config::core::physical::PhysicalConfigMirror;
+use crate::config::core::swapchain::SwapchainConfigMirror;
+use crate::config::error::ConfigError;
 
 #[derive(Deserialize, Default)]
 pub(crate) struct CoreConfigMirror {

@@ -6,10 +6,10 @@ use gsvk::core::swapchain::SwapchainConfig;
 
 use gsvk::types::vkuint;
 
-use config::engine::ConfigMirror;
-use config::error::{ ConfigError, MappingError };
+use crate::config::engine::ConfigMirror;
+use crate::config::error::{ ConfigError, MappingError };
 
-use utils::time::TimePeriod;
+use crate::utils::time::TimePeriod;
 use std::time::Duration;
 
 #[derive(Deserialize, Default)]

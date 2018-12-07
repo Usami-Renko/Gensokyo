@@ -3,7 +3,7 @@ use ash::vk;
 
 use std::ptr;
 
-use types::{ vkuint, vkbool, vkfloat, VK_FALSE, VK_TRUE };
+use crate::types::{ vkuint, vkbool, vkfloat, VK_FALSE, VK_TRUE };
 
 #[derive(Debug, Clone, Copy, Eq, PartialEq)]
 pub enum MultisamplePrefab {

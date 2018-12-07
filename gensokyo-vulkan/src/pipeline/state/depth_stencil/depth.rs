@@ -1,9 +1,9 @@
 
 use ash::vk;
 
-use pipeline::state::dynamic::DynamicableValue;
+use crate::pipeline::state::dynamic::DynamicableValue;
 
-use types::{ vkfloat, vkbool, VK_TRUE, VK_FALSE };
+use crate::types::{ vkfloat, vkbool, VK_TRUE, VK_FALSE };
 
 pub struct DepthTest {
 

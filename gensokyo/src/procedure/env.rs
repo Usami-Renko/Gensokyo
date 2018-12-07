@@ -1,11 +1,11 @@
 
 use winit;
 
-use config::engine::EngineConfig;
+use crate::config::engine::EngineConfig;
 
-use procedure::window::WindowInfo;
-use procedure::workflow::RoutineBuilder;
-use procedure::error::{ RuntimeError, ProcedureError };
+use crate::procedure::window::WindowInfo;
+use crate::procedure::workflow::RoutineBuilder;
+use crate::procedure::error::{ RuntimeError, ProcedureError };
 
 use gsvk::core::instance::GsInstance;
 use gsvk::core::debug::GsDebugger;

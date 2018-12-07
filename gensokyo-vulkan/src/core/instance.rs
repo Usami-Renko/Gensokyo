@@ -3,13 +3,13 @@ use ash::vk;
 use ash::version::EntryV1_0;
 use ash::version::InstanceV1_0;
 
-use core::debug::{ ValidationConfig, DebugInstanceType };
-use core::error::InstanceError;
-use core::platforms;
-use core::debug;
+use crate::core::debug::{ ValidationConfig, DebugInstanceType };
+use crate::core::error::InstanceError;
+use crate::core::platforms;
+use crate::core::debug;
 
-use utils::cast;
-use types::vkuint;
+use crate::utils::cast;
+use crate::types::vkuint;
 
 use std::ptr;
 use std::ffi::CString;

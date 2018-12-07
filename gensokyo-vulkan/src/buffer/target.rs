@@ -2,14 +2,15 @@
 use ash::vk;
 use ash::version::DeviceV1_0;
 
-use core::device::GsDevice;
+use crate::core::device::GsDevice;
 
-use buffer::allocator::types::BufferMemoryTypeAbs;
-use buffer::error::BufferError;
+use crate::buffer::allocator::types::BufferMemoryTypeAbs;
+use crate::buffer::error::BufferError;
 
-use memory::MemoryDstEntity;
+use crate::memory::MemoryDstEntity;
 
-use types::{ vkbytes, vkuint };
+use crate::types::{ vkbytes, vkuint };
+
 use std::ptr;
 
 pub struct GsBuffer {
@@ -47,7 +48,7 @@ impl MemoryDstEntity for GsBuffer {
 
     fn aligment_size(&self) -> vkbytes {
 
-        use utils::memory::bind_to_alignment;
+        use crate::utils::memory::bind_to_alignment;
         bind_to_alignment(self.requirement.size, self.requirement.alignment)
     }
 }

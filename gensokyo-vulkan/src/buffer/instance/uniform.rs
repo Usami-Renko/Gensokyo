@@ -1,19 +1,19 @@
 
 use ash::vk;
 
-use buffer::target::BufferDescInfo;
-use buffer::entity::BufferBlock;
-use buffer::instance::enums::BufferInstanceType;
-use buffer::traits::{ BufferInstance, BufferBlockInfo };
-use buffer::traits::{ BufferCopiable, BufferCopyInfo };
-use buffer::allocator::{ BufferBlockIndex, BufferDistAttachment };
-use buffer::error::BufferError;
+use crate::buffer::target::BufferDescInfo;
+use crate::buffer::entity::BufferBlock;
+use crate::buffer::instance::enums::BufferInstanceType;
+use crate::buffer::traits::{ BufferInstance, BufferBlockInfo };
+use crate::buffer::traits::{ BufferCopiable, BufferCopyInfo };
+use crate::buffer::allocator::{ BufferBlockIndex, BufferDistAttachment };
+use crate::buffer::error::BufferError;
 
-use descriptor::DescriptorBufferBindableTarget;
-use descriptor::{ DescriptorBindingContent, DescriptorBufferBindingInfo };
-use descriptor::{ GsDescriptorType, BufferDescriptorType };
+use crate::descriptor::DescriptorBufferBindableTarget;
+use crate::descriptor::{ DescriptorBindingContent, DescriptorBufferBindingInfo };
+use crate::descriptor::{ GsDescriptorType, BufferDescriptorType };
 
-use types::{ vkuint, vkbytes };
+use crate::types::{ vkuint, vkbytes };
 
 #[derive(Debug, Clone)]
 pub struct UniformBlockInfo {

@@ -5,6 +5,8 @@ use std::error::Error;
 use tobj::LoadError;
 use gltf::Error as GltfError;
 
+use gsma::impl_from_err;
+
 #[derive(Debug)]
 pub enum ModelLoadingError {
 

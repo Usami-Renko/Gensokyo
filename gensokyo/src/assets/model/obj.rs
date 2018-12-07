@@ -1,7 +1,7 @@
 
 use tobj;
 
-use assets::model::{ModelLoadingError, ModelObjLoadingError };
+use crate::assets::model::{ModelLoadingError, ModelObjLoadingError };
 
 use std::path::Path;
 

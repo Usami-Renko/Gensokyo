@@ -1,9 +1,9 @@
 
-use core::device::GsDevice;
+use crate::core::device::GsDevice;
 
-use memory::instance::GsImageMemory;
-use image::target::GsImage;
-use image::view::GsImageView;
+use crate::memory::instance::GsImageMemory;
+use crate::image::target::GsImage;
+use crate::image::view::GsImageView;
 
 use std::marker::PhantomData;
 

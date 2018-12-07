@@ -1,8 +1,8 @@
 
 use ash::vk;
 
-use image::{ GsImage, GsImageView };
-use image::traits::ImageHandleEntity;
+use crate::image::{ GsImage, GsImageView };
+use crate::image::traits::ImageHandleEntity;
 
 #[derive(Debug, Clone, Default)]
 pub struct ImageEntity {

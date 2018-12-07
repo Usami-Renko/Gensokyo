@@ -1,8 +1,8 @@
 
 use ash::vk;
 
-use descriptor::GsDescriptorSet;
-use types::vkuint;
+use crate::descriptor::GsDescriptorSet;
+use crate::types::vkuint;
 
 #[derive(Debug, Clone, Default)]
 pub struct DescriptorSetEntity {

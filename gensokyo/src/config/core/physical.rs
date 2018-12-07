@@ -2,8 +2,8 @@
 use toml;
 use ash::vk;
 
-use config::engine::ConfigMirror;
-use config::error::{ ConfigError, MappingError };
+use crate::config::engine::ConfigMirror;
+use crate::config::error::{ ConfigError, MappingError };
 
 use gsvk::core::physical::PhysicalConfig;
 use gsvk::core::physical::DeviceExtensionType;

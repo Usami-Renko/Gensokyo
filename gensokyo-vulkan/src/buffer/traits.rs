@@ -1,11 +1,11 @@
 
 use ash::vk;
 
-use buffer::instance::BufferInstanceType;
-use buffer::entity::BufferBlock;
-use buffer::target::BufferDescInfo;
-use buffer::allocator::BufferBlockIndex;
-use types::vkbytes;
+use crate::buffer::instance::BufferInstanceType;
+use crate::buffer::entity::BufferBlock;
+use crate::buffer::target::BufferDescInfo;
+use crate::buffer::allocator::BufferBlockIndex;
+use crate::types::vkbytes;
 
 pub trait BufferInstance: BufferCopiable {
 

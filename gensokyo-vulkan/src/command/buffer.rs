@@ -1,9 +1,9 @@
 
 use ash::vk;
 
-use core::device::GsDevice;
+use crate::core::device::GsDevice;
 
-use command::record::GsCommandRecorder;
+use crate::command::record::GsCommandRecorder;
 
 #[derive(Debug, Clone, Copy, Eq, PartialEq)]
 pub enum CmdBufferUsage {

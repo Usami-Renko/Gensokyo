@@ -9,6 +9,8 @@ use gsvk::prelude::pipeline::*;
 use gsvk::command::*;
 use gsvk::sync::*;
 
+use gsma::data_size;
+
 use super::data::{ Vertex, UboObject };
 use super::data::{ VERTEX_DATA, INDEX_DATA };
 

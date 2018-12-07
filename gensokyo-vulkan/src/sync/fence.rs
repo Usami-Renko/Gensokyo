@@ -2,10 +2,10 @@
 use ash::vk;
 use ash::version::DeviceV1_0;
 
-use core::device::GsDevice;
+use crate::core::device::GsDevice;
 
-use sync::error::SyncError;
-use types::vklint;
+use crate::sync::error::SyncError;
+use crate::types::vklint;
 
 use std::ptr;
 

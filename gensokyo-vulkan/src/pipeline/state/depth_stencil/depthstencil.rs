@@ -2,8 +2,8 @@
 use ash::vk;
 use std::ptr;
 
-use pipeline::state::depth_stencil::DepthTest;
-use pipeline::state::depth_stencil::StencilTest;
+use crate::pipeline::state::depth_stencil::DepthTest;
+use crate::pipeline::state::depth_stencil::StencilTest;
 
 pub struct GsDepthStencilState {
 

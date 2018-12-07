@@ -1,15 +1,16 @@
 
 [package]
-name = "gensokyo-ex01-baisc"
-version = "0.1.0"
-authors = ["usami-renko <usami-ssc@protonmail.com>"]
+name        = "gensokyo-ex01-baisc"
+version     = "0.1.0"
+authors     = ["usami-renko <usami-ssc@protonmail.com>"]
+edition     = "2018"
 description = "Basic examples of gensokyo Engine."
 
 [dependencies]
-ash = "0.26.0"
-gensokyo-vulkan = { path = "../../gensokyo-vulkan" }
-gensokyo-macros = { path = "../../gensokyo-macros" }
-gensokyo = { path = "../../gensokyo" }
+gs   = { package = "gensokyo", path = "../../gensokyo" }
+gsvk = { package = "gensokyo-vulkan", path = "../../gensokyo-vulkan" }
+gsma = { package = "gensokyo-macros", path = "../../gensokyo-macros" }
+ash    = "0.26.0"
 cgmath = "0.16.1"
 
 [[bin]]

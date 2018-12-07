@@ -1,12 +1,12 @@
 
 use ash::vk;
 
-use core::device::enums::PrefabQueuePriority;
+use crate::core::device::enums::PrefabQueuePriority;
 
-use sync::GsSemaphore;
-use command::GsCommandBuffer;
+use crate::sync::GsSemaphore;
+use crate::command::GsCommandBuffer;
 
-use types::vkuint;
+use crate::types::vkuint;
 
 #[derive(Debug, Clone, Copy, Eq, PartialEq, Hash)]
 pub enum QueueUsage {

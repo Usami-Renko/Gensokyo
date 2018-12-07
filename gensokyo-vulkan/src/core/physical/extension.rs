@@ -2,11 +2,11 @@
 use ash::vk;
 use ash::version::InstanceV1_0;
 
-use core::instance::GsInstance;
-use core::physical::config::PhysicalInspectProperty;
-use core::error::PhysicalDeviceError;
+use crate::core::instance::GsInstance;
+use crate::core::physical::config::PhysicalInspectProperty;
+use crate::core::error::PhysicalDeviceError;
 
-use utils::cast;
+use crate::utils::cast;
 
 use std::ffi::CString;
 

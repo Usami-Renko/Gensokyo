@@ -2,16 +2,18 @@
 use ash::vk;
 use ash::version::DeviceV1_0;
 
-use core::device::GsDevice;
-use core::device::device::{ GsLogicalDevice, DeviceConfig };
-use core::device::queue::{ GsQueue, GsQueueAbstract };
-use core::error::LogicalDeviceError;
+use gsma::collect_handle;
 
-use sync::{ GsFence, SyncError };
-use command::{ GsCommandBuffer, CmdBufferUsage };
-use command::CommandError;
+use crate::core::device::GsDevice;
+use crate::core::device::device::{ GsLogicalDevice, DeviceConfig };
+use crate::core::device::queue::{ GsQueue, GsQueueAbstract };
+use crate::core::error::LogicalDeviceError;
 
-use types::{ vklint, vkuint };
+use crate::sync::{ GsFence, SyncError };
+use crate::command::{ GsCommandBuffer, CmdBufferUsage };
+use crate::command::CommandError;
+
+use crate::types::{ vklint, vkuint };
 
 use std::rc::Rc;
 use std::ptr;

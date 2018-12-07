@@ -1,13 +1,13 @@
 
 use ash::vk;
 
-use core::device::{ GsDevice, GsLogicalDevice };
-use core::device::queue::GsTransfer;
+use crate::core::device::{ GsDevice, GsLogicalDevice };
+use crate::core::device::queue::GsTransfer;
 
-use buffer::BufferCopiable;
-use image::ImageCopiable;
-use command::GsCommandRecorder;
-use memory::error::AllocatorError;
+use crate::buffer::BufferCopiable;
+use crate::image::ImageCopiable;
+use crate::command::GsCommandRecorder;
+use crate::memory::error::AllocatorError;
 
 pub struct DataCopyer {
 

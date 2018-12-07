@@ -2,10 +2,10 @@
 use toml;
 use ash::vk;
 
-use assets::io::ImageLoadConfig;
+use crate::assets::io::ImageLoadConfig;
 
-use config::engine::ConfigMirror;
-use config::error::ConfigError;
+use crate::config::engine::ConfigMirror;
+use crate::config::error::ConfigError;
 
 #[derive(Deserialize, Default)]
 pub(crate) struct ImageLoadConfigMirror {

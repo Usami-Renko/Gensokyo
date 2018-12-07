@@ -1,20 +1,20 @@
 
-use VERBOSE;
-
 use ash::version::InstanceV1_0;
 
-use core::instance::GsInstance;
-use core::surface::GsSurface;
+use crate::core::instance::GsInstance;
+use crate::core::surface::GsSurface;
 
-use core::physical::config::{ PhysicalConfig, PhysicalInspectProperty };
-use core::physical::target::GsPhysicalDevice;
-use core::physical::extension::PhysicalExtension;
-use core::physical::family::PhysicalQueueFamilies;
-use core::physical::features::PhyscialFeatures;
-use core::physical::memory::PhysicalMemory;
-use core::physical::property::PhysicalProperties;
+use crate::core::physical::config::{ PhysicalConfig, PhysicalInspectProperty };
+use crate::core::physical::target::GsPhysicalDevice;
+use crate::core::physical::extension::PhysicalExtension;
+use crate::core::physical::family::PhysicalQueueFamilies;
+use crate::core::physical::features::PhyscialFeatures;
+use crate::core::physical::memory::PhysicalMemory;
+use crate::core::physical::property::PhysicalProperties;
 
-use core::error::PhysicalDeviceError;
+use crate::VERBOSE;
+
+use crate::core::error::PhysicalDeviceError;
 
 pub struct PhysicalInspector {
 

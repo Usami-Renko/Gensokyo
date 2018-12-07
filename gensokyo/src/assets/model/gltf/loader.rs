@@ -1,6 +1,6 @@
 
-use assets::model::GltfEntity;
-use assets::model::ModelLoadingError;
+use crate::assets::model::GltfEntity;
+use crate::assets::model::ModelLoadingError;
 
 use gsvk::buffer::allocator::types::BufferMemoryTypeAbs;
 

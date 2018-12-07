@@ -1,8 +1,8 @@
 
-pub use descriptor::allocator::GsDescriptorAllocator;
-pub use descriptor::allocator::GsDescriptorDistributor;
-pub use descriptor::GsDescriptorRepository;
+pub use crate::descriptor::allocator::GsDescriptorAllocator;
+pub use crate::descriptor::allocator::GsDescriptorDistributor;
+pub use crate::descriptor::GsDescriptorRepository;
 
-pub use descriptor::DescriptorSetConfig;
-pub use descriptor::DescriptorSet;
-pub use descriptor::GsDescBindingStage;
+pub use crate::descriptor::DescriptorSetConfig;
+pub use crate::descriptor::DescriptorSet;
+pub use crate::descriptor::GsDescBindingStage;

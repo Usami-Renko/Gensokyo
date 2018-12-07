@@ -1,10 +1,10 @@
 
 use ash::vk;
 
-use pipeline::state::blend::attachment::BlendAttachemnt;
-use pipeline::state::dynamic::DynamicableValue;
+use crate::pipeline::state::blend::attachment::BlendAttachemnt;
+use crate::pipeline::state::dynamic::DynamicableValue;
 
-use types::{ vkuint, vkfloat, VK_TRUE, VK_FALSE };
+use crate::types::{ vkuint, vkfloat, VK_TRUE, VK_FALSE };
 
 use std::ptr;
 
@@ -19,7 +19,7 @@ impl GsBlendPrefab {
 
     fn generate(&self) -> GsBlendState {
 
-        match *self {
+        match self {
             | GsBlendPrefab::Default => GsBlendState {
                 logic_op_enable: false,
                 logic_op: vk::LogicOp::COPY,

@@ -1,17 +1,18 @@
 
-use core::device::GsDevice;
-use core::physical::GsPhyDevice;
+use crate::core::device::GsDevice;
+use crate::core::physical::GsPhyDevice;
 
-use buffer::target::GsBuffer;
-use buffer::allocator::BufferAllocateInfos;
-use buffer::allocator::types::BufferMemoryTypeAbs;
+use crate::buffer::target::GsBuffer;
+use crate::buffer::allocator::BufferAllocateInfos;
+use crate::buffer::allocator::types::BufferMemoryTypeAbs;
 
-use memory::types::GsMemoryType;
-use memory::instance::GsBufferMemory;
-use memory::transfer::BufferDataUploader;
-use memory::{ AllocatorError, MemoryError };
+use crate::memory::types::GsMemoryType;
+use crate::memory::instance::GsBufferMemory;
+use crate::memory::transfer::BufferDataUploader;
+use crate::memory::{ AllocatorError, MemoryError };
 
-use types::vkbytes;
+use crate::types::vkbytes;
+
 use std::marker::PhantomData;
 
 pub struct GsBufferRepository<M> where M: BufferMemoryTypeAbs {
@@ -33,7 +34,7 @@ impl<M> GsBufferRepository<M> where M: BufferMemoryTypeAbs {
 
     pub(crate) fn store(phantom_type: PhantomData<M>, device: GsDevice, physical: GsPhyDevice, buffers: Vec<GsBuffer>, memory: GsBufferMemory, allocate_infos: BufferAllocateInfos) -> GsBufferRepository<M> {
 
-        use utils::memory::spaces_to_offsets;
+        use crate::utils::memory::spaces_to_offsets;
         let offsets = spaces_to_offsets(&allocate_infos.spaces);
 
         GsBufferRepository {

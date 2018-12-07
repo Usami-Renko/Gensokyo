@@ -14,8 +14,10 @@ use gsvk::buffer::instance::{ IndexBlockInfo, GsIndexBlock };
 use gsvk::buffer::allocator::types::BufferMemoryTypeAbs;
 use gsvk::memory::transfer::BufferDataUploader;
 
-use assets::model::GltfRawData;
-use assets::model::{ ModelGltfLoadingError, GltfAttributeMissing };
+use gsma::{ define_input, vertex_rate, data_size, vk_format, offset_of };
+
+use crate::assets::model::GltfRawData;
+use crate::assets::model::{ ModelGltfLoadingError, GltfAttributeMissing };
 
 pub(crate) struct GltfPrimitive {
 

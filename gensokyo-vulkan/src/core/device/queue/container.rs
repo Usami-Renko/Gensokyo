@@ -1,9 +1,9 @@
 
-use core::device::DeviceConfig;
-use core::device::queue::traits::GsQueueAbstract;
-use core::device::queue::{ GsQueue, QueueUsage, GsGraphicsQueue, GsPresentQueue, GsTransferQueue };
-use core::device::enums::DeviceQueueIdentifier;
-use core::error::LogicalDeviceError;
+use crate::core::device::DeviceConfig;
+use crate::core::device::queue::traits::GsQueueAbstract;
+use crate::core::device::queue::{ GsQueue, QueueUsage, GsGraphicsQueue, GsPresentQueue, GsTransferQueue };
+use crate::core::device::enums::DeviceQueueIdentifier;
+use crate::core::error::LogicalDeviceError;
 
 use std::rc::Rc;
 

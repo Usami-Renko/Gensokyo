@@ -1,7 +1,7 @@
 
 use ash::vk;
 
-use types::vkuint;
+use crate::types::vkuint;
 use std::ptr;
 
 #[derive(Default)]
@@ -20,7 +20,6 @@ impl GsVertexInputState {
             bindings, attributes,
         }
     }
-
 
     pub(crate) fn info(&self) -> vk::PipelineVertexInputStateCreateInfo {
 

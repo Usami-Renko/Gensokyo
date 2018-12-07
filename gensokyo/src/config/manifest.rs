@@ -1,7 +1,7 @@
 
-use toml;
+use toml::{ toml, toml_internal };
 
-pub(super) fn manifest_toml() -> toml::Value {
+pub(super) fn manifest_toml() -> ::toml::Value {
 
     toml! {
         [core]

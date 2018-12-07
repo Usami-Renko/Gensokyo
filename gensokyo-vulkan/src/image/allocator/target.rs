@@ -1,27 +1,27 @@
 
 use ash::vk;
 
-use core::device::GsDevice;
-use core::physical::GsPhyDevice;
+use crate::core::device::GsDevice;
+use crate::core::physical::GsPhyDevice;
 
-use image::target::{ GsImage, ImageDescInfo };
-use image::view::ImageViewDescInfo;
-use image::enums::ImageInstanceType;
-use image::traits::ImageCopiable;
-use image::utils::ImageCopyInfo;
-use image::storage::ImageStorageInfo;
-use image::instance::{ ImageBarrierBundleAbs, ImageInstanceInfoAbs, ImageInstanceInfoDesc };
-use image::instance::sample::{ SampleImageInfo, SampleImageBarrierBundle };
-use image::instance::depth::{ DepthStencilAttachmentInfo, DepSteImageBarrierBundle };
-use image::allocator::types::ImageMemoryTypeAbs;
-use image::allocator::distributor::GsImageDistributor;
-use image::error::ImageError;
+use crate::image::target::{ GsImage, ImageDescInfo };
+use crate::image::view::ImageViewDescInfo;
+use crate::image::enums::ImageInstanceType;
+use crate::image::traits::ImageCopiable;
+use crate::image::utils::ImageCopyInfo;
+use crate::image::storage::ImageStorageInfo;
+use crate::image::instance::{ ImageBarrierBundleAbs, ImageInstanceInfoAbs, ImageInstanceInfoDesc };
+use crate::image::instance::sample::{ SampleImageInfo, SampleImageBarrierBundle };
+use crate::image::instance::depth::{ DepthStencilAttachmentInfo, DepSteImageBarrierBundle };
+use crate::image::allocator::types::ImageMemoryTypeAbs;
+use crate::image::allocator::distributor::GsImageDistributor;
+use crate::image::error::ImageError;
 
-use memory::{ MemorySelector, MemoryDstEntity };
-use memory::transfer::DataCopyer;
-use memory::AllocatorError;
+use crate::memory::{ MemorySelector, MemoryDstEntity };
+use crate::memory::transfer::DataCopyer;
+use crate::memory::AllocatorError;
 
-use types::vkbytes;
+use crate::types::vkbytes;
 
 use std::collections::HashMap;
 use std::marker::PhantomData;
@@ -74,7 +74,7 @@ impl<M> GsImageAllocator<M> where M: ImageMemoryTypeAbs {
     fn append_image(&mut self, info: &mut impl ImageInstanceInfoAbs, storage: ImageStorageInfo) -> Result<(), AllocatorError> {
 
         let image = info.build_image(&self.device)?;
-        self.memory_selector.try(&image)?;
+        self.memory_selector.filter(&image)?;
 
         info.set_allocate_index(self.image_infos.len());
         self.image_infos.push(info.allocate_info(image, storage));
@@ -179,7 +179,7 @@ impl ImageCopiable for ImageAllocateInfo {
 
     fn copy_info(&self) -> ImageCopyInfo {
 
-        use image::utils::image_subrange_to_layers;
+        use crate::image::utils::image_subrange_to_layers;
         // The layout paramater is the destination layout after data copy.
         // This value should be vk::TransferDstOptimal.
         let subrange_layers = image_subrange_to_layers(&self.view_desc.subrange);

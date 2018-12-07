@@ -2,11 +2,13 @@
 use std::error::Error;
 use std::fmt;
 
-use buffer::BufferError;
-use image::ImageError;
-use command::CommandError;
-use descriptor::DescriptorError;
-use sync::SyncError;
+use gsma::impl_from_err;
+
+use crate::buffer::BufferError;
+use crate::image::ImageError;
+use crate::command::CommandError;
+use crate::descriptor::DescriptorError;
+use crate::sync::SyncError;
 
 #[derive(Debug, Clone, Eq, PartialEq)]
 pub enum AllocatorError {
@@ -34,12 +36,12 @@ impl fmt::Display for AllocatorError {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
 
         let description = match self {
-            | AllocatorError::Buffer(ref e)     => e.to_string(),
-            | AllocatorError::Memory(ref e)     => e.to_string(),
-            | AllocatorError::Command(ref e)    => e.to_string(),
-            | AllocatorError::Image(ref e)      => e.to_string(),
-            | AllocatorError::Sync(ref e)       => e.to_string(),
-            | AllocatorError::Descriptor(ref e) => e.to_string(),
+            | AllocatorError::Buffer(e)     => e.to_string(),
+            | AllocatorError::Memory(e)     => e.to_string(),
+            | AllocatorError::Command(e)    => e.to_string(),
+            | AllocatorError::Image(e)      => e.to_string(),
+            | AllocatorError::Sync(e)       => e.to_string(),
+            | AllocatorError::Descriptor(e) => e.to_string(),
             | AllocatorError::UnsupportBufferUsage => {
                 String::from("The type of buffer is not support on this allocator.")
             },

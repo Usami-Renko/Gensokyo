@@ -1,9 +1,9 @@
 
 use ash::vk;
 
-use pipeline::state::vertex_input::GsVertexInputState;
+use crate::pipeline::state::vertex_input::GsVertexInputState;
 
-use types::vkuint;
+use crate::types::vkuint;
 
 #[derive(Debug)]
 pub struct GsVertexInputBinding {

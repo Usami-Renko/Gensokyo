@@ -1,8 +1,8 @@
 
 use shaderc;
 
-use pipeline::shader::shaderc::options::GsShadercOptions;
-use pipeline::shader::shaderc::options::{ GsShaderOptimalLevel, GsShaderDebugPattern };
+use crate::pipeline::shader::shaderc::options::GsShadercOptions;
+use crate::pipeline::shader::shaderc::options::{ GsShaderOptimalLevel, GsShaderDebugPattern };
 
 pub struct VulkanShadercOptions {
 

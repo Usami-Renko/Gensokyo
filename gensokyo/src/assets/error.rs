@@ -2,7 +2,9 @@
 use std::fmt;
 use std::error::Error;
 
-use assets::model::ModelLoadingError;
+use gsma::impl_from_err;
+
+use crate::assets::model::ModelLoadingError;
 
 #[derive(Debug)]
 pub enum AssetsError {

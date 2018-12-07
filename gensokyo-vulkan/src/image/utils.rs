@@ -1,8 +1,8 @@
 
 use ash::vk;
 
-use image::traits::ImageHandleEntity;
-use types::vkDim3D;
+use crate::image::traits::ImageHandleEntity;
+use crate::types::vkDim3D;
 
 pub struct ImageCopyInfo {
 

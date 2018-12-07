@@ -1,12 +1,12 @@
 
 use ash::vk;
 
-use core::device::GsDevice;
+use crate::core::device::GsDevice;
 
-use descriptor::layout::{ GsDescriptorSetLayout, DescriptorSetLayoutInfo };
-use descriptor::entity::DescriptorSetEntity;
-use descriptor::binding::DescriptorBindingInfo;
-use descriptor::binding::{ DescriptorBufferBindableTarget, DescriptorImageBindableTarget };
+use crate::descriptor::layout::{ GsDescriptorSetLayout, DescriptorSetLayoutInfo };
+use crate::descriptor::entity::DescriptorSetEntity;
+use crate::descriptor::binding::DescriptorBindingInfo;
+use crate::descriptor::binding::{ DescriptorBufferBindableTarget, DescriptorImageBindableTarget };
 
 use std::slice::Iter;
 

@@ -1,7 +1,7 @@
 
-use pipeline::state::viewport::{ ViewportInfo, ScissorInfo };
-use pipeline::state::depth_stencil::DepthBoundInfo;
-use pipeline::state::rasterizer::DepthBiasInfo;
+use crate::pipeline::state::viewport::{ ViewportInfo, ScissorInfo };
+use crate::pipeline::state::depth_stencil::DepthBoundInfo;
+use crate::pipeline::state::rasterizer::DepthBiasInfo;
 
 pub type CmdViewportInfo   = ViewportInfo;
 pub type CmdScissorInfo    = ScissorInfo;

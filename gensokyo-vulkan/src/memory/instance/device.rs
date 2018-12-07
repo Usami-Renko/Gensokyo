@@ -1,21 +1,21 @@
 
-use core::device::GsDevice;
-use core::physical::GsPhyDevice;
+use crate::core::device::GsDevice;
+use crate::core::physical::GsPhyDevice;
 
-use buffer::BufferBlock;
-use buffer::allocator::BufferAllocateInfos;
+use crate::buffer::BufferBlock;
+use crate::buffer::allocator::BufferAllocateInfos;
 
-use memory::types::GsMemoryType;
-use memory::target::GsMemory;
-use memory::traits::{ GsMemoryAbstract, MemoryMappable };
-use memory::selector::MemorySelector;
-use memory::utils::MemoryWritePtr;
-use memory::instance::traits::{ GsImageMemoryAbs, GsBufferMemoryAbs };
-use memory::instance::staging::UploadStagingResource;
-use memory::transfer::MemoryDataDelegate;
-use memory::error::{ MemoryError, AllocatorError };
+use crate::memory::types::GsMemoryType;
+use crate::memory::target::GsMemory;
+use crate::memory::traits::{ GsMemoryAbstract, MemoryMappable };
+use crate::memory::selector::MemorySelector;
+use crate::memory::utils::MemoryWritePtr;
+use crate::memory::instance::traits::{ GsImageMemoryAbs, GsBufferMemoryAbs };
+use crate::memory::instance::staging::UploadStagingResource;
+use crate::memory::transfer::MemoryDataDelegate;
+use crate::memory::error::{ MemoryError, AllocatorError };
 
-use types::vkbytes;
+use crate::types::vkbytes;
 
 pub struct GsDeviceMemory {
 

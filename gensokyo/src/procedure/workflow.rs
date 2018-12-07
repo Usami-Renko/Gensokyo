@@ -2,13 +2,13 @@
 use gsvk::core::device::GsDevice;
 use gsvk::sync::{ GsFence, GsSemaphore };
 
-use procedure::env::ProgramEnv;
-use procedure::chain::ChainResource;
-use procedure::loader::AssetsLoader;
-use procedure::loops::RoutineFlow;
-use procedure::error::{ RuntimeError, ProcedureError };
+use crate::procedure::env::ProgramEnv;
+use crate::procedure::chain::ChainResource;
+use crate::procedure::loader::AssetsLoader;
+use crate::procedure::loops::RoutineFlow;
+use crate::procedure::error::{ RuntimeError, ProcedureError };
 
-use input::{ ActionNerve, SceneAction };
+use crate::input::{ ActionNerve, SceneAction };
 
 
 pub trait GraphicsRoutine {

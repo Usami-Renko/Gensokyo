@@ -1,19 +1,20 @@
 
-use ash;
 use ash::vk;
 use ash::version::DeviceV1_0;
 
-use core::device::GsDevice;
-use core::device::enums::{ DeviceQueueIdentifier, QueueRequestStrategy };
-use core::device::queue::{ GsQueueAbstract, GsGraphicsQueue, GsPresentQueue, GsTransferQueue, GsTransfer };
-use core::device::queue::{ GsQueue, QueueContainer, QueueSubmitBundle };
-use core::error::LogicalDeviceError;
+use gsma::collect_handle;
 
-use sync::GsFence;
-use descriptor::DescriptorWriteInfo;
-use sync::SyncError;
+use crate::core::device::GsDevice;
+use crate::core::device::enums::{ DeviceQueueIdentifier, QueueRequestStrategy };
+use crate::core::device::queue::{ GsQueueAbstract, GsGraphicsQueue, GsPresentQueue, GsTransferQueue, GsTransfer };
+use crate::core::device::queue::{ GsQueue, QueueContainer, QueueSubmitBundle };
+use crate::core::error::LogicalDeviceError;
 
-use types::{ vklint, vkuint };
+use crate::sync::GsFence;
+use crate::descriptor::DescriptorWriteInfo;
+use crate::sync::SyncError;
+
+use crate::types::{ vklint, vkuint };
 
 use std::rc::Rc;
 use std::ptr;

@@ -1,7 +1,7 @@
 
 use ash::vk;
 
-use pipeline::pass::subpass::AttachmentType;
+use crate::pipeline::pass::subpass::AttachmentType;
 
 #[derive(Debug, Clone, Copy, Eq, PartialEq)]
 pub enum RenderAttachementPrefab {

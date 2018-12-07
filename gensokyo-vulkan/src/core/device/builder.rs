@@ -1,35 +1,34 @@
 
-use ash;
 use ash::vk;
 use ash::version::{ InstanceV1_0, DeviceV1_0 };
 
-use core::instance::GsInstance;
-use core::physical::GsPhysicalDevice;
-use core::device::device::{ DeviceConfig, GsLogicalDevice };
-use core::device::enums::{ PrefabQueuePriority, DeviceQueueIdentifier, QueueRequestStrategy };
-use core::device::queue::{ GsQueue, QueueUsage, QueueContainer };
-use core::error::LogicalDeviceError;
+use crate::core::instance::GsInstance;
+use crate::core::physical::GsPhysicalDevice;
+use crate::core::device::device::{ DeviceConfig, GsLogicalDevice };
+use crate::core::device::enums::{ PrefabQueuePriority, DeviceQueueIdentifier, QueueRequestStrategy };
+use crate::core::device::queue::{ GsQueue, QueueUsage, QueueContainer };
+use crate::core::error::LogicalDeviceError;
 
-use utils::cast;
-use types::vkuint;
-use VERBOSE;
+use crate::utils::cast;
+use crate::types::vkuint;
+use crate::VERBOSE;
 
 use std::collections::HashMap;
 use std::rc::Rc;
 use std::ptr;
 
-pub struct LogicalDeviceBuilder<'a, 'b> {
+pub struct LogicalDeviceBuilder<'a> {
 
     instance: &'a GsInstance,
-    physical: &'b GsPhysicalDevice,
+    physical: &'a GsPhysicalDevice,
 
     queue_request: QueueRequestInfo,
     config: DeviceConfig,
 }
 
-impl<'a, 'b> LogicalDeviceBuilder<'a, 'b> {
+impl<'a> LogicalDeviceBuilder<'a> {
 
-    pub fn init(instance: &'a GsInstance, physical: &'b GsPhysicalDevice, config: &DeviceConfig) -> Result<LogicalDeviceBuilder<'a, 'b>, LogicalDeviceError> {
+    pub fn init(instance: &'a GsInstance, physical: &'a GsPhysicalDevice, config: &DeviceConfig) -> Result<LogicalDeviceBuilder<'a>, LogicalDeviceError> {
 
         let queue_request = QueueRequestInfo::new(physical, config.queue_request_strategy)?;
 

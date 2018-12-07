@@ -1,10 +1,10 @@
 
 use ash::vk;
 
-use image::target::GsImage;
-use command::IntoVKBarrier;
+use crate::image::target::GsImage;
+use crate::command::IntoVKBarrier;
 
-use types::vkuint;
+use crate::types::vkuint;
 
 use std::ptr;
 

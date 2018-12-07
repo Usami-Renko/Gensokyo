@@ -1,15 +1,15 @@
 
 use ash::vk;
 
-use image::view::GsImageView;
-use image::entity::ImageEntity;
-use image::traits::{ ImageInstance, ImageCopiable };
-use image::utils::ImageCopyInfo;
-use image::instance::ImageInstanceInfoDesc;
-use image::instance::depth::DepthStencilAttachmentInfo;
-use image::allocator::ImageAllocateInfo;
+use crate::image::view::GsImageView;
+use crate::image::entity::ImageEntity;
+use crate::image::traits::{ ImageInstance, ImageCopiable };
+use crate::image::utils::ImageCopyInfo;
+use crate::image::instance::ImageInstanceInfoDesc;
+use crate::image::instance::depth::DepthStencilAttachmentInfo;
+use crate::image::allocator::ImageAllocateInfo;
 
-use pipeline::pass::{ RenderAttachement, RenderAttachementPrefab };
+use crate::pipeline::pass::{ RenderAttachement, RenderAttachementPrefab };
 
 #[derive(Debug, Default)]
 pub struct GsDepthStencilAttachment {
@@ -42,7 +42,7 @@ impl ImageCopiable for GsDepthStencilAttachment {
 
     fn copy_info(&self) -> ImageCopyInfo {
 
-        use image::utils::image_subrange_to_layers;
+        use crate::image::utils::image_subrange_to_layers;
         let subrange_layers = image_subrange_to_layers(&self.desc.subrange);
 
         ImageCopyInfo::new(&self.entity, subrange_layers, self.desc.current_layout, self.desc.dimension)

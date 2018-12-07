@@ -1,17 +1,17 @@
 
 use ash::vk;
 
-use core::device::GsDevice;
+use crate::core::device::GsDevice;
 
-use image::target::{ GsImage, ImageDescInfo, ImagePropertyInfo, ImageSpecificInfo };
-use image::view::ImageViewDescInfo;
-use image::storage::{ ImageStorageInfo, ImageSource };
-use image::enums::{ ImageInstanceType, DepthStencilImageFormat };
-use image::instance::traits::{ GsImageDescAbs, GsImageViewDescAbs, ImageInstanceInfoAbs };
-use image::allocator::ImageAllocateInfo;
-use image::error::ImageError;
+use crate::image::target::{ GsImage, ImageDescInfo, ImagePropertyInfo, ImageSpecificInfo };
+use crate::image::view::ImageViewDescInfo;
+use crate::image::storage::{ ImageStorageInfo, ImageSource };
+use crate::image::enums::{ ImageInstanceType, DepthStencilImageFormat };
+use crate::image::instance::traits::{ GsImageDescAbs, GsImageViewDescAbs, ImageInstanceInfoAbs };
+use crate::image::allocator::ImageAllocateInfo;
+use crate::image::error::ImageError;
 
-use types::{ vkuint, vkDim2D, vkDim3D };
+use crate::types::{ vkuint, vkDim2D, vkDim3D };
 
 pub struct DepthStencilAttachmentInfo {
 

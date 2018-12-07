@@ -4,12 +4,12 @@ use toml;
 use gsvk::core::config::CoreConfig;
 use gsvk::pipeline::config::PipelineConfig;
 
-use config::manifest;
-use config::core::CoreConfigMirror;
-use config::window::{ WindowConfig, WindowConfigMirror };
-use config::pipeline::PipelineConfigMirror;
-use config::resources::{ ResourceConfig, ResourceConfigMirror };
-use config::error::ConfigError;
+use crate::config::manifest;
+use crate::config::core::CoreConfigMirror;
+use crate::config::window::{ WindowConfig, WindowConfigMirror };
+use crate::config::pipeline::PipelineConfigMirror;
+use crate::config::resources::{ ResourceConfig, ResourceConfigMirror };
+use crate::config::error::ConfigError;
 
 use std::env;
 use std::fs;

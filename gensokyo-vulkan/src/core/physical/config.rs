@@ -1,8 +1,8 @@
 
-use core::physical::extension::PhysicalExtensionConfig;
-use core::physical::family::PhysicalQueueFamilyConfig;
-use core::physical::features::PhysicalFeatureConfig;
-use core::physical::property::PhysicalPropertiesConfig;
+use crate::core::physical::extension::PhysicalExtensionConfig;
+use crate::core::physical::family::PhysicalQueueFamilyConfig;
+use crate::core::physical::features::PhysicalFeatureConfig;
+use crate::core::physical::property::PhysicalPropertiesConfig;
 
 pub(crate) trait PhysicalInspectProperty {
     type ConfigType;

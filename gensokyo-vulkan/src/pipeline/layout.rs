@@ -2,11 +2,11 @@
 use ash::vk;
 use ash::version::DeviceV1_0;
 
-use core::device::GsDevice;
-use pipeline::error::PipelineError;
+use crate::core::device::GsDevice;
+use crate::pipeline::error::PipelineError;
 
-use descriptor::GsDescriptorSetLayout;
-use types::vkuint;
+use crate::descriptor::GsDescriptorSetLayout;
+use crate::types::vkuint;
 
 use std::ptr;
 

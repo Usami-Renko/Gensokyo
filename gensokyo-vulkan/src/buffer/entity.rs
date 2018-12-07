@@ -1,10 +1,10 @@
 
 use ash::vk;
 
-use buffer::target::GsBuffer;
-use buffer::traits::{ BufferHandleEntity, BufferCopiable, BufferCopyInfo };
+use crate::buffer::target::GsBuffer;
+use crate::buffer::traits::{ BufferHandleEntity, BufferCopiable, BufferCopyInfo };
 
-use types::vkbytes;
+use crate::types::vkbytes;
 
 #[derive(Debug, Clone, Default)]
 pub struct BufferBlock {

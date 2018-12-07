@@ -1,7 +1,7 @@
 
 use ash::vk;
 
-use types::{ vkbytes, vkDim3D };
+use crate::types::{ vkbytes, vkDim3D };
 
 pub struct ImageStorageInfo {
 

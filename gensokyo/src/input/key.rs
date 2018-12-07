@@ -2,7 +2,7 @@
 use winit;
 use smallvec::SmallVec;
 
-use config::input::SIMULTANEOUS_KEY_COUNT;
+use crate::config::input::SIMULTANEOUS_KEY_COUNT;
 
 pub(crate) struct KeyHeap {
 

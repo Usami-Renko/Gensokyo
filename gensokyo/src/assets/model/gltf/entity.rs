@@ -11,13 +11,14 @@ use gsvk::command::GsCommandRecorder;
 use gsvk::memory::AllocatorError;
 
 use gsvk::types::vkuint;
+use gsma::{ define_input, vertex_rate, vk_format, offset_of };
 
-use assets::model::{ GltfResources, GltfRawData };
-use assets::model::GltfScene;
-use assets::model::GltfHierarchyAbstract;
-use assets::model::{ModelLoadingError, ModelGltfLoadingError };
+use crate::assets::model::{ GltfResources, GltfRawData };
+use crate::assets::model::GltfScene;
+use crate::assets::model::GltfHierarchyAbstract;
+use crate::assets::model::{ModelLoadingError, ModelGltfLoadingError };
 
-use toolkit::AllocatorKit;
+use crate::toolkit::AllocatorKit;
 
 use std::path::Path;
 

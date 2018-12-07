@@ -1,9 +1,9 @@
 
 use gltf;
 
-use assets::model::GltfPrimitive;
-use assets::model::GltfRawData;
-use assets::model::ModelGltfLoadingError;
+use crate::assets::model::GltfPrimitive;
+use crate::assets::model::GltfRawData;
+use crate::assets::model::ModelGltfLoadingError;
 
 pub(crate) struct GltfMesh {
 

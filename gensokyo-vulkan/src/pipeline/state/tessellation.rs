@@ -1,7 +1,7 @@
 
 use ash::vk;
 
-use types::vkuint;
+use crate::types::vkuint;
 
 use std::ptr;
 

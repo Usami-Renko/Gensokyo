@@ -13,7 +13,7 @@ pub enum TimePeriod {
 impl TimePeriod {
 
     pub fn vulkan_time(&self) -> vklint {
-        match *self {
+        match self {
             | TimePeriod::Immediate => 0,
             | TimePeriod::Time(time) =>
                 (time.subsec_nanos() as vklint) + time.as_secs() * 1_000_000_000,

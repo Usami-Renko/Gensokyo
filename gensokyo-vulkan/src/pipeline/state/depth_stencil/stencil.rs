@@ -1,9 +1,9 @@
 
 use ash::vk;
 
-use pipeline::state::dynamic::DynamicableValue;
+use crate::pipeline::state::dynamic::DynamicableValue;
 
-use types::{ vkuint, vkbool, VK_FALSE, VK_TRUE };
+use crate::types::{ vkuint, vkbool, VK_FALSE, VK_TRUE };
 
 pub struct StencilTest {
 

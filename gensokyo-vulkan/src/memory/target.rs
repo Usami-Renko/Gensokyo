@@ -1,13 +1,13 @@
 
 use ash::vk;
 
-use core::device::GsDevice;
 use ash::version::DeviceV1_0;
 
-use memory::selector::MemorySelector;
+use crate::core::device::GsDevice;
+use crate::memory::selector::MemorySelector;
 
-use memory::error::MemoryError;
-use types::{ vkuint, vkbytes };
+use crate::memory::error::MemoryError;
+use crate::types::{ vkuint, vkbytes };
 
 use std::ptr;
 

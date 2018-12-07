@@ -1,10 +1,10 @@
 
-pub use pipeline::graphics::GsGraphicsPipeline;
+pub use crate::pipeline::graphics::GsGraphicsPipeline;
 
-pub use pipeline::shader::GsShaderInfo;
-pub use pipeline::shader::{ VertexInputDescription, GsVertexInputAttribute, GsVertexInputBinding };
+pub use crate::pipeline::shader::GsShaderInfo;
+pub use crate::pipeline::shader::{ VertexInputDescription, GsVertexInputAttribute, GsVertexInputBinding };
 
-pub use pipeline::state::{
+pub use crate::pipeline::state::{
     vertex_input::GsVertexInputState,
     input_assembly::GsInputAssemblyState,
     viewport::{ GsViewportState, ViewportStateInfo, ViewportStateType },
@@ -15,4 +15,4 @@ pub use pipeline::state::{
     tessellation::GsTessellationState,
 };
 
-pub use pipeline::pass::SubpassStage;
+pub use crate::pipeline::pass::SubpassStage;

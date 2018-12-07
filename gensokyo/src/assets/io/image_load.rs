@@ -7,7 +7,7 @@ use image::GenericImageView;
 use gsvk::image::storage::{ ImageStorageInfo, ImageSource, ImageData };
 use gsvk::types::{ vkbytes, vkDim3D };
 
-use assets::error::{ IoError, AssetsError };
+use crate::assets::error::{ IoError, AssetsError };
 
 use std::path::Path;
 use std::mem;

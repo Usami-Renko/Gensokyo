@@ -1,7 +1,7 @@
 
 use gltf;
 
-use assets::model::GltfMesh;
+use crate::assets::model::GltfMesh;
 
 // The container of all the resources in Gltf.
 #[derive(Default)]

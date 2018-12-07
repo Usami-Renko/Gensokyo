@@ -1,13 +1,13 @@
 
 use ash::version::EntryV1_0;
 
-use core::instance::GsInstance;
-use core::debug::report::{ GsDebugReport, DebugReportConfig };
-use core::debug::utils::{ GsDebugUtils, DebugUtilsConfig };
-use core::error::{ InstanceError, ValidationError };
+use crate::core::instance::GsInstance;
+use crate::core::debug::report::{ GsDebugReport, DebugReportConfig };
+use crate::core::debug::utils::{ GsDebugUtils, DebugUtilsConfig };
+use crate::core::error::{ InstanceError, ValidationError };
 
-use VERBOSE;
-use utils::cast;
+use crate::VERBOSE;
+use crate::utils::cast;
 
 pub struct GsDebugger {
 
@@ -17,6 +17,13 @@ pub struct GsDebugger {
 pub trait DebugInstance {
 
     fn cleanup(&self);
+}
+
+pub enum DebugInstanceType {
+
+    DebugReport,
+    DebugUtils,
+    None,
 }
 
 pub struct ValidationConfig {
@@ -64,10 +71,7 @@ impl GsDebugger {
             }
         };
 
-        let debugger = GsDebugger {
-            target,
-        };
-
+        let debugger = GsDebugger { target };
         Ok(debugger)
     }
 
@@ -117,12 +121,4 @@ pub(crate) fn is_support_validation_layer(entry: &ash::Entry, required_validatio
     }
 
     Ok(true)
-}
-
-
-pub enum DebugInstanceType {
-
-    DebugReport,
-    DebugUtils,
-    None,
 }

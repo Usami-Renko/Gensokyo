@@ -2,12 +2,12 @@
 use ash::vk;
 use ash::version::DeviceV1_0;
 
-use core::device::GsDevice;
+use crate::core::device::GsDevice;
 
-use descriptor::binding::DescriptorBindingInfo;
-use descriptor::error::DescriptorError;
+use crate::descriptor::binding::DescriptorBindingInfo;
+use crate::descriptor::error::DescriptorError;
 
-use types::vkuint;
+use crate::types::vkuint;
 
 use std::ptr;
 

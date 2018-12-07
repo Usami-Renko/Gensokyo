@@ -1,11 +1,11 @@
 
-use core::device::GsDevice;
+use crate::core::device::GsDevice;
 
-use descriptor::{ GsDescriptorPool, GsDescriptorSet, DescriptorSetConfig };
+use crate::descriptor::{ GsDescriptorPool, GsDescriptorSet, DescriptorSetConfig };
 
-use descriptor::set::DescriptorSet;
-use descriptor::repository::GsDescriptorRepository;
-use descriptor::allocator::index::DescriptorSetIndex;
+use crate::descriptor::set::DescriptorSet;
+use crate::descriptor::repository::GsDescriptorRepository;
+use crate::descriptor::allocator::index::DescriptorSetIndex;
 
 pub struct GsDescriptorDistributor {
 

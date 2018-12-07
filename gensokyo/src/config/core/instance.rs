@@ -1,8 +1,8 @@
 
 use gsvk::core::instance::InstanceConfig;
 
-use config::engine::ConfigMirror;
-use config::error::ConfigError;
+use crate::config::engine::ConfigMirror;
+use crate::config::error::ConfigError;
 
 #[derive(Deserialize, Default)]
 pub struct InstanceConfigMirror {
@@ -16,7 +16,7 @@ impl ConfigMirror for InstanceConfigMirror {
 
     fn into_config(self) -> Result<Self::ConfigType, ConfigError> {
 
-        use utils::shortcuts::vk_to_version;
+        use crate::utils::shortcuts::vk_to_version;
 
         let config = InstanceConfig {
 

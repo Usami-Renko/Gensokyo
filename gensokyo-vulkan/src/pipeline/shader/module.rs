@@ -2,10 +2,10 @@
 use ash::vk;
 use ash::version::DeviceV1_0;
 
-use core::device::GsDevice;
+use crate::core::device::GsDevice;
 
-use pipeline::shader::shaderc::GsShaderCompiler;
-use pipeline::error::{ ShaderError, PipelineError };
+use crate::pipeline::shader::shaderc::GsShaderCompiler;
+use crate::pipeline::error::{ ShaderError, PipelineError };
 
 use std::path::{ Path, PathBuf };
 use std::ffi::CString;
@@ -60,7 +60,7 @@ impl GsShaderInfo {
 
     pub fn build(&self, device: &GsDevice, compiler: &mut GsShaderCompiler) -> Result<GsShaderModule, PipelineError> {
 
-        use pipeline::shader::shaderc::cast_shaderc_kind;
+        use crate::pipeline::shader::shaderc::cast_shaderc_kind;
 
         let codes = match self.pattern {
             | ShaderSourcePattern::SourceCode => {

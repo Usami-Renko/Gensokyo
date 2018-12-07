@@ -2,12 +2,12 @@
 use ash::vk;
 use ash::version::InstanceV1_0;
 
-use core::instance::GsInstance;
-use core::surface::GsSurface;
-use core::physical::config::PhysicalInspectProperty;
-use core::error::PhysicalDeviceError;
+use crate::core::instance::GsInstance;
+use crate::core::surface::GsSurface;
+use crate::core::physical::config::PhysicalInspectProperty;
+use crate::core::error::PhysicalDeviceError;
 
-use types::vkuint;
+use crate::types::vkuint;
 
 #[derive(Debug, Clone)]
 pub struct QueueFamilyIndices {

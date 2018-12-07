@@ -4,12 +4,12 @@ use ash::vk;
 
 use num::clamp;
 
-use core::surface::GsSurface;
-use core::swapchain::SwapchainConfig;
-use core::swapchain::error::SwapchainInitError;
-use core::error::SurfaceError;
+use crate::core::surface::GsSurface;
+use crate::core::swapchain::SwapchainConfig;
+use crate::core::swapchain::error::SwapchainInitError;
+use crate::core::error::SurfaceError;
 
-use types::{ vkDim2D, vkuint };
+use crate::types::{ vkDim2D, vkuint };
 
 pub struct SwapchainSupport {
 

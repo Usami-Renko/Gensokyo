@@ -1,7 +1,7 @@
 
 use ash::vk;
 
-use types::{ VK_TRUE, VK_FALSE };
+use crate::types::{ VK_TRUE, VK_FALSE };
 use std::ptr;
 
 pub struct GsInputAssemblyState {

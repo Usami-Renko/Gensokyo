@@ -1,5 +1,5 @@
 
-use types::vkchar;
+use crate::types::vkchar;
 
 use std::ffi::{ CStr, CString };
 

@@ -1,7 +1,7 @@
 
 use ash::vk;
 
-use command::IntoVKBarrier;
+use crate::command::IntoVKBarrier;
 
 #[allow(dead_code)]
 struct GsBufferBarrier {

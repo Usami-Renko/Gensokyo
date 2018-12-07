@@ -1,17 +1,18 @@
 
-use core::device::GsDevice;
-use core::physical::GsPhyDevice;
+use crate::core::device::GsDevice;
+use crate::core::physical::GsPhyDevice;
 
-use buffer::{ GsBuffer, BufferBlock };
-use buffer::allocator::BufferBlockIndex;
-use buffer::allocator::memory::BufferAllocateInfos;
-use buffer::allocator::types::BufferMemoryTypeAbs;
-use buffer::instance::{ GsVertexBlock, GsIndexBlock, GsUniformBlock, GsImgsrcBlock };
-use buffer::repository::GsBufferRepository;
-use memory::instance::GsBufferMemory;
-use memory::AllocatorError;
+use crate::buffer::{ GsBuffer, BufferBlock };
+use crate::buffer::allocator::BufferBlockIndex;
+use crate::buffer::allocator::memory::BufferAllocateInfos;
+use crate::buffer::allocator::types::BufferMemoryTypeAbs;
+use crate::buffer::instance::{ GsVertexBlock, GsIndexBlock, GsUniformBlock, GsImgsrcBlock };
+use crate::buffer::repository::GsBufferRepository;
+use crate::memory::instance::GsBufferMemory;
+use crate::memory::AllocatorError;
 
-use types::vkbytes;
+use crate::types::vkbytes;
+
 use std::marker::PhantomData;
 
 pub struct GsBufferDistributor<M> where M: BufferMemoryTypeAbs {
@@ -33,7 +34,7 @@ impl<M> GsBufferDistributor<M> where M: BufferMemoryTypeAbs {
 
     pub(super) fn new(phantom_type: PhantomData<M>, device: GsDevice, physical: GsPhyDevice, memory: GsBufferMemory, buffers: Vec<GsBuffer>, spaces: Vec<vkbytes>, allot_infos: BufferAllocateInfos) -> GsBufferDistributor<M> {
 
-        use utils::memory::spaces_to_offsets;
+        use crate::utils::memory::spaces_to_offsets;
         let offsets = spaces_to_offsets(&spaces);
 
         GsBufferDistributor {

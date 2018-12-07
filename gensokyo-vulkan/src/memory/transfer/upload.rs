@@ -1,14 +1,14 @@
 
-use core::device::GsDevice;
-use core::physical::GsPhyDevice;
+use crate::core::device::GsDevice;
+use crate::core::physical::GsPhyDevice;
 
-use buffer::{ BufferBlock, BufferInstance };
-use buffer::allocator::BufferAllocateInfos;
-use buffer::allocator::types::BufferMemoryTypeAbs;
+use crate::buffer::{ BufferBlock, BufferInstance };
+use crate::buffer::allocator::BufferAllocateInfos;
+use crate::buffer::allocator::types::BufferMemoryTypeAbs;
 
-use memory::instance::GsBufferMemory;
-use memory::utils::MemoryWritePtr;
-use memory::error::{ MemoryError, AllocatorError };
+use crate::memory::instance::GsBufferMemory;
+use crate::memory::utils::MemoryWritePtr;
+use crate::memory::error::{ MemoryError, AllocatorError };
 
 use std::marker::PhantomData;
 

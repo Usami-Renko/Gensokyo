@@ -2,11 +2,11 @@
 use ash::vk;
 use ash::version::DeviceV1_0;
 
-use core::device::GsDevice;
+use crate::core::device::GsDevice;
 
-use pipeline::layout::GsPipelineLayout;
-use pipeline::pass::GsRenderPass;
-use pipeline::error::PipelineError;
+use crate::pipeline::layout::GsPipelineLayout;
+use crate::pipeline::pass::GsRenderPass;
+use crate::pipeline::error::PipelineError;
 
 pub struct GsGraphicsPipeline {
 

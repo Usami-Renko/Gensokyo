@@ -1,15 +1,15 @@
 
-use core::device::GsDevice;
+use crate::core::device::GsDevice;
 
-use buffer::target::BufferDescInfo;
-use buffer::allocator::types::BufferMemoryTypeAbs;
+use crate::buffer::target::BufferDescInfo;
+use crate::buffer::allocator::types::BufferMemoryTypeAbs;
 
-use memory::types::GsMemoryType;
-use memory::{ GsMemoryAbstract, MemoryMappable, MemorySelector };
-use memory::instance::{ GsBufferMemory, GsHostMemory, GsCachedMemory, GsDeviceMemory, GsStagingMemory };
-use memory::MemoryError;
+use crate::memory::types::GsMemoryType;
+use crate::memory::{ GsMemoryAbstract, MemoryMappable, MemorySelector };
+use crate::memory::instance::{ GsBufferMemory, GsHostMemory, GsCachedMemory, GsDeviceMemory, GsStagingMemory };
+use crate::memory::MemoryError;
 
-use types::vkbytes;
+use crate::types::vkbytes;
 
 #[derive(Default)]
 pub struct BufferAllocateInfos {

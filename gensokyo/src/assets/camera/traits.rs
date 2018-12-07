@@ -1,6 +1,7 @@
 
 use cgmath::{ Matrix4, Point3, Vector3, SquareMatrix, InnerSpace };
-use input::ActionNerve;
+
+use crate::input::ActionNerve;
 
 pub trait GsCameraAbstract {
 

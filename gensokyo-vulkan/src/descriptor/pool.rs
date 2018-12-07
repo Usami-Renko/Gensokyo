@@ -2,14 +2,16 @@
 use ash::vk;
 use ash::version::DeviceV1_0;
 
-use core::device::GsDevice;
+use gsma::collect_handle;
 
-use descriptor::set::GsDescriptorSet;
-use descriptor::layout::GsDescriptorSetLayout;
-use descriptor::types::GsDescriptorType;
-use descriptor::error::DescriptorError;
+use crate::core::device::GsDevice;
 
-use types::vkuint;
+use crate::descriptor::set::GsDescriptorSet;
+use crate::descriptor::layout::GsDescriptorSetLayout;
+use crate::descriptor::types::GsDescriptorType;
+use crate::descriptor::error::DescriptorError;
+
+use crate::types::vkuint;
 
 use std::ptr;
 

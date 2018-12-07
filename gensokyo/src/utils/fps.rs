@@ -1,7 +1,7 @@
 
 use std::time::Instant;
 
-use config::utils::{ FPS_SAMPLE_COUNT, FPS_SAMPLE_COUNT_FLOAT, DEFAULT_PREFER_FPS };
+use crate::config::utils::{ FPS_SAMPLE_COUNT, FPS_SAMPLE_COUNT_FLOAT, DEFAULT_PREFER_FPS };
 
 pub struct GsFpsTimer {
 

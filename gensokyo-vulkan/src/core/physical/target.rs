@@ -2,11 +2,11 @@
 use ash::vk;
 use ash::version::InstanceV1_0;
 
-use core::instance::GsInstance;
-use core::physical::family::PhysicalQueueFamilies;
-use core::physical::features::PhyscialFeatures;
-use core::physical::extension::PhysicalExtension;
-use core::physical::memory::PhysicalMemory;
+use crate::core::instance::GsInstance;
+use crate::core::physical::family::PhysicalQueueFamilies;
+use crate::core::physical::features::PhyscialFeatures;
+use crate::core::physical::extension::PhysicalExtension;
+use crate::core::physical::memory::PhysicalMemory;
 
 pub struct GsPhysicalDevice {
 

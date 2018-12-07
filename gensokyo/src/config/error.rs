@@ -3,7 +3,8 @@ use toml::de::Error as TomlError;
 use std::fmt;
 use std::error::Error;
 
-/// possible error may occur during the creation of vk::Instance.
+use gsma::impl_from_err;
+
 #[derive(Debug, Clone)]
 pub enum ConfigError {
 

@@ -1,12 +1,12 @@
 
-use core::device::GsDevice;
+use crate::core::device::GsDevice;
 
-use types::vkbytes;
+use crate::types::vkbytes;
 
-use memory::{ GsMemoryAbstract, MemorySelector };
-use memory::types::{ GsMemoryType, Device, Cached };
-use memory::instance::{ GsImageMemory, GsCachedMemory, GsDeviceMemory };
-use memory::MemoryError;
+use crate::memory::{ GsMemoryAbstract, MemorySelector };
+use crate::memory::types::{ GsMemoryType, Device, Cached };
+use crate::memory::instance::{ GsImageMemory, GsCachedMemory, GsDeviceMemory };
+use crate::memory::MemoryError;
 
 pub trait ImageMemoryTypeAbs: Copy {
     const MEMORY_TYPE: GsMemoryType;

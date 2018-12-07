@@ -1,14 +1,13 @@
 
-use ash;
 use ash::vk;
 
 use winit;
 
-use core::instance::GsInstance;
-use core::platforms;
-use core::error::SurfaceError;
+use crate::core::instance::GsInstance;
+use crate::core::platforms;
+use crate::core::error::SurfaceError;
 
-use types::vkuint;
+use crate::types::vkuint;
 
 /// Wrapper class for `vk::Surface`.
 pub struct GsSurface {

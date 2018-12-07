@@ -22,8 +22,8 @@ pub(super) struct PipelineStates {
     pub dynamic       : self::dynamic::GsDynamicState,
 }
 
-use pipeline::shader::VertexInputDescription;
-use types::vkDim2D;
+use crate::pipeline::shader::VertexInputDescription;
+use crate::types::vkDim2D;
 
 impl PipelineStates {
 

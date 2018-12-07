@@ -1,7 +1,9 @@
 
+use ash::vk_make_version;
+
 use gsvk::types::vkuint;
 
-use config::error::ConfigError;
+use crate::config::error::ConfigError;
 
 pub fn vk_to_version(raw_version: &String) -> Result<vkuint, ConfigError> {
 

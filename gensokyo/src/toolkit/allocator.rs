@@ -1,7 +1,7 @@
 
 use ash::vk;
 
-use config::resources::ResourceConfig;
+use crate::config::resources::ResourceConfig;
 
 use gsvk::core::physical::GsPhyDevice;
 use gsvk::core::device::GsDevice;
@@ -17,8 +17,8 @@ use gsvk::descriptor::allocator::GsDescriptorAllocator;
 
 use gsvk::types::vkDim2D;
 
-use assets::io::ImageLoader;
-use assets::model::ModelGltfLoader;
+use crate::assets::io::ImageLoader;
+use crate::assets::model::ModelGltfLoader;
 
 pub struct AllocatorKit {
 

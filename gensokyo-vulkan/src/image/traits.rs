@@ -1,7 +1,7 @@
 
 use ash::vk;
 
-use image::utils::ImageCopyInfo;
+use crate::image::utils::ImageCopyInfo;
 
 pub trait ImageHandleEntity where Self: Sized {
 

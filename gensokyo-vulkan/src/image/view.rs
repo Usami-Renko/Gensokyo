@@ -2,9 +2,9 @@
 use ash::vk;
 use ash::version::DeviceV1_0;
 
-use core::device::GsDevice;
-use image::target::{ GsImage, ImageSpecificInfo };
-use image::error::ImageError;
+use crate::core::device::GsDevice;
+use crate::image::target::{ GsImage, ImageSpecificInfo };
+use crate::image::error::ImageError;
 
 use std::ptr;
 

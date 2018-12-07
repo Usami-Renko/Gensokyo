@@ -2,8 +2,8 @@
 use ash::vk;
 use ash::version::InstanceV1_0;
 
-use core::instance::GsInstance;
-use types::vkuint;
+use crate::core::instance::GsInstance;
+use crate::types::vkuint;
 
 pub(crate) struct PhysicalMemory {
 

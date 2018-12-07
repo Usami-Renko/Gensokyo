@@ -3,11 +3,11 @@ use cgmath;
 use cgmath::{ Matrix4, Vector3, Point3, InnerSpace, Zero, Deg };
 use num;
 
-use input::ActionNerve;
-use input::GsKeycode;
+use crate::input::ActionNerve;
+use crate::input::GsKeycode;
 
-use config::utils;
-use assets::camera::traits::GsCameraAbstract;
+use crate::config::utils;
+use crate::assets::camera::traits::GsCameraAbstract;
 
 pub struct GsFlightCamera {
 

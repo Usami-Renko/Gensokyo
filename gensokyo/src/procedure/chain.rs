@@ -1,9 +1,9 @@
 
-use config::resources::ResourceConfig;
+use crate::config::resources::ResourceConfig;
 
-use procedure::env::{ ProgramEnv, VulkanEnv };
-use procedure::loader::AssetsLoader;
-use procedure::error::ProcedureError;
+use crate::procedure::env::{ ProgramEnv, VulkanEnv };
+use crate::procedure::loader::AssetsLoader;
+use crate::procedure::error::ProcedureError;
 
 use gsvk::core::device::{ GsDevice, DeviceQueueIdentifier };
 use gsvk::core::swapchain::{ GsChain, SwapchainConfig };
@@ -11,7 +11,7 @@ use gsvk::core::swapchain::error::{ SwapchainError, SwapchainRuntimeError };
 use gsvk::sync::{ GsSemaphore, GsFence, SyncError };
 use gsvk::types::vkuint;
 
-use utils::time::TimePeriod;
+use crate::utils::time::TimePeriod;
 
 pub(super) struct ChainResource {
 

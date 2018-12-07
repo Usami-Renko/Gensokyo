@@ -1,7 +1,8 @@
 
 use winit;
 
-use config::window::WindowConfig;
+use crate::config::window::WindowConfig;
+
 use gsvk::types::vkDim2D;
 
 pub(crate) struct WindowInfo {

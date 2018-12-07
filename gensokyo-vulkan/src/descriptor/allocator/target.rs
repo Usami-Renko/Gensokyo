@@ -1,16 +1,16 @@
 
 use ash::vk;
 
-use core::device::GsDevice;
+use crate::core::device::GsDevice;
 
-use descriptor::DescriptorSetConfig;
-use descriptor::DescriptorPoolInfo;
-use descriptor::GsDescriptorType;
-use descriptor::allocator::index::DescriptorSetIndex;
-use descriptor::allocator::distributor::GsDescriptorDistributor;
+use crate::descriptor::DescriptorSetConfig;
+use crate::descriptor::DescriptorPoolInfo;
+use crate::descriptor::GsDescriptorType;
+use crate::descriptor::allocator::index::DescriptorSetIndex;
+use crate::descriptor::allocator::distributor::GsDescriptorDistributor;
 
-use memory::AllocatorError;
-use types::vkuint;
+use crate::memory::AllocatorError;
+use crate::types::vkuint;
 
 use std::collections::HashMap;
 

@@ -1,7 +1,7 @@
 
 use ash::vk;
 
-use types::{ vkbool, VK_TRUE, VK_FALSE };
+use crate::types::{ vkbool, VK_TRUE, VK_FALSE };
 
 #[derive(Debug, Clone, Copy, Eq, PartialEq)]
 pub enum BlendAttachmentPrefab {

@@ -2,10 +2,10 @@
 use ash::vk;
 use ash::version::DeviceV1_0;
 
-use core::device::GsDevice;
+use crate::core::device::GsDevice;
 
-use pipeline::pass::framebuffer::GsFramebuffer;
-use types::{ vkuint, vkDim2D };
+use crate::pipeline::pass::framebuffer::GsFramebuffer;
+use crate::types::{ vkuint, vkDim2D };
 
 use std::ptr;
 

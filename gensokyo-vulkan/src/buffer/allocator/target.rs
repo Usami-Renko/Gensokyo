@@ -1,20 +1,20 @@
 
-use core::device::GsDevice;
-use core::physical::GsPhyDevice;
+use crate::core::device::GsDevice;
+use crate::core::physical::GsPhyDevice;
 
-use buffer::target::GsBuffer;
-use buffer::traits::BufferBlockInfo;
-use buffer::instance::BufferInstanceType;
-use buffer::error::BufferError;
-use memory::{ MemorySelector, MemoryDstEntity };
-use memory::AllocatorError;
+use crate::buffer::target::GsBuffer;
+use crate::buffer::traits::BufferBlockInfo;
+use crate::buffer::instance::BufferInstanceType;
+use crate::buffer::error::BufferError;
+use crate::memory::{ MemorySelector, MemoryDstEntity };
+use crate::memory::AllocatorError;
 
-use buffer::allocator::index::BufferBlockIndex;
-use buffer::allocator::types::BufferMemoryTypeAbs;
-use buffer::allocator::memory::{ BufferAllocateInfos, BufMemAllocator };
-use buffer::allocator::distributor::GsBufferDistributor;
+use crate::buffer::allocator::index::BufferBlockIndex;
+use crate::buffer::allocator::types::BufferMemoryTypeAbs;
+use crate::buffer::allocator::memory::{ BufferAllocateInfos, BufMemAllocator };
+use crate::buffer::allocator::distributor::GsBufferDistributor;
 
-use types::vkbytes;
+use crate::types::vkbytes;
 
 use std::marker::PhantomData;
 
@@ -75,7 +75,7 @@ impl<M> GsBufferAllocator<M> where M: BufferMemoryTypeAbs {
         }
 
         let buffer = info.as_desc_ref().build(&self.device, self.storage_type, None)?;
-        self.memory_selector.try(&buffer)?;
+        self.memory_selector.filter(&buffer)?;
 
         Ok(buffer)
     }

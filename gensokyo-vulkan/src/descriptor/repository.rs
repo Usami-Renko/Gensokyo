@@ -1,8 +1,8 @@
 
-use core::device::GsDevice;
+use crate::core::device::GsDevice;
 
-use descriptor::GsDescriptorPool;
-use descriptor::GsDescriptorSet;
+use crate::descriptor::GsDescriptorPool;
+use crate::descriptor::GsDescriptorSet;
 
 pub struct GsDescriptorRepository {
 

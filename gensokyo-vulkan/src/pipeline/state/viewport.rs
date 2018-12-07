@@ -1,7 +1,7 @@
 
 use ash::vk;
 
-use types::{ vkuint, vksint, vkfloat, vkDim2D };
+use crate::types::{ vkuint, vksint, vkfloat, vkDim2D };
 use std::ptr;
 
 pub struct GsViewportState {

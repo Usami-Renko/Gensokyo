@@ -1,6 +1,7 @@
 
 [package]
-name = "gensokyo-macros"
-version = "0.1.0"
-authors = ["usami-renko <usami-ssc@protonmail.com>"]
+name        = "gensokyo-macros"
+version     = "0.1.0"
+authors     = ["usami-renko <usami-ssc@protonmail.com>"]
+edition     = "2018"
 description = "Practical macros for gensokyo and application."
