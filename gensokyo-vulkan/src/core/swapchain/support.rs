@@ -37,7 +37,7 @@ impl SwapchainSupport {
 
         const SPECIAL_EXTEND: vkuint = 0xFFFF_FFFF;
 
-        let optimal_extent = if self.capabilities.current_extent.width  == SPECIAL_EXTEND &&
+        let optimal_extent = if self.capabilities.current_extent.width == SPECIAL_EXTEND &&
             self.capabilities.current_extent.height == SPECIAL_EXTEND {
 
             let window_size = window.get_inner_size()
@@ -45,12 +45,12 @@ impl SwapchainSupport {
 
             vkDim2D {
                 width: clamp(
-                    window_size.width as vkuint,
+                    window_size.width as _,
                     self.capabilities.min_image_extent.width,
                     self.capabilities.max_image_extent.width
                 ),
                 height: clamp(
-                    window_size.height as vkuint,
+                    window_size.height as _,
                     self.capabilities.min_image_extent.height,
                     self.capabilities.max_image_extent.height,
                 )
@@ -85,9 +85,9 @@ impl SwapchainSupport {
 
     pub fn optimal_present_mode(&self) -> vk::PresentModeKHR {
 
-        if self.present_modes.iter().find(|&mode| *mode == self.config.prefer_primary_present_mode).is_some() {
+        if self.present_modes.contains(&self.config.prefer_primary_present_mode) {
             self.config.prefer_primary_present_mode
-        } else if self.present_modes.iter().find(|&mode| *mode == self.config.prefer_secondary_present_mode).is_some() {
+        } else if self.present_modes.contains(&self.config.prefer_secondary_present_mode) {
             self.config.prefer_secondary_present_mode
         } else {
             self.present_modes[0]

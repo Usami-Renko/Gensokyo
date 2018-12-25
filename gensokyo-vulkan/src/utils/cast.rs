@@ -4,7 +4,7 @@ use crate::types::vkchar;
 use std::ffi::{ CStr, CString };
 
 /// Helper function to convert [c_char; SIZE] to string
-pub fn vk_to_string(raw_string_array: &[vkchar]) -> String {
+pub fn chars2string(raw_string_array: &[vkchar]) -> String {
 
     // Implementation 1
 //    let end = '\0' as u8;
@@ -34,7 +34,7 @@ pub fn vk_to_string(raw_string_array: &[vkchar]) -> String {
         .to_owned()
 }
 
-pub fn vk_to_cstring(raw_string_array: &[vkchar]) -> CString {
+pub fn chars2cstring(raw_string_array: &[vkchar]) -> CString {
 
     let raw_string = unsafe {
         let pointer = raw_string_array.as_ptr();
@@ -44,8 +44,13 @@ pub fn vk_to_cstring(raw_string_array: &[vkchar]) -> CString {
     raw_string.to_owned()
 }
 
-// TODO: Remove this function.
-pub fn to_array_ptr(raw_string_array: &[CString]) -> Vec<*const vkchar> {
+pub fn string2cstring(content: Option<&String>) -> Option<CString> {
+    content.and_then({
+        |c| CString::new(c.clone()).ok()
+    })
+}
+
+pub fn cstrings2ptrs(raw_string_array: &[CString]) -> Vec<*const vkchar> {
 
     raw_string_array.iter()
         .map(|l| l.as_ptr()).collect()

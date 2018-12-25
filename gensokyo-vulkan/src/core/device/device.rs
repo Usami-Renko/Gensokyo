@@ -6,24 +6,20 @@ use gsma::collect_handle;
 
 use crate::core::device::GsDevice;
 use crate::core::device::enums::{ DeviceQueueIdentifier, QueueRequestStrategy };
-use crate::core::device::queue::{ GsQueueAbstract, GsGraphicsQueue, GsPresentQueue, GsTransferQueue, GsTransfer };
-use crate::core::device::queue::{ GsQueue, QueueContainer, QueueSubmitBundle };
+use crate::core::device::queue::{ GsGraphicsQueue, GsPresentQueue, GsTransferQueue, GsTransfer };
+use crate::core::device::queue::{ GsQueue, QueueSubmitBundle };
 use crate::core::error::LogicalDeviceError;
 
-use crate::sync::GsFence;
 use crate::descriptor::DescriptorWriteInfo;
-use crate::sync::SyncError;
+use crate::sync::{ GsFence, SyncError };
 
-use crate::types::{ vklint, vkuint };
+use crate::types::vklint;
 
-use std::rc::Rc;
 use std::ptr;
 
 pub struct GsLogicalDevice {
 
     pub(crate) handle: ash::Device,
-
-    queue_container: QueueContainer,
 
     graphics_queue: GsGraphicsQueue,
     present_queue : GsPresentQueue,
@@ -32,11 +28,10 @@ pub struct GsLogicalDevice {
 
 impl GsLogicalDevice {
 
-    pub(super) fn new(handle: ash::Device, container: QueueContainer, graphics: GsGraphicsQueue, present: GsPresentQueue, transfer: GsTransferQueue) -> GsLogicalDevice {
+    pub(super) fn new(handle: ash::Device, graphics: GsGraphicsQueue, present: GsPresentQueue, transfer: GsTransferQueue) -> GsLogicalDevice {
 
         GsLogicalDevice {
             handle,
-            queue_container: container,
             graphics_queue: graphics,
             present_queue : present,
             transfer_queue: transfer,
@@ -89,15 +84,15 @@ impl GsLogicalDevice {
                 s_type: vk::StructureType::SUBMIT_INFO,
                 p_next: ptr::null(),
                 // an array of semaphores upon which to wait before the command buffers for this batch begin execution.
-                wait_semaphore_count   : wait_semaphores.len() as vkuint,
+                wait_semaphore_count   : wait_semaphores.len() as _,
                 p_wait_semaphores      : wait_semaphores.as_ptr(),
                 // an array of pipeline stages at which each corresponding semaphore wait will occur.
                 p_wait_dst_stage_mask  : bundle.wait_stages.as_ptr(),
                 // an array of command buffers to execute in the batch.
-                command_buffer_count   : commands.len() as vkuint,
+                command_buffer_count   : commands.len() as _,
                 p_command_buffers      : commands.as_ptr(),
                 // an array of semaphores which will be signaled when the command buffers for this batch have completed execution.
-                signal_semaphore_count : sign_semaphores.len() as vkuint,
+                signal_semaphore_count : sign_semaphores.len() as _,
                 p_signal_semaphores    : sign_semaphores.as_ptr(),
             };
 
@@ -124,25 +119,22 @@ impl GsLogicalDevice {
         }
     }
 
-    pub fn cleanup(&self) {
+    pub fn destroy(&self) {
 
         unsafe {
-            self.graphics_queue.cleanup(self);
-            self.present_queue.cleanup(self);
-            self.transfer_queue.cleanup(self);
+            self.graphics_queue.destroy();
+            self.present_queue.destroy();
+            self.transfer_queue.destroy(self);
 
             self.handle.destroy_device(None);
         }
     }
 
-    pub fn queue_handle_by_identifier(&self, identifier: DeviceQueueIdentifier) -> &Rc<GsQueue> {
+    pub fn queue_handle_by_identifier(&self, identifier: DeviceQueueIdentifier) -> &GsQueue {
         match identifier {
             | DeviceQueueIdentifier::Graphics => &self.graphics_queue.queue(),
             | DeviceQueueIdentifier::Present  => &self.present_queue.queue(),
             | DeviceQueueIdentifier::Transfer => &self.transfer_queue.queue(),
-            | DeviceQueueIdentifier::Custom { identifier, queue_index } => {
-                self.queue_container.queue(*identifier, queue_index)
-            },
         }
     }
 

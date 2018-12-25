@@ -7,7 +7,7 @@ use crate::memory::types::GsMemoryType;
 use crate::memory::traits::MemoryDstEntity;
 use crate::memory::error::MemoryError;
 
-pub struct MemorySelector {
+pub struct MemoryFilter {
 
     physical: GsPhyDevice,
     /// The index of memory type that available to use.
@@ -17,13 +17,13 @@ pub struct MemorySelector {
     memory_flag: vk::MemoryPropertyFlags,
 }
 
-impl MemorySelector {
+impl MemoryFilter {
 
-    pub fn init(physical: &GsPhyDevice, dst_memory: GsMemoryType) -> MemorySelector {
+    pub fn new(physical: &GsPhyDevice, dst_memory: GsMemoryType) -> MemoryFilter {
 
         let memory_flag = dst_memory.property_flags();
 
-        MemorySelector {
+        MemoryFilter {
             physical: physical.clone(),
             candidate_memories: vec![],
             dst_memory,

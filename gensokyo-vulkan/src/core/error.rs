@@ -11,6 +11,7 @@ use crate::command::CommandError;
 pub enum InstanceError {
 
     EntryCreationError,
+    InvalidNameCastingError,
     ValidationLayerNotSupportError,
     InstanceCreationError,
     LayerPropertiesEnumerateError,
@@ -23,6 +24,7 @@ impl fmt::Display for InstanceError {
 
         let description = match self {
             | InstanceError::EntryCreationError             => "Failed to create Entry Object.",
+            | InstanceError::InvalidNameCastingError        => "Error occur during name casting.",
             | InstanceError::ValidationLayerNotSupportError => "Validation Layer is not support.",
             | InstanceError::InstanceCreationError          => "Failed to create Instance Object.",
             | InstanceError::LayerPropertiesEnumerateError  => "Failed to enumerate Instance Layer Properties.",
@@ -66,7 +68,6 @@ pub enum PhysicalDeviceError {
     PresentQueueNotSupportError,
     TransferQueueNotSupportError,
     EnumerateExtensionsError,
-    FormatUsageNotSupport(PhysicalFormatUsage),
 }
 
 impl Error for PhysicalDeviceError {}
@@ -81,25 +82,6 @@ impl fmt::Display for PhysicalDeviceError {
             | PhysicalDeviceError::PresentQueueNotSupportError  => "Physical device does not support present requirement.",
             | PhysicalDeviceError::TransferQueueNotSupportError => "Physical device does not support transfer requirement",
             | PhysicalDeviceError::EnumerateExtensionsError     => "Failed to enumerate Device Extensions.",
-            | PhysicalDeviceError::FormatUsageNotSupport(usage) => return write!(f, "Unable to find support format for {}.", usage),
-        };
-
-        write!(f, "{}", description)
-    }
-}
-
-/// The possible specific required usage of vk::Format in Vulkan.
-#[derive(Debug, Clone, Copy, Eq, PartialEq)]
-pub enum PhysicalFormatUsage {
-    DepthStencil,
-}
-
-impl fmt::Display for PhysicalFormatUsage {
-
-    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
-
-        let description = match self {
-            | PhysicalFormatUsage::DepthStencil => "Depth or Stencil Buffer",
         };
 
         write!(f, "{}", description)
@@ -139,8 +121,7 @@ pub enum LogicalDeviceError {
 
     DeviceCreationError,
     WaitIdleError,
-    QueueOpsUnsupport,
-    QueueCountNotEnough,
+    Queue(QueueError),
     Command(CommandError),
 }
 
@@ -149,13 +130,34 @@ impl fmt::Display for LogicalDeviceError {
 
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
         match self {
-            | LogicalDeviceError::DeviceCreationError  => write!(f, "Failed to create Logical Device."),
-            | LogicalDeviceError::WaitIdleError        => write!(f, "Device failed to wait idle."),
-            | LogicalDeviceError::QueueOpsUnsupport    => write!(f, "Not all the operations is support for Device Queues."),
-            | LogicalDeviceError::QueueCountNotEnough  => write!(f, "No enough queue available on this Device."),
-            | LogicalDeviceError::Command(e)           => write!(f, "{}", e.to_string()),
+            | LogicalDeviceError::DeviceCreationError => write!(f, "Failed to create Logical Device."),
+            | LogicalDeviceError::WaitIdleError       => write!(f, "Device failed to wait idle."),
+            | LogicalDeviceError::Queue(e)            => write!(f, "{}", e.to_string()),
+            | LogicalDeviceError::Command(e)          => write!(f, "{}", e.to_string()),
         }
     }
 }
 
 impl_from_err!(Command(CommandError) -> LogicalDeviceError);
+impl_from_err!(Queue(QueueError) -> LogicalDeviceError);
+
+#[derive(Debug, Clone, Copy, Eq, PartialEq)]
+pub enum QueueError {
+
+    PhyQueueNotYetGenerate,
+    QueueOpsUnsupport,
+}
+
+impl Error for QueueError {}
+impl fmt::Display for QueueError {
+
+    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+
+        let description = match self {
+            | QueueError::PhyQueueNotYetGenerate => "`inspect_queue_available()` method must be call before using this function.",
+            | QueueError::QueueOpsUnsupport      => "Not all the operations is support or No adequade queues for the requested queues.",
+        };
+
+        write!(f, "{}", description)
+    }
+}

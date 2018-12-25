@@ -69,13 +69,13 @@ impl RenderSubpass {
             // The value of the flags is currently provided by extension.
             flags: vk::SubpassDescriptionFlags::empty(),
             pipeline_bind_point       : self.bind_point,
-            input_attachment_count    : self.inputs.len() as vkuint,
+            input_attachment_count    : self.inputs.len() as _,
             p_input_attachments       : self.inputs.as_ptr(),
-            color_attachment_count    : self.colors.len() as vkuint,
+            color_attachment_count    : self.colors.len() as _,
             p_color_attachments       : self.colors.as_ptr(),
             p_resolve_attachments     : if self.resolves.is_empty() { ptr::null() } else { self.resolves.as_ptr() },
             p_depth_stencil_attachment: if self.depth_stencils.is_empty() { ptr::null() } else { self.depth_stencils.as_ptr() },
-            preserve_attachment_count : self.preserves.len() as vkuint,
+            preserve_attachment_count : self.preserves.len() as _,
             p_preserve_attachments    : self.preserves.as_ptr(),
         }
     }

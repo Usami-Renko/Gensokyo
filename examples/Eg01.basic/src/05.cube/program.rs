@@ -268,7 +268,7 @@ impl GraphicsRoutine for CubeProcedure {
             .for_each(|semaphore| semaphore.cleanup());
         self.present_availables.clear();
         self.command_buffers.clear();
-        self.command_pool.cleanup();
+        self.command_pool.destroy();
         self.pipeline.cleanup();
 
         Ok(())
@@ -298,7 +298,7 @@ impl GraphicsRoutine for CubeProcedure {
         self.present_availables.iter()
             .for_each(|semaphore| semaphore.cleanup());
         self.pipeline.cleanup();
-        self.command_pool.cleanup();
+        self.command_pool.destroy();
 
         self.desc_storage.cleanup();
         self.buffer_storage.cleanup();

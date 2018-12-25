@@ -4,7 +4,7 @@ use ash::vk;
 use crate::pipeline::state::blend::attachment::BlendAttachemnt;
 use crate::pipeline::state::dynamic::DynamicableValue;
 
-use crate::types::{ vkuint, vkfloat, VK_TRUE, VK_FALSE };
+use crate::types::{ vkfloat, VK_TRUE, VK_FALSE };
 
 use std::ptr;
 
@@ -68,7 +68,7 @@ impl GsBlendState {
             flags  : vk::PipelineColorBlendStateCreateFlags::empty(),
             logic_op_enable  : if self.logic_op_enable { VK_TRUE } else { VK_FALSE },
             logic_op         : self.logic_op,
-            attachment_count : attchement_infos.len() as vkuint,
+            attachment_count : attchement_infos.len() as _,
             p_attachments    : attchement_infos.as_ptr(),
             blend_constants  : self.blend_constants.to_blend_contents(),
         }

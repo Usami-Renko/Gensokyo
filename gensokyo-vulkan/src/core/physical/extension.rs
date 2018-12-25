@@ -57,7 +57,7 @@ impl PhysicalExtension {
         Ok(result)
     }
 
-    pub fn enable_extensions(&self) -> &Vec<CString> {
+    pub fn borrow_enable_extensions(&self) -> &Vec<CString> {
 
         &self.enable_extensions
     }
@@ -73,13 +73,11 @@ impl PhysicalInspectProperty for PhysicalExtension {
         let requrie_extension_names: Vec<CString> = config.require_extensions.iter()
             .map(|e| e.name()).collect();
         let available_extensions: Vec<CString> = self.handles.iter()
-            .map(|e| cast::vk_to_cstring(&e.extension_name)).collect();
+            .map(|e| cast::chars2cstring(&e.extension_name)).collect();
 
         let is_all_extension_available = requrie_extension_names.iter()
             .all(|test_extension| {
-                available_extensions.iter().find(|&backup_extension| {
-                    backup_extension == test_extension
-                }).is_some()
+                available_extensions.contains(test_extension)
             });
 
         is_all_extension_available

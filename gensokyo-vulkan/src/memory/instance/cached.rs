@@ -8,7 +8,7 @@ use crate::memory::types::GsMemoryType;
 use crate::memory::target::GsMemory;
 use crate::memory::utils::MemoryWritePtr;
 use crate::memory::traits::{ GsMemoryAbstract, MemoryMappable };
-use crate::memory::selector::MemorySelector;
+use crate::memory::filter::MemoryFilter;
 use crate::memory::instance::traits::{ GsImageMemoryAbs, GsBufferMemoryAbs };
 use crate::memory::instance::staging::UploadStagingResource;
 use crate::memory::transfer::MemoryDataDelegate;
@@ -32,10 +32,10 @@ impl GsMemoryAbstract for GsCachedMemory {
         &self.target
     }
 
-    fn allocate(device: &GsDevice, size: vkbytes, selector: &MemorySelector) -> Result<GsCachedMemory, MemoryError> {
+    fn allocate(device: &GsDevice, size: vkbytes, filter: &MemoryFilter) -> Result<GsCachedMemory, MemoryError> {
 
         let memory = GsCachedMemory {
-            target: GsMemory::allocate(device, size, selector)?,
+            target: GsMemory::allocate(device, size, filter)?,
         };
         Ok(memory)
     }

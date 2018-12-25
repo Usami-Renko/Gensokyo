@@ -54,9 +54,9 @@ impl GsViewportState {
             p_next: ptr::null(),
             // flags is reserved for future use in API version 1.1.82.
             flags : vk::PipelineViewportStateCreateFlags::empty(),
-            viewport_count: self.length as vkuint,
+            viewport_count: self.length as _,
             p_viewports   : self.ports.as_ptr(),
-            scissor_count : self.length as vkuint,
+            scissor_count : self.length as _,
             p_scissors    : self.scissors.as_ptr(),
         }
     }
@@ -134,8 +134,8 @@ impl ViewportInfo {
             content: vk::Viewport {
                 x: 0.0,
                 y: 0.0,
-                width : dimension.width  as vkfloat,
-                height: dimension.height as vkfloat,
+                width : dimension.width  as _,
+                height: dimension.height as _,
                 min_depth: 0.0,
                 max_depth: 1.0,
             }

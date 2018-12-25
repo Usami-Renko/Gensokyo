@@ -31,7 +31,7 @@ impl PhysicalProperties {
         let handle = unsafe {
             instance.handle.get_physical_device_properties(physical_device)
         };
-        let device_name = cast::vk_to_string(&handle.device_name);
+        let device_name = cast::chars2string(&handle.device_name);
         let api_version = handle.api_version;
         let device_type = handle.device_type;
 

@@ -32,7 +32,7 @@ impl GsBuffer {
         }
     }
 
-    pub fn cleanup(&self, device: &GsDevice) {
+    pub fn destroy(&self, device: &GsDevice) {
 
         unsafe {
             device.handle.destroy_buffer(self.handle, None);
@@ -85,12 +85,12 @@ impl BufferDescInfo {
         let create_info = vk::BufferCreateInfo {
             s_type: vk::StructureType::BUFFER_CREATE_INFO,
             p_next: ptr::null(),
-            // TODO: Add configuration for BufferCreateFlag.
+            // TODO: Add configuration for vk::BufferCreateFlags.
             flags: self.flags,
             size : self.estimate_size,
             usage: memory_abs.complement_usage(self.usage),
             sharing_mode,
-            queue_family_index_count: indices.len() as vkuint,
+            queue_family_index_count: indices.len() as _,
             p_queue_family_indices  : indices.as_ptr(),
         };
 

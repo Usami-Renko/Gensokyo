@@ -251,7 +251,7 @@ impl GraphicsRoutine for UniformBufferProcedure {
             .for_each(|semaphore| semaphore.cleanup());
         self.present_availables.clear();
         self.command_buffers.clear();
-        self.command_pool.cleanup();
+        self.command_pool.destroy();
         self.graphics_pipeline.cleanup();
 
         Ok(())
@@ -281,7 +281,7 @@ impl GraphicsRoutine for UniformBufferProcedure {
         self.present_availables.iter()
             .for_each(|semaphore| semaphore.cleanup());
         self.graphics_pipeline.cleanup();
-        self.command_pool.cleanup();
+        self.command_pool.destroy();
         self.desc_storage.cleanup();
         self.buffer_storage.cleanup();
     }

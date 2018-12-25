@@ -9,16 +9,22 @@ use crate::core::error::{ InstanceError, ValidationError };
 use crate::VERBOSE;
 use crate::utils::cast;
 
+/// Wrapper class for the validation tools used in Vulkan.
+///
+/// Based on the content of `ValidationConfig`, `GsDebugger` will use `vk::DebugReport` or `vk::DebugUtils` in validation checking.
 pub struct GsDebugger {
 
     target: Option<Box<dyn DebugInstance>>,
 }
 
-pub trait DebugInstance {
+/// `DebugInstance` is used as a trait object. It specifies the common behaviors of a Vulkan validation tool.
+pub(super) trait DebugInstance {
 
-    fn cleanup(&self);
+    /// Destroy this validation tool.
+    fn destroy(&self);
 }
 
+/// An enum type indicates all support validation tools used in `GsDebugger`.
 pub enum DebugInstanceType {
 
     DebugReport,
@@ -42,6 +48,7 @@ pub struct ValidationConfig {
 
 impl GsDebugger {
 
+    /// Initialize the validation tool in Vulkan which is specified in `config`.
     pub fn new(instance: &GsInstance, config: &ValidationConfig) -> Result<GsDebugger, ValidationError> {
 
         let target = if config.is_enable == false {
@@ -75,16 +82,17 @@ impl GsDebugger {
         Ok(debugger)
     }
 
-    pub fn cleanup(&self) {
+    /// Destroy this validation tool.
+    pub fn destroy(&self) {
 
         if let Some(ref debug_instance) = self.target {
-            debug_instance.cleanup();
+            debug_instance.destroy();
         }
     }
 }
 
 /// helper function to check if all required layers of validation layer are satisfied.
-pub(crate) fn is_support_validation_layer(entry: &ash::Entry, required_validation_layers: &[String]) -> Result<bool, InstanceError> {
+pub(in crate::core) fn is_support_validation_layer(entry: &ash::Entry, required_validation_layers: &[String]) -> Result<bool, InstanceError> {
 
     let layer_properties = entry.enumerate_instance_layer_properties()
         .or(Err(InstanceError::LayerPropertiesEnumerateError))?;
@@ -97,7 +105,7 @@ pub(crate) fn is_support_validation_layer(entry: &ash::Entry, required_validatio
 
             println!("[info] Instance available layers:");
             for layer in layer_properties.iter() {
-                let layer_name = cast::vk_to_string(&layer.layer_name);
+                let layer_name = cast::chars2string(&layer.layer_name);
                 println!("\t{}", layer_name)
             }
         }
@@ -108,7 +116,7 @@ pub(crate) fn is_support_validation_layer(entry: &ash::Entry, required_validatio
 
         for layer_property in layer_properties.iter() {
 
-            let test_layer_name = cast::vk_to_string(&layer_property.layer_name);
+            let test_layer_name = cast::chars2string(&layer_property.layer_name);
             if (*required_layer_name) == test_layer_name {
                 is_required_layer_found = true;
                 break

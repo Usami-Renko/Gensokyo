@@ -10,7 +10,7 @@ use crate::types::{ vkbool, vkptr, VK_FALSE };
 use std::ffi::CStr;
 use std::ptr;
 
-/// the callback function in Debug Utils.
+/// the callback function used in Debug Utils.
 unsafe extern "system" fn vulkan_debug_utils_callback(
     message_severity : vk::DebugUtilsMessageSeverityFlagsEXT,
     message_type     : vk::DebugUtilsMessageTypeFlagsEXT,
@@ -35,6 +35,7 @@ pub struct GsDebugUtils {
     utils_messager: vk::DebugUtilsMessengerEXT,
 }
 
+/// The configuration parameters used in the initialization of `vk::DebugUtils`.
 pub struct DebugUtilsConfig {
 
     pub flags    : vk::DebugUtilsMessengerCreateFlagsEXT,
@@ -74,7 +75,8 @@ impl GsDebugUtils {
 
 impl DebugInstance for GsDebugUtils {
 
-    fn cleanup(&self) {
+    /// Destroy the `vk::DebugUtils` object.
+    fn destroy(&self) {
         unsafe {
             self.loader.destroy_debug_utils_messenger_ext(self.utils_messager, None);
         }

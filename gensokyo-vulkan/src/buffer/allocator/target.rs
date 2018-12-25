@@ -6,7 +6,7 @@ use crate::buffer::target::GsBuffer;
 use crate::buffer::traits::BufferBlockInfo;
 use crate::buffer::instance::BufferInstanceType;
 use crate::buffer::error::BufferError;
-use crate::memory::{ MemorySelector, MemoryDstEntity };
+use crate::memory::{ MemoryFilter, MemoryDstEntity };
 use crate::memory::AllocatorError;
 
 use crate::buffer::allocator::index::BufferBlockIndex;
@@ -32,7 +32,7 @@ pub struct GsBufferAllocator<M> where M: BufferMemoryTypeAbs {
     spaces  : Vec<vkbytes>,
 
     allot_infos: BufferAllocateInfos,
-    memory_selector: MemorySelector,
+    memory_filter: MemoryFilter,
 }
 
 impl<M> GsBufferAllocator<M> where M: BufferMemoryTypeAbs {
@@ -50,7 +50,7 @@ impl<M> GsBufferAllocator<M> where M: BufferMemoryTypeAbs {
             spaces : vec![],
 
             allot_infos: BufferAllocateInfos::new(),
-            memory_selector: MemorySelector::init(physical, storage_type.memory_type()),
+            memory_filter: MemoryFilter::new(physical, storage_type.memory_type()),
         }
     }
 
@@ -75,7 +75,7 @@ impl<M> GsBufferAllocator<M> where M: BufferMemoryTypeAbs {
         }
 
         let buffer = info.as_desc_ref().build(&self.device, self.storage_type, None)?;
-        self.memory_selector.filter(&buffer)?;
+        self.memory_filter.filter(&buffer)?;
 
         Ok(buffer)
     }
@@ -88,7 +88,7 @@ impl<M> GsBufferAllocator<M> where M: BufferMemoryTypeAbs {
 
         // allocate memory
         let mut memory_allocator = BufMemAllocator::allot_memory(
-            self.storage_type, &self.device, self.allot_infos, self.spaces.iter().sum(), &self.memory_selector
+            self.storage_type, &self.device, self.allot_infos, self.spaces.iter().sum(), &self.memory_filter
         )?;
 
         let mut buffers_to_distribute = vec![];
@@ -117,10 +117,10 @@ impl<M> GsBufferAllocator<M> where M: BufferMemoryTypeAbs {
     pub fn reset(&mut self) {
 
         self.buffers.iter()
-            .for_each(|buffer| buffer.cleanup(&self.device));
+            .for_each(|buffer| buffer.destroy(&self.device));
         self.buffers.clear();
 
         self.spaces.clear();
-        self.memory_selector.reset();
+        self.memory_filter.reset();
     }
 }

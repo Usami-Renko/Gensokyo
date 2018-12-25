@@ -66,6 +66,7 @@ impl GsShaderInfo {
             | ShaderSourcePattern::SourceCode => {
                 let source = load_to_str(&self.path)?;
                 let kind = cast_shaderc_kind(self.stage);
+                // TODO: handle unwrap().
                 let tag_name = self.tag_name.as_ref().unwrap();
 
                 compiler.compile_source_into_spirv(&source, kind, tag_name, &self.main)?
@@ -80,6 +81,7 @@ impl GsShaderInfo {
         let shader_module = GsShaderModule {
             handle,
             stage: self.stage,
+            // TODO: handle unwrap().
             main : CString::new(self.main.as_str()).unwrap(),
         };
         Ok(shader_module)
@@ -93,7 +95,7 @@ impl GsShaderInfo {
             // flags is reserved for future use in API version 1.1.82.
             flags     : vk::ShaderModuleCreateFlags::empty(),
             code_size : codes.len(),
-            p_code    : codes.as_ptr() as *const u32,
+            p_code    : codes.as_ptr() as _,
         };
 
         unsafe {
@@ -128,7 +130,7 @@ impl GsShaderModule {
         }
     }
 
-    pub fn cleanup(&self, device: &GsDevice) {
+    pub fn destroy(&self, device: &GsDevice) {
 
         unsafe {
             device.handle.destroy_shader_module(self.handle, None);

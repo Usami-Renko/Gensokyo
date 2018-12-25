@@ -10,7 +10,7 @@ use crate::types::{ vkptr, vkchar, vklint, vksint, VK_FALSE };
 use std::ffi::CStr;
 use std::ptr;
 
-/// the callback function in Debug Report.
+/// the callback function used in Debug Report.
 unsafe extern "system" fn vulkan_debug_report_callback(
     _flags       : vk::DebugReportFlagsEXT,
     _obj_type    : vk::DebugReportObjectTypeEXT,
@@ -35,6 +35,7 @@ pub struct GsDebugReport {
     callback: vk::DebugReportCallbackEXT,
 }
 
+/// The configuration parameters used in the initialization of `vk::DebugReport`.
 pub struct DebugReportConfig {
     /// the message type that Validation Layer would report for.
     pub flags: vk::DebugReportFlagsEXT,
@@ -73,10 +74,8 @@ impl GsDebugReport {
 
 impl DebugInstance for GsDebugReport {
 
-    /// Some cleaning operations before this object was uninitialized.
-    ///
-    /// For GsDebugReport, it destroy the `vk::DebugReport` object.
-    fn cleanup(&self) {
+    /// Destroy the `vk::DebugReport` object.
+    fn destroy(&self) {
         unsafe {
             self.loader.destroy_debug_report_callback_ext(self.callback, None);
         }

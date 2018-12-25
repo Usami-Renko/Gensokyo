@@ -20,6 +20,12 @@ use cocoa::appkit::{ NSView, NSWindow };
 #[cfg(target_os = "macos")]
 use objc::runtime::YES;
 
+/// get the names of required extensions used in linux.
+#[cfg(all(unix, not(target_os = "android"), not(target_os = "macos")))]
+pub fn platform_surface_names() -> &'static CStr {
+    XlibSurface::name()
+}
+
 /// get the names of required extension used in macOS.
 #[cfg(target_os = "macos")]
 pub fn platform_surface_names() -> &'static CStr {
@@ -30,12 +36,6 @@ pub fn platform_surface_names() -> &'static CStr {
 #[cfg(all(windows))]
 pub fn platform_surface_names() -> &'static CStr {
     Win32Surface::name()
-}
-
-/// get the names of required extensions used in linux.
-#[cfg(all(unix, not(target_os = "android"), not(target_os = "macos")))]
-pub fn platform_surface_names() -> &'static CStr {
-    XlibSurface::name()
 }
 
 /// get the required surface used in linux.
@@ -58,8 +58,7 @@ pub unsafe fn generate_surface<E: EntryV1_0, I: InstanceV1_0>(
         window : x11_window as vk::Window,
         dpy    : x11_display as *mut vk::Display,
     };
-    let xlib_surface_loader =
-        XlibSurface::new(entry, instance);
+    let xlib_surface_loader = XlibSurface::new(entry, instance);
     xlib_surface_loader.create_xlib_surface_khr(&x11_create_info, None)
 }
 
@@ -97,8 +96,7 @@ pub unsafe fn generate_surface<E: EntryV1_0, I: InstanceV1_0>(
         p_view : window.get_nsview() as *const c_void
     };
 
-    let macos_surface_loader =
-        MacOSSurface::new(entry, instance);
+    let macos_surface_loader = MacOSSurface::new(entry, instance);
     macos_surface_loader.create_mac_os_surface_mvk(&create_info, None)
 }
 
@@ -125,8 +123,7 @@ pub unsafe fn generate_surface<E: EntryV1_0, I: InstanceV1_0>(
         hwnd      : hwnd as *const c_void,
         hinstance,
     };
-    let win32_surface_loader =
-        Win32Surface::new(entry, instance);
+    let win32_surface_loader = Win32Surface::new(entry, instance);
     win32_surface_loader.create_win32_surface_khr(&win32_create_info, None)
 }
 // ------------------------------------------------------------------------

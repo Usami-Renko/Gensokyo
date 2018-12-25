@@ -31,7 +31,7 @@ impl<M> GsImageRepository<M> {
     pub fn cleanup(&mut self) {
 
         self.images.iter()
-            .for_each(|image| image.cleanup(&self.device));
+            .for_each(|image| image.destroy(&self.device));
         self.views.iter()
             .for_each(|view| view.cleanup(&self.device));
 

@@ -203,7 +203,7 @@ impl GraphicsRoutine for TriangleProcedure {
             .for_each(|semaphore| semaphore.cleanup());
         self.present_availables.clear();
         self.command_buffers.clear();
-        self.command_pool.cleanup();
+        self.command_pool.destroy();
         self.graphics_pipeline.cleanup();
 
         Ok(())
@@ -233,7 +233,7 @@ impl GraphicsRoutine for TriangleProcedure {
         self.present_availables.iter()
             .for_each(|semaphore| semaphore.cleanup());
         self.graphics_pipeline.cleanup();
-        self.command_pool.cleanup();
+        self.command_pool.destroy();
         self.vertex_storage.cleanup();
     }
 

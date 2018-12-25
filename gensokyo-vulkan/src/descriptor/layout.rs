@@ -7,8 +7,6 @@ use crate::core::device::GsDevice;
 use crate::descriptor::binding::DescriptorBindingInfo;
 use crate::descriptor::error::DescriptorError;
 
-use crate::types::vkuint;
-
 use std::ptr;
 
 pub struct DescriptorSetLayoutInfo {
@@ -59,7 +57,7 @@ impl DescriptorSetLayoutInfo {
             s_type: vk::StructureType::DESCRIPTOR_SET_LAYOUT_CREATE_INFO,
             p_next: ptr::null(),
             flags : self.flags,
-            binding_count: self.bindings.len() as vkuint,
+            binding_count: self.bindings.len() as _,
             p_bindings   : self.bindings.as_ptr(),
         };
 

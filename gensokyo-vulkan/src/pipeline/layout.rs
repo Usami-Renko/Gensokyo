@@ -6,7 +6,6 @@ use crate::core::device::GsDevice;
 use crate::pipeline::error::PipelineError;
 
 use crate::descriptor::GsDescriptorSetLayout;
-use crate::types::vkuint;
 
 use std::ptr;
 
@@ -26,9 +25,9 @@ impl PipelineLayoutBuilder {
             p_next: ptr::null(),
             // flags is reserved for future use in API version 1.1.82.
             flags : vk::PipelineLayoutCreateFlags::empty(),
-            set_layout_count          : self.descriptor_layouts.len() as vkuint,
+            set_layout_count          : self.descriptor_layouts.len() as _,
             p_set_layouts             : self.descriptor_layouts.as_ptr(),
-            push_constant_range_count : self.push_constants.len() as vkuint,
+            push_constant_range_count : self.push_constants.len() as _,
             p_push_constant_ranges    : self.push_constants.as_ptr(),
         };
 

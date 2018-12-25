@@ -1,8 +1,6 @@
 
 use ash::vk;
 
-use crate::core::device::enums::PrefabQueuePriority;
-
 use crate::sync::GsSemaphore;
 use crate::command::GsCommandBuffer;
 
@@ -15,26 +13,44 @@ pub enum QueueUsage {
     Transfer,
 }
 
+impl QueueUsage {
+
+    pub fn vk_flag(&self) -> vk::QueueFlags {
+        match self {
+            | QueueUsage::Graphics
+            | QueueUsage::Present  => vk::QueueFlags::GRAPHICS,
+            | QueueUsage::Transfer => vk::QueueFlags::TRANSFER,
+        }
+    }
+}
+
 pub struct GsQueue {
 
     pub handle: vk::Queue,
 
-    pub _priority    : PrefabQueuePriority,
+    pub _usage: QueueUsage,
     pub family_index : vkuint,
     pub _queue_index : vkuint,
 }
 
-
 impl GsQueue {
 
-    pub fn new(handle: vk::Queue, priority: PrefabQueuePriority, family_index: vkuint, queue_index: vkuint) -> GsQueue {
+    pub fn new(handle: vk::Queue, usage: QueueUsage, family_index: vkuint, queue_index: vkuint) -> GsQueue {
         GsQueue {
             handle,
-            _priority: priority,
+            _usage: usage,
             family_index,
             _queue_index: queue_index,
         }
     }
+}
+
+pub struct QueueInitInfo {
+
+    /// The index of requested queue family.
+    pub family_index: vkuint,
+    /// The priority of each queue in this queue family.
+    pub priorities: Vec<f32>,
 }
 
 pub struct QueueSubmitBundle<'vec, 're: 'vec> {

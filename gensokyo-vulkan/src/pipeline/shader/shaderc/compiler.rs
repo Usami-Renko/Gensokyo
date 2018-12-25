@@ -58,7 +58,6 @@ impl GsShaderCompiler {
         // FIXME: The compiler seems failed to output the debug error.
         let result = self.compiler.compile_into_spirv(source, kind, input_name, entry_name, Some(&compile_options))
             .or_else(|_| {
-
                 Err(ShaderCompileError::CompileFailedError(input_name.to_owned()))
             })?;
 

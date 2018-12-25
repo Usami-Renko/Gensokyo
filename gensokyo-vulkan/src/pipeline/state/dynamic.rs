@@ -28,7 +28,7 @@ impl GsDynamicState {
             p_next: ptr::null(),
             // flags is reserved for future use in API version 1.1.82.
             flags : vk::PipelineDynamicStateCreateFlags::empty(),
-            dynamic_state_count: self.states.len() as vkuint,
+            dynamic_state_count: self.states.len() as _,
             p_dynamic_states   : self.states.as_ptr(),
         }
     }
@@ -57,4 +57,3 @@ impl Clone for DynamicableValue<vkuint> {
         self.to_owned()
     }
 }
-

@@ -12,7 +12,7 @@ use crate::memory::types::GsMemoryType;
 use crate::memory::utils::{ MemoryMapStatus, MemoryRange, MemoryMapAlias, MemoryWritePtr };
 use crate::memory::types::Staging;
 use crate::memory::traits::{ GsMemoryAbstract, MemoryMappable };
-use crate::memory::selector::MemorySelector;
+use crate::memory::filter::MemoryFilter;
 use crate::memory::transfer::DataCopyer;
 use crate::memory::instance::GsBufferMemoryAbs;
 use crate::memory::transfer::MemoryDataDelegate;
@@ -48,9 +48,9 @@ impl GsMemoryAbstract for GsStagingMemory {
         &self.target
     }
 
-    fn allocate(device: &GsDevice, size: vkbytes, selector: &MemorySelector) -> Result<GsStagingMemory, MemoryError> {
+    fn allocate(device: &GsDevice, size: vkbytes, filter: &MemoryFilter) -> Result<GsStagingMemory, MemoryError> {
 
-        let target = GsMemory::allocate(device, size, selector)?;
+        let target = GsMemory::allocate(device, size, filter)?;
         let map_status = MemoryMapStatus::from_unmap();
 
         let memory = GsStagingMemory {
@@ -145,7 +145,7 @@ impl UploadStagingResource {
 
     pub fn new(device: &GsDevice, physical: &GsPhyDevice, allocate_infos: &BufferAllocateInfos) -> Result<UploadStagingResource, MemoryError> {
 
-        let mut memory_selector = MemorySelector::init(physical, GsMemoryType::StagingMemory);
+        let mut memory_filter = MemoryFilter::new(physical, GsMemoryType::StagingMemory);
 
         // generate buffers
         let mut buffers = vec![];
@@ -154,13 +154,13 @@ impl UploadStagingResource {
             let buffer = buffer_desc.build(device, Staging, None)
                 .or(Err(MemoryError::AllocateMemoryError))?;
 
-            memory_selector.filter(&buffer)?;
+            memory_filter.filter(&buffer)?;
             buffers.push(buffer);
         }
 
         // allocate memory
         let mut src_memory = GsStagingMemory::allocate(
-            device, allocate_infos.spaces.iter().sum(), &memory_selector
+            device, allocate_infos.spaces.iter().sum(), &memory_filter
         )?;
 
         // bind buffers to memory
@@ -234,7 +234,7 @@ impl UploadStagingResource {
     pub fn cleanup(&mut self, device: &GsDevice) {
 
         self.buffers.iter()
-            .for_each(|buffer| buffer.cleanup(device));
+            .for_each(|buffer| buffer.destroy(device));
         self.src_memory.cleanup(device);
     }
 }

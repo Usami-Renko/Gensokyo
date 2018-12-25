@@ -46,7 +46,7 @@ impl GsImage {
         }
     }
 
-    pub fn cleanup(&self, device: &GsDevice) {
+    pub fn destroy(&self, device: &GsDevice) {
 
         unsafe {
             device.handle.destroy_image(self.handle, None);
@@ -100,7 +100,7 @@ impl ImageDescInfo {
             array_layers   : self.property.array_layers,
             initial_layout : self.property.initial_layout,
             sharing_mode   : self.specific.sharing,
-            queue_family_index_count: self.specific.queue_family_indices.len() as vkuint,
+            queue_family_index_count: self.specific.queue_family_indices.len() as _,
             p_queue_family_indices  : self.specific.queue_family_indices.as_ptr(),
         };
 

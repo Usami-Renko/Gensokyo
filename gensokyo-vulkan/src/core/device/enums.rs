@@ -22,13 +22,14 @@ impl PrefabQueuePriority {
     }
 }
 
+pub struct DeviceQueueIndex(pub(super) usize);
+
 #[derive(Debug)]
 pub enum DeviceQueueIdentifier {
 
     Graphics,
     Present,
     Transfer,
-    Custom { identifier: Box<DeviceQueueIdentifier>, queue_index: usize },
 }
 
 /// The strategy used when request for create device queues.

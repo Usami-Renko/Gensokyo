@@ -11,7 +11,7 @@ use crate::memory::types::GsMemoryType;
 use crate::memory::utils::{ MemoryMapStatus, MemoryRange, MemoryMapAlias, MemoryWritePtr };
 use crate::memory::target::GsMemory;
 use crate::memory::traits::{ GsMemoryAbstract, MemoryMappable };
-use crate::memory::selector::MemorySelector;
+use crate::memory::filter::MemoryFilter;
 use crate::memory::instance::GsBufferMemoryAbs;
 use crate::memory::transfer::MemoryDataDelegate;
 use crate::memory::error::{ MemoryError, AllocatorError };
@@ -46,9 +46,9 @@ impl GsMemoryAbstract for GsHostMemory {
         &self.target
     }
 
-    fn allocate(device: &GsDevice, size: vkbytes, selector: &MemorySelector) -> Result<GsHostMemory, MemoryError> {
+    fn allocate(device: &GsDevice, size: vkbytes, filter: &MemoryFilter) -> Result<GsHostMemory, MemoryError> {
 
-        let target = GsMemory::allocate(device, size, selector)?;
+        let target = GsMemory::allocate(device, size, filter)?;
         let map_status = MemoryMapStatus::from_unmap();
 
         let memory = GsHostMemory {

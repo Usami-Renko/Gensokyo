@@ -5,7 +5,7 @@ use ash::version::DeviceV1_0;
 use crate::core::device::GsDevice;
 
 use crate::pipeline::pass::framebuffer::GsFramebuffer;
-use crate::types::{ vkuint, vkDim2D };
+use crate::types::vkDim2D;
 
 use std::ptr;
 
@@ -41,7 +41,7 @@ impl GsRenderPass {
                 offset: vk::Offset2D { x: 0, y: 0 },
                 extent: self.framebuffer_extent,
             },
-            clear_value_count: self.clear_values.len() as vkuint,
+            clear_value_count: self.clear_values.len() as _,
             p_clear_values   : self.clear_values.as_ptr(),
         }
     }
@@ -50,13 +50,13 @@ impl GsRenderPass {
         self.framebuffers.len()
     }
 
-    pub fn cleanup(&self, device: &GsDevice) {
+    pub fn destroy(&self, device: &GsDevice) {
 
         unsafe {
             device.handle.destroy_render_pass(self.handle, None);
         }
 
         self.framebuffers.iter()
-            .for_each(|f| f.cleanup(device));
+            .for_each(|f| f.destroy(device));
     }
 }

@@ -91,22 +91,22 @@ impl ConfigMirror for WindowConfigMirror {
         if let Some(v) = toml.get("dimension") {
 
             if let Some(v) = v.get("width") {
-                self.dimension.width = v.as_integer().ok_or(ConfigError::ParseError)? as vkuint;
+                self.dimension.width = v.as_integer().ok_or(ConfigError::ParseError)? as _;
             }
             if let Some(v) = v.get("height") {
-                self.dimension.height = v.as_integer().ok_or(ConfigError::ParseError)? as vkuint;
+                self.dimension.height = v.as_integer().ok_or(ConfigError::ParseError)? as _;
             }
             if let Some(v) = v.get("min_width") {
-                self.dimension.min_width = v.as_integer().ok_or(ConfigError::ParseError)? as vkuint;
+                self.dimension.min_width = v.as_integer().ok_or(ConfigError::ParseError)? as _;
             }
             if let Some(v) = v.get("min_height") {
-                self.dimension.min_height = v.as_integer().ok_or(ConfigError::ParseError)? as vkuint;
+                self.dimension.min_height = v.as_integer().ok_or(ConfigError::ParseError)? as _;
             }
             if let Some(v) = v.get("max_width") {
-                self.dimension.max_width = v.as_integer().ok_or(ConfigError::ParseError)? as vkuint;
+                self.dimension.max_width = v.as_integer().ok_or(ConfigError::ParseError)? as _;
             }
             if let Some(v) = v.get("max_height") {
-                self.dimension.max_height = v.as_integer().ok_or(ConfigError::ParseError)? as vkuint;
+                self.dimension.max_height = v.as_integer().ok_or(ConfigError::ParseError)? as _;
             }
         }
 

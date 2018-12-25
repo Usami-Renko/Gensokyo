@@ -260,7 +260,7 @@ impl GraphicsRoutine for TextureMappingProcedure {
             .for_each(|semaphore| semaphore.cleanup());
         self.present_availables.clear();
         self.command_buffers.clear();
-        self.command_pool.cleanup();
+        self.command_pool.destroy();
         self.graphics_pipeline.cleanup();
 
         Ok(())
@@ -290,7 +290,7 @@ impl GraphicsRoutine for TextureMappingProcedure {
         self.present_availables.iter()
             .for_each(|semaphore| semaphore.cleanup());
         self.graphics_pipeline.cleanup();
-        self.command_pool.cleanup();
+        self.command_pool.destroy();
         
         self.desc_storage.cleanup();
         self.sample_image.cleanup(device);

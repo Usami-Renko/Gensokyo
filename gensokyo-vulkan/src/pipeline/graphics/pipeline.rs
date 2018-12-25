@@ -52,7 +52,7 @@ impl GsGraphicsPipeline {
                 device.handle.destroy_pipeline(self.handle, None);
             }
             self.layout.cleanup(device);
-            self.pass.cleanup(device);
+            self.pass.destroy(device);
         }
     }
 }

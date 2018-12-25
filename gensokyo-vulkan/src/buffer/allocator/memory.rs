@@ -5,7 +5,7 @@ use crate::buffer::target::BufferDescInfo;
 use crate::buffer::allocator::types::BufferMemoryTypeAbs;
 
 use crate::memory::types::GsMemoryType;
-use crate::memory::{ GsMemoryAbstract, MemoryMappable, MemorySelector };
+use crate::memory::{ GsMemoryAbstract, MemoryMappable, MemoryFilter };
 use crate::memory::instance::{ GsBufferMemory, GsHostMemory, GsCachedMemory, GsDeviceMemory, GsStagingMemory };
 use crate::memory::MemoryError;
 
@@ -42,12 +42,12 @@ pub struct BufMemAllocator<M> where M: BufferMemoryTypeAbs {
 
 impl<M> BufMemAllocator<M> where M: BufferMemoryTypeAbs {
 
-    pub fn allot_memory(phantom_type: M, device: &GsDevice, infos: BufferAllocateInfos, size: vkbytes, selector: &MemorySelector) -> Result<BufMemAllocator<M>, MemoryError> {
+    pub fn allot_memory(phantom_type: M, device: &GsDevice, infos: BufferAllocateInfos, size: vkbytes, filter: &MemoryFilter) -> Result<BufMemAllocator<M>, MemoryError> {
 
         let allocator = BufMemAllocator {
             phantom_type,
             infos,
-            memory: phantom_type.memory_type().allot_buffer_memory(device, size, selector)?,
+            memory: phantom_type.memory_type().allot_buffer_memory(device, size, filter)?,
         };
 
         Ok(allocator)
@@ -70,20 +70,20 @@ impl<M> BufMemAllocator<M> where M: BufferMemoryTypeAbs {
 
 impl GsMemoryType {
 
-    fn allot_buffer_memory(&self, device: &GsDevice, size: vkbytes, selector: &MemorySelector) -> Result<GsBufferMemory, MemoryError> {
+    fn allot_buffer_memory(&self, device: &GsDevice, size: vkbytes, filter: &MemoryFilter) -> Result<GsBufferMemory, MemoryError> {
 
         let memory = match self {
             | GsMemoryType::HostMemory => {
-                Box::new(GsHostMemory::allocate(device, size, selector)?) as GsBufferMemory
+                Box::new(GsHostMemory::allocate(device, size, filter)?) as GsBufferMemory
             },
             | GsMemoryType::CachedMemory => {
-                Box::new(GsCachedMemory::allocate(device, size, selector)?) as GsBufferMemory
+                Box::new(GsCachedMemory::allocate(device, size, filter)?) as GsBufferMemory
             },
             | GsMemoryType::DeviceMemory => {
-                Box::new(GsDeviceMemory::allocate(device, size, selector)?) as GsBufferMemory
+                Box::new(GsDeviceMemory::allocate(device, size, filter)?) as GsBufferMemory
             },
             | GsMemoryType::StagingMemory => {
-                Box::new(GsStagingMemory::allocate(device, size, selector)?) as GsBufferMemory
+                Box::new(GsStagingMemory::allocate(device, size, filter)?) as GsBufferMemory
             },
         };
 

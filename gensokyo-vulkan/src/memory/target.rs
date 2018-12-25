@@ -4,10 +4,10 @@ use ash::vk;
 use ash::version::DeviceV1_0;
 
 use crate::core::device::GsDevice;
-use crate::memory::selector::MemorySelector;
+use crate::memory::filter::MemoryFilter;
 
 use crate::memory::error::MemoryError;
-use crate::types::{ vkuint, vkbytes };
+use crate::types::vkbytes;
 
 use std::ptr;
 
@@ -21,17 +21,17 @@ pub struct GsMemory {
 
 impl GsMemory {
 
-    pub fn allocate(device: &GsDevice, size: vkbytes, selector: &MemorySelector) -> Result<GsMemory, MemoryError> {
+    pub fn allocate(device: &GsDevice, size: vkbytes, filter: &MemoryFilter) -> Result<GsMemory, MemoryError> {
 
-        let optimal_memory_index = selector.optimal_memory()?;
-        let typ = selector.optimal_mem_type()?;
+        let optimal_memory_index = filter.optimal_memory()?;
+        let typ = filter.optimal_mem_type()?;
 
         let allocate_info = vk::MemoryAllocateInfo {
             s_type: vk::StructureType::MEMORY_ALLOCATE_INFO,
             p_next: ptr::null(),
             allocation_size: size,
             // an index identifying a memory type from the memoryTypes array of the vkPhysicalDeviceMemoryProperties structure.
-            memory_type_index: optimal_memory_index as vkuint,
+            memory_type_index: optimal_memory_index as _,
         };
 
         let handle = unsafe {

@@ -1,7 +1,6 @@
 
 use ash::vk;
 
-use crate::types::vkuint;
 use std::ptr;
 
 #[derive(Default)]
@@ -28,9 +27,9 @@ impl GsVertexInputState {
             p_next : ptr::null(),
             // flags is reserved for future use in API version 1.1.82.
             flags  : vk::PipelineVertexInputStateCreateFlags::empty(),
-            vertex_binding_description_count   : self.bindings.len() as vkuint,
+            vertex_binding_description_count   : self.bindings.len() as _,
             p_vertex_binding_descriptions      : self.bindings.as_ptr(),
-            vertex_attribute_description_count : self.attributes.len() as vkuint,
+            vertex_attribute_description_count : self.attributes.len() as _,
             p_vertex_attribute_descriptions    : self.attributes.as_ptr(),
         }
     }

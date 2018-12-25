@@ -69,7 +69,7 @@ impl<M> GsBufferRepository<M> where M: BufferMemoryTypeAbs {
     pub fn cleanup(&mut self) {
 
         self.buffers.iter().for_each(|buffer|
-            buffer.cleanup(&self.device));
+            buffer.destroy(&self.device));
 
         self.memory.cleanup(&self.device);
 

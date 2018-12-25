@@ -1,8 +1,6 @@
 
 use ash::vk;
 
-use winit;
-
 use crate::core::instance::GsInstance;
 use crate::core::platforms;
 use crate::core::error::SurfaceError;
@@ -20,7 +18,7 @@ pub struct GsSurface {
 
 impl GsSurface {
 
-    /// initialize surface extension loader and `vk::Surface` object.
+    /// Initialize surface extension loader and `vk::Surface` object.
     pub fn new(instance: &GsInstance, window: &winit::Window) -> Result<GsSurface, SurfaceError> {
 
         let handle = unsafe {
@@ -37,7 +35,7 @@ impl GsSurface {
         Ok(surface)
     }
 
-    /// query whether a queue family of a physical device supports presentation to a given surface.
+    /// Query whether a queue family of a physical device supports presentation to a given surface.
     ///
     /// return true if the queue family support presentation, or false if it doesn't support.
     pub fn query_is_family_presentable(&self, physical_device: vk::PhysicalDevice, queue_family_index: vkuint) -> bool {
@@ -47,7 +45,7 @@ impl GsSurface {
         }
     }
 
-    /// query the basic capabilities of a surface.
+    /// Query the basic capabilities of a surface.
     ///
     /// capabilities usually needs in swapchain creation.
     pub fn query_capabilities(&self, physical_device: vk::PhysicalDevice) -> Result<vk::SurfaceCapabilitiesKHR, SurfaceError> {
@@ -58,7 +56,7 @@ impl GsSurface {
         }
     }
 
-    /// query the supported swapchain format tuples for a surface.
+    /// Query the supported swapchain format tuples for a surface.
     pub fn query_formats(&self, physical_device: vk::PhysicalDevice) -> Result<Vec<vk::SurfaceFormatKHR>, SurfaceError> {
 
         unsafe {
@@ -67,7 +65,7 @@ impl GsSurface {
         }
     }
 
-    /// query the supported presentation modes for a surface.
+    /// Query the supported presentation modes for a surface.
     pub fn query_present_modes(&self, physical_device: vk::PhysicalDevice) -> Result<Vec<vk::PresentModeKHR>, SurfaceError> {
 
         unsafe {
@@ -76,10 +74,8 @@ impl GsSurface {
         }
     }
 
-    /// Some cleaning operations before this object was uninitialized.
-    ///
-    /// For `GsSurface`, it destroy the `vk::SurfaceKHR` object.
-    pub fn cleanup(&self) {
+    /// Destroy the `vk::SurfaceKHR` object.
+    pub fn destroy(&self) {
 
         unsafe {
             self.loader.destroy_surface_khr(self.handle, None);

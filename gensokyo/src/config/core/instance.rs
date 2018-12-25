@@ -20,12 +20,12 @@ impl ConfigMirror for InstanceConfigMirror {
 
         let config = InstanceConfig {
 
-            version_api         : vk_to_version(&self.version.api)?,
-            version_application : vk_to_version(&self.version.application)?,
-            version_engine      : vk_to_version(&self.version.engine)?,
+            api_version         : vk_to_version(&self.version.api)?,
+            application_version : vk_to_version(&self.version.application)?,
+            engine_version      : vk_to_version(&self.version.engine)?,
 
-            name_application : self.name.application,
-            name_engine      : self.name.engine,
+            application_name : self.name.application,
+            engine_name      : self.name.engine,
         };
 
         Ok(config)
@@ -49,10 +49,10 @@ impl ConfigMirror for InstanceConfigMirror {
         if let Some(v) = toml.get("name") {
 
             if let Some(v) = v.get("application") {
-                self.name.application = v.as_str().ok_or(ConfigError::ParseError)?.to_owned();
+                self.name.application = Some(v.as_str().ok_or(ConfigError::ParseError)?.to_owned());
             }
             if let Some(v) = v.get("engine") {
-                self.name.engine = v.as_str().ok_or(ConfigError::ParseError)?.to_owned();
+                self.name.engine = Some(v.as_str().ok_or(ConfigError::ParseError)?.to_owned());
             }
         }
 
@@ -70,6 +70,6 @@ struct Version {
 
 #[derive(Deserialize, Default)]
 struct Name {
-    pub application: String,
-    pub engine     : String,
+    pub application: Option<String>,
+    pub engine     : Option<String>,
 }

@@ -110,7 +110,7 @@ impl VulkanEnv {
         let physical_inspector = PhysicalInspector::new(&config.core.physical);
         let physical = physical_inspector.inspect(&instance, &surface)?;
         // Initialize the device with default queues. (one graphics queue, one present queue, one transfer queue)
-        let device = LogicalDeviceBuilder::init(&instance, &physical, &config.core.device)?
+        let (device, _custom_queues) = LogicalDeviceBuilder::init(&instance, &physical, &config.core.device)
             .build()?;
 
         let env = VulkanEnv {
@@ -132,12 +132,12 @@ impl VulkanEnv {
     /// use cleanup function, so that the order of deinitialization can be customizable.
     pub fn cleanup(&self) {
 
-        self.physical.cleanup();
-        self.device.cleanup();
+        self.physical.destroy();
+        self.device.destroy();
 
-        self.surface.cleanup();
+        self.surface.destroy();
 
-        self.debugger.cleanup();
-        self.instance.clenaup();
+        self.debugger.destroy();
+        self.instance.destroy();
     }
 }

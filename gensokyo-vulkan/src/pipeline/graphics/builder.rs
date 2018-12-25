@@ -4,26 +4,26 @@ use ash::version::DeviceV1_0;
 
 use crate::core::device::GsDevice;
 
-use crate::pipeline::shader::{ GsShaderModule, GsShaderInfo, VertexInputDescription };
-use crate::pipeline::state::PipelineStates;
-use crate::pipeline::state::vertex_input::GsVertexInputState;
-use crate::pipeline::state::input_assembly::GsInputAssemblyState;
-use crate::pipeline::state::viewport::ViewportStateType;
-use crate::pipeline::state::rasterizer::GsRasterizerState;
-use crate::pipeline::state::multisample::GsMultisampleState;
-use crate::pipeline::state::depth_stencil::GsDepthStencilState;
-use crate::pipeline::state::blend::GsBlendState;
-use crate::pipeline::state::tessellation::GsTessellationState;
-use crate::pipeline::pass::GsRenderPass;
-use crate::pipeline::graphics::pipeline::{ GsGraphicsPipeline, GraphicsPipelineContainer };
-use crate::pipeline::layout::PipelineLayoutBuilder;
-use crate::pipeline::error::PipelineError;
+use crate::pipeline::{
+    shader::{ GsShaderModule, GsShaderInfo, VertexInputDescription },
+    shader::shaderc::{ GsShaderCompiler, ShaderCompilePrefab, ShadercConfiguration },
+    state::PipelineStates,
+    state::vertex_input::GsVertexInputState,
+    state::input_assembly::GsInputAssemblyState,
+    state::viewport::ViewportStateType,
+    state::rasterizer::GsRasterizerState,
+    state::multisample::GsMultisampleState,
+    state::depth_stencil::GsDepthStencilState,
+    state::blend::GsBlendState,
+    state::tessellation::GsTessellationState,
+    pass::GsRenderPass,
+    graphics::{ GsGraphicsPipeline, GraphicsPipelineContainer },
+    layout::PipelineLayoutBuilder,
+    error::PipelineError,
+};
 
 use crate::descriptor::DescriptorSet;
-
-use crate::pipeline::shader::shaderc::{ GsShaderCompiler, ShaderCompilePrefab, ShadercConfiguration };
-
-use crate::types::{ vkuint, vkDim2D };
+use crate::types::vkDim2D;
 
 use std::ptr;
 
@@ -132,7 +132,7 @@ impl GraphicsPipelineBuilder {
                 p_next: ptr::null(),
                 // TODO: Add configuration for vk::PipelineCreateFlags.
                 flags : vk::PipelineCreateFlags::empty(),
-                stage_count: shader_create_infos.len() as vkuint,
+                stage_count: shader_create_infos.len() as _,
                 p_stages   : shader_create_infos.as_ptr(),
                 p_vertex_input_state  : &config.states.vertex_input.info(),
                 p_input_assembly_state: &config.states.input_assembly.info(),
@@ -160,7 +160,7 @@ impl GraphicsPipelineBuilder {
             self.device.handle.create_graphics_pipelines(vk::PipelineCache::null(), infos.as_slice(), None).unwrap()
         };
 
-        self.clean_shader_modules();
+        self.destroy_shader_modules();
 
         let mut pipelines = vec![];
         for (i, config) in self.configs.into_iter().enumerate() {
@@ -172,11 +172,11 @@ impl GraphicsPipelineBuilder {
         Ok(container)
     }
 
-    fn clean_shader_modules(&self) {
+    fn destroy_shader_modules(&self) {
 
         self.configs.iter().for_each(|config| {
             config.shader_modules.iter().for_each(|module| {
-                module.cleanup(&self.device);
+                module.destroy(&self.device);
             });
         });
     }
@@ -185,22 +185,22 @@ impl GraphicsPipelineBuilder {
 
 impl GraphicsPipelineConfig {
 
-    pub fn resetup_shader(mut self, shaders: Vec<GsShaderInfo>) -> GraphicsPipelineConfig {
+    pub fn with_shader(mut self, shaders: Vec<GsShaderInfo>) -> GraphicsPipelineConfig {
         self.shaders = shaders;
         self
     }
 
-    pub fn setup_input_vertex(mut self, state: GsVertexInputState) -> GraphicsPipelineConfig {
+    pub fn with_input_vertex(mut self, state: GsVertexInputState) -> GraphicsPipelineConfig {
         self.states.vertex_input = state;
         self
     }
 
-    pub fn setup_input_assembly(mut self, state: GsInputAssemblyState) -> GraphicsPipelineConfig {
+    pub fn with_input_assembly(mut self, state: GsInputAssemblyState) -> GraphicsPipelineConfig {
         self.states.input_assembly = state;
         self
     }
 
-    pub fn setup_viewport(mut self, state: ViewportStateType) -> GraphicsPipelineConfig {
+    pub fn with_viewport(mut self, state: ViewportStateType) -> GraphicsPipelineConfig {
 
         match state {
             | ViewportStateType::Fixed { .. } => {},
@@ -220,7 +220,7 @@ impl GraphicsPipelineConfig {
         self
     }
 
-    pub fn setup_rasterizer(mut self, state: GsRasterizerState) -> GraphicsPipelineConfig {
+    pub fn with_rasterizer(mut self, state: GsRasterizerState) -> GraphicsPipelineConfig {
 
         if state.is_dynamic_lindwidth() {
             self.states.dynamic.add_state(vk::DynamicState::LINE_WIDTH);
@@ -233,12 +233,12 @@ impl GraphicsPipelineConfig {
         self
     }
 
-    pub fn setup_multisample(mut self, state: GsMultisampleState) -> GraphicsPipelineConfig {
+    pub fn with_multisample(mut self, state: GsMultisampleState) -> GraphicsPipelineConfig {
         self.states.multisample = state;
         self
     }
 
-    pub fn setup_depth_stencil(mut self, state: GsDepthStencilState) -> GraphicsPipelineConfig {
+    pub fn with_depth_stencil(mut self, state: GsDepthStencilState) -> GraphicsPipelineConfig {
 
         if state.depth.is_dynamic_depthbound() {
             self.states.dynamic.add_state(vk::DynamicState::DEPTH_BOUNDS);
@@ -257,7 +257,7 @@ impl GraphicsPipelineConfig {
         self
     }
 
-    pub fn setup_blend(mut self, state: GsBlendState) -> GraphicsPipelineConfig {
+    pub fn with_blend(mut self, state: GsBlendState) -> GraphicsPipelineConfig {
 
         if state.is_dynamic_blend_constants() {
             self.states.dynamic.add_state(vk::DynamicState::BLEND_CONSTANTS);
@@ -267,7 +267,7 @@ impl GraphicsPipelineConfig {
         self
     }
 
-    pub fn setup_tessllation(mut self, tessellation: GsTessellationState) -> GraphicsPipelineConfig {
+    pub fn with_tessllation(mut self, tessellation: GsTessellationState) -> GraphicsPipelineConfig {
         self.states.tessellation = Some(tessellation);
         self
     }

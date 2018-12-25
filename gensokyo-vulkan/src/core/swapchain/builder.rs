@@ -18,10 +18,10 @@ use crate::types::{ vkuint, vklint, VK_TRUE };
 
 use std::ptr;
 
-pub struct SwapchainBuilder<'vk> {
+pub struct SwapchainBuilder<'s> {
 
     device : GsDevice,
-    surface: &'vk GsSurface,
+    surface: &'s GsSurface,
 
     support: SwapchainSupport,
     image_share_info: SwapchainImageShaingInfo,
@@ -29,10 +29,10 @@ pub struct SwapchainBuilder<'vk> {
     acquire_image_time: vklint,
 }
 
-impl<'vk> SwapchainBuilder<'vk> {
+impl<'s> SwapchainBuilder<'s> {
 
-    pub fn init(config: &SwapchainConfig, physical: &GsPhyDevice, device: &GsDevice, surface: &'vk GsSurface)
-        -> Result<SwapchainBuilder<'vk>, SwapchainInitError> {
+    pub fn init(config: &SwapchainConfig, physical: &GsPhyDevice, device: &GsDevice, surface: &'s GsSurface)
+        -> Result<SwapchainBuilder<'s>, SwapchainInitError> {
 
         let support = SwapchainSupport::query_support(surface, physical.handle, config)
             .map_err(|e| SwapchainInitError::SurfacePropertiesQuery(e))?;
@@ -52,7 +52,7 @@ impl<'vk> SwapchainBuilder<'vk> {
         Ok(builder)
     }
 
-    pub fn build(&self, instance: &GsInstance, old_chain: Option<&GsChain>, window: &winit::Window)
+    pub fn build(self, instance: &GsInstance, old_chain: Option<&GsChain>, window: &winit::Window)
         -> Result<GsSwapchain, SwapchainInitError> {
 
         let prefer_format = self.support.optimal_format();
@@ -78,7 +78,7 @@ impl<'vk> SwapchainBuilder<'vk> {
             // use exclusize mode in single queue family or concurrent mode in multiple queue families.
             image_sharing_mode       : self.image_share_info.mode,
             // only use this field in concurrent mode.
-            queue_family_index_count : self.image_share_info.queue_family_indices.len() as vkuint,
+            queue_family_index_count : self.image_share_info.queue_family_indices.len() as _,
             // only use this field in concurrent mode.
             p_queue_family_indices   : self.image_share_info.queue_family_indices.as_ptr(),
             pre_transform            : self.support.current_transform(),

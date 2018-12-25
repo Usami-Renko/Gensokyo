@@ -82,7 +82,7 @@ impl DescriptorBindingInfo for DescriptorBufferBindingInfo {
             dst_binding: self.content.binding,
             // TODO: Currently dst_array_element filed is not configurable
             dst_array_element  : 0,
-            descriptor_count   : buffer_infos.len() as vkuint,
+            descriptor_count   : buffer_infos.len() as _,
             descriptor_type    : self.content.descriptor_type.to_raw(),
             p_image_info       : ptr::null(),
             p_buffer_info      : buffer_infos.as_ptr(),

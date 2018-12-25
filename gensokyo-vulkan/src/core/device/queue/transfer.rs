@@ -6,46 +6,44 @@ use gsma::collect_handle;
 
 use crate::core::device::GsDevice;
 use crate::core::device::device::{ GsLogicalDevice, DeviceConfig };
-use crate::core::device::queue::{ GsQueue, GsQueueAbstract };
+use crate::core::device::queue::GsQueue;
 use crate::core::error::LogicalDeviceError;
 
 use crate::sync::{ GsFence, SyncError };
 use crate::command::{ GsCommandBuffer, CmdBufferUsage };
 use crate::command::CommandError;
 
-use crate::types::{ vklint, vkuint };
+use crate::types::vklint;
 
-use std::rc::Rc;
 use std::ptr;
 
 pub struct GsTransferQueue {
 
-    queue: Rc<GsQueue>,
+    queue: GsQueue,
     pool: TransferCommandPool,
 
     transfer_wait_time: vklint,
 }
 
-impl GsQueueAbstract for GsTransferQueue {
+impl GsTransferQueue {
 
-    fn new(device: &ash::Device, queue: &Rc<GsQueue>, config: &DeviceConfig) -> Result<Self, LogicalDeviceError> {
+    pub fn new(device: &ash::Device, queue: GsQueue, config: &DeviceConfig) -> Result<Self, LogicalDeviceError> {
 
-        let pool = TransferCommandPool::setup(device, queue)?;
+        let pool = TransferCommandPool::setup(device, &queue)?;
 
         let transfer_queue = GsTransferQueue {
-            queue: queue.clone(),
-            pool,
+            queue, pool,
             transfer_wait_time: config.transfer_wait_time,
         };
         Ok(transfer_queue)
     }
 
-    fn queue(&self) -> &Rc<GsQueue> {
+    pub fn queue(&self) -> &GsQueue {
         &self.queue
     }
 
-    fn cleanup(&self, device: &GsLogicalDevice) {
-        self.pool.cleanup(device);
+    pub fn destroy(&self, device: &GsLogicalDevice) {
+        self.pool.destroy(device);
     }
 }
 
@@ -114,7 +112,7 @@ impl GsTransfer {
             wait_semaphore_count  : 0,
             p_wait_semaphores     : ptr::null(),
             p_wait_dst_stage_mask : ptr::null(),
-            command_buffer_count  : submit_commands.len() as vkuint,
+            command_buffer_count  : submit_commands.len() as _,
             p_command_buffers     : submit_commands.as_ptr(),
             signal_semaphore_count: 0,
             p_signal_semaphores   : ptr::null(),
@@ -178,7 +176,7 @@ impl TransferCommandPool {
             p_next: ptr::null(),
             command_pool: self.handle,
             level: vk::CommandBufferLevel::PRIMARY,
-            command_buffer_count: count as vkuint,
+            command_buffer_count: count as _,
         };
 
         let handles = unsafe {
@@ -203,7 +201,7 @@ impl TransferCommandPool {
         }
     }
 
-    fn cleanup(&self, device: &GsLogicalDevice) {
+    fn destroy(&self, device: &GsLogicalDevice) {
 
         unsafe {
             device.handle.destroy_command_pool(self.handle, None);

@@ -5,7 +5,7 @@ use ash::version::DeviceV1_0;
 use crate::core::device::GsDevice;
 
 use crate::memory::target::GsMemory;
-use crate::memory::selector::MemorySelector;
+use crate::memory::filter::MemoryFilter;
 use crate::memory::types::GsMemoryType;
 use crate::memory::utils::{ MemoryRange, MemoryMapStatus };
 use crate::memory::error::MemoryError;
@@ -23,7 +23,7 @@ pub trait GsMemoryAbstract {
 
     fn target(&self) -> &GsMemory;
 
-    fn allocate(device: &GsDevice, size: vkbytes, selector: &MemorySelector) -> Result<Self, MemoryError> where Self: Sized;
+    fn allocate(device: &GsDevice, size: vkbytes, filter: &MemoryFilter) -> Result<Self, MemoryError> where Self: Sized;
 
     fn as_mut_mapable(&mut self) -> Option<&mut MemoryMappable>;
 

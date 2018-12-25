@@ -11,7 +11,7 @@ pub struct GsFramebuffer {
 
 impl GsFramebuffer {
 
-    pub fn cleanup(&self, device: &GsDevice) {
+    pub fn destroy(&self, device: &GsDevice) {
         unsafe {
             device.handle.destroy_framebuffer(self.handle, None);
         }

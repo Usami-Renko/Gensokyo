@@ -31,7 +31,7 @@ impl GsPhysicalDevice {
             format_properties.buffer_features.contains(query.buffers)
     }
 
-    pub fn cleanup(&self) {
+    pub fn destroy(&self) {
         // No method for delete physical device
         // leave it empty
     }

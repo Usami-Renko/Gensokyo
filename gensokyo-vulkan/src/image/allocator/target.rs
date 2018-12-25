@@ -17,7 +17,7 @@ use crate::image::allocator::types::ImageMemoryTypeAbs;
 use crate::image::allocator::distributor::GsImageDistributor;
 use crate::image::error::ImageError;
 
-use crate::memory::{ MemorySelector, MemoryDstEntity };
+use crate::memory::{ MemoryFilter, MemoryDstEntity };
 use crate::memory::transfer::DataCopyer;
 use crate::memory::AllocatorError;
 
@@ -38,7 +38,7 @@ pub struct GsImageAllocator<M> where M: ImageMemoryTypeAbs {
 
     image_infos : Vec<ImageAllocateInfo>,
 
-    memory_selector : MemorySelector,
+    memory_filter : MemoryFilter,
 }
 
 impl<M> GsImageAllocator<M> where M: ImageMemoryTypeAbs {
@@ -54,7 +54,7 @@ impl<M> GsImageAllocator<M> where M: ImageMemoryTypeAbs {
 
             image_infos: vec![],
 
-            memory_selector: MemorySelector::init(physical, storage_type.memory_type()),
+            memory_filter: MemoryFilter::new(physical, storage_type.memory_type()),
         }
     }
 
@@ -74,7 +74,7 @@ impl<M> GsImageAllocator<M> where M: ImageMemoryTypeAbs {
     fn append_image(&mut self, info: &mut impl ImageInstanceInfoAbs, storage: ImageStorageInfo) -> Result<(), AllocatorError> {
 
         let image = info.build_image(&self.device)?;
-        self.memory_selector.filter(&image)?;
+        self.memory_filter.filter(&image)?;
 
         info.set_allocate_index(self.image_infos.len());
         self.image_infos.push(info.allocate_info(image, storage));
@@ -95,7 +95,7 @@ impl<M> GsImageAllocator<M> where M: ImageMemoryTypeAbs {
             });
 
         // 2.allocate memory.
-        let memory = self.storage_type.allot_memory(&self.device, total_space, &self.memory_selector)?;
+        let memory = self.storage_type.allot_memory(&self.device, total_space, &self.memory_filter)?;
 
         // 3.bind image to memory.
         let mut offset = 0;
@@ -129,7 +129,7 @@ impl<M> GsImageAllocator<M> where M: ImageMemoryTypeAbs {
             image_info.cleanup(&self.device);
         });
 
-        self.memory_selector.reset();
+        self.memory_filter.reset();
     }
 }
 
@@ -171,7 +171,7 @@ impl ImageAllocateInfo {
 
     pub fn cleanup(&self, device: &GsDevice) {
 
-        self.image.cleanup(device);
+        self.image.destroy(device);
     }
 }
 

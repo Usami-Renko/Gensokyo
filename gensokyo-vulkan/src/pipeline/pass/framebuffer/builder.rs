@@ -38,7 +38,7 @@ impl FramebufferBuilder {
             // flags is reserved for future use in API version 1.1.82.
             flags: vk::FramebufferCreateFlags::empty(),
             render_pass,
-            attachment_count: self.attachments.len() as vkuint,
+            attachment_count: self.attachments.len() as _,
             p_attachments   : self.attachments.as_ptr(),
             width : self.extent.width,
             height: self.extent.height,

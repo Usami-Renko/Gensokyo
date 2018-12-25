@@ -121,7 +121,7 @@ impl ChainResource {
 
     pub fn cleanup(&self, device: &GsDevice) {
 
-        self.swapchain.cleanup(device);
+        self.swapchain.destroy(device);
         self.image_awaits.iter()
             .for_each(|i| i.cleanup());
         self.sync_fences.iter()

@@ -49,14 +49,14 @@ impl DescriptorPoolInfo {
 
     pub fn build(&self, device: &GsDevice) -> Result<GsDescriptorPool, DescriptorError> {
 
-        let max_sets = if self.max_sets == 0 { self.pool_sizes.len() as vkuint } else { self.max_sets };
+        let max_sets = if self.max_sets == 0 { self.pool_sizes.len() as _ } else { self.max_sets };
 
         let info = vk::DescriptorPoolCreateInfo {
             s_type: vk::StructureType::DESCRIPTOR_POOL_CREATE_INFO,
             p_next: ptr::null(),
             flags : self.flags,
             max_sets,
-            pool_size_count: self.pool_sizes.len() as vkuint,
+            pool_size_count: self.pool_sizes.len() as _,
             p_pool_sizes   : self.pool_sizes.as_ptr(),
         };
 
@@ -89,7 +89,7 @@ impl GsDescriptorPool {
             s_type: vk::StructureType::DESCRIPTOR_SET_ALLOCATE_INFO,
             p_next: ptr::null(),
             descriptor_pool: self.handle,
-            descriptor_set_count: layout_handles.len() as vkuint,
+            descriptor_set_count: layout_handles.len() as _,
             p_set_layouts       : layout_handles.as_ptr(),
         };
 

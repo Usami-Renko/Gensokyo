@@ -219,7 +219,7 @@ impl DepthProcedure {
         let depth_stencil = GsDepthStencilState::setup(GsDepthStencilPrefab::EnableDepth);
 
         let pipeline_config = kit.pipeline_config(shader_infos, vertex_input_desc, render_pass)
-            .setup_depth_stencil(depth_stencil)
+            .with_depth_stencil(depth_stencil)
             .add_descriptor_set(ubo_set)
             .finish();
 
@@ -299,7 +299,7 @@ impl GraphicsRoutine for DepthProcedure {
             .for_each(|semaphore| semaphore.cleanup());
         self.present_availables.clear();
         self.command_buffers.clear();
-        self.command_pool.cleanup();
+        self.command_pool.destroy();
         self.pipeline.cleanup();
 
         Ok(())
@@ -329,7 +329,7 @@ impl GraphicsRoutine for DepthProcedure {
         self.present_availables.iter()
             .for_each(|semaphore| semaphore.cleanup());
         self.pipeline.cleanup();
-        self.command_pool.cleanup();
+        self.command_pool.destroy();
         self.image_storage.cleanup();
 
         self.desc_storage.cleanup();

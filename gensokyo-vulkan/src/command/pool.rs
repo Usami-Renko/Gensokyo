@@ -8,8 +8,6 @@ use crate::core::device::{ GsDevice, DeviceQueueIdentifier };
 use crate::command::buffer::{ GsCommandBuffer, CmdBufferUsage };
 use crate::command::error::CommandError;
 
-use crate::types::vkuint;
-
 use std::ptr;
 
 pub struct GsCommandPool {
@@ -55,7 +53,7 @@ impl GsCommandPool {
             p_next: ptr::null(),
             command_pool: self.handle,
             level: usage.level(),
-            command_buffer_count: count as vkuint,
+            command_buffer_count: count as _,
         };
 
         let handles = unsafe {
@@ -71,14 +69,14 @@ impl GsCommandPool {
 
     pub fn free(&self, buffers_to_free: &[GsCommandBuffer]) {
 
-        let buffer_handles = collect_handle!(buffers_to_free);
+        let buffer_handles: Vec<vk::CommandBuffer> = collect_handle!(buffers_to_free);
 
         unsafe {
             self.device.handle.free_command_buffers(self.handle, &buffer_handles);
         }
     }
 
-    pub fn cleanup(&self) {
+    pub fn destroy(&self) {
         unsafe {
             self.device.handle.destroy_command_pool(self.handle, None);
         }

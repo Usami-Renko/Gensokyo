@@ -55,14 +55,14 @@ impl RenderPassBuilder {
         let subpass_index = self.subpasses.len();
         self.subpasses.push(subpass);
 
-        subpass_index as vkuint
+        subpass_index as _
     }
 
     /// create a attachment and set its reference to subpass, return the index of this attachment.
     pub fn add_attachemnt(&mut self, attachment: RenderAttachement, subpass_index: vkuint) -> usize {
 
         let attachment_ref = vk::AttachmentReference {
-            attachment: self.attachments.len() as vkuint,
+            attachment: self.attachments.len() as _,
             layout: attachment.layout,
         };
 
@@ -115,11 +115,11 @@ impl RenderPassBuilder {
             p_next: ptr::null(),
             // flags is reserved for future use in API version 1.1.82.
             flags: vk::RenderPassCreateFlags::empty(),
-            attachment_count: attachments.len() as vkuint,
+            attachment_count: attachments.len() as _,
             p_attachments   : attachments.as_ptr(),
-            subpass_count   : subpasses.len() as vkuint,
+            subpass_count   : subpasses.len() as _,
             p_subpasses     : subpasses.as_ptr(),
-            dependency_count: dependencies.len() as vkuint,
+            dependency_count: dependencies.len() as _,
             p_dependencies  : dependencies.as_ptr(),
         };
 

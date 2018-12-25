@@ -1,31 +1,25 @@
 
-use crate::core::device::device::{ GsLogicalDevice, DeviceConfig };
-use crate::core::device::queue::{ GsQueue, GsQueueAbstract };
-use crate::core::error::LogicalDeviceError;
-
-use std::rc::Rc;
+use crate::core::device::queue::GsQueue;
 
 pub struct GsPresentQueue {
 
-    queue: Rc<GsQueue>,
+    queue: GsQueue,
 }
 
-impl GsQueueAbstract for GsPresentQueue {
+impl GsPresentQueue {
 
-    fn new(_device: &ash::Device, queue: &Rc<GsQueue>, _config: &DeviceConfig) -> Result<Self, LogicalDeviceError> {
+    pub fn new(queue: GsQueue) -> GsPresentQueue {
 
-        let present_queue = GsPresentQueue {
-            queue: queue.clone(),
-        };
-
-        Ok(present_queue)
+        GsPresentQueue {
+            queue
+        }
     }
 
-    fn queue(&self) -> &Rc<GsQueue> {
+    pub fn queue(&self) -> &GsQueue {
         &self.queue
     }
 
-    fn cleanup(&self, _device: &GsLogicalDevice) {
+    pub fn destroy(&self) {
         // nothing to clean
     }
 }

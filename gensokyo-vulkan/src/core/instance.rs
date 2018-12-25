@@ -3,10 +3,10 @@ use ash::vk;
 use ash::version::EntryV1_0;
 use ash::version::InstanceV1_0;
 
-use crate::core::debug::{ ValidationConfig, DebugInstanceType };
-use crate::core::error::InstanceError;
-use crate::core::platforms;
 use crate::core::debug;
+use crate::core::debug::{ ValidationConfig, DebugInstanceType };
+use crate::core::platforms;
+use crate::core::error::InstanceError;
 
 use crate::utils::cast;
 use crate::types::vkuint;
@@ -25,6 +25,7 @@ pub struct GsInstance {
     pub(crate) enable_layer_names: Vec<CString>,
 }
 
+/// An enum type indicates all support extensions for `vk::Instance`.
 enum InstanceExtensionType {
     Surface,
     PlatformSurface,
@@ -34,31 +35,33 @@ enum InstanceExtensionType {
 
 impl GsInstance {
 
-    /// Initialize `vk::Instance` object
+    /// Initialize `vk::Instance` object.
     pub fn new(config: &InstanceConfig, validation: &ValidationConfig) -> Result<GsInstance, InstanceError> {
 
         let entry = ash::Entry::new()
             .or(Err(InstanceError::EntryCreationError))?;
 
-        let app_name    = CString::new(config.name_application.clone()).unwrap();
-        let engine_name = CString::new(config.name_engine.clone()).unwrap();
+        let app_name = cast::string2cstring((&config.application_name).into())
+            .ok_or(InstanceError::InvalidNameCastingError)?;
+        let engine_name = cast::string2cstring((&config.engine_name).into())
+            .ok_or(InstanceError::InvalidNameCastingError)?;
 
         let application_info = vk::ApplicationInfo {
             s_type              : vk::StructureType::APPLICATION_INFO,
             p_next              : ptr::null(),
             p_application_name  : app_name.as_ptr(),
-            application_version : config.version_application,
+            application_version : config.application_version,
             p_engine_name       : engine_name.as_ptr(),
-            engine_version      : config.version_engine,
-            api_version         : config.version_api,
+            engine_version      : config.engine_version,
+            api_version         : config.api_version,
         };
 
         // get the names of required vulkan layers.
         let enable_layer_names = required_layers(&entry, validation)?;
-        let enable_layer_names_ptr = cast::to_array_ptr(&enable_layer_names);
+        let enable_layer_names_ptr = cast::cstrings2ptrs(&enable_layer_names);
         // get the names of required vulkan extensions.
-        let require_extensions = GsInstance::require_instances(validation);
-        let enable_extension_names = instance_extension_to_names(&require_extensions);
+        let require_extensions = GsInstance::require_extensions(validation);
+        let enable_extension_names = instance_extensions_to_names(&require_extensions);
 
         let instance_create_info = vk::InstanceCreateInfo {
             s_type                     : vk::StructureType::INSTANCE_CREATE_INFO,
@@ -66,9 +69,9 @@ impl GsInstance {
             // flags is reserved for future use in API version 1.1.82.
             flags                      : vk::InstanceCreateFlags::empty(),
             p_application_info         : &application_info,
-            enabled_layer_count        : enable_layer_names_ptr.len() as vkuint,
+            enabled_layer_count        : enable_layer_names_ptr.len() as _,
             pp_enabled_layer_names     : enable_layer_names_ptr.as_ptr(),
-            enabled_extension_count    : enable_extension_names.len() as vkuint,
+            enabled_extension_count    : enable_extension_names.len() as _,
             pp_enabled_extension_names : enable_extension_names.as_ptr(),
         };
 
@@ -85,7 +88,8 @@ impl GsInstance {
         Ok(instance)
     }
 
-    fn require_instances(validation: &ValidationConfig) -> Vec<InstanceExtensionType> {
+    /// Specify the necessary extensions.
+    fn require_extensions(validation: &ValidationConfig) -> Vec<InstanceExtensionType> {
 
         let mut instance_extensions = vec![
             InstanceExtensionType::Surface,
@@ -103,10 +107,10 @@ impl GsInstance {
         instance_extensions
     }
 
-    /// Some cleaning operations before this object was uninitialized.
+    /// Destroy the `vk::Instance` object. This function must be called before this wrapper class is dropped.
     ///
-    /// For `GsInstance`, it destroy the `vk::Instance` object.
-    pub fn clenaup(&self) {
+    /// In Vulkan, all child objects created using instance must have been destroyed prior to destroying instance.
+    pub fn destroy(&self) {
         unsafe {
             self.handle.destroy_instance(None);
         }
@@ -123,12 +127,15 @@ fn required_layers(entry: &ash::Entry, validation: &ValidationConfig) -> Result<
 
     if validation.is_enable {
         if debug::is_support_validation_layer(entry, &validation.required_validation_layers)? {
-            enable_layer_names = validation.required_validation_layers.iter()
-                .map(|layer_name| CString::new(layer_name.as_str()).unwrap())
-                .collect();
+
+            for layer in validation.required_validation_layers.iter() {
+
+                let layer_name = cast::string2cstring(Some(layer))
+                    .ok_or(InstanceError::InvalidNameCastingError)?;
+                enable_layer_names.push(layer_name);
+            }
         } else {
             return Err(InstanceError::ValidationLayerNotSupportError)
-
         }
     }
     // -------------------------------------------------------------------
@@ -137,12 +144,11 @@ fn required_layers(entry: &ash::Entry, validation: &ValidationConfig) -> Result<
     // currently not ohter layers is needed
     // -------------------------------------------------------------------
 
-//    let raw_names = enable_layer_names.iter().map
-
     Ok(enable_layer_names)
 }
 
-fn instance_extension_to_names(extensions: &[InstanceExtensionType]) -> Vec<*const i8> {
+/// Translate the type of instance extension to c-style string.
+fn instance_extensions_to_names(extensions: &[InstanceExtensionType]) -> Vec<*const i8> {
 
     extensions.iter().map(|extension| {
         match extension {
@@ -154,12 +160,20 @@ fn instance_extension_to_names(extensions: &[InstanceExtensionType]) -> Vec<*con
     }).collect()
 }
 
+/// The configuration parameters used in the initialization of `vk::Instance`.
 pub struct InstanceConfig {
 
-    pub version_api         : vkuint,
-    pub version_application : vkuint,
-    pub version_engine      : vkuint,
+    /// `api_version` must be the highest version of Vulkan that the application is designed to use.
+    ///
+    /// The patch version number is ignored and only the major and minor versions must match those requested in `api_version`.
+    pub api_version: vkuint,
+    /// `application_version` is an unsigned integer variable containing the developer-supplied version number of the application.
+    pub application_version: vkuint,
+    /// `engine_version`is an unsigned integer variable containing the developer-supplied version number of the engine used to create the application.
+    pub engine_version: vkuint,
 
-    pub name_application : String,
-    pub name_engine      : String,
+    /// `application_name` is a string containing the name of the application or None if it is not provided.
+    pub application_name: Option<String>,
+    /// `engine_name` is the name of the engine used to create the application or None if it is not provided.
+    pub engine_name: Option<String>,
 }

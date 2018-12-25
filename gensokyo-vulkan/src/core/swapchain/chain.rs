@@ -23,8 +23,9 @@ pub struct GsSwapchain {
 
     /// the presentable image objects associated with the swapchain.
     ///
-    /// These images are created in `loader.create_swapchain_khr(..)` call.
-    _images: Vec<GsImage>,
+    /// These images are created in `loader.create_swapchain_khr(..)` call and are destroyed automatically when `vk::SwapchainKHR` is destroyed.
+    #[allow(dead_code)]
+    images: Vec<GsImage>,
     /// the corresponding image views associated with the presentable images created by swapchain.
     views: Vec<GsImageView>,
     /// the format of presentable images.
@@ -41,7 +42,7 @@ impl GsSwapchain {
     pub(crate) fn new(handle: vk::SwapchainKHR, loader: ash::extensions::Swapchain, images: Vec<GsImage>, views: Vec<GsImageView>, format: vk::Format, extent: vkDim2D, image_acquire_time: vklint) -> GsSwapchain {
 
         GsSwapchain {
-            handle, loader, _images: images, views, format, extent, image_acquire_time
+            handle, loader, images, views, format, extent, image_acquire_time
         }
     }
 
@@ -92,7 +93,7 @@ impl GsSwapchain {
         let present_info = vk::PresentInfoKHR {
             s_type              : vk::StructureType::PRESENT_INFO_KHR,
             p_next              : ptr::null(),
-            wait_semaphore_count: semaphores.len() as vkuint,
+            wait_semaphore_count: semaphores.len() as _,
             p_wait_semaphores   : semaphores.as_ptr(),
             swapchain_count     : 1,
             p_swapchains        : &self.handle,
@@ -113,8 +114,10 @@ impl GsSwapchain {
         }
     }
 
-    /// Some cleaning operations before this object was uninitialized.
-    pub fn cleanup(&self, device: &GsDevice) {
+    /// Destroy the `vk::SwapchainKHR` object.
+    ///
+    /// The application must not destroy `vk::SwapchainKHR` until after completion of all outstanding operations on images that were acquired from the `vk::SwapchainKHR`.
+    pub fn destroy(&self, device: &GsDevice) {
 
         // destroy all the presentable images created by this swapchain.
         self.views.iter()
