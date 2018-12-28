@@ -61,10 +61,10 @@ impl GsMemoryAbstract for GsHostMemory {
         Some(self)
     }
 
-    fn cleanup(&mut self, device: &GsDevice) {
+    fn destroy(&mut self, device: &GsDevice) {
 
         self.unmap(device);
-        self.target.cleanup(device);
+        self.target.destroy(device);
     }
 }
 

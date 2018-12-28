@@ -53,7 +53,7 @@ pub struct GsPipelineLayout {
 
 impl GsPipelineLayout {
 
-    pub fn cleanup(&self, device: &GsDevice) {
+    pub fn destroy(&self, device: &GsDevice) {
         unsafe {
             device.handle.destroy_pipeline_layout(self.handle, None);
         }

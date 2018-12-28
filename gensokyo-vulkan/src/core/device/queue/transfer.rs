@@ -137,7 +137,7 @@ impl Drop for GsTransfer {
 
     fn drop(&mut self) {
 
-        self.fence.cleanup();
+        self.fence.destroy();
     }
 }
 

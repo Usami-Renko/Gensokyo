@@ -129,8 +129,8 @@ impl VulkanEnv {
         Ok(Rc::new(chain))
     }
 
-    /// use cleanup function, so that the order of deinitialization can be customizable.
-    pub fn cleanup(&self) {
+    /// use destroy function, so that the order of deinitialization can be customizable.
+    pub fn destroy(&self) {
 
         self.physical.destroy();
         self.device.destroy();

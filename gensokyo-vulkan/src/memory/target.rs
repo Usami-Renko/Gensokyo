@@ -50,7 +50,7 @@ impl GsMemory {
         self.typ.property_flags.contains(vk::MemoryPropertyFlags::HOST_COHERENT)
     }
 
-    pub fn cleanup(&self, device: &GsDevice) {
+    pub fn destroy(&self, device: &GsDevice) {
 
         unsafe {
             device.handle.free_memory(self.handle, None);

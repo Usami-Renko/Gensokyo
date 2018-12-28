@@ -12,7 +12,7 @@ keywords    = ["Vulkan", "Rust", "Graphics"]
 winit        = "0.18.0" # winit is a window creation and management library.
 ash          = "0.26.0" # ash is the vulkan bindings for Rust.
 num          = "0.2"    # num crate is a collection of numeric types and traits for Rust.
-image        = "0.20" # image crate provides basic imaging processing functions and methods for converting to and from image formats.
+image        = "0.20"   # image crate provides basic imaging processing functions and methods for converting to and from image formats.
 memoffset    = "0.2"    # memoffset provides C-Like offset_of functionality for Rust structs.
 smallvec     = "0.6.5"  # smallvec store up to a small number of items on the stack to provide optimization for Rust.
 cgmath       = "0.16.1" # cgmath is a linear algebra and mathematics library for computer graphics.
@@ -24,5 +24,8 @@ serde_derive = "1.0.80" # Macros implementation of #[derive(Serialize, Deseriali
 # error-chain = "0.12.0" # Consistent error handling for Rust.
 # rayon = "1.0.2" # Rayon is a data-parallelism library for Rust.
 
-gsvk = { package = "gensokyo-vulkan", path = "../gensokyo-vulkan" }
-gsma = { package = "gensokyo-macros", path = "../gensokyo-macros" }
+gensokyo-vulkan = { path = "../gensokyo-vulkan" }
+gensokyo-macros = { path = "../gensokyo-macros" }
+
+# gsvk = { package = "gensokyo-vulkan", path = "../gensokyo-vulkan" }
+# gsma = { package = "gensokyo-macros", path = "../gensokyo-macros" }

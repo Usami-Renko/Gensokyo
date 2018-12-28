@@ -23,7 +23,7 @@ impl GsSampler {
         }
     }
 
-    pub fn cleanup(&self, device: &GsDevice) {
+    pub fn destroy(&self, device: &GsDevice) {
         unsafe {
             device.handle.destroy_sampler(self.handle, None);
         }

@@ -37,7 +37,7 @@ impl GsSemaphore {
         Ok(semaphore)
     }
 
-    pub fn cleanup(&self) {
+    pub fn destroy(&self) {
         unsafe {
             self.device.handle.destroy_semaphore(self.handle, None);
         }

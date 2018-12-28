@@ -121,7 +121,7 @@ impl GsSwapchain {
 
         // destroy all the presentable images created by this swapchain.
         self.views.iter()
-            .for_each(|v| v.cleanup(device));
+            .for_each(|v| v.destroy(device));
 
         // destroy the swapchain itself.
         unsafe {

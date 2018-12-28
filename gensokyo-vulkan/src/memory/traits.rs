@@ -43,7 +43,7 @@ pub trait GsMemoryAbstract {
         }
     }
 
-    fn cleanup(&mut self, device: &GsDevice) {
+    fn destroy(&mut self, device: &GsDevice) {
         unsafe {
             device.handle.free_memory(self.target().handle, None);
         }

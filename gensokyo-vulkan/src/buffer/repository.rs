@@ -65,13 +65,16 @@ impl<M> GsBufferRepository<M> where M: BufferMemoryTypeAbs {
             },
         }
     }
+}
 
-    pub fn cleanup(&mut self) {
+impl<M> Drop for GsBufferRepository<M> where M: BufferMemoryTypeAbs {
+
+    fn drop(&mut self) {
 
         self.buffers.iter().for_each(|buffer|
             buffer.destroy(&self.device));
 
-        self.memory.cleanup(&self.device);
+        self.memory.destroy(&self.device);
 
         self.buffers.clear();
         self.offsets.clear();

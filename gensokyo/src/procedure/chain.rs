@@ -111,7 +111,7 @@ impl ChainResource {
     pub fn reload(&mut self, env: &VulkanEnv, config: &SwapchainConfig) -> Result<(), ProcedureError> {
 
         let new_chain = env.new_chain(config, Some(&self.swapchain), &self.window)?;
-        self.cleanup(&env.device);
+        self.destroy(&env.device);
 
         self.swapchain = new_chain;
         self.recreate_syncs(&env.device)?;
@@ -119,13 +119,13 @@ impl ChainResource {
         Ok(())
     }
 
-    pub fn cleanup(&self, device: &GsDevice) {
+    pub fn destroy(&self, device: &GsDevice) {
 
         self.swapchain.destroy(device);
         self.image_awaits.iter()
-            .for_each(|i| i.cleanup());
+            .for_each(|i| i.destroy());
         self.sync_fences.iter()
-            .for_each(|f| f.cleanup());
+            .for_each(|f| f.destroy());
     }
 
     fn recreate_syncs(&mut self, device: &GsDevice) -> Result<(), ProcedureError> {

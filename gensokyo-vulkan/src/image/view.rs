@@ -20,7 +20,7 @@ pub struct GsImageView {
 
 impl GsImageView {
 
-    pub fn cleanup(&self, device: &GsDevice) {
+    pub fn destroy(&self, device: &GsDevice) {
         unsafe {
             device.handle.destroy_image_view(self.handle, None);
         }

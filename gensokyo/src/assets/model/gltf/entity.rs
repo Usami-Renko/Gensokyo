@@ -146,13 +146,6 @@ impl<M> GltfEntity<M> where M: BufferMemoryTypeAbs + Copy {
         }
     }
 
-    pub fn cleanup(&mut self) {
-
-        if let Some(ref mut res) = self.allo_res {
-            res.repository.cleanup();
-        }
-    }
-
     pub fn vertex_desc(&self) -> VertexInputDescription {
         Vertex::desc()
     }
@@ -163,6 +156,7 @@ struct AllocateResource<M> where M: BufferMemoryTypeAbs + Copy {
     vertexs: Vec<GsVertexBlock>,
     indices: Vec<GsIndexBlock>,
     index_counts: Vec<usize>,
+    #[allow(dead_code)]
     repository: GsBufferRepository<M>,
 }
 

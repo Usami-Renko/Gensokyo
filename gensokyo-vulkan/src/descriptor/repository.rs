@@ -21,15 +21,15 @@ impl GsDescriptorRepository {
             pool, sets,
         }
     }
-
-    pub fn cleanup(&mut self) {
-
-        self.pool.cleanup(&self.device);
-
-        self.sets.iter()
-            .for_each(|set| set.cleanup(&self.device));
-
-        self.sets.clear();
-    }
 }
 
+impl Drop for GsDescriptorRepository {
+
+    fn drop(&mut self) {
+
+        self.pool.destroy(&self.device);
+
+        self.sets.iter()
+            .for_each(|set| set.destroy(&self.device));
+    }
+}

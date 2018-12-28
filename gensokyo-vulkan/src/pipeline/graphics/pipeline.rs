@@ -14,7 +14,7 @@ pub struct GsGraphicsPipeline {
     pub(crate) pass  : GsRenderPass,
     pub(crate) layout: GsPipelineLayout,
 
-    device: Option<GsDevice>,
+    device: GsDevice,
 
     bind_point: vk::PipelineBindPoint,
     frame_count: usize,
@@ -28,8 +28,8 @@ impl GsGraphicsPipeline {
 
         GsGraphicsPipeline {
             handle,
-            device: Some(device.clone()),
-            layout: GsPipelineLayout { handle: layout,  },
+            device: device.clone(),
+            layout: GsPipelineLayout { handle: layout },
             pass,
             bind_point: vk::PipelineBindPoint::GRAPHICS,
             frame_count,
@@ -44,16 +44,13 @@ impl GsGraphicsPipeline {
         self.frame_count
     }
 
-    pub fn cleanup(&self) {
+    pub fn destroy(&self) {
 
-        if let Some(ref device) = self.device {
-
-            unsafe {
-                device.handle.destroy_pipeline(self.handle, None);
-            }
-            self.layout.cleanup(device);
-            self.pass.destroy(device);
+        unsafe {
+            self.device.handle.destroy_pipeline(self.handle, None);
         }
+        self.layout.destroy(&self.device);
+        self.pass.destroy(&self.device);
     }
 }
 

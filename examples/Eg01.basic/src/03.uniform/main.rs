@@ -1,4 +1,9 @@
 
+// TODO: Rename crate in Cargo.toml.
+extern crate gensokyo as gs;
+extern crate gensokyo_vulkan as gsvk;
+extern crate gensokyo_macros as gsma;
+
 use ash::vk;
 use gs::prelude::*;
 use gsvk::prelude::common::*;
@@ -42,9 +47,11 @@ struct UboObject {
 struct UniformBufferProcedure {
 
     vertex_data   : Vec<Vertex>,
+    #[allow(dead_code)]
     buffer_storage: GsBufferRepository<Host>,
     vertex_buffer : GsVertexBlock,
 
+    #[allow(dead_code)]
     desc_storage: GsDescriptorRepository,
     ubo_set: DescriptorSet,
 
@@ -248,11 +255,11 @@ impl GraphicsRoutine for UniformBufferProcedure {
     fn clean_resources(&mut self, _: &GsDevice) -> Result<(), ProcedureError> {
 
         self.present_availables.iter()
-            .for_each(|semaphore| semaphore.cleanup());
+            .for_each(|semaphore| semaphore.destroy());
         self.present_availables.clear();
         self.command_buffers.clear();
         self.command_pool.destroy();
-        self.graphics_pipeline.cleanup();
+        self.graphics_pipeline.destroy();
 
         Ok(())
     }
@@ -279,11 +286,9 @@ impl GraphicsRoutine for UniformBufferProcedure {
     fn clean_routine(&mut self, _device: &GsDevice) {
 
         self.present_availables.iter()
-            .for_each(|semaphore| semaphore.cleanup());
-        self.graphics_pipeline.cleanup();
+            .for_each(|semaphore| semaphore.destroy());
+        self.graphics_pipeline.destroy();
         self.command_pool.destroy();
-        self.desc_storage.cleanup();
-        self.buffer_storage.cleanup();
     }
 
     fn react_input(&mut self, inputer: &ActionNerve, _: f32) -> SceneAction {
@@ -305,7 +310,7 @@ fn main() {
 
     let asset_loader = builder.assets_loader();
     let routine = UniformBufferProcedure::new(asset_loader).unwrap();
-    let mut routine_flow = builder.build(routine);
+    let routine_flow = builder.build(routine);
 
     match routine_flow.launch(program_env) {
         | Ok(_) => (),

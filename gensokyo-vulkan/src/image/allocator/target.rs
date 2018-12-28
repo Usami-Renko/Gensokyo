@@ -115,10 +115,6 @@ impl<M> GsImageAllocator<M> where M: ImageMemoryTypeAbs {
         // 5.execute image barrier transition.
         copyer.done()?;
 
-        // 6.do some cleaning.
-        barrier_bundles.iter_mut()
-            .for_each(|bundle| bundle.cleanup());
-
         // final done.
         GsImageDistributor::new(self.phantom_type, self.device, self.image_infos, memory)
     }
@@ -126,7 +122,7 @@ impl<M> GsImageAllocator<M> where M: ImageMemoryTypeAbs {
     pub fn reset(&mut self) {
 
         self.image_infos.iter().for_each(|image_info| {
-            image_info.cleanup(&self.device);
+            image_info.destroy(&self.device);
         });
 
         self.memory_filter.reset();
@@ -169,7 +165,7 @@ impl ImageAllocateInfo {
         }
     }
 
-    pub fn cleanup(&self, device: &GsDevice) {
+    pub fn destroy(&self, device: &GsDevice) {
 
         self.image.destroy(device);
     }

@@ -266,13 +266,13 @@ impl ProgramProc for ModelProcedure {
     fn clean_resources(&mut self, _: &GsDevice) -> Result<(), ProcedureError> {
 
         self.present_availables.iter()
-            .for_each(|semaphore| semaphore.cleanup());
+            .for_each(|semaphore| semaphore.destroy());
 
         self.present_availables.clear();
         self.command_buffers.clear();
 
-        self.graphics_pipeline.cleanup();
-        self.command_pool.cleanup();
+        self.graphics_pipeline.destroy();
+        self.command_pool.destroy();
 
         Ok(())
     }

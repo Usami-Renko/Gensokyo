@@ -27,7 +27,7 @@ impl<Routine> RoutineFlow<Routine> where Routine: GraphicsRoutine {
         }
     }
 
-    pub fn launch(&mut self, env: ProgramEnv) -> Result<(), RuntimeError> {
+    pub fn launch(mut self, env: ProgramEnv) -> Result<(), RuntimeError> {
 
         let (mut window_env, vulkan_env, config) = env.split();
         let device = &vulkan_env.device;
@@ -57,9 +57,12 @@ impl<Routine> RoutineFlow<Routine> where Routine: GraphicsRoutine {
         self.routine.closure(device)?;
         self.wait_device_idle(device)?;
         self.routine.clean_routine(device);
-        self.chain.cleanup(device);
+        self.chain.destroy(device);
 
-        vulkan_env.cleanup();
+        // free the program specific resource.
+        drop(self);
+        // and then free vulkan environment resource.
+        vulkan_env.destroy();
 
         Ok(())
     }
@@ -116,7 +119,7 @@ impl<Routine> RoutineFlow<Routine> where Routine: GraphicsRoutine {
 
         let image_ready_to_present = self.routine.draw(&device,
             acquire_result.device_ready, acquire_result.image_acquire_finished,
-            acquire_result.acquire_image_index as usize, delta_time
+            acquire_result.acquire_image_index as _, delta_time
         )?;
 
         self.chain.present_image(device, image_ready_to_present, acquire_result.acquire_image_index)

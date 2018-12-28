@@ -106,7 +106,7 @@ impl GsDescriptorPool {
         Ok(sets)
     }
 
-    pub fn cleanup(&self, device: &GsDevice) {
+    pub fn destroy(&self, device: &GsDevice) {
 
         unsafe {
             device.handle.destroy_descriptor_pool(self.handle, None);

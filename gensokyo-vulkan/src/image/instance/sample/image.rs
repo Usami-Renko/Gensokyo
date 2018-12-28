@@ -37,8 +37,8 @@ impl GsSampleImage {
         }
     }
 
-    pub fn cleanup(&self, device: &GsDevice) {
-        self.sampler.cleanup(device);
+    pub fn destroy(&self, device: &GsDevice) {
+        self.sampler.destroy(device);
     }
 }
 

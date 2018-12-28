@@ -63,7 +63,7 @@ impl GsFence {
         Ok(())
     }
 
-    pub fn cleanup(&self) {
+    pub fn destroy(&self) {
         unsafe {
             self.device.handle.destroy_fence(self.handle, None);
         }

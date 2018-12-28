@@ -1,4 +1,6 @@
 
+// TODO: Remove all #[allow(dead_code)]
+
 use ash::vk;
 use gs::prelude::*;
 use gsvk::prelude::common::*;
@@ -32,6 +34,7 @@ pub struct CubeProcedure {
     pipeline: GsGraphicsPipeline,
 
     ubo_set     : DescriptorSet,
+    #[allow(dead_code)]
     desc_storage: GsDescriptorRepository,
 
     command_pool   : GsCommandPool,
@@ -265,11 +268,11 @@ impl GraphicsRoutine for CubeProcedure {
     fn clean_resources(&mut self, _: &GsDevice) -> Result<(), ProcedureError> {
 
         self.present_availables.iter()
-            .for_each(|semaphore| semaphore.cleanup());
+            .for_each(|semaphore| semaphore.destroy());
         self.present_availables.clear();
         self.command_buffers.clear();
         self.command_pool.destroy();
-        self.pipeline.cleanup();
+        self.pipeline.destroy();
 
         Ok(())
     }
@@ -296,12 +299,9 @@ impl GraphicsRoutine for CubeProcedure {
     fn clean_routine(&mut self, _: &GsDevice) {
 
         self.present_availables.iter()
-            .for_each(|semaphore| semaphore.cleanup());
-        self.pipeline.cleanup();
+            .for_each(|semaphore| semaphore.destroy());
+        self.pipeline.destroy();
         self.command_pool.destroy();
-
-        self.desc_storage.cleanup();
-        self.buffer_storage.cleanup();
     }
 
     fn react_input(&mut self, inputer: &ActionNerve, delta_time: f32) -> SceneAction {

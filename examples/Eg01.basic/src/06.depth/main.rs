@@ -1,4 +1,9 @@
 
+// TODO: Rename crate in Cargo.toml.
+extern crate gensokyo as gs;
+extern crate gensokyo_vulkan as gsvk;
+extern crate gensokyo_macros as gsma;
+
 mod data;
 mod program;
 
@@ -18,7 +23,7 @@ fn main() {
 
     let asset_loader = builder.assets_loader();
     let routine = DepthProcedure::new(asset_loader).unwrap();
-    let mut routine_flow = builder.build(routine);
+    let routine_flow = builder.build(routine);
 
     match routine_flow.launch(program_env) {
         | Ok(_) => (),

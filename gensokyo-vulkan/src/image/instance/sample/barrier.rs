@@ -66,12 +66,6 @@ impl ImageBarrierBundleAbs for SampleImageBarrierBundle {
 
         Ok(())
     }
-
-    fn cleanup(&mut self) {
-        if let Some(ref mut repository) = self.staging_repository {
-            repository.cleanup();
-        }
-    }
 }
 
 impl SampleImageBarrierBundle {

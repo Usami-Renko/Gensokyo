@@ -32,10 +32,6 @@ impl ImageBarrierBundleAbs for DepSteImageBarrierBundle {
 
         Ok(())
     }
-
-    fn cleanup(&mut self) {
-        // nothing to clean, leave this func empty...
-    }
 }
 
 impl DepSteImageBarrierBundle {

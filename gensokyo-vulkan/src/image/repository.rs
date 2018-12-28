@@ -27,17 +27,17 @@ impl<M> GsImageRepository<M> {
             device, images, views, memory,
         }
     }
+}
 
-    pub fn cleanup(&mut self) {
+impl<M> Drop for GsImageRepository<M> {
+
+    fn drop(&mut self) {
 
         self.images.iter()
             .for_each(|image| image.destroy(&self.device));
         self.views.iter()
-            .for_each(|view| view.cleanup(&self.device));
+            .for_each(|view| view.destroy(&self.device));
 
-        self.memory.cleanup(&self.device);
-
-        self.views.clear();
-        self.images.clear();
+        self.memory.destroy(&self.device);
     }
 }

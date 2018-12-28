@@ -29,8 +29,8 @@ impl GsDescriptorSet {
         self.layout.clone()
     }
 
-    pub fn cleanup(&self, device: &GsDevice) {
-        self.layout.cleanup(device);
+    pub fn destroy(&self, device: &GsDevice) {
+        self.layout.destroy(device);
     }
 }
 

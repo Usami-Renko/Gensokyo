@@ -51,5 +51,4 @@ pub trait GsImageViewDescAbs where Self: Sized {
 pub trait ImageBarrierBundleAbs {
 
     fn make_transfermation(&mut self, physical: &GsPhyDevice, device: &GsDevice, copyer: &DataCopyer, infos: &mut Vec<ImageAllocateInfo>) -> Result<(), AllocatorError>;
-    fn cleanup(&mut self);
 }
