@@ -1,7 +1,6 @@
 
-use cgmath;
-use cgmath::{ Matrix4, Vector3, Point3, InnerSpace, Zero, Deg };
 use num;
+use nalgebra::{ Matrix4, Vector3, Point3, zero };
 
 use crate::input::ActionNerve;
 use crate::input::GsKeycode;
@@ -40,12 +39,12 @@ impl GsCameraAbstract for GsFlightCamera {
 
     fn view_matrix(&self) -> Matrix4<f32> {
 
-        Matrix4::look_at(self.pos, self.pos + self.front, self.up)
+        Matrix4::look_at_rh(&self.pos, &(self.pos + self.front), &self.up)
     }
 
     fn proj_matrix(&self) -> Matrix4<f32> {
 
-        cgmath::perspective(Deg(self.zoom), self.screen_aspect, self.near, self.far)
+        Matrix4::new_perspective(self.screen_aspect, self.zoom, self.near, self.far)
     }
 
     fn reset_screen_dimension(&mut self, width: u32, height: u32) {
@@ -107,8 +106,8 @@ impl GsFlightCamera {
 
         // also calculte the right and up vector.
         // Normalize the vectors, because their length gets closer to 0 the move you look up or down which results in slower movement.
-        self.right = self.front.cross(self.world_up);
-        self.up    = self.right.cross(self.front);
+        self.right = self.front.cross(&self.world_up);
+        self.up    = self.right.cross(&self.front);
     }
 }
 
@@ -118,9 +117,9 @@ impl Default for GsFlightCamera {
         GsFlightCamera {
             pos  : Point3::new(0.0, 0.0, 0.0),
             front: Vector3::new(0.0, 0.0, -1.0),
-            up   : Vector3::zero(),
-            right: Vector3::zero(),
-            world_up: Vector3::unit_y(),
+            up   : zero(),
+            right: zero(),
+            world_up: Vector3::y(),
 
             yaw  : utils::CAMERA_YAW,
             pitch: utils::CAMERA_PITCH,

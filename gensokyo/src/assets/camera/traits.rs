@@ -1,5 +1,5 @@
 
-use cgmath::{ Matrix4, Point3, Vector3, SquareMatrix, InnerSpace };
+use nalgebra::{ Matrix4, Point3, Vector3, RowVector4, Vector4 };
 
 use crate::input::ActionNerve;
 
@@ -24,27 +24,21 @@ fn lookat_matrix(pos: &Point3<f32>, target: &Point3<f32>, world_up: &Vector3<f32
     // 2. Calculate camera direction.
     let z_axis = (pos - target).normalize();
     // 3. Get positive right axis vector.
-    let x_axis = world_up.normalize().cross(z_axis).normalize();
+    let x_axis = world_up.normalize().cross(&z_axis).normalize();
     // 4. Calculate camera up vector.
-    let y_axis = z_axis.cross(x_axis);
+    let y_axis = z_axis.cross(&x_axis);
 
     // Create translation and rotation matrix
     // Access elements as mat[col][row] due to column-major layout
     let mut translation: Matrix4<f32> = Matrix4::identity();
-    translation[3][0] = -pos.x;
-    translation[3][1] = -pos.y;
-    translation[3][2] = -pos.z;
+    translation.set_column(3, &Vector4::new(-pos.x, -pos.y, -pos.z, 1.0));
 
-    let mut rotation: Matrix4<f32> = Matrix4::identity();
-    rotation[0][0] = x_axis.x; // First column, first row.
-    rotation[1][0] = x_axis.y;
-    rotation[2][0] = x_axis.z;
-    rotation[0][1] = y_axis.x; // First column, second row.
-    rotation[1][1] = y_axis.y;
-    rotation[2][1] = y_axis.z;
-    rotation[0][2] = z_axis.x; // First column, third row.
-    rotation[1][2] = z_axis.y;
-    rotation[2][2] = z_axis.z;
+    let rotation = Matrix4::from_rows(&[
+        RowVector4::new(x_axis.x, x_axis.y, x_axis.z, 0.0),
+        RowVector4::new(y_axis.x, y_axis.y, y_axis.z, 0.0),
+        RowVector4::new(z_axis.x, y_axis.y, y_axis.z, 0.0),
+        RowVector4::new(0.0, 0.0, 0.0, 1.0),
+    ]);
 
     // Return lookAt matrix as combination of translation and rotation matrix.
     rotation * translation // Remember to read from right to left (first translation then rotation)

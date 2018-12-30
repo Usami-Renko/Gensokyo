@@ -16,7 +16,7 @@ use gsma::data_size;
 use super::data::{ Vertex, UboObject };
 use super::data::{ VERTEX_DATA, INDEX_DATA };
 
-use cgmath::{ Matrix4, SquareMatrix, Point3 };
+use nalgebra::{ Matrix4, Point3 };
 use std::path::Path;
 
 const VERTEX_SHADER_SOURCE_PATH  : &str = "src/06.depth/depth.vert";
@@ -56,8 +56,8 @@ impl DepthProcedure {
 
         let screen_dimension = loader.screen_dimension();
 
-        let camera = CameraConfigurator::config()
-            .place_at(Point3::new(0.0, 0.0, 3.0))
+        let camera = GsCameraFactory::config()
+            .place_at(Point3::new(0.0, 0.0, 2.5))
             .screen_aspect_ratio(screen_dimension.width as f32 / screen_dimension.height as f32)
             .into_flight_camera();
 

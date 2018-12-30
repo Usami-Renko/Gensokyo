@@ -15,7 +15,7 @@ use gsvk::sync::*;
 
 use gsma::{ define_input, offset_of, vk_format, vertex_rate, data_size };
 
-use cgmath::{ Matrix4, Vector3, Deg };
+use nalgebra::{ Matrix4, Vector3 };
 
 use std::path::{ Path, PathBuf };
 
@@ -70,7 +70,7 @@ impl UniformBufferProcedure {
         let vertex_data = VERTEX_DATA.to_vec();
         let ubo_data = vec![
             UboObject {
-                rotate: Matrix4::from_axis_angle(Vector3::new(0.0, 0.0, 1.0), Deg(90.0))
+                rotate: Matrix4::from_axis_angle(&Vector3::z_axis(), std::f32::consts::FRAC_PI_2) // rotate 90.0 degree.
             },
         ];
 

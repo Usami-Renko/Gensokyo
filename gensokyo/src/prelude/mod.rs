@@ -8,7 +8,7 @@ pub use crate::toolkit::{ AllocatorKit, PipelineKit, CommandKit, SyncKit };
 
 pub use crate::input::{ ActionNerve, SceneAction, GsKeycode };
 
-pub use crate::assets::camera::{ CameraConfigurator, GsCameraAbstract };
+pub use crate::assets::camera::{ GsCameraFactory, GsCameraAbstract };
 pub use crate::assets::camera::{ GsStageCamera, GsFlightCamera };
 
 pub use crate::assets::model::GltfEntity;

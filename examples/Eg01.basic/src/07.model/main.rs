@@ -11,7 +11,6 @@ extern crate ash;
 extern crate gensokyo_macros;
 extern crate gensokyo_vulkan as gsvk;
 extern crate gensokyo as gs;
-extern crate cgmath;
 
 use gs::prelude::*;
 

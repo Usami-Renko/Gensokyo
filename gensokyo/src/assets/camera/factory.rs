@@ -1,11 +1,11 @@
 
-use cgmath::{ Vector3, Point3 };
+use nalgebra::{ Vector3, Point3 };
 
 use crate::assets::camera::chase::GsChaseCamera;
 use crate::assets::camera::flight::GsFlightCamera;
 use crate::assets::camera::stage::GsStageCamera;
 
-pub struct CameraConfigurator {
+pub struct GsCameraFactory {
 
     pos     : Point3<f32>,
     world_up: Vector3<f32>,
@@ -18,18 +18,40 @@ pub struct CameraConfigurator {
     screen_aspect: f32,
 }
 
-impl CameraConfigurator {
+impl GsCameraFactory {
 
-    pub fn config() -> CameraConfigurator {
-        CameraConfigurator::default()
+    pub fn config() -> GsCameraFactory {
+        GsCameraFactory::default()
     }
 
-    pub fn place_at(mut self, position: Point3<f32>) -> Self { self.pos = position; self }
-    pub fn world_up(mut self, up: Vector3<f32>) -> Self { self.world_up = up; self }
-    pub fn yaw(mut self, yaw: f32) -> Self { self.yaw = yaw; self }
-    pub fn pitch(mut self, pitch: f32) -> Self { self.pitch = pitch; self }
-    pub fn view_distance(mut self, near: f32, far: f32) -> Self { self.near = near; self.far = far; self }
-    pub fn screen_aspect_ratio(mut self, ratio: f32) -> Self { self.screen_aspect = ratio; self }
+    pub fn place_at(mut self, position: Point3<f32>) -> GsCameraFactory {
+        self.pos = position;
+        self
+    }
+
+    pub fn world_up(mut self, up: Vector3<f32>) -> GsCameraFactory {
+        self.world_up = up;
+        self
+    }
+
+    pub fn yaw(mut self, yaw: f32) -> GsCameraFactory {
+        self.yaw = yaw;
+        self
+    }
+
+    pub fn pitch(mut self, pitch: f32) -> GsCameraFactory {
+        self.pitch = pitch;
+        self
+    }
+    pub fn view_distance(mut self, near: f32, far: f32) -> GsCameraFactory {
+        self.near = near; self.far = far;
+        self
+    }
+
+    pub fn screen_aspect_ratio(mut self, ratio: f32) -> GsCameraFactory {
+        self.screen_aspect = ratio;
+        self
+    }
 
     pub fn into_chase_camera(self) -> GsChaseCamera {
         unimplemented!()
@@ -45,10 +67,10 @@ impl CameraConfigurator {
 }
 
 
-impl Default for CameraConfigurator {
+impl Default for GsCameraFactory {
 
-    fn default() -> CameraConfigurator {
-        CameraConfigurator {
+    fn default() -> GsCameraFactory {
+        GsCameraFactory {
 
             pos     : Point3::new(0.0, 0.0, 0.0),
             world_up: Vector3::new(0.0, 1.0, 0.0),

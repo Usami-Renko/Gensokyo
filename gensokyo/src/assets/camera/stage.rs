@@ -1,6 +1,5 @@
 
-use cgmath;
-use cgmath::{ Matrix4, Vector3, Point3, InnerSpace, Zero, Deg, Rad };
+use nalgebra::{ Matrix4, Vector3, Point3, zero };
 
 use crate::input::ActionNerve;
 use crate::input::GsKeycode;
@@ -37,12 +36,12 @@ impl GsCameraAbstract for GsStageCamera {
 
     fn view_matrix(&self) -> Matrix4<f32> {
 
-        Matrix4::look_at(self.pos, self.pos + self.front, self.up)
+        Matrix4::look_at_rh(&self.pos, &(self.pos + self.front), &self.up)
     }
 
     fn proj_matrix(&self) -> Matrix4<f32> {
 
-        cgmath::perspective(Deg(self.zoom), self.screen_aspect, self.near, self.far)
+        Matrix4::new_perspective(self.screen_aspect, self.zoom, self.near, self.far)
     }
 
     fn reset_screen_dimension(&mut self, width: u32, height: u32) {
@@ -95,7 +94,7 @@ impl GsStageCamera {
 
     pub fn object_model_transformation(&self) -> Matrix4<f32> {
 
-        Matrix4::from_angle_y(Rad(self.horizontal_rotate)) * Matrix4::from_angle_x(Rad(self.vertical_rotate))
+        Matrix4::from_axis_angle(&Vector3::y_axis(), self.horizontal_rotate) * Matrix4::from_axis_angle(&Vector3::x_axis(), self.vertical_rotate)
     }
 
     fn update_vectors(&mut self, world_up: Vector3<f32>, yaw: f32, pitch: f32) {
@@ -108,8 +107,8 @@ impl GsStageCamera {
 
         // also calculte the right and up vector.
         // Normalize the vectors, because their length gets closer to 0 the move you look up or down which results in slower movement.
-        self.right = self.front.cross(world_up);
-        self.up    = self.right.cross(self.front);
+        self.right = self.front.cross(&world_up);
+        self.up    = self.right.cross(&self.front);
     }
 }
 
@@ -119,8 +118,8 @@ impl Default for GsStageCamera {
         GsStageCamera {
             pos  : Point3::new(0.0, 0.0, 0.0),
             front: Vector3::new(0.0, 0.0, -1.0),
-            up   : Vector3::zero(),
-            right: Vector3::zero(),
+            up   : zero(),
+            right: zero(),
 
             _wheel_sentivity: utils::CAMERA_WHEEL_SENTIVITY,
 

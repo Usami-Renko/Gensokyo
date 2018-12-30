@@ -15,8 +15,9 @@ gensokyo-macros = { path = "../../gensokyo-macros" }
 # gs   = { package = "gensokyo", path = "../../gensokyo" }
 # gsvk = { package = "gensokyo-vulkan", path = "../../gensokyo-vulkan" }
 # gsma = { package = "gensokyo-macros", path = "../../gensokyo-macros" }
-ash    = "0.26.0"
-cgmath = "0.16.1"
+ash      = "0.26.0"
+nalgebra = "0.16"
+
 
 [[bin]]
 name = "01"
