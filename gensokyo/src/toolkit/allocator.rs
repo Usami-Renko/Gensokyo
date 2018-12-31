@@ -1,8 +1,6 @@
 
 use ash::vk;
 
-use crate::config::resources::ResourceConfig;
-
 use gsvk::core::physical::GsPhyDevice;
 use gsvk::core::device::GsDevice;
 use gsvk::core::swapchain::GsChain;
@@ -17,8 +15,9 @@ use gsvk::descriptor::allocator::GsDescriptorAllocator;
 
 use gsvk::types::vkDim2D;
 
+use crate::config::resources::ResourceConfig;
 use crate::assets::io::ImageLoader;
-use crate::assets::model::ModelGltfLoader;
+use crate::assets::gltf::importer::GsGltfImporter;
 
 pub struct AllocatorKit {
 
@@ -62,7 +61,7 @@ impl AllocatorKit {
         ImageLoader::new(self.config.image_load.clone())
     }
 
-    pub fn gltf_loader(&self) -> ModelGltfLoader {
-        ModelGltfLoader::new()
+    pub fn gltf_loader<M: BufferMemoryTypeAbs>(&self, typ: M) -> GsGltfImporter<M> {
+        GsGltfImporter::new(&self.physical, &self.device, typ)
     }
 }

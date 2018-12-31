@@ -44,6 +44,7 @@ impl<M> BufferDataUploader<M> where M: BufferMemoryTypeAbs {
         Ok(self)
     }
 
+    // TODO: Add finish call checking to remind user remembering call this function in debug mode.
     pub fn finish(&mut self) -> Result<(), AllocatorError> {
 
         self.agency.finish(&self.device)

@@ -4,13 +4,13 @@ use std::error::Error;
 
 use gsma::impl_from_err;
 
-use crate::assets::model::ModelLoadingError;
+use crate::assets::gltf::error::GltfError;
 
 #[derive(Debug)]
 pub enum AssetsError {
 
     Io(IoError),
-    Model(ModelLoadingError),
+    Gltf(GltfError),
 }
 
 impl Error for AssetsError {}
@@ -19,8 +19,8 @@ impl fmt::Display for AssetsError {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
 
         let description = match self {
-            | AssetsError::Io(ref e)    => e.to_string(),
-            | AssetsError::Model(ref e) => e.to_string(),
+            | AssetsError::Io(ref e)   => e.to_string(),
+            | AssetsError::Gltf(ref e) => e.to_string(),
         };
 
         write!(f, "{}", description)
@@ -28,7 +28,7 @@ impl fmt::Display for AssetsError {
 }
 
 impl_from_err!(Io(IoError) -> AssetsError);
-impl_from_err!(Model(ModelLoadingError) -> AssetsError);
+impl_from_err!(Gltf(GltfError) -> AssetsError);
 
 #[derive(Debug)]
 pub enum IoError {

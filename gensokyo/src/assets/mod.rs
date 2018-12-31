@@ -1,5 +1,5 @@
 
 pub mod camera;
-pub mod model;
+pub mod gltf;
 pub mod io;
 pub mod error;
