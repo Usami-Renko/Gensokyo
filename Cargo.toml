@@ -6,4 +6,5 @@ members = [
     "gensokyo-macros",
 
     "examples/Eg01.basic",
+    "examples/Eg02.gltf",
 ]

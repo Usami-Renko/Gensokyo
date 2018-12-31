@@ -5,18 +5,13 @@ extern crate gensokyo_vulkan as gsvk;
 extern crate gensokyo_macros as gsma;
 
 mod program;
-
-extern crate ash;
-#[macro_use]
-extern crate gensokyo_macros;
-extern crate gensokyo_vulkan as gsvk;
-extern crate gensokyo as gs;
+mod data;
 
 use gs::prelude::*;
 
-const MANIFEST_PATH: &str = "src/07.model/hakurei.toml";
+const MANIFEST_PATH: &str = "src/01.triangle/gensokyo.toml";
 
-use self::program::ModelProcedure;
+use self::program::TriangleGltfModel;
 use std::path::PathBuf;
 
 fn main() {
@@ -24,13 +19,11 @@ fn main() {
     let manifest = PathBuf::from(MANIFEST_PATH);
     let mut program_env = ProgramEnv::new(Some(manifest)).unwrap();
 
-    let mut routine_flow = {
-        let builder = program_env.routine().unwrap();
+    let builder = program_env.routine().unwrap();
 
-        let asset_loader = builder.assets_loader();
-        let routine = ModelProcedure::new(asset_loader).unwrap();
-        builder.build(routine)
-    };
+    let asset_loader = builder.assets_loader();
+    let routine = TriangleGltfModel::new(asset_loader).unwrap();
+    let routine_flow = builder.build(routine);
 
     match routine_flow.launch(program_env) {
         | Ok(_) => (),

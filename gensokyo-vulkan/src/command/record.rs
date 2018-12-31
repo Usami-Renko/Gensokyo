@@ -209,7 +209,7 @@ impl GsCommandRecorder {
 
             let block = block.as_block_ref();
             handles.push(block.handle);
-            offsets.push(block.memory_offset);
+            offsets.push(0);
         }
 
         unsafe {

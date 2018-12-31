@@ -12,12 +12,11 @@ use gsvk::image::allocator::GsImageAllocator;
 use gsvk::image::allocator::types::ImageMemoryTypeAbs;
 
 use gsvk::descriptor::allocator::GsDescriptorAllocator;
-
 use gsvk::types::vkDim2D;
 
 use crate::config::resources::ResourceConfig;
 use crate::assets::io::ImageLoader;
-use crate::assets::gltf::importer::GsGltfImporter;
+use crate::assets::gltf::importer::GsGltfAllocator;
 
 pub struct AllocatorKit {
 
@@ -61,7 +60,7 @@ impl AllocatorKit {
         ImageLoader::new(self.config.image_load.clone())
     }
 
-    pub fn gltf_loader<M: BufferMemoryTypeAbs>(&self, typ: M) -> GsGltfImporter<M> {
-        GsGltfImporter::new(&self.physical, &self.device, typ)
+    pub fn gltf_allocator<M: BufferMemoryTypeAbs>(&self, typ: M) -> GsGltfAllocator<M> {
+        GsGltfAllocator::new(&self.physical, &self.device, typ)
     }
 }

@@ -1,0 +1,19 @@
+
+[package]
+name    = "gensokyo-eg02-gltf"
+version = "0.1.0"
+authors = ["usami-renko <usami-ssc@protonmail.com>"]
+edition = "2018"
+
+[dependencies]
+gensokyo = { package = "gensokyo", path = "../../gensokyo" }
+gensokyo-vulkan = { package = "gensokyo-vulkan", path = "../../gensokyo-vulkan" }
+gensokyo-macros = { package = "gensokyo-macros", path = "../../gensokyo-macros" }
+
+ash = "0.26.0"
+nalgebra = "0.16"
+
+
+[[bin]]
+name = "01"
+path = "src/01.triangle/main.rs"

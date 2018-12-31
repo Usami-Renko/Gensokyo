@@ -1,6 +1,6 @@
 
 [package]
-name        = "gensokyo-ex01-baisc"
+name        = "gensokyo-eg01-baisc"
 version     = "0.1.0"
 authors     = ["usami-renko <usami-ssc@protonmail.com>"]
 edition     = "2018"
@@ -8,9 +8,9 @@ description = "Basic examples of gensokyo Engine."
 
 [dependencies]
 
-gensokyo = { path = "../../gensokyo" }
-gensokyo-vulkan = { path = "../../gensokyo-vulkan" }
-gensokyo-macros = { path = "../../gensokyo-macros" }
+gensokyo = { package = "gensokyo", path = "../../gensokyo" }
+gensokyo-vulkan = { package = "gensokyo-vulkan", path = "../../gensokyo-vulkan" }
+gensokyo-macros = { package = "gensokyo-macros", path = "../../gensokyo-macros" }
 
 # gs   = { package = "gensokyo", path = "../../gensokyo" }
 # gsvk = { package = "gensokyo-vulkan", path = "../../gensokyo-vulkan" }
@@ -42,7 +42,3 @@ path = "src/05.cube/main.rs"
 [[bin]]
 name = "06"
 path = "src/06.depth/main.rs"
-
-#[[bin]]
-#name = "07"
-#path = "src/07.model/main.rs"

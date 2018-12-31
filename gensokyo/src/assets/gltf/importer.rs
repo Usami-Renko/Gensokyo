@@ -1,7 +1,8 @@
 
-use crate::assets::gltf::storage::{GltfRawDataAgency, GsGltfRepository, GsModelStorage, GsGltfEntity};
+use crate::assets::gltf::storage::{ GltfRawDataAgency, GsGltfRepository, GsModelStorage, GsGltfEntity };
 use crate::assets::gltf::scene::{ GsGltfScene, GltfSceneIndex };
 use crate::assets::gltf::error::GltfError;
+use crate::assets::error::AssetsError;
 
 use gsvk::core::physical::GsPhyDevice;
 use gsvk::core::device::GsDevice;
@@ -14,28 +15,14 @@ use gsvk::command::GsCommandRecorder;
 
 use std::path::Path;
 
+pub struct GsGltfImporter;
 
-pub struct GsGltfImporter<M> where M: BufferMemoryTypeAbs {
+impl GsGltfImporter {
 
-    allocator: GsBufferAllocator<M>,
-}
-
-pub struct GsModelIndex {
-    index: GltfSceneIndex,
-}
-
-impl<M> GsGltfImporter<M> where M: BufferMemoryTypeAbs {
-
-    pub(crate) fn new(physical: &GsPhyDevice, device: &GsDevice, typ: M) -> GsGltfImporter<M> {
-        GsGltfImporter {
-            allocator: GsBufferAllocator::new(physical, device, typ),
-        }
-    }
-
-    pub fn load(path: impl AsRef<Path>) -> Result<GsModelStorage, GltfError> {
+    pub fn load(path: impl AsRef<Path>) -> Result<GsModelStorage, AssetsError> {
 
         let (doc, data_buffer, data_image) = gltf::import(path)
-            .map_err(|e| GltfError::Loading(e))?;
+            .map_err(|e| AssetsError::Gltf(GltfError::Loading(e)))?;
 
         let data_agency = GltfRawDataAgency {
             doc, data_buffer, data_image
@@ -46,9 +33,28 @@ impl<M> GsGltfImporter<M> where M: BufferMemoryTypeAbs {
             .or(data_agency.doc.scenes().next())
             .ok_or(GltfError::ModelContentMissing)?;
 
-        let scene_data = GsGltfScene::from_hierachy(dst_scene, &data_agency)?;
+        let scene_data = GsGltfScene::from_hierachy(dst_scene, &data_agency)
+            .map_err(|e| AssetsError::Gltf(e))?;
         let target = GsModelStorage::new(scene_data);
         Ok(target)
+    }
+}
+
+pub struct GsGltfAllocator<M> where M: BufferMemoryTypeAbs {
+
+    allocator: GsBufferAllocator<M>,
+}
+
+pub struct GsModelIndex {
+    index: GltfSceneIndex,
+}
+
+impl<M> GsGltfAllocator<M> where M: BufferMemoryTypeAbs {
+
+    pub(crate) fn new(physical: &GsPhyDevice, device: &GsDevice, typ: M) -> GsGltfAllocator<M> {
+        GsGltfAllocator {
+            allocator: GsBufferAllocator::new(physical, device, typ),
+        }
     }
 
     pub fn append_model(&mut self, model: &GsModelStorage) -> Result<GsModelIndex, AllocatorError> {

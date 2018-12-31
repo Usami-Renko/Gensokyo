@@ -44,23 +44,27 @@ impl<M> GsBufferDistributor<M> where M: BufferMemoryTypeAbs {
 
     pub fn acquire_vertex(&self, index: BufferBlockIndex) -> GsVertexBlock {
 
-        GsVertexBlock::new(self.gen_buffer_item(&index), index)
+        let buffer_block = self.gen_buffer_block(&index);
+        GsVertexBlock::new(buffer_block, index)
     }
 
     pub fn acquire_index(&self, index: BufferBlockIndex) -> GsIndexBlock {
 
-        GsIndexBlock::new(self.gen_buffer_item(&index), index)
+        let buffer_block = self.gen_buffer_block(&index);
+        GsIndexBlock::new(buffer_block, index)
     }
 
     pub fn acquire_uniform(&self, index: BufferBlockIndex) ->  Result<GsUniformBlock, AllocatorError> {
 
-        let block = GsUniformBlock::new(self.gen_buffer_item(&index), index)?;
+        let buffer_block = self.gen_buffer_block(&index);
+        let block = GsUniformBlock::new(buffer_block, index)?;
         Ok(block)
     }
 
     pub fn acquire_imgsrc(&self, index: BufferBlockIndex) -> GsImgsrcBlock {
 
-        GsImgsrcBlock::new(self.gen_buffer_item(&index), index)
+        let buffer_block = self.gen_buffer_block(&index);
+        GsImgsrcBlock::new(buffer_block, index)
     }
 
     pub fn into_repository(self) -> GsBufferRepository<M> {
@@ -68,7 +72,7 @@ impl<M> GsBufferDistributor<M> where M: BufferMemoryTypeAbs {
         GsBufferRepository::store(self.phantom_type, self.device, self.physical, self.buffers, self.memory, self.allot_infos)
     }
 
-    fn gen_buffer_item(&self, index: &BufferBlockIndex) -> BufferBlock {
+    fn gen_buffer_block(&self, index: &BufferBlockIndex) -> BufferBlock {
 
         BufferBlock::new(
             &self.buffers[index.value],

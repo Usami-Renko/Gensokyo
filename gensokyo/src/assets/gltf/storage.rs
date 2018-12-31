@@ -67,7 +67,7 @@ impl<M> GsGltfRepository<M> where M: BufferMemoryTypeAbs {
     pub fn data_uploader(&mut self) -> Result<GltfDataUploader<M>, AllocatorError> {
 
         let target = GltfDataUploader {
-            uploader: self.repository.data_updater()?,
+            uploader: self.repository.data_uploader()?,
         };
         Ok(target)
     }
@@ -83,8 +83,12 @@ impl<M> GltfDataUploader<M> where M: BufferMemoryTypeAbs {
     pub fn upload(&mut self, to: &GsGltfEntity, data_torage: &GsModelStorage) -> Result<&mut GltfDataUploader<M>, AllocatorError> {
 
         to.scene.upload(&mut self.uploader, &data_torage.scene)?;
-        self.uploader.finish()?;
 
         Ok(self)
+    }
+
+    pub fn finish(&mut self) -> Result<(), AllocatorError> {
+
+        self.uploader.finish()
     }
 }
