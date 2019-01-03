@@ -107,10 +107,10 @@ pub(super) trait GltfHierachyIndex where Self: Sized {
         where M: BufferMemoryTypeAbs;
 }
 
-pub(super) trait GltfHierachyInstance where Self: Sized {
+pub(super) trait GltfHierachyInstance<'a> where Self: Sized {
     type HierachyDataType;
 
-    fn upload<M>(&self, uploader: &mut BufferDataUploader<M>, data: &Self::HierachyDataType) -> Result<(), AllocatorError>
+    fn upload<M>(&self, uploader: &mut BufferDataUploader<M>, data: Self::HierachyDataType) -> Result<(), AllocatorError>
         where M: BufferMemoryTypeAbs;
     fn record_command(&self, recorder: &GsCommandRecorder);
 }

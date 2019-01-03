@@ -26,7 +26,7 @@ macro_rules! define_input {
                     bindings: vec![
                         GsVertexInputBinding {
                             binding: $binding_index,
-                            stride: mem::size_of::<Self>() as vkuint,
+                            stride: mem::size_of::<Self>() as _,
                             rate: vertex_rate!($input_rate),
                         },
                     ],
@@ -35,7 +35,7 @@ macro_rules! define_input {
                             binding: $binding_index,
                             location: $loc_index,
                             format: vk_format!($format),
-                            offset: offset_of!(Self, $filed_name) as vkuint,
+                            offset: offset_of!(Self, $filed_name) as _,
                         },
                     )*],
                 }

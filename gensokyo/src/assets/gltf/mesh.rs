@@ -1,7 +1,7 @@
 
 use crate::assets::gltf::storage::GltfRawDataAgency;
 use crate::assets::gltf::importer::{ GsGltfHierachy, GltfHierachyIndex, GltfHierachyInstance };
-use crate::assets::gltf::primitive::{ GsGltfPrimitive, GltfPrimitiveIndex, GltfPrimitiveInstance };
+use crate::assets::gltf::primitive::{ GsGltfPrimitive, GltfPrimitiveIndex, GltfPrimitiveInstance, GltfPrimitiveUploadData };
 use crate::assets::gltf::error::GltfError;
 
 use gsvk::buffer::allocator::{ GsBufferAllocator, GsBufferDistributor };
@@ -9,6 +9,8 @@ use gsvk::buffer::allocator::types::BufferMemoryTypeAbs;
 use gsvk::memory::transfer::BufferDataUploader;
 use gsvk::memory::AllocatorError;
 use gsvk::command::GsCommandRecorder;
+
+use nalgebra::Matrix4;
 
 
 pub(super) struct GsGltfMesh {
@@ -70,15 +72,20 @@ impl GltfHierachyIndex for GltfMeshIndex {
     }
 }
 
-impl GltfHierachyInstance for GltfMeshInstance {
-    type HierachyDataType = GsGltfMesh;
+impl<'a> GltfHierachyInstance<'a> for GltfMeshInstance {
+    type HierachyDataType = GltfMeshUploadData<'a>;
 
-    fn upload<M>(&self, uploader: &mut BufferDataUploader<M>, data: &Self::HierachyDataType) -> Result<(), AllocatorError>
+    fn upload<M>(&self, uploader: &mut BufferDataUploader<M>, data: Self::HierachyDataType) -> Result<(), AllocatorError>
         where M: BufferMemoryTypeAbs {
 
         for (primitive_instance, primitive_data) in self.primitives.iter()
-            .zip(data.primitives.iter()) {
-            primitive_instance.upload(uploader, primitive_data)?;
+            .zip(data.mesh.primitives.iter()) {
+
+            let upload_data = GltfPrimitiveUploadData {
+                primitive: primitive_data,
+                transform: data.transform,
+            };
+            primitive_instance.upload(uploader, upload_data)?;
         }
         Ok(())
     }
@@ -89,5 +96,9 @@ impl GltfHierachyInstance for GltfMeshInstance {
             primitive.record_command(recorder);
         });
     }
+}
 
+pub(super) struct GltfMeshUploadData<'a> {
+    pub mesh: &'a GsGltfMesh,
+    pub transform: &'a Matrix4<f32>,
 }

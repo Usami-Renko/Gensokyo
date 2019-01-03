@@ -13,7 +13,7 @@ use gsvk::command::GsCommandRecorder;
 
 pub(super) struct GsGltfScene {
 
-    nodes: Vec<GsGltfNode>,
+    nodes: Vec<Box<GsGltfNode>>,
 }
 
 pub(super) struct GltfSceneIndex {
@@ -23,7 +23,7 @@ pub(super) struct GltfSceneIndex {
 
 pub(super) struct GltfSceneInstance {
 
-    nodes: Vec<GltfNodeInstance>,
+    nodes: Vec<Box<GltfNodeInstance>>,
 }
 
 impl<'a> GsGltfHierachy<'a> for GsGltfScene {
@@ -35,7 +35,7 @@ impl<'a> GsGltfHierachy<'a> for GsGltfScene {
         let mut nodes = vec![];
         for raw_node in hierachy.nodes().into_iter() {
             let node = GsGltfNode::from_hierachy(raw_node, agency)?;
-            nodes.push(node);
+            nodes.push(Box::new(node));
         }
 
         let result = GsGltfScene { nodes };
@@ -64,17 +64,18 @@ impl GltfHierachyIndex for GltfSceneIndex {
         where M: BufferMemoryTypeAbs {
 
         let nodes = self.indices.into_iter().map(|index| {
-            index.distribute(distributor)
+            let node_instance = index.distribute(distributor);
+            Box::new(node_instance)
         }).collect();
 
         GltfSceneInstance { nodes }
     }
 }
 
-impl GltfHierachyInstance for GltfSceneInstance {
-    type HierachyDataType = GsGltfScene;
+impl<'a> GltfHierachyInstance<'a> for GltfSceneInstance {
+    type HierachyDataType = &'a GsGltfScene;
 
-    fn upload<M>(&self, uploader: &mut BufferDataUploader<M>, data: &Self::HierachyDataType) -> Result<(), AllocatorError>
+    fn upload<M>(&self, uploader: &mut BufferDataUploader<M>, data: Self::HierachyDataType) -> Result<(), AllocatorError>
         where M: BufferMemoryTypeAbs {
 
         for (node_instance, node_data) in self.nodes.iter().zip(data.nodes.iter()) {

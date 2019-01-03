@@ -13,14 +13,12 @@ use gsma::data_size;
 use nalgebra::{ Matrix4, Point3 };
 
 use std::path::Path;
-use crate::data::{ UboObject, Vertex };
+use std::marker::PhantomData;
+use crate::{ UboObject, FilePathConstants, ShaderInputDefination };
 
-const VERTEX_SHADER_SOURCE_PATH  : &str = "src/01.triangle/triangle.vert";
-const FRAGMENT_SHADER_SOURCE_PATH: &str = "src/01.triangle/triangle.frag";
-const MODEL_GLTF_PATH: &str = "src/01.triangle/triangle.gltf";
+pub struct GltfModelViewer<T: ShaderInputDefination> {
 
-
-pub struct TriangleGltfModel {
+    phantom_type: PhantomData<T>,
 
     model_entity: GsGltfEntity,
     #[allow(dead_code)]
@@ -43,14 +41,15 @@ pub struct TriangleGltfModel {
     command_pool   : GsCommandPool,
     command_buffers: Vec<GsCommandBuffer>,
 
+    paths: FilePathConstants,
     camera: GsFlightCamera,
 
     present_availables: Vec<GsSemaphore>,
 }
 
-impl TriangleGltfModel {
+impl<T: ShaderInputDefination> GltfModelViewer<T> {
 
-    pub fn new(loader: AssetsLoader) -> Result<TriangleGltfModel, ProcedureError> {
+    pub fn new(loader: AssetsLoader, paths: FilePathConstants) -> Result<GltfModelViewer<T>, ProcedureError> {
 
         let screen_dimension = loader.screen_dimension();
         let camera = GsCameraFactory::config()
@@ -59,7 +58,7 @@ impl TriangleGltfModel {
             .into_flight_camera();
 
         let (model_entity, model_repository) = loader.assets(|kit| {
-            TriangleGltfModel::load_model(kit)
+            Self::load_model(kit, &paths)
         })?;
 
         let ubo_data = vec![
@@ -70,32 +69,33 @@ impl TriangleGltfModel {
             }
         ];
         let (ubo_buffer, ubo_storage, ubo_set, desc_storage) = loader.assets(|kit| {
-            TriangleGltfModel::ubo(kit, &ubo_data)
+            Self::ubo(kit, &ubo_data)
         })?;
 
         let (depth_attachment, image_storage) = loader.assets(|kit| {
-            TriangleGltfModel::image(kit)
+            Self::image(kit)
         })?;
 
         let pipeline = loader.pipelines(|kit| {
-            TriangleGltfModel::pipelines(kit, &ubo_set, &depth_attachment)
+            Self::pipelines(kit, &paths, &ubo_set, &depth_attachment)
         })?;
 
         let present_availables = loader.syncs(|kit| {
-            TriangleGltfModel::sync_resources(kit, &pipeline)
+            Self::sync_resources(kit, &pipeline)
         })?;
 
         let (command_pool, command_buffers) = loader.commands(|kit| {
-            TriangleGltfModel::commands(kit, &pipeline, &ubo_set, &model_entity)
+            Self::commands(kit, &pipeline, &ubo_set, &model_entity)
         })?;
 
-        let procedure = TriangleGltfModel {
+        let procedure = GltfModelViewer {
+            phantom_type: PhantomData,
             model_entity, model_repository,
             ubo_data, ubo_storage, ubo_buffer, ubo_set, desc_storage,
             depth_attachment, image_storage,
             pipeline,
             command_pool, command_buffers,
-            camera,
+            paths, camera,
             present_availables,
         };
 
@@ -113,9 +113,9 @@ impl TriangleGltfModel {
         Ok(())
     }
 
-    fn load_model(kit: AllocatorKit) -> Result<(GsGltfEntity, GsGltfRepository<Device>), ProcedureError> {
+    fn load_model(kit: AllocatorKit, paths: &FilePathConstants) -> Result<(GsGltfEntity, GsGltfRepository<Device>), ProcedureError> {
 
-        let model_data_source = GsGltfImporter::load(Path::new(MODEL_GLTF_PATH))?;
+        let model_data_source = GsGltfImporter::load(Path::new(paths.model_path))?;
         let mut model_allocator = kit.gltf_allocator(BufferStorageType::DEVICE);
 
         let model_index = model_allocator.append_model(&model_data_source)?;
@@ -175,24 +175,24 @@ impl TriangleGltfModel {
         Ok((depth_attachment, image_storage))
     }
 
-    fn pipelines(kit: PipelineKit, ubo_set: &DescriptorSet, depth_image: &GsDepthStencilAttachment) -> Result<GsGraphicsPipeline, ProcedureError> {
+    fn pipelines(kit: PipelineKit, paths: &FilePathConstants, ubo_set: &DescriptorSet, depth_image: &GsDepthStencilAttachment) -> Result<GsGraphicsPipeline, ProcedureError> {
 
         // shaders
         let vertex_shader = GsShaderInfo::from_source(
             vk::ShaderStageFlags::VERTEX,
-            Path::new(VERTEX_SHADER_SOURCE_PATH),
+            Path::new(paths.vertex_shader),
             None,
             "[Vertex Shader]");
         let fragment_shader = GsShaderInfo::from_source(
             vk::ShaderStageFlags::FRAGMENT,
-            Path::new(FRAGMENT_SHADER_SOURCE_PATH),
+            Path::new(paths.framment_shader),
             None,
             "[Fragment Shader]");
         let shader_infos = vec![
             vertex_shader,
             fragment_shader,
         ];
-        let vertex_input_desc = Vertex::desc();
+        let vertex_input_desc = T::desc();
 
         // pipeline
         let mut render_pass_builder = kit.pass_builder();
@@ -269,7 +269,7 @@ impl TriangleGltfModel {
     }
 }
 
-impl GraphicsRoutine for TriangleGltfModel {
+impl<T: ShaderInputDefination> GraphicsRoutine for GltfModelViewer<T> {
 
     fn draw(&mut self, device: &GsDevice, device_available: &GsFence, image_available: &GsSemaphore, image_index: usize, _: f32) -> Result<&GsSemaphore, ProcedureError> {
 
@@ -304,15 +304,15 @@ impl GraphicsRoutine for TriangleGltfModel {
     fn reload_res(&mut self, loader: AssetsLoader) -> Result<(), ProcedureError> {
 
         self.pipeline = loader.pipelines(|kit| {
-            TriangleGltfModel::pipelines(kit, &self.ubo_set, &self.depth_attachment)
+            Self::pipelines(kit, &self.paths, &self.ubo_set, &self.depth_attachment)
         })?;
 
         self.present_availables = loader.syncs(|kit| {
-            TriangleGltfModel::sync_resources(kit, &self.pipeline)
+            Self::sync_resources(kit, &self.pipeline)
         })?;
 
         let (command_pool, command_buffers) = loader.commands(|kit| {
-            TriangleGltfModel::commands(kit, &self.pipeline, &self.ubo_set, &self.model_entity)
+            Self::commands(kit, &self.pipeline, &self.ubo_set, &self.model_entity)
         })?;
         self.command_pool = command_pool;
         self.command_buffers = command_buffers;
@@ -339,4 +339,3 @@ impl GraphicsRoutine for TriangleGltfModel {
         SceneAction::Rendering
     }
 }
-

@@ -10,7 +10,6 @@ use crate::config::resources::ResourceConfig;
 use crate::toolkit::{ AllocatorKit, PipelineKit, CommandKit, SyncKit };
 
 use crate::procedure::env::VulkanEnv;
-use crate::procedure::error::ProcedureError;
 
 pub struct AssetsLoader {
 
@@ -33,32 +32,32 @@ impl AssetsLoader {
         }
     }
 
-    pub fn assets<A, F>(&self, func: F) -> Result<A, ProcedureError>
-        where F: FnOnce(AllocatorKit) -> Result<A, ProcedureError> {
+    pub fn assets<R, F>(&self, func: F) -> R
+        where F: FnOnce(AllocatorKit) -> R {
 
         let kit = AllocatorKit::init(&self.physical, &self.device, &self.swapchain, self.config.clone());
 
         func(kit)
     }
 
-    pub fn pipelines<P, F>(&self, func: F) -> Result<P, ProcedureError>
-        where F: FnOnce(PipelineKit) -> Result<P, ProcedureError> {
+    pub fn pipelines<R, F>(&self, func: F) -> R
+        where F: FnOnce(PipelineKit) -> R {
 
         let kit = PipelineKit::init(&self.device, &self.swapchain);
 
         func(kit)
     }
 
-    pub fn syncs<R, F>(&self, func: F) -> Result<R, ProcedureError>
-        where F: FnOnce(SyncKit) -> Result<R, ProcedureError> {
+    pub fn syncs<R, F>(&self, func: F) -> R
+        where F: FnOnce(SyncKit) -> R {
 
         let kit = SyncKit::init(&self.device);
 
         func(kit)
     }
 
-    pub fn commands<C, F>(&self, func: F) -> Result<C, ProcedureError>
-        where F: FnOnce(CommandKit) -> Result<C, ProcedureError> {
+    pub fn commands<R, F>(&self, func: F) -> R
+        where F: FnOnce(CommandKit) -> R {
 
         let kit = CommandKit::init(&self.device);
 

@@ -16,10 +16,12 @@ use gsvk::types::{ vkuint, vkbytes };
 
 use gsma::data_size;
 
+use nalgebra::{ Matrix4, Point3 };
+
 
 pub(super) struct GsGltfPrimitive {
 
-    positions: Vec<[f32; 3]>,
+    positions: Vec<Point3<f32>>,
     indices  : Option<Vec<vkuint>>,
 }
 
@@ -59,7 +61,7 @@ impl<'a> GsGltfHierachy<'a> for GsGltfPrimitive {
                 | Semantic::Positions => {
                     let pos_iter = reader.read_positions()
                         .ok_or(GltfError::ModelContentMissing)?; // missing position attribute.
-                    primitive.positions = pos_iter.collect();
+                    primitive.positions = pos_iter.map(Point3::from).collect();
                 },
                 _ => {},
             }
@@ -78,7 +80,7 @@ impl<'a> GsGltfHierachy<'a> for GsGltfPrimitive {
             None
         };
 
-        let vertex_info = VertexBlockInfo::new(data_size!(self.positions, [f32; 3]));
+        let vertex_info = VertexBlockInfo::new(data_size!(self.positions, Point3<f32>));
         let vertex_pos_index = allocator.append_buffer(vertex_info)?;
 
         let element_count = self.indices.as_ref()
@@ -118,16 +120,21 @@ impl GltfHierachyIndex for GltfPrimitiveIndex {
     }
 }
 
-impl GltfHierachyInstance for GltfPrimitiveInstance {
-    type HierachyDataType = GsGltfPrimitive;
+impl<'a> GltfHierachyInstance<'a> for GltfPrimitiveInstance {
+    type HierachyDataType = GltfPrimitiveUploadData<'a>;
 
-    fn upload<M>(&self, uploader: &mut BufferDataUploader<M>, data: &Self::HierachyDataType) -> Result<(), AllocatorError>
+    fn upload<M>(&self, uploader: &mut BufferDataUploader<M>, data: Self::HierachyDataType) -> Result<(), AllocatorError>
         where M: BufferMemoryTypeAbs {
 
-        uploader.upload(&self.pos_block, &data.positions)?;
+        // apply transform.
+        let pos_transformed: Vec<Point3<f32>> = data.primitive.positions.iter()
+            .map(|pos| data.transform.transform_point(pos)).collect();
+
+        // upload data to vulkan.
+        uploader.upload(&self.pos_block, &pos_transformed)?;
 
         if let Some(ref index_block) = self.index_block {
-            if let Some(ref index_data) = data.indices {
+            if let Some(ref index_data) = data.primitive.indices {
                 uploader.upload(index_block, index_data)?;
             }
         }
@@ -159,4 +166,9 @@ impl Default for GsGltfPrimitive {
             indices  : None,
         }
     }
+}
+
+pub(super) struct GltfPrimitiveUploadData<'a> {
+    pub primitive: &'a GsGltfPrimitive,
+    pub transform: &'a Matrix4<f32>,
 }
