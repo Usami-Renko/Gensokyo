@@ -3,6 +3,7 @@ use crate::assets::gltf::storage::GltfRawDataAgency;
 use crate::assets::gltf::importer::{ GsGltfHierachy, GltfHierachyIndex, GltfHierachyInstance };
 use crate::assets::gltf::primitive::{ GsGltfPrimitive, GltfPrimitiveIndex, GltfPrimitiveInstance, GltfPrimitiveUploadData };
 use crate::assets::gltf::error::GltfError;
+use crate::utils::types::Matrix4F;
 
 use gsvk::buffer::allocator::{ GsBufferAllocator, GsBufferDistributor };
 use gsvk::buffer::allocator::types::BufferMemoryTypeAbs;
@@ -10,9 +11,7 @@ use gsvk::memory::transfer::BufferDataUploader;
 use gsvk::memory::AllocatorError;
 use gsvk::command::GsCommandRecorder;
 
-use nalgebra::Matrix4;
-
-
+/// A wrapper class for mesh level in glTF, containing the data read from glTF file.
 pub(super) struct GsGltfMesh {
 
     primitives: Vec<GsGltfPrimitive>,
@@ -100,5 +99,5 @@ impl<'a> GltfHierachyInstance<'a> for GltfMeshInstance {
 
 pub(super) struct GltfMeshUploadData<'a> {
     pub mesh: &'a GsGltfMesh,
-    pub transform: &'a Matrix4<f32>,
+    pub transform: &'a Matrix4F,
 }

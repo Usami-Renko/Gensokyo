@@ -3,6 +3,7 @@ use crate::assets::gltf::storage::GltfRawDataAgency;
 use crate::assets::gltf::importer::{ GsGltfHierachy, GltfHierachyIndex, GltfHierachyInstance };
 use crate::assets::gltf::mesh::{ GsGltfMesh, GltfMeshIndex, GltfMeshInstance, GltfMeshUploadData };
 use crate::assets::gltf::error::GltfError;
+use crate::utils::types::Matrix4F;
 
 use gsvk::buffer::allocator::{ GsBufferAllocator, GsBufferDistributor };
 use gsvk::buffer::allocator::types::BufferMemoryTypeAbs;
@@ -10,20 +11,19 @@ use gsvk::memory::transfer::BufferDataUploader;
 use gsvk::memory::AllocatorError;
 use gsvk::command::GsCommandRecorder;
 
-use nalgebra::{ Matrix4, MatrixMN };
-
-
+/// A wrapper class for node level in glTF, containing the data read from glTF file.
 pub(super) struct GsGltfNode {
 
     mesh: Option<GsGltfMesh>,
-    transform: Matrix4<f32>,
+    transform: Matrix4F,
 
     children: Vec<Box<GsGltfNode>>,
 }
 
 impl GsGltfNode {
 
-    fn combine_transform(&mut self, parent_transform: &Matrix4<f32>) {
+    /// Apply parent node's transformation to current node level.
+    fn combine_transform(&mut self, parent_transform: &Matrix4F) {
         self.transform = self.transform * parent_transform;
     }
 }
@@ -46,7 +46,7 @@ impl<'a> GsGltfHierachy<'a> for GsGltfNode {
 
     fn from_hierachy(hierachy: Self::HierachyRawType, agency: &GltfRawDataAgency) ->  Result<Self, GltfError> {
 
-        let transform = MatrixMN::from(hierachy.transform().matrix());
+        let transform = Matrix4F::from(hierachy.transform().matrix());
 
         let mut children = vec![];
         for child_node in hierachy.children() {

@@ -34,7 +34,7 @@ pub struct GltfModelViewer<T: ShaderInputDefination> {
 
     depth_attachment: GsDepthStencilAttachment,
     #[allow(dead_code)]
-    image_storage   : GsImageRepository<Device>,
+    image_storage: GsImageRepository<Device>,
 
     pipeline: GsGraphicsPipeline,
 
@@ -42,7 +42,7 @@ pub struct GltfModelViewer<T: ShaderInputDefination> {
     command_buffers: Vec<GsCommandBuffer>,
 
     paths: FilePathConstants,
-    camera: GsFlightCamera,
+    camera: GsStageCamera,
 
     present_availables: Vec<GsSemaphore>,
 }
@@ -53,9 +53,9 @@ impl<T: ShaderInputDefination> GltfModelViewer<T> {
 
         let screen_dimension = loader.screen_dimension();
         let camera = GsCameraFactory::config()
-            .place_at(Point3::new(0.0, 0.0, 2.5))
+            .place_at(Point3::new(0.0, 0.0, 2.0))
             .screen_aspect_ratio(screen_dimension.width as f32 / screen_dimension.height as f32)
-            .into_flight_camera();
+            .into_stage_camera();
 
         let (model_entity, model_repository) = loader.assets(|kit| {
             Self::load_model(kit, &paths)
@@ -104,6 +104,7 @@ impl<T: ShaderInputDefination> GltfModelViewer<T> {
 
     fn update_uniforms(&mut self) -> Result<(), ProcedureError> {
 
+        self.ubo_data[0].model = self.camera.object_model_transformation();
         self.ubo_data[0].view  = self.camera.view_matrix();
 
         self.ubo_storage.data_updater()?

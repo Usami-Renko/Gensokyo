@@ -1,9 +1,10 @@
 
 [package]
-name    = "example02"
-version = "0.1.0"
-authors = ["usami-renko <usami-ssc@protonmail.com>"]
-edition = "2018"
+name        = "example02"
+version     = "0.1.0"
+authors     = ["usami-renko <usami-ssc@protonmail.com>"]
+edition     = "2018"
+description = "Gltf examples of gensokyo Engine."
 
 [dependencies]
 gensokyo = { package = "gensokyo", path = "../../gensokyo" }
@@ -17,3 +18,7 @@ toml = "0.4"
 [[bin]]
 name = "01"
 path = "src/01.triangle/main.rs"
+
+[[bin]]
+name = "02"
+path = "src/02.box/main.rs"

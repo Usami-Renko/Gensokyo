@@ -1,13 +1,12 @@
 
 [package]
-name        = "gensokyo-eg01-baisc"
+name        = "example01"
 version     = "0.1.0"
 authors     = ["usami-renko <usami-ssc@protonmail.com>"]
 edition     = "2018"
 description = "Basic examples of gensokyo Engine."
 
 [dependencies]
-
 gensokyo = { package = "gensokyo", path = "../../gensokyo" }
 gensokyo-vulkan = { package = "gensokyo-vulkan", path = "../../gensokyo-vulkan" }
 gensokyo-macros = { package = "gensokyo-macros", path = "../../gensokyo-macros" }

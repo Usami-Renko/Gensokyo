@@ -10,7 +10,7 @@ use gsvk::memory::transfer::BufferDataUploader;
 use gsvk::memory::AllocatorError;
 use gsvk::command::GsCommandRecorder;
 
-
+/// A wrapper class for scene level in glTF, containing the data read from glTF file.
 pub(super) struct GsGltfScene {
 
     nodes: Vec<Box<GsGltfNode>>,

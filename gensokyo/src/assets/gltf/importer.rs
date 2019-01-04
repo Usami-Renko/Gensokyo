@@ -1,5 +1,5 @@
 
-use crate::assets::gltf::storage::{ GltfRawDataAgency, GsGltfRepository, GsModelStorage, GsGltfEntity };
+use crate::assets::gltf::storage::{ GltfRawDataAgency, GsGltfRepository, GsGltfStorage, GsGltfEntity };
 use crate::assets::gltf::scene::{ GsGltfScene, GltfSceneIndex };
 use crate::assets::gltf::error::GltfError;
 use crate::assets::error::AssetsError;
@@ -19,7 +19,8 @@ pub struct GsGltfImporter;
 
 impl GsGltfImporter {
 
-    pub fn load(path: impl AsRef<Path>) -> Result<GsModelStorage, AssetsError> {
+    /// Try to load a glTF file(read to memory) with its path, and return its model data if succeed.
+    pub fn load(path: impl AsRef<Path>) -> Result<GsGltfStorage, AssetsError> {
 
         let (doc, data_buffer, data_image) = gltf::import(path)
             .map_err(|e| AssetsError::Gltf(GltfError::Loading(e)))?;
@@ -35,7 +36,7 @@ impl GsGltfImporter {
 
         let scene_data = GsGltfScene::from_hierachy(dst_scene, &data_agency)
             .map_err(|e| AssetsError::Gltf(e))?;
-        let target = GsModelStorage::new(scene_data);
+        let target = GsGltfStorage::new(scene_data);
         Ok(target)
     }
 }
@@ -57,7 +58,7 @@ impl<M> GsGltfAllocator<M> where M: BufferMemoryTypeAbs {
         }
     }
 
-    pub fn append_model(&mut self, model: &GsModelStorage) -> Result<GsModelIndex, AllocatorError> {
+    pub fn append_model(&mut self, model: &GsGltfStorage) -> Result<GsModelIndex, AllocatorError> {
 
         let index = model.allocate(&mut self.allocator)?;
         Ok(GsModelIndex { index })

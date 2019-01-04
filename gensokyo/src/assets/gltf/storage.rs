@@ -33,15 +33,15 @@ impl GsGltfEntity {
     }
 }
 
-pub struct GsModelStorage {
+pub struct GsGltfStorage {
 
     scene: GsGltfScene,
 }
 
-impl GsModelStorage {
+impl GsGltfStorage {
 
-    pub(super) fn new(scene: GsGltfScene) -> GsModelStorage {
-        GsModelStorage { scene }
+    pub(super) fn new(scene: GsGltfScene) -> GsGltfStorage {
+        GsGltfStorage { scene }
     }
 
     pub(super) fn allocate<M>(&self, allocator: &mut GsBufferAllocator<M>) -> Result<GltfSceneIndex, AllocatorError>
@@ -80,7 +80,7 @@ pub struct GltfDataUploader<M> where M: BufferMemoryTypeAbs {
 
 impl<M> GltfDataUploader<M> where M: BufferMemoryTypeAbs {
 
-    pub fn upload(&mut self, to: &GsGltfEntity, data_torage: &GsModelStorage) -> Result<&mut GltfDataUploader<M>, AllocatorError> {
+    pub fn upload(&mut self, to: &GsGltfEntity, data_torage: &GsGltfStorage) -> Result<&mut GltfDataUploader<M>, AllocatorError> {
 
         to.scene.upload(&mut self.uploader, &data_torage.scene)?;
 
