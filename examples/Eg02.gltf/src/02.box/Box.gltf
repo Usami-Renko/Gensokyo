@@ -44,8 +44,8 @@
             "primitives": [
                 {
                     "attributes": {
-                        "NORMAL": 1,
-                        "POSITION": 2
+                        "POSITION": 2,
+                        "NORMAL": 1
                     },
                     "indices": 0,
                     "mode": 4,

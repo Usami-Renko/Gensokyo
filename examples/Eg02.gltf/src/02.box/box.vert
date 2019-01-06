@@ -10,6 +10,7 @@ layout (binding = 0, set = 0) uniform UboOjbect {
 } ubo;
 
 layout (location = 0) in vec3 inPosition;
+layout (location = 1) in vec3 inNormal;
 
 out gl_PerVertex {
     vec4 gl_Position;

@@ -46,17 +46,17 @@ impl<M> GsBufferRepository<M> where M: BufferMemoryTypeAbs {
         }
     }
 
-    pub fn data_uploader(&mut self) -> Result<BufferDataUploader<M>, AllocatorError> {
+    pub fn data_uploader(&mut self) -> Result<BufferDataUploader, AllocatorError> {
 
-        BufferDataUploader::new(self.phantom_type, &self.physical, &self.device, &self.memory, &self.allocate_infos)
+        BufferDataUploader::new(&self.physical, &self.device, &self.memory, &self.allocate_infos)
     }
 
     // TODO: Implement actual updater.
-    pub fn data_updater(&mut self) -> Result<BufferDataUploader<M>, AllocatorError> {
+    pub fn data_updater(&mut self) -> Result<BufferDataUploader, AllocatorError> {
 
         match self.memory.memory_type() {
             | GsMemoryType::HostMemory => {
-                BufferDataUploader::new(self.phantom_type, &self.physical, &self.device, &self.memory, &self.allocate_infos)
+                BufferDataUploader::new(&self.physical, &self.device, &self.memory, &self.allocate_infos)
             },
             | GsMemoryType::StagingMemory
             | GsMemoryType::CachedMemory

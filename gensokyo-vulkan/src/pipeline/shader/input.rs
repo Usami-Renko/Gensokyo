@@ -31,7 +31,7 @@ pub struct VertexInputDescription {
 
 impl VertexInputDescription {
 
-    pub fn desc(self) -> GsVertexInputState {
+    pub fn into_desc(self) -> GsVertexInputState {
 
         let bindings = self.bindings.iter()
             .map(|b|

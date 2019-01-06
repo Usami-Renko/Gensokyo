@@ -209,6 +209,7 @@ impl GsCommandRecorder {
 
             let block = block.as_block_ref();
             handles.push(block.handle);
+            // TODO: Add configuration for offset parameter.
             offsets.push(0);
         }
 

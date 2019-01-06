@@ -35,12 +35,12 @@ pub trait BufferBlockInfo {
     }
 }
 
-pub trait BufferCopiable where Self: Sized {
+pub trait BufferCopiable: Sized {
 
     fn copy_info(&self) -> BufferCopyInfo;
 }
 
-pub trait BufferHandleEntity where Self: Sized {
+pub trait BufferHandleEntity: Sized {
 
     fn handle(&self) -> vk::Buffer;
 }

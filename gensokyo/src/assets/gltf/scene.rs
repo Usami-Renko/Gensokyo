@@ -3,6 +3,7 @@ use crate::assets::gltf::storage::GltfRawDataAgency;
 use crate::assets::gltf::importer::{ GsGltfHierachy, GltfHierachyIndex, GltfHierachyInstance };
 use crate::assets::gltf::node::{ GsGltfNode, GltfNodeIndex, GltfNodeInstance };
 use crate::assets::gltf::error::GltfError;
+use crate::utils::types::Matrix4F;
 
 use gsvk::buffer::allocator::{ GsBufferAllocator, GsBufferDistributor };
 use gsvk::buffer::allocator::types::BufferMemoryTypeAbs;
@@ -27,8 +28,9 @@ pub(super) struct GltfSceneInstance {
 }
 
 impl<'a> GsGltfHierachy<'a> for GsGltfScene {
-    type HierachyRawType = gltf::Scene<'a>;
-    type HierachyIndex   = GltfSceneIndex;
+    type HierachyRawType   = gltf::Scene<'a>;
+    type HierachyIndex     = GltfSceneIndex;
+    type HierachyTransform = ();
 
     fn from_hierachy(hierachy: Self::HierachyRawType, agency: &GltfRawDataAgency) ->  Result<Self, GltfError> {
 
@@ -41,6 +43,13 @@ impl<'a> GsGltfHierachy<'a> for GsGltfScene {
         let result = GsGltfScene { nodes };
 
         Ok(result)
+    }
+
+    fn apply_transform(&mut self, _: &Self::HierachyTransform) {
+
+        self.nodes.iter_mut().for_each(|node| {
+            node.apply_transform(&Matrix4F::identity())
+        });
     }
 
     fn allocate<M>(&self, allocator: &mut GsBufferAllocator<M>) -> Result<Self::HierachyIndex, AllocatorError>
@@ -72,11 +81,10 @@ impl GltfHierachyIndex for GltfSceneIndex {
     }
 }
 
-impl<'a> GltfHierachyInstance<'a> for GltfSceneInstance {
-    type HierachyDataType = &'a GsGltfScene;
+impl GltfHierachyInstance for GltfSceneInstance {
+    type HierachyDataType = GsGltfScene;
 
-    fn upload<M>(&self, uploader: &mut BufferDataUploader<M>, data: Self::HierachyDataType) -> Result<(), AllocatorError>
-        where M: BufferMemoryTypeAbs {
+    fn upload(&self, uploader: &mut BufferDataUploader, data: &Self::HierachyDataType) -> Result<(), AllocatorError> {
 
         for (node_instance, node_data) in self.nodes.iter().zip(data.nodes.iter()) {
             node_instance.upload(uploader, node_data)?;

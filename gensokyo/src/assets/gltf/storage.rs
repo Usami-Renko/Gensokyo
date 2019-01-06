@@ -48,6 +48,10 @@ impl GsGltfStorage {
         where M: BufferMemoryTypeAbs {
         self.scene.allocate(allocator)
     }
+
+    pub fn apply_transform(&mut self) {
+        self.scene.apply_transform(&());
+    }
 }
 
 pub struct GsGltfRepository<M> where M: BufferMemoryTypeAbs {
@@ -64,7 +68,7 @@ impl<M> GsGltfRepository<M> where M: BufferMemoryTypeAbs {
         }
     }
 
-    pub fn data_uploader(&mut self) -> Result<GltfDataUploader<M>, AllocatorError> {
+    pub fn data_uploader(&mut self) -> Result<GltfDataUploader, AllocatorError> {
 
         let target = GltfDataUploader {
             uploader: self.repository.data_uploader()?,
@@ -73,14 +77,14 @@ impl<M> GsGltfRepository<M> where M: BufferMemoryTypeAbs {
     }
 }
 
-pub struct GltfDataUploader<M> where M: BufferMemoryTypeAbs {
+pub struct GltfDataUploader {
 
-    uploader: BufferDataUploader<M>,
+    uploader: BufferDataUploader,
 }
 
-impl<M> GltfDataUploader<M> where M: BufferMemoryTypeAbs {
+impl GltfDataUploader {
 
-    pub fn upload(&mut self, to: &GsGltfEntity, data_torage: &GsGltfStorage) -> Result<&mut GltfDataUploader<M>, AllocatorError> {
+    pub fn upload(&mut self, to: &GsGltfEntity, data_torage: &GsGltfStorage) -> Result<&mut GltfDataUploader, AllocatorError> {
 
         to.scene.upload(&mut self.uploader, &data_torage.scene)?;
 

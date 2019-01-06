@@ -1,5 +1,6 @@
 
-use crate::assets::gltf::property::traits::GltfPrimitiveProperty;
+use crate::assets::gltf::primitive::traits::GltfPrimitiveProperty;
+use crate::assets::gltf::error::GltfError;
 
 use gsvk::buffer::allocator::{ GsBufferAllocator, BufferBlockIndex };
 use gsvk::buffer::allocator::types::BufferMemoryTypeAbs;
@@ -9,21 +10,16 @@ use gsvk::memory::transfer::BufferDataUploader;
 use gsvk::types::{ vkuint, vkbytes };
 use gsma::data_size;
 
-use gltf::mesh::Reader;
-
 #[derive(Default)]
-pub(crate) struct GltfPropertyIndices {
+pub(crate) struct GltfPrimitiveIndices {
 
     data: Option<Vec<vkuint>>,
 }
 
-impl GltfPrimitiveProperty for GltfPropertyIndices {
+impl GltfPrimitiveProperty for GltfPrimitiveIndices {
     const PROPERTY_NAME: &'static str = "indices";
 
-    type IndexType = BufferBlockIndex;
-    type BlockType = GsIndexBlock;
-
-    fn read<'a, 's, F>(reader: &Reader<'a, 's, F>) -> Self
+    fn read<'a, 's, F>(_primitive: &gltf::Primitive, reader: &gltf::mesh::Reader<'a, 's, F>) -> Result<Self, GltfError>
         where F: Clone + Fn(gltf::Buffer<'a>) -> Option<&'s [u8]> {
 
         let data = reader.read_indices()
@@ -32,11 +28,21 @@ impl GltfPrimitiveProperty for GltfPropertyIndices {
                 Some(data)
             });
 
-        GltfPropertyIndices { data }
+        let indices = GltfPrimitiveIndices { data };
+        Ok(indices)
+    }
+}
+
+impl GltfPrimitiveIndices {
+
+    pub fn indices_count(&self) -> Option<usize> {
+
+        self.data.as_ref()
+            .map(|vertex_data| vertex_data.len())
     }
 
-    fn append_allocation<M>(&self, allocator: &mut GsBufferAllocator<M>) -> Result<Option<Self::IndexType>, AllocatorError>
-        where M: BufferMemoryTypeAbs {
+    pub fn append_allocation<M>(&self, allocator: &mut GsBufferAllocator<M>) -> Result<Option<BufferBlockIndex>, AllocatorError>
+        where M: BufferMemoryTypeAbs{
 
         let block_index = if let Some(ref indices_data) = self.data {
             let indices_info = IndexBlockInfo::new(data_size!(indices_data, vkuint));
@@ -48,8 +54,7 @@ impl GltfPrimitiveProperty for GltfPropertyIndices {
         Ok(block_index)
     }
 
-    fn upload<M>(&self, to: &Option<Self::BlockType>, by: &mut BufferDataUploader<M>) -> Result<(), AllocatorError>
-        where M: BufferMemoryTypeAbs {
+    pub fn upload(&self, to: &Option<GsIndexBlock>, by: &mut BufferDataUploader) -> Result<(), AllocatorError> {
 
         if let Some(ref indices_data) = self.data {
             if let Some(ref index_block) = to {
@@ -57,14 +62,5 @@ impl GltfPrimitiveProperty for GltfPropertyIndices {
             }
         }
         Ok(())
-    }
-}
-
-impl GltfPropertyIndices {
-
-    pub fn indices_count(&self) -> Option<usize> {
-
-        self.data.as_ref()
-            .map(|vertex_data| vertex_data.len())
     }
 }

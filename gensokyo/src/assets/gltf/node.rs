@@ -1,7 +1,7 @@
 
 use crate::assets::gltf::storage::GltfRawDataAgency;
 use crate::assets::gltf::importer::{ GsGltfHierachy, GltfHierachyIndex, GltfHierachyInstance };
-use crate::assets::gltf::mesh::{ GsGltfMesh, GltfMeshIndex, GltfMeshInstance, GltfMeshUploadData };
+use crate::assets::gltf::mesh::{ GsGltfMesh, GltfMeshIndex, GltfMeshInstance };
 use crate::assets::gltf::error::GltfError;
 use crate::utils::types::Matrix4F;
 
@@ -41,8 +41,9 @@ pub(super) struct GltfNodeInstance {
 }
 
 impl<'a> GsGltfHierachy<'a> for GsGltfNode {
-    type HierachyRawType = gltf::Node<'a>;
-    type HierachyIndex   = GltfNodeIndex;
+    type HierachyRawType   = gltf::Node<'a>;
+    type HierachyIndex     = GltfNodeIndex;
+    type HierachyTransform = Matrix4F;
 
     fn from_hierachy(hierachy: Self::HierachyRawType, agency: &GltfRawDataAgency) ->  Result<Self, GltfError> {
 
@@ -63,6 +64,17 @@ impl<'a> GsGltfHierachy<'a> for GsGltfNode {
 
         let target = GsGltfNode { mesh, transform, children };
         Ok(target)
+    }
+
+    fn apply_transform(&mut self, transform: &Self::HierachyTransform) {
+
+        if let Some(ref mut mesh) = self.mesh {
+            mesh.apply_transform(&self.transform);
+        }
+
+        self.children.iter_mut().for_each(|child_node| {
+            child_node.apply_transform(transform);
+        });
     }
 
     fn allocate<M>(&self, allocator: &mut GsBufferAllocator<M>) -> Result<Self::HierachyIndex, AllocatorError>
@@ -107,20 +119,14 @@ impl GltfHierachyIndex for GltfNodeIndex {
     }
 }
 
-impl<'a> GltfHierachyInstance<'a> for GltfNodeInstance {
-    type HierachyDataType = &'a GsGltfNode;
+impl GltfHierachyInstance for GltfNodeInstance {
+    type HierachyDataType = GsGltfNode;
 
-    fn upload<M>(&self, uploader: &mut BufferDataUploader<M>, data: Self::HierachyDataType) -> Result<(), AllocatorError>
-        where M: BufferMemoryTypeAbs {
+    fn upload(&self, uploader: &mut BufferDataUploader, data: &Self::HierachyDataType) -> Result<(), AllocatorError> {
 
         if let Some(ref mesh) = self.mesh {
             if let Some(ref mesh_data) = data.mesh {
-
-                let upload_data = GltfMeshUploadData {
-                    mesh: mesh_data,
-                    transform: &data.transform,
-                };
-                mesh.upload(uploader, upload_data)?;
+                mesh.upload(uploader, mesh_data)?;
             } else {
                 unreachable!()
             }

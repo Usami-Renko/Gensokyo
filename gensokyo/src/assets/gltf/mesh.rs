@@ -1,7 +1,7 @@
 
 use crate::assets::gltf::storage::GltfRawDataAgency;
 use crate::assets::gltf::importer::{ GsGltfHierachy, GltfHierachyIndex, GltfHierachyInstance };
-use crate::assets::gltf::primitive::{ GsGltfPrimitive, GltfPrimitiveIndex, GltfPrimitiveInstance, GltfPrimitiveUploadData };
+use crate::assets::gltf::primitive::{ GsGltfPrimitive, GltfPrimitiveIndex, GltfPrimitiveInstance };
 use crate::assets::gltf::error::GltfError;
 use crate::utils::types::Matrix4F;
 
@@ -28,8 +28,9 @@ pub(super) struct GltfMeshInstance {
 }
 
 impl<'a> GsGltfHierachy<'a> for GsGltfMesh {
-    type HierachyRawType = gltf::Mesh<'a>;
-    type HierachyIndex   = GltfMeshIndex;
+    type HierachyRawType   = gltf::Mesh<'a>;
+    type HierachyIndex     = GltfMeshIndex;
+    type HierachyTransform = Matrix4F;
 
     fn from_hierachy(hierachy: Self::HierachyRawType, agency: &GltfRawDataAgency) ->  Result<Self, GltfError> {
 
@@ -41,6 +42,13 @@ impl<'a> GsGltfHierachy<'a> for GsGltfMesh {
 
         let mesh = GsGltfMesh { primitives };
         Ok(mesh)
+    }
+
+    fn apply_transform(&mut self, transform: &Self::HierachyTransform) {
+
+        self.primitives.iter_mut().for_each(|primitive| {
+            primitive.apply_transform(transform);
+        });
     }
 
     fn allocate<M>(&self, allocator: &mut GsBufferAllocator<M>) -> Result<Self::HierachyIndex, AllocatorError>
@@ -71,20 +79,15 @@ impl GltfHierachyIndex for GltfMeshIndex {
     }
 }
 
-impl<'a> GltfHierachyInstance<'a> for GltfMeshInstance {
-    type HierachyDataType = GltfMeshUploadData<'a>;
+impl GltfHierachyInstance for GltfMeshInstance {
+    type HierachyDataType = GsGltfMesh;
 
-    fn upload<M>(&self, uploader: &mut BufferDataUploader<M>, data: Self::HierachyDataType) -> Result<(), AllocatorError>
-        where M: BufferMemoryTypeAbs {
+    fn upload(&self, uploader: &mut BufferDataUploader, data: &Self::HierachyDataType) -> Result<(), AllocatorError> {
 
         for (primitive_instance, primitive_data) in self.primitives.iter()
-            .zip(data.mesh.primitives.iter()) {
+            .zip(data.primitives.iter()) {
 
-            let upload_data = GltfPrimitiveUploadData {
-                primitive: primitive_data,
-                transform: data.transform,
-            };
-            primitive_instance.upload(uploader, upload_data)?;
+            primitive_instance.upload(uploader, primitive_data)?;
         }
         Ok(())
     }
@@ -95,9 +98,4 @@ impl<'a> GltfHierachyInstance<'a> for GltfMeshInstance {
             primitive.record_command(recorder);
         });
     }
-}
-
-pub(super) struct GltfMeshUploadData<'a> {
-    pub mesh: &'a GsGltfMesh,
-    pub transform: &'a Matrix4F,
 }

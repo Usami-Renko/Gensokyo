@@ -29,7 +29,7 @@ impl PipelineStates {
 
     pub(super) fn setup(input: VertexInputDescription, dimension: vkDim2D) -> PipelineStates {
         PipelineStates {
-            vertex_input  : input.desc(),
+            vertex_input  : input.into_desc(),
             input_assembly: self::input_assembly::GsInputAssemblyState::default(),
             viewport      : self::viewport::GsViewportState::single(self::viewport::ViewportStateInfo::new(dimension)),
             rasterizer    : self::rasterizer::GsRasterizerState::default(),

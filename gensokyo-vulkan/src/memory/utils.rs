@@ -71,7 +71,7 @@ impl MemoryMappable for MemoryMapAlias {
 
 pub struct MemoryWritePtr {
 
-    ptr : vkptr,
+    ptr: vkptr,
     size: vkbytes,
 }
 

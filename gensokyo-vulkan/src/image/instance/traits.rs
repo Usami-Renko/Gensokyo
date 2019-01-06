@@ -13,7 +13,7 @@ use crate::memory::AllocatorError;
 
 use crate::types::vkuint;
 
-pub trait ImageInstanceInfoAbs where Self: Sized {
+pub trait ImageInstanceInfoAbs: Sized {
 
     fn build_image(&self, device: &GsDevice) -> Result<GsImage, ImageError>;
     fn allocate_index(&self) -> Option<usize>;
@@ -21,7 +21,7 @@ pub trait ImageInstanceInfoAbs where Self: Sized {
     fn allocate_info(&self, image: GsImage, storage: ImageStorageInfo) -> ImageAllocateInfo;
 }
 
-pub trait GsImageDescAbs where Self: Sized {
+pub trait GsImageDescAbs: Sized {
 
     // image property.
     fn with_tiling(&mut self, tiling: vk::ImageTiling);
@@ -30,7 +30,7 @@ pub trait GsImageDescAbs where Self: Sized {
     fn with_share_queues(&mut self, queue_family_indices: Vec<vkuint>);
 }
 
-pub trait GsImageViewDescAbs where Self: Sized {
+pub trait GsImageViewDescAbs: Sized {
 
     // image view property.
     fn with_mapping_component(&mut self, r: vk::ComponentSwizzle, g: vk::ComponentSwizzle, b: vk::ComponentSwizzle, a: vk::ComponentSwizzle);

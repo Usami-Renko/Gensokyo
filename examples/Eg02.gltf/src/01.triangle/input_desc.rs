@@ -4,7 +4,7 @@ use gsvk::pipeline::shader::*;
 use gsma::{ offset_of, vertex_rate, vk_format };
 
 use example02::ShaderInputDefination;
-use nalgebra::Point3;
+use nalgebra::{ Point3, Vector3 };
 
 //define_input! {
 //    #[binding = 0, rate = vertex]
@@ -17,6 +17,7 @@ use nalgebra::Point3;
 #[derive(Debug, Clone, Copy)]
 pub struct Vertex {
     pos: Point3<f32>,
+    normal: Vector3<f32>,
 }
 
 impl ShaderInputDefination for Vertex {
@@ -38,6 +39,12 @@ impl ShaderInputDefination for Vertex {
                     format: vk_format!(vec3),
                     offset: offset_of!(Self, pos) as _,
                 },
+                GsVertexInputAttribute {
+                    binding: 0,
+                    location: 1,
+                    format: vk_format!(vec3),
+                    offset: offset_of!(Self, normal) as _,
+                }
             ],
         }
     }

@@ -34,8 +34,10 @@ impl GsGltfImporter {
             .or(data_agency.doc.scenes().next())
             .ok_or(GltfError::ModelContentMissing)?;
 
-        let scene_data = GsGltfScene::from_hierachy(dst_scene, &data_agency)
+        let mut scene_data = GsGltfScene::from_hierachy(dst_scene, &data_agency)
             .map_err(|e| AssetsError::Gltf(e))?;
+        scene_data.apply_transform(&());
+
         let target = GsGltfStorage::new(scene_data);
         Ok(target)
     }
@@ -92,26 +94,29 @@ impl<M> GsGltfDistributor<M> where M: BufferMemoryTypeAbs {
     }
 }
 
-pub(super) trait GsGltfHierachy<'a> where Self: Sized {
+pub(super) trait GsGltfHierachy<'a>: Sized {
     type HierachyRawType;
     type HierachyIndex;
+    type HierachyTransform;
 
     fn from_hierachy(hierachy: Self::HierachyRawType, agency: &GltfRawDataAgency) -> Result<Self, GltfError>;
+
+    fn apply_transform(&mut self, transform: &Self::HierachyTransform);
+
     fn allocate<M>(&self, allocator: &mut GsBufferAllocator<M>) -> Result<Self::HierachyIndex, AllocatorError>
         where M: BufferMemoryTypeAbs;
 }
 
-pub(super) trait GltfHierachyIndex where Self: Sized {
+pub(super) trait GltfHierachyIndex: Sized {
     type HierachyInstance;
 
     fn distribute<M>(self, distributor: &GsBufferDistributor<M>) -> Self::HierachyInstance
         where M: BufferMemoryTypeAbs;
 }
 
-pub(super) trait GltfHierachyInstance<'a> where Self: Sized {
+pub(super) trait GltfHierachyInstance: Sized {
     type HierachyDataType;
 
-    fn upload<M>(&self, uploader: &mut BufferDataUploader<M>, data: Self::HierachyDataType) -> Result<(), AllocatorError>
-        where M: BufferMemoryTypeAbs;
+    fn upload(&self, uploader: &mut BufferDataUploader, data: &Self::HierachyDataType) -> Result<(), AllocatorError>;
     fn record_command(&self, recorder: &GsCommandRecorder);
 }
