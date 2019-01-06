@@ -1,7 +1,10 @@
 
+use crate::assets::gltf::primitive::traits::GltfPrimitiveProperty;
+use crate::assets::gltf::error::GltfError;
+
 use gsvk::types::vkfloat;
 
-pub(crate) struct GltfPropertyMaterial {
+pub(crate) struct GltfPrimitiveMaterial {
 
     pbr: Option<PbrMetallicRoughness>,
     emissive_factor: [vkfloat; 3],
@@ -13,16 +16,18 @@ struct PbrMetallicRoughness {
     metallic_factor: vkfloat,
 }
 
-impl GltfPropertyMaterial {
+impl GltfPrimitiveProperty for GltfPrimitiveMaterial {
+    const PROPERTY_NAME: &'static str = "material";
 
-    pub fn load(from: &gltf::Primitive) -> GltfPropertyMaterial {
+    fn read<'a, 's, F>(primitive: &gltf::Primitive, _reader: &gltf::mesh::Reader<'a, 's, F>) -> Result<Self, GltfError>
+        where F: Clone + Fn(gltf::Buffer<'a>) -> Option<&'s [u8]> {
 
-        if from.indices().is_some() { // material property is defined in glTF.
+        let raw_material = primitive.material();
+        let material = if raw_material.index().is_some() {
 
-            let raw_material = from.material();
             let raw_pbr = raw_material.pbr_metallic_roughness();
 
-            GltfPropertyMaterial {
+            GltfPrimitiveMaterial {
                 pbr: Some(
                     PbrMetallicRoughness {
                         base_color_factor: raw_pbr.base_color_factor(),
@@ -31,14 +36,19 @@ impl GltfPropertyMaterial {
                 ),
                 emissive_factor: raw_material.emissive_factor(),
             }
-        } else { // material property is not defined in glTF.
+        } else {
 
-            GltfPropertyMaterial {
+            GltfPrimitiveMaterial {
                 pbr: None,
                 emissive_factor: [0.0; 3],
             }
-        }
+        };
+
+        Ok(material)
     }
+}
+
+impl GltfPrimitiveMaterial {
 
     pub fn is_contain_material(&self) -> bool {
         self.pbr.is_some()

@@ -13,6 +13,7 @@ use crate::utils::types::Matrix4F;
 use self::traits::GltfPrimitiveProperty;
 use self::attributes::GltfPrimitiveAttributes;
 use self::indices::GltfPrimitiveIndices;
+use self::material::GltfPrimitiveMaterial;
 
 use gsvk::buffer::allocator::{ GsBufferAllocator, GsBufferDistributor, BufferBlockIndex };
 use gsvk::buffer::allocator::types::BufferMemoryTypeAbs;
@@ -30,6 +31,7 @@ pub(super) struct GsGltfPrimitive {
     element_count: usize,
     attributes: GltfPrimitiveAttributes,
     indices   : GltfPrimitiveIndices,
+    material  : GltfPrimitiveMaterial,
 }
 
 pub(super) struct GltfPrimitiveIndex {
@@ -57,6 +59,7 @@ impl<'a> GsGltfHierachy<'a> for GsGltfPrimitive {
 
         let attributes = GltfPrimitiveAttributes::read(&hierachy, &reader)?;
         let indices = GltfPrimitiveIndices::read(&hierachy, &reader)?;
+        let material = GltfPrimitiveMaterial::read(&hierachy, &reader)?;
 
         let element_count = indices.indices_count() // get the vertex count by its indices property in glTF.
             .or_else(||{
@@ -73,7 +76,7 @@ impl<'a> GsGltfHierachy<'a> for GsGltfPrimitive {
             }).ok_or(GltfError::ModelContentMissing)?;
 
         let primitive = GsGltfPrimitive {
-            element_count, attributes, indices
+            element_count, attributes, indices, material,
         };
         Ok(primitive)
     }

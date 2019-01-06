@@ -1,7 +1,7 @@
 
 use crate::assets::gltf::error::GltfError;
 
-pub(crate) trait GltfPrimitiveProperty where Self: Sized {
+pub(crate) trait GltfPrimitiveProperty: Sized {
     const PROPERTY_NAME: &'static str;
 
     fn read<'a, 's, F>(primitive: &gltf::Primitive, reader: &gltf::mesh::Reader<'a, 's, F>) -> Result<Self, GltfError>
