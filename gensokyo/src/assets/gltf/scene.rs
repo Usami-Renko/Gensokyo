@@ -1,7 +1,8 @@
 
 use crate::assets::gltf::storage::GltfRawDataAgency;
 use crate::assets::gltf::importer::{ GsGltfHierachy, GltfHierachyIndex, GltfHierachyInstance };
-use crate::assets::gltf::node::{ GsGltfNode, GltfNodeIndex, GltfNodeInstance };
+use crate::assets::gltf::node::{ GsGltfNode, GltfNodeIndex, GltfNodeInstance, GltfNodeVerification };
+use crate::assets::gltf::material::storage::GltfShareResourceTmp;
 use crate::assets::gltf::error::GltfError;
 use crate::utils::types::Matrix4F;
 
@@ -17,6 +18,11 @@ pub(super) struct GsGltfScene {
     nodes: Vec<Box<GsGltfNode>>,
 }
 
+pub(super) struct GltfSceneVerification {
+
+    verification: GltfNodeVerification,
+}
+
 pub(super) struct GltfSceneIndex {
 
     indices: Vec<GltfNodeIndex>,
@@ -28,21 +34,36 @@ pub(super) struct GltfSceneInstance {
 }
 
 impl<'a> GsGltfHierachy<'a> for GsGltfScene {
-    type HierachyRawType   = gltf::Scene<'a>;
-    type HierachyIndex     = GltfSceneIndex;
-    type HierachyTransform = ();
+    type HierachyRawType    = gltf::Scene<'a>;
+    type HierachyVerifyType = GltfSceneVerification;
+    type HierachyIndex      = GltfSceneIndex;
+    type HierachyTransform  = ();
 
-    fn from_hierachy(hierachy: Self::HierachyRawType, agency: &GltfRawDataAgency) ->  Result<Self, GltfError> {
+    fn from_hierachy(hierachy: Self::HierachyRawType, agency: &GltfRawDataAgency, res: &mut GltfShareResourceTmp) -> Result<Self, GltfError> {
 
         let mut nodes = vec![];
         for raw_node in hierachy.nodes().into_iter() {
-            let node = GsGltfNode::from_hierachy(raw_node, agency)?;
+            let node = GsGltfNode::from_hierachy(raw_node, agency, res)?;
             nodes.push(Box::new(node));
         }
 
         let result = GsGltfScene { nodes };
 
         Ok(result)
+    }
+
+    fn generate_verification(&self) -> Option<Self::HierachyVerifyType> {
+
+        self.nodes.first()
+            .and_then(|n| n.generate_verification())
+            .and_then(|verification| Some(GltfSceneVerification { verification }))
+    }
+
+    fn verify(&self, verification: &Self::HierachyVerifyType) -> bool {
+
+        self.nodes.iter().all(|node| {
+            node.verify(&verification.verification)
+        })
     }
 
     fn apply_transform(&mut self, _: &Self::HierachyTransform) {

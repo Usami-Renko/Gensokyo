@@ -47,9 +47,9 @@ impl GsMemoryAbstract for GsDeviceMemory {
 
 impl GsBufferMemoryAbs for GsDeviceMemory {
 
-    fn to_agency(&self, device: &GsDevice, physical: &GsPhyDevice, allot_infos: &BufferAllocateInfos) -> Result<Box<dyn MemoryDataDelegate>, MemoryError> {
+    fn to_agency(&self, device: &GsDevice, physical: &GsPhyDevice, allocate_infos: &BufferAllocateInfos) -> Result<Box<dyn MemoryDataDelegate>, MemoryError> {
 
-        let agency = DeviceDataAgency::new(device, physical, allot_infos)?;
+        let agency = DeviceDataAgency::new(device, physical, allocate_infos)?;
         Ok(Box::new(agency))
     }
 }

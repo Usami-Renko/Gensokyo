@@ -12,7 +12,7 @@ type Vector4U = nalgebra::Vector4<u16>;
 
 use std::ops::{ BitAnd, BitOr, BitOrAssign, BitAndAssign };
 
-#[derive(Eq, PartialEq)]
+#[derive(Debug, Clone, Copy, Eq, PartialEq)]
 pub struct GPAFlag(u32);
 
 impl GPAFlag {
@@ -70,71 +70,148 @@ pub(super) trait GPAttribute {
     fn attribute_size(&self) -> vkbytes;
 
     fn upload(&self, to: &GsVertexBlock, by: &mut BufferDataUploader) -> Result<(), AllocatorError>;
+
     fn update_transform(&mut self, transform: &nalgebra::Matrix4<f32>);
 }
 
 
 macro_rules! read_attribute {
     ($target:ident, $reader:ident, $VertexType:ident, position) => {
-        $target.data = $reader.read_positions()
-            .ok_or(GltfError::ModelContentMissing)?
-            .map(|pos| {
-                let position = Point3F::from(pos);
-                $VertexType { position, ..Default::default() }
-            }).collect();
+        if $target.data.is_empty() {
+            $target.data = $reader.read_positions()
+                .ok_or(GltfError::ModelContentMissing)?
+                .map(|pos| {
+                    let position = Point3F::from(pos);
+                    $VertexType { position, ..Default::default() }
+                }).collect();
+        } else {
+            let pos_iter = $reader.read_positions()
+                .ok_or(GltfError::ModelContentMissing)?;
+            for (i, pos) in pos_iter.enumerate() {
+                $target.data[i].position = Point3F::from(pos);
+            }
+        }
     };
     ($target:ident, $reader:ident, $VertexType:ident, normal) => {
-        let normal_iter = $reader.read_normals()
-            .ok_or(GltfError::ModelContentMissing)?;
-        for (i, normal) in normal_iter.enumerate() {
-            $target.data[i].normal = Vector3F::from(normal);
+        if $target.data.is_empty() {
+            $target.data = $reader.read_normals()
+                .ok_or(GltfError::ModelContentMissing)?
+                .map(|nor| {
+                    let normal = Vector3F::from(nor);
+                    $VertexType { normal, ..Default::default() }
+                }).collect();
+        } else {
+            let normal_iter = $reader.read_normals()
+                .ok_or(GltfError::ModelContentMissing)?;
+            for (i, normal) in normal_iter.enumerate() {
+                $target.data[i].normal = Vector3F::from(normal);
+            }
         }
     };
     ($target:ident, $reader:ident, $VertexType:ident, tangents) => {
-        let tangents_iter = $reader.read_tangents()
-            .ok_or(GltfError::ModelContentMissing)?;
-        for (i, tangent) in tangents_iter.enumerate() {
-            $target.data[i].tangents = Vector4F::from(tangent);
+        if $target.data.is_empty() {
+            $target.data = $reader.read_tangents()
+                .ok_or(GltfError::ModelContentMissing)?
+                .map(|tan| {
+                    let tangents = Vector4F::from(tan);
+                    $VertexType { tangents, ..Default::default() }
+                }).collect();
+        } else {
+            let tangents_iter = $reader.read_tangents()
+                .ok_or(GltfError::ModelContentMissing)?;
+            for (i, tangent) in tangents_iter.enumerate() {
+                $target.data[i].tangents = Vector4F::from(tangent);
+            }
         }
     };
     ($target:ident, $reader:ident, $VertexType:ident, texcoord_0) => {
-        let texcoord_0_iter = $reader.read_tex_coords(0)
-            .ok_or(GltfError::ModelContentMissing)?
-            .into_f32();
-        for (i, texcoord_0) in texcoord_0_iter.enumerate() {
-            $target.data[i].texcoord_0 = Point2F::from(texcoord_0);
+        if $target.data.is_empty() {
+            $target.data = $reader.read_tex_coords(0)
+                .ok_or(GltfError::ModelContentMissing)?
+                .into_f32()
+                .map(|texcoord| {
+                    let texcoord_0 = Point2F::from(texcoord);
+                    $VertexType { texcoord_0, ..Default::default() }
+                }).collect();
+        } else {
+            let texcoord_0_iter = $reader.read_tex_coords(0)
+                .ok_or(GltfError::ModelContentMissing)?
+                .into_f32();
+            for (i, texcoord_0) in texcoord_0_iter.enumerate() {
+                $target.data[i].texcoord_0 = Point2F::from(texcoord_0);
+            }
         }
     };
     ($target:ident, $reader:ident, $VertexType:ident, texcoord_1) => {
-        let texcoord_1_iter = $reader.read_tex_coords(1)
-            .ok_or(GltfError::ModelContentMissing)?
-            .into_f32();
-        for (i, texcoord_1) in texcoord_1_iter.enumerate() {
-            $target.data[i].texcoord_1 = Point2F::from(texcoord_1);
+        if $target.data.is_empty() {
+            $target.data = $reader.read_tex_coords(1)
+                .ok_or(GltfError::ModelContentMissing)?
+                .into_f32()
+                .map(|texcoord| {
+                    let texcoord_1 = Point2F::from(texcoord);
+                    $VertexType { texcoord_1, ..Default::default() }
+                }).collect();
+        } else {
+            let texcoord_1_iter = $reader.read_tex_coords(1)
+                .ok_or(GltfError::ModelContentMissing)?
+                .into_f32();
+            for (i, texcoord_1) in texcoord_1_iter.enumerate() {
+                $target.data[i].texcoord_1 = Point2F::from(texcoord_1);
+            }
         }
     };
     ($target:ident, $reader:ident, $VertexType:ident, color_0) => {
-        let color_0_iter = $reader.read_colors(0)
-            .ok_or(GltfError::ModelContentMissing)?
-            .into_rgba_f32();
-        for (i, color_0) in color_0_iter.enumerate() {
-            $target.data[i].color_0 = Vector4F::from(color_0);
+        if $target.data.is_empty() {
+            $target.data = $reader.read_colors(0)
+                .ok_or(GltfError::ModelContentMissing)?
+                .into_rgba_f32()
+                .map(|color| {
+                    let color_0 = Vector4F::from(color);
+                    $VertexType { color_0, ..Default::default() }
+                }).collect();
+        } else {
+            let color_0_iter = $reader.read_colors(0)
+                .ok_or(GltfError::ModelContentMissing)?
+                .into_rgba_f32();
+            for (i, color_0) in color_0_iter.enumerate() {
+                $target.data[i].color_0 = Vector4F::from(color_0);
+            }
         }
     };
     ($target:ident, $reader:ident, $VertexType:ident, joints_0) => {
-        let joints_0_iter = $reader.read_joints(0)
-            .ok_or(GltfError::ModelContentMissing)?
-            .into_u16();
-        for (i, joints_0) in joints_0_iter.enumerate() {
-            $target.data[i].joints_0 = Vector4U::from(joints_0);
+        if $target.data.is_empty() {
+            $target.data = $reader.read_joints(0)
+                .ok_or(GltfError::ModelContentMissing)?
+                .into_u16()
+                .map(|joint| {
+                    let joints_0 = Vector4U::from(joint);
+                    $VertexType { joints_0, ..Default::default() }
+                }).collect();
+        } else {
+            let joints_0_iter = $reader.read_joints(0)
+                .ok_or(GltfError::ModelContentMissing)?
+                .into_u16();
+            for (i, joints_0) in joints_0_iter.enumerate() {
+                $target.data[i].joints_0 = Vector4U::from(joints_0);
+            }
         }
     };
     ($target:ident, $reader:ident, $VertexType:ident, weights_0) => {
-        let weights_0_iter = $reader.read_weights(0)
-            .ok_or(GltfError::ModelContentMissing)?
-            .into_f32();
-        for (i, weights_0) in weights_0_iter.enumerate() {
-            $target.data[i].weights_0 = Vector4F::from(weights_0);
+        if $target.data.is_empty() {
+            $target.data = $reader.read_weights(0)
+                .ok_or(GltfError::ModelContentMissing)?
+                .into_f32()
+                .map(|weight| {
+                    let weights_0 = Vector4F::from(weight);
+                    $VertexType { weights_0, ..Default::default() }
+                }).collect();
+        } else {
+            let weights_0_iter = $reader.read_weights(0)
+                .ok_or(GltfError::ModelContentMissing)?
+                .into_f32();
+            for (i, weights_0) in weights_0_iter.enumerate() {
+                $target.data[i].weights_0 = Vector4F::from(weights_0);
+            }
         }
     };
 }
@@ -170,7 +247,7 @@ macro_rules! define_gpa {
 
         #[derive(Default)]
         pub(super) struct $name_gpa {
-            data: Vec<$name_vertex>
+            data: Vec<$name_vertex>,
         }
 
         #[derive(Debug, Clone, Copy)]

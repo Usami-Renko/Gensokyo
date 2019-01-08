@@ -1,6 +1,7 @@
 
-use crate::assets::gltf::scene::{ GsGltfScene, GltfSceneInstance, GltfSceneIndex };
 use crate::assets::gltf::importer::{ GsGltfHierachy, GltfHierachyInstance };
+use crate::assets::gltf::scene::{ GsGltfScene, GltfSceneInstance, GltfSceneIndex };
+use crate::assets::gltf::material::storage::GltfShareResource;
 
 use gsvk::buffer::allocator::types::BufferMemoryTypeAbs;
 use gsvk::buffer::allocator::GsBufferAllocator;
@@ -10,12 +11,15 @@ use gsvk::memory::AllocatorError;
 use gsvk::command::GsCommandRecorder;
 
 
-pub struct GltfRawDataAgency {
+// ------------------------------------------------------------------------------------
+pub(super) struct GltfRawDataAgency {
     pub doc: gltf::Document,
     pub data_buffer: Vec<gltf::buffer::Data>,
     pub data_image : Vec<gltf::image::Data>,
 }
+// ------------------------------------------------------------------------------------
 
+// ------------------------------------------------------------------------------------
 pub struct GsGltfEntity {
 
     scene: GltfSceneInstance,
@@ -32,16 +36,19 @@ impl GsGltfEntity {
         self.scene.record_command(recorder);
     }
 }
+// ------------------------------------------------------------------------------------
 
+// ------------------------------------------------------------------------------------
 pub struct GsGltfStorage {
 
     scene: GsGltfScene,
+    resource: GltfShareResource,
 }
 
 impl GsGltfStorage {
 
-    pub(super) fn new(scene: GsGltfScene) -> GsGltfStorage {
-        GsGltfStorage { scene }
+    pub(super) fn new(scene: GsGltfScene, res: GltfShareResource) -> GsGltfStorage {
+        GsGltfStorage { scene, resource: res }
     }
 
     pub(super) fn allocate<M>(&self, allocator: &mut GsBufferAllocator<M>) -> Result<GltfSceneIndex, AllocatorError>
@@ -53,7 +60,9 @@ impl GsGltfStorage {
         self.scene.apply_transform(&());
     }
 }
+// ------------------------------------------------------------------------------------
 
+// ------------------------------------------------------------------------------------
 pub struct GsGltfRepository<M> where M: BufferMemoryTypeAbs {
 
     repository: GsBufferRepository<M>,
@@ -76,7 +85,9 @@ impl<M> GsGltfRepository<M> where M: BufferMemoryTypeAbs {
         Ok(target)
     }
 }
+// ------------------------------------------------------------------------------------
 
+// ------------------------------------------------------------------------------------
 pub struct GltfDataUploader {
 
     uploader: BufferDataUploader,
@@ -96,3 +107,4 @@ impl GltfDataUploader {
         self.uploader.finish()
     }
 }
+// ------------------------------------------------------------------------------------

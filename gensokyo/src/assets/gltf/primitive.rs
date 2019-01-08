@@ -2,17 +2,19 @@
 mod attributes;
 mod attrpatterns;
 mod indices;
-mod material;
-mod traits;
+mod mode;
+
+pub(super) mod material;
 
 use crate::assets::gltf::storage::GltfRawDataAgency;
 use crate::assets::gltf::importer::{ GsGltfHierachy, GltfHierachyIndex, GltfHierachyInstance };
+use crate::assets::gltf::material::storage::GltfShareResourceTmp;
 use crate::assets::gltf::error::GltfError;
 use crate::utils::types::Matrix4F;
 
-use self::traits::GltfPrimitiveProperty;
 use self::attributes::GltfPrimitiveAttributes;
 use self::indices::GltfPrimitiveIndices;
+use self::mode::GltfPrimitiveMode;
 use self::material::GltfPrimitiveMaterial;
 
 use gsvk::buffer::allocator::{ GsBufferAllocator, GsBufferDistributor, BufferBlockIndex };
@@ -31,7 +33,13 @@ pub(super) struct GsGltfPrimitive {
     element_count: usize,
     attributes: GltfPrimitiveAttributes,
     indices   : GltfPrimitiveIndices,
+    mode      : GltfPrimitiveMode,
     material  : GltfPrimitiveMaterial,
+}
+
+#[derive(Debug, PartialEq, Eq)]
+pub(super) struct GltfPrimitiveVerification {
+    mode: gltf::mesh::Mode,
 }
 
 pub(super) struct GltfPrimitiveIndex {
@@ -49,17 +57,19 @@ pub(super) struct GltfPrimitiveInstance {
 }
 
 impl<'a> GsGltfHierachy<'a> for GsGltfPrimitive {
-    type HierachyRawType   = gltf::Primitive<'a>;
-    type HierachyIndex     = GltfPrimitiveIndex;
-    type HierachyTransform = Matrix4F;
+    type HierachyRawType    = gltf::Primitive<'a>;
+    type HierachyVerifyType = GltfPrimitiveVerification;
+    type HierachyIndex      = GltfPrimitiveIndex;
+    type HierachyTransform  = Matrix4F;
 
-    fn from_hierachy(hierachy: Self::HierachyRawType, agency: &GltfRawDataAgency) ->  Result<Self, GltfError> {
+    fn from_hierachy(hierachy: Self::HierachyRawType, agency: &GltfRawDataAgency, res: &mut GltfShareResourceTmp) -> Result<Self, GltfError> {
 
         let reader = hierachy.reader(|b| Some(&agency.data_buffer[b.index()]));
 
         let attributes = GltfPrimitiveAttributes::read(&hierachy, &reader)?;
-        let indices = GltfPrimitiveIndices::read(&hierachy, &reader)?;
-        let material = GltfPrimitiveMaterial::read(&hierachy, &reader)?;
+        let indices = GltfPrimitiveIndices::read(&reader);
+        let mode = GltfPrimitiveMode::read(&hierachy);
+        let material = GltfPrimitiveMaterial::read(&hierachy, res);
 
         let element_count = indices.indices_count() // get the vertex count by its indices property in glTF.
             .or_else(||{
@@ -76,9 +86,21 @@ impl<'a> GsGltfHierachy<'a> for GsGltfPrimitive {
             }).ok_or(GltfError::ModelContentMissing)?;
 
         let primitive = GsGltfPrimitive {
-            element_count, attributes, indices, material,
+            element_count, attributes, indices, mode, material,
         };
         Ok(primitive)
+    }
+
+    fn generate_verification(&self) -> Option<Self::HierachyVerifyType> {
+
+        let verification = GltfPrimitiveVerification {
+            mode: self.mode.0,
+        };
+        Some(verification)
+    }
+
+    fn verify(&self, verification: &Self::HierachyVerifyType) -> bool {
+        verification.mode == self.mode.0
     }
 
     fn apply_transform(&mut self, transform: &Self::HierachyTransform) {
@@ -89,9 +111,9 @@ impl<'a> GsGltfHierachy<'a> for GsGltfPrimitive {
         where M: BufferMemoryTypeAbs {
 
         let index = GltfPrimitiveIndex {
-            element_count: self.element_count as _,
-            attributes_index: self.attributes.append_allocation(allocator)?,
-            indices_index: self.indices.append_allocation(allocator)?,
+            element_count    : self.element_count as _,
+            attributes_index : self.attributes.append_allocation(allocator)?,
+            indices_index    : self.indices.append_allocation(allocator)?,
         };
         Ok(index)
     }

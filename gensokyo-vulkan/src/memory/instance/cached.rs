@@ -47,9 +47,9 @@ impl GsMemoryAbstract for GsCachedMemory {
 
 impl GsBufferMemoryAbs for GsCachedMemory {
 
-    fn to_agency(&self, device: &GsDevice, physical: &GsPhyDevice, allot_infos: &BufferAllocateInfos) -> Result<Box<dyn MemoryDataDelegate>, MemoryError> {
+    fn to_agency(&self, device: &GsDevice, physical: &GsPhyDevice, allocate_infos: &BufferAllocateInfos) -> Result<Box<dyn MemoryDataDelegate>, MemoryError> {
 
-        let agency = CachedDataAgency::new(device, physical, allot_infos)?;
+        let agency = CachedDataAgency::new(device, physical, allocate_infos)?;
         Ok(Box::new(agency))
     }
 }

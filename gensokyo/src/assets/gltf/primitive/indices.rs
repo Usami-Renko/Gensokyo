@@ -1,7 +1,4 @@
 
-use crate::assets::gltf::primitive::traits::GltfPrimitiveProperty;
-use crate::assets::gltf::error::GltfError;
-
 use gsvk::buffer::allocator::{ GsBufferAllocator, BufferBlockIndex };
 use gsvk::buffer::allocator::types::BufferMemoryTypeAbs;
 use gsvk::buffer::instance::{ IndexBlockInfo, GsIndexBlock };
@@ -11,15 +8,14 @@ use gsvk::types::{ vkuint, vkbytes };
 use gsma::data_size;
 
 #[derive(Default)]
-pub(crate) struct GltfPrimitiveIndices {
+pub(super) struct GltfPrimitiveIndices {
 
     data: Option<Vec<vkuint>>,
 }
 
-impl GltfPrimitiveProperty for GltfPrimitiveIndices {
-    const PROPERTY_NAME: &'static str = "indices";
+impl GltfPrimitiveIndices {
 
-    fn read<'a, 's, F>(_primitive: &gltf::Primitive, reader: &gltf::mesh::Reader<'a, 's, F>) -> Result<Self, GltfError>
+    pub fn read<'a, 's, F>(reader: &gltf::mesh::Reader<'a, 's, F>) -> GltfPrimitiveIndices
         where F: Clone + Fn(gltf::Buffer<'a>) -> Option<&'s [u8]> {
 
         let data = reader.read_indices()
@@ -28,12 +24,8 @@ impl GltfPrimitiveProperty for GltfPrimitiveIndices {
                 Some(data)
             });
 
-        let indices = GltfPrimitiveIndices { data };
-        Ok(indices)
+        GltfPrimitiveIndices { data }
     }
-}
-
-impl GltfPrimitiveIndices {
 
     pub fn indices_count(&self) -> Option<usize> {
 

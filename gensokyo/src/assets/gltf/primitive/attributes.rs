@@ -1,5 +1,4 @@
 
-use crate::assets::gltf::primitive::traits::GltfPrimitiveProperty;
 use crate::assets::gltf::primitive::attrpatterns::{ GPAttribute, GPAFlag, GPAP, GPAPN, GPAPNTe0, GPAUltimate };
 use crate::assets::gltf::error::GltfError;
 use crate::utils::types::Matrix4F;
@@ -15,10 +14,9 @@ pub(super) struct GltfPrimitiveAttributes {
     data: Box<dyn GPAttribute>,
 }
 
-impl GltfPrimitiveProperty for GltfPrimitiveAttributes {
-    const PROPERTY_NAME: &'static str = "attributes";
+impl GltfPrimitiveAttributes {
 
-    fn read<'a, 's, F>(primitive: &gltf::Primitive, reader: &gltf::mesh::Reader<'a, 's, F>) -> Result<Self, GltfError>
+    pub fn read<'a, 's, F>(primitive: &gltf::Primitive, reader: &gltf::mesh::Reader<'a, 's, F>) -> Result<GltfPrimitiveAttributes, GltfError>
         where F: Clone + Fn(gltf::Buffer<'a>) -> Option<&'s [u8]> {
 
         let mut require_flags = GPAFlag::NONE;
@@ -47,9 +45,6 @@ impl GltfPrimitiveProperty for GltfPrimitiveAttributes {
         let target = GltfPrimitiveAttributes { data };
         Ok(target)
     }
-}
-
-impl GltfPrimitiveAttributes {
 
     pub fn append_allocation<M>(&self, allocator: &mut GsBufferAllocator<M>) -> Result<BufferBlockIndex, AllocatorError>
         where M: BufferMemoryTypeAbs {

@@ -1,7 +1,8 @@
 
 use crate::assets::gltf::storage::GltfRawDataAgency;
 use crate::assets::gltf::importer::{ GsGltfHierachy, GltfHierachyIndex, GltfHierachyInstance };
-use crate::assets::gltf::mesh::{ GsGltfMesh, GltfMeshIndex, GltfMeshInstance };
+use crate::assets::gltf::mesh::{ GsGltfMesh, GltfMeshIndex, GltfMeshInstance, GltfMeshVerification };
+use crate::assets::gltf::material::storage::GltfShareResourceTmp;
 use crate::assets::gltf::error::GltfError;
 use crate::utils::types::Matrix4F;
 
@@ -28,6 +29,12 @@ impl GsGltfNode {
     }
 }
 
+#[derive(Debug, PartialEq, Eq)]
+pub(super) struct GltfNodeVerification {
+
+    verification: GltfMeshVerification,
+}
+
 pub(super) struct GltfNodeIndex {
 
     root_index: Option<GltfMeshIndex>,
@@ -41,29 +48,54 @@ pub(super) struct GltfNodeInstance {
 }
 
 impl<'a> GsGltfHierachy<'a> for GsGltfNode {
-    type HierachyRawType   = gltf::Node<'a>;
-    type HierachyIndex     = GltfNodeIndex;
-    type HierachyTransform = Matrix4F;
+    type HierachyRawType    = gltf::Node<'a>;
+    type HierachyVerifyType = GltfNodeVerification;
+    type HierachyIndex      = GltfNodeIndex;
+    type HierachyTransform  = Matrix4F;
 
-    fn from_hierachy(hierachy: Self::HierachyRawType, agency: &GltfRawDataAgency) ->  Result<Self, GltfError> {
+    fn from_hierachy(hierachy: Self::HierachyRawType, agency: &GltfRawDataAgency, res: &mut GltfShareResourceTmp) -> Result<Self, GltfError> {
 
         let transform = Matrix4F::from(hierachy.transform().matrix());
 
         let mut children = vec![];
         for child_node in hierachy.children() {
-            let mut sub_node = GsGltfNode::from_hierachy(child_node, &agency)?;
+            let mut sub_node = GsGltfNode::from_hierachy(child_node, &agency, res)?;
             sub_node.combine_transform(&transform);
             children.push(Box::new(sub_node));
         }
 
         let mesh = if let Some(raw_mesh) = hierachy.mesh() {
-            Some(GsGltfMesh::from_hierachy(raw_mesh, &agency)?)
+            Some(GsGltfMesh::from_hierachy(raw_mesh, &agency, res)?)
         } else {
             None
         };
 
         let target = GsGltfNode { mesh, transform, children };
         Ok(target)
+    }
+
+    fn generate_verification(&self) -> Option<Self::HierachyVerifyType> {
+
+        self.mesh.as_ref().and_then(|mesh| {
+            mesh.generate_verification()
+                .and_then(|verification| Some(GltfNodeVerification { verification }))
+        }).or_else(|| {
+            self.children.iter()
+                .find_map(|child| child.generate_verification())
+        })
+    }
+
+    fn verify(&self, verification: &Self::HierachyVerifyType) -> bool {
+
+        let is_mesh_verified = self.mesh.as_ref()
+            .and_then(|m| Some(m.verify(&verification.verification)))
+            .unwrap_or(true);
+
+        if is_mesh_verified {
+            self.children.iter().all(|child| child.verify(verification))
+        } else {
+            false
+        }
     }
 
     fn apply_transform(&mut self, transform: &Self::HierachyTransform) {

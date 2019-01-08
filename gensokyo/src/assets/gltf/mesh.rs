@@ -1,7 +1,8 @@
 
 use crate::assets::gltf::storage::GltfRawDataAgency;
 use crate::assets::gltf::importer::{ GsGltfHierachy, GltfHierachyIndex, GltfHierachyInstance };
-use crate::assets::gltf::primitive::{ GsGltfPrimitive, GltfPrimitiveIndex, GltfPrimitiveInstance };
+use crate::assets::gltf::primitive::{ GsGltfPrimitive, GltfPrimitiveIndex, GltfPrimitiveInstance, GltfPrimitiveVerification };
+use crate::assets::gltf::material::storage::GltfShareResourceTmp;
 use crate::assets::gltf::error::GltfError;
 use crate::utils::types::Matrix4F;
 
@@ -17,6 +18,12 @@ pub(super) struct GsGltfMesh {
     primitives: Vec<GsGltfPrimitive>,
 }
 
+#[derive(Debug, PartialEq, Eq)]
+pub(super) struct GltfMeshVerification {
+
+    verification: GltfPrimitiveVerification,
+}
+
 pub(super) struct GltfMeshIndex {
 
     indices: Vec<GltfPrimitiveIndex>,
@@ -28,20 +35,35 @@ pub(super) struct GltfMeshInstance {
 }
 
 impl<'a> GsGltfHierachy<'a> for GsGltfMesh {
-    type HierachyRawType   = gltf::Mesh<'a>;
-    type HierachyIndex     = GltfMeshIndex;
-    type HierachyTransform = Matrix4F;
+    type HierachyRawType    = gltf::Mesh<'a>;
+    type HierachyVerifyType = GltfMeshVerification;
+    type HierachyIndex      = GltfMeshIndex;
+    type HierachyTransform  = Matrix4F;
 
-    fn from_hierachy(hierachy: Self::HierachyRawType, agency: &GltfRawDataAgency) ->  Result<Self, GltfError> {
+    fn from_hierachy(hierachy: Self::HierachyRawType, agency: &GltfRawDataAgency, res: &mut GltfShareResourceTmp) -> Result<Self, GltfError> {
 
         let mut primitives = vec![];
         for raw_primitive in hierachy.primitives() {
-            let primitive = GsGltfPrimitive::from_hierachy(raw_primitive, agency)?;
+            let primitive = GsGltfPrimitive::from_hierachy(raw_primitive, agency, res)?;
             primitives.push(primitive);
         }
 
         let mesh = GsGltfMesh { primitives };
         Ok(mesh)
+    }
+
+    fn generate_verification(&self) -> Option<Self::HierachyVerifyType> {
+
+        self.primitives.first()
+            .and_then(|p| p.generate_verification())
+            .and_then(|verification| Some(GltfMeshVerification { verification }))
+    }
+
+    fn verify(&self, verification: &Self::HierachyVerifyType) -> bool {
+
+        self.primitives.iter().all(|primitive| {
+            primitive.verify(&verification.verification)
+        })
     }
 
     fn apply_transform(&mut self, transform: &Self::HierachyTransform) {

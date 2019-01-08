@@ -16,14 +16,16 @@ use nalgebra::{ Point3, Vector3 };
 
 #[derive(Debug, Clone, Copy)]
 pub struct Vertex {
-    pos: Point3<f32>,
+    position: Point3<f32>,
     normal: Vector3<f32>,
 }
 
 impl ShaderInputDefination for Vertex {
 
     fn desc() -> VertexInputDescription {
+
         use std::mem;
+
         VertexInputDescription {
             bindings: vec![
                 GsVertexInputBinding {
@@ -37,7 +39,7 @@ impl ShaderInputDefination for Vertex {
                     binding: 0,
                     location: 0,
                     format: vk_format!(vec3),
-                    offset: offset_of!(Self, pos) as _,
+                    offset: offset_of!(Self, position) as _,
                 },
                 GsVertexInputAttribute {
                     binding: 0,

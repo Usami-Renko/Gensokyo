@@ -1,6 +1,7 @@
 
 use crate::assets::gltf::storage::{ GltfRawDataAgency, GsGltfRepository, GsGltfStorage, GsGltfEntity };
 use crate::assets::gltf::scene::{ GsGltfScene, GltfSceneIndex };
+use crate::assets::gltf::material::storage::GltfShareResourceTmp;
 use crate::assets::gltf::error::GltfError;
 use crate::assets::error::AssetsError;
 
@@ -34,11 +35,22 @@ impl GsGltfImporter {
             .or(data_agency.doc.scenes().next())
             .ok_or(GltfError::ModelContentMissing)?;
 
-        let mut scene_data = GsGltfScene::from_hierachy(dst_scene, &data_agency)
+        // fetch the data from glTF.
+        let mut share_resource = GltfShareResourceTmp::default();
+        let mut scene_data = GsGltfScene::from_hierachy(dst_scene, &data_agency, &mut share_resource)
             .map_err(|e| AssetsError::Gltf(e))?;
+
+        // verify the content of glTF.
+        let verify_content = scene_data.generate_verification()
+            .ok_or(GltfError::VerificationError)?;
+        if scene_data.verify(&verify_content) == false {
+            return Err(AssetsError::from(GltfError::VerificationError))
+        }
+
+        // update the transformation of glTF data.
         scene_data.apply_transform(&());
 
-        let target = GsGltfStorage::new(scene_data);
+        let target = GsGltfStorage::new(scene_data, share_resource.into_resource());
         Ok(target)
     }
 }
@@ -96,10 +108,15 @@ impl<M> GsGltfDistributor<M> where M: BufferMemoryTypeAbs {
 
 pub(super) trait GsGltfHierachy<'a>: Sized {
     type HierachyRawType;
+    type HierachyVerifyType;
     type HierachyIndex;
     type HierachyTransform;
 
-    fn from_hierachy(hierachy: Self::HierachyRawType, agency: &GltfRawDataAgency) -> Result<Self, GltfError>;
+    fn from_hierachy(hierachy: Self::HierachyRawType, agency: &GltfRawDataAgency, res: &mut GltfShareResourceTmp) -> Result<Self, GltfError>;
+
+    fn generate_verification(&self) -> Option<Self::HierachyVerifyType>;
+
+    fn verify(&self, verification: &Self::HierachyVerifyType) -> bool;
 
     fn apply_transform(&mut self, transform: &Self::HierachyTransform);
 
