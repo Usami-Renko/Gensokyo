@@ -70,7 +70,13 @@ impl GsMemoryAbstract for GsHostMemory {
 
 impl GsBufferMemoryAbs for GsHostMemory {
 
-    fn to_agency(&self, _: &GsDevice, _: &GsPhyDevice, _: &BufferAllocateInfos) -> Result<Box<dyn MemoryDataDelegate>, MemoryError> {
+    fn to_upload_agency(&self, _: &GsDevice, _: &GsPhyDevice, _: &BufferAllocateInfos) -> Result<Box<dyn MemoryDataDelegate>, MemoryError> {
+
+        let agency = HostDataAgency::new(self);
+        Ok(Box::new(agency))
+    }
+
+    fn to_update_agency(&self) -> Result<Box<dyn MemoryDataDelegate>, MemoryError> {
 
         let agency = HostDataAgency::new(self);
         Ok(Box::new(agency))

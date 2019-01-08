@@ -8,7 +8,7 @@ use crate::utils::types::Matrix4F;
 
 use gsvk::buffer::allocator::{ GsBufferAllocator, GsBufferDistributor };
 use gsvk::buffer::allocator::types::BufferMemoryTypeAbs;
-use gsvk::memory::transfer::BufferDataUploader;
+use gsvk::memory::transfer::GsBufferDataUploader;
 use gsvk::memory::AllocatorError;
 use gsvk::command::GsCommandRecorder;
 
@@ -105,7 +105,7 @@ impl GltfHierachyIndex for GltfSceneIndex {
 impl GltfHierachyInstance for GltfSceneInstance {
     type HierachyDataType = GsGltfScene;
 
-    fn upload(&self, uploader: &mut BufferDataUploader, data: &Self::HierachyDataType) -> Result<(), AllocatorError> {
+    fn upload(&self, uploader: &mut GsBufferDataUploader, data: &Self::HierachyDataType) -> Result<(), AllocatorError> {
 
         for (node_instance, node_data) in self.nodes.iter().zip(data.nodes.iter()) {
             node_instance.upload(uploader, node_data)?;

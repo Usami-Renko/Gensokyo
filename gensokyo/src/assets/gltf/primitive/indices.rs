@@ -3,7 +3,7 @@ use gsvk::buffer::allocator::{ GsBufferAllocator, BufferBlockIndex };
 use gsvk::buffer::allocator::types::BufferMemoryTypeAbs;
 use gsvk::buffer::instance::{ IndexBlockInfo, GsIndexBlock };
 use gsvk::memory::AllocatorError;
-use gsvk::memory::transfer::BufferDataUploader;
+use gsvk::memory::transfer::GsBufferDataUploader;
 use gsvk::types::{ vkuint, vkbytes };
 use gsma::data_size;
 
@@ -46,7 +46,7 @@ impl GltfPrimitiveIndices {
         Ok(block_index)
     }
 
-    pub fn upload(&self, to: &Option<GsIndexBlock>, by: &mut BufferDataUploader) -> Result<(), AllocatorError> {
+    pub fn upload(&self, to: &Option<GsIndexBlock>, by: &mut GsBufferDataUploader) -> Result<(), AllocatorError> {
 
         if let Some(ref indices_data) = self.data {
             if let Some(ref index_block) = to {

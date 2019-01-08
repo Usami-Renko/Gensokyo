@@ -66,10 +66,15 @@ impl GsMemoryAbstract for GsStagingMemory {
 
 impl GsBufferMemoryAbs for GsStagingMemory {
 
-    fn to_agency(&self, _: &GsDevice, _: &GsPhyDevice, _: &BufferAllocateInfos) -> Result<Box<dyn MemoryDataDelegate>, MemoryError> {
+    fn to_upload_agency(&self, _: &GsDevice, _: &GsPhyDevice, _: &BufferAllocateInfos) -> Result<Box<dyn MemoryDataDelegate>, MemoryError> {
 
         let agency = StagingDataAgency::new(self)?;
         Ok(Box::new(agency))
+    }
+
+    fn to_update_agency(&self) -> Result<Box<dyn MemoryDataDelegate>, MemoryError> {
+        /// Staging memory is unable to update directly.
+        unreachable!()
     }
 }
 

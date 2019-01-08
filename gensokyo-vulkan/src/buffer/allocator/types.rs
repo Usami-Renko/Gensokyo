@@ -7,7 +7,7 @@ use crate::memory::MemoryMappable;
 use crate::memory::types::{ GsMemoryType, Host, Device, Cached, Staging };
 use crate::memory::MemoryError;
 
-pub trait BufferMemoryTypeAbs: Copy {
+pub trait BufferMemoryTypeAbs: Copy + Sized {
     const MEMORY_TYPE: GsMemoryType;
 
     fn memory_type(&self) -> GsMemoryType {

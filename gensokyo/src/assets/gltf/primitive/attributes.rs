@@ -6,7 +6,7 @@ use crate::utils::types::Matrix4F;
 use gsvk::buffer::allocator::{ GsBufferAllocator, BufferBlockIndex };
 use gsvk::buffer::instance::{ VertexBlockInfo, GsVertexBlock };
 use gsvk::buffer::allocator::types::BufferMemoryTypeAbs;
-use gsvk::memory::transfer::BufferDataUploader;
+use gsvk::memory::transfer::GsBufferDataUploader;
 use gsvk::memory::AllocatorError;
 
 pub(super) struct GltfPrimitiveAttributes {
@@ -54,7 +54,7 @@ impl GltfPrimitiveAttributes {
     }
 
     #[inline]
-    pub fn upload(&self, to: &GsVertexBlock, by: &mut BufferDataUploader) -> Result<(), AllocatorError> {
+    pub fn upload(&self, to: &GsVertexBlock, by: &mut GsBufferDataUploader) -> Result<(), AllocatorError> {
         self.data.upload(to, by)
     }
 

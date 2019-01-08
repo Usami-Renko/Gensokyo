@@ -1,16 +1,12 @@
 
 use crate::core::device::GsDevice;
-use crate::core::physical::GsPhyDevice;
 
 use crate::buffer::BufferInstance;
-use crate::buffer::allocator::BufferAllocateInfos;
-
 use crate::memory::instance::GsBufferMemory;
 use crate::memory::transfer::traits::MemoryDataDelegate;
 use crate::memory::error::AllocatorError;
 
-
-pub struct GsBufferDataUploader {
+pub struct GsBufferDataUpdater {
 
     device: GsDevice,
     agency: Box<dyn MemoryDataDelegate>,
@@ -18,22 +14,22 @@ pub struct GsBufferDataUploader {
     is_finished: bool,
 }
 
-impl GsBufferDataUploader {
+impl GsBufferDataUpdater {
 
-    pub(crate) fn new(physical: &GsPhyDevice, device: &GsDevice, memory: &GsBufferMemory, allocate_infos: &BufferAllocateInfos) -> Result<GsBufferDataUploader, AllocatorError> {
+    pub(crate) fn new(device: &GsDevice, memory: &GsBufferMemory) -> Result<GsBufferDataUpdater, AllocatorError> {
 
-        let mut agency = memory.to_upload_agency(device, physical, allocate_infos)?;
+        let mut agency = memory.to_update_agency()?;
         agency.prepare(device)?;
 
-        let uploader = GsBufferDataUploader {
+        let updater = GsBufferDataUpdater {
             device: device.clone(),
             agency,
             is_finished: false,
         };
-        Ok(uploader)
+        Ok(updater)
     }
 
-    pub fn upload(&mut self, to: &impl BufferInstance, data: &[impl Copy]) -> Result<&mut GsBufferDataUploader, AllocatorError> {
+    pub fn update(&mut self, to: &impl BufferInstance, data: &[impl Copy]) -> Result<&mut GsBufferDataUpdater, AllocatorError> {
 
         let writer = self.agency.acquire_write_ptr(to.as_block_ref(), to.repository_index())?;
         writer.write_data(data);
@@ -48,7 +44,7 @@ impl GsBufferDataUploader {
     }
 }
 
-impl Drop for GsBufferDataUploader {
+impl Drop for GsBufferDataUpdater {
 
     fn drop(&mut self) {
         debug_assert!(self.is_finished);

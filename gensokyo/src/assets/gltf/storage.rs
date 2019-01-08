@@ -6,7 +6,7 @@ use crate::assets::gltf::material::storage::GltfShareResource;
 use gsvk::buffer::allocator::types::BufferMemoryTypeAbs;
 use gsvk::buffer::allocator::GsBufferAllocator;
 use gsvk::buffer::GsBufferRepository;
-use gsvk::memory::transfer::BufferDataUploader;
+use gsvk::memory::transfer::GsBufferDataUploader;
 use gsvk::memory::AllocatorError;
 use gsvk::command::GsCommandRecorder;
 
@@ -90,7 +90,7 @@ impl<M> GsGltfRepository<M> where M: BufferMemoryTypeAbs {
 // ------------------------------------------------------------------------------------
 pub struct GltfDataUploader {
 
-    uploader: BufferDataUploader,
+    uploader: GsBufferDataUploader,
 }
 
 impl GltfDataUploader {

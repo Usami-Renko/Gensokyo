@@ -20,7 +20,7 @@ use self::material::GltfPrimitiveMaterial;
 use gsvk::buffer::allocator::{ GsBufferAllocator, GsBufferDistributor, BufferBlockIndex };
 use gsvk::buffer::allocator::types::BufferMemoryTypeAbs;
 use gsvk::buffer::instance::{ GsVertexBlock, GsIndexBlock };
-use gsvk::memory::transfer::BufferDataUploader;
+use gsvk::memory::transfer::GsBufferDataUploader;
 use gsvk::memory::AllocatorError;
 use gsvk::command::GsCommandRecorder;
 use gsvk::types::vkuint;
@@ -136,7 +136,7 @@ impl GltfHierachyIndex for GltfPrimitiveIndex {
 impl GltfHierachyInstance for GltfPrimitiveInstance {
     type HierachyDataType = GsGltfPrimitive;
 
-    fn upload(&self, uploader: &mut BufferDataUploader, data: &Self::HierachyDataType) -> Result<(), AllocatorError> {
+    fn upload(&self, uploader: &mut GsBufferDataUploader, data: &Self::HierachyDataType) -> Result<(), AllocatorError> {
 
         // upload attribute data to vulkan.
         data.attributes.upload(&self.attributes_block, uploader)?;

@@ -13,7 +13,8 @@ pub type GsImageMemory  = Box<dyn GsImageMemoryAbs>;
 
 pub trait GsBufferMemoryAbs: GsMemoryAbstract {
 
-    fn to_agency(&self, device: &GsDevice, physical: &GsPhyDevice, allocate_infos: &BufferAllocateInfos) -> Result<Box<dyn MemoryDataDelegate>, MemoryError>;
+    fn to_upload_agency(&self, device: &GsDevice, physical: &GsPhyDevice, allot_infos: &BufferAllocateInfos) -> Result<Box<dyn MemoryDataDelegate>, MemoryError>;
+    fn to_update_agency(&self) -> Result<Box<dyn MemoryDataDelegate>, MemoryError>;
 }
 
 pub trait GsImageMemoryAbs: GsMemoryAbstract {}

@@ -47,10 +47,15 @@ impl GsMemoryAbstract for GsCachedMemory {
 
 impl GsBufferMemoryAbs for GsCachedMemory {
 
-    fn to_agency(&self, device: &GsDevice, physical: &GsPhyDevice, allocate_infos: &BufferAllocateInfos) -> Result<Box<dyn MemoryDataDelegate>, MemoryError> {
+    fn to_upload_agency(&self, device: &GsDevice, physical: &GsPhyDevice, allot_infos: &BufferAllocateInfos) -> Result<Box<dyn MemoryDataDelegate>, MemoryError> {
 
-        let agency = CachedDataAgency::new(device, physical, allocate_infos)?;
+        let agency = CachedDataAgency::new(device, physical, allot_infos)?;
         Ok(Box::new(agency))
+    }
+
+    fn to_update_agency(&self) -> Result<Box<dyn MemoryDataDelegate>, MemoryError> {
+        /// Cached memory is unable to update directly.
+        unreachable!()
     }
 }
 

@@ -105,7 +105,7 @@ impl CubeProcedure {
         self.ubo_data[0].view  = self.camera.view_matrix();
 
         self.buffer_storage.data_updater()?
-            .upload(&self.ubo_buffer, &self.ubo_data)?
+            .update(&self.ubo_buffer, &self.ubo_data)?
             .finish()?;
 
         Ok(())

@@ -8,7 +8,7 @@ use crate::buffer::allocator::types::BufferMemoryTypeAbs;
 
 use crate::memory::types::GsMemoryType;
 use crate::memory::instance::GsBufferMemory;
-use crate::memory::transfer::BufferDataUploader;
+use crate::memory::transfer::{ GsBufferDataUploader, GsBufferDataUpdater };
 use crate::memory::{ AllocatorError, MemoryError };
 
 use crate::types::vkbytes;
@@ -46,17 +46,16 @@ impl<M> GsBufferRepository<M> where M: BufferMemoryTypeAbs {
         }
     }
 
-    pub fn data_uploader(&mut self) -> Result<BufferDataUploader, AllocatorError> {
+    pub fn data_uploader(&mut self) -> Result<GsBufferDataUploader, AllocatorError> {
 
-        BufferDataUploader::new(&self.physical, &self.device, &self.memory, &self.allocate_infos)
+        GsBufferDataUploader::new(&self.physical, &self.device, &self.memory, &self.allocate_infos)
     }
 
-    // TODO: Implement actual updater.
-    pub fn data_updater(&mut self) -> Result<BufferDataUploader, AllocatorError> {
+    pub fn data_updater(&mut self) -> Result<GsBufferDataUpdater, AllocatorError> {
 
         match self.memory.memory_type() {
             | GsMemoryType::HostMemory => {
-                BufferDataUploader::new(&self.physical, &self.device, &self.memory, &self.allocate_infos)
+                GsBufferDataUpdater::new(&self.device, &self.memory)
             },
             | GsMemoryType::StagingMemory
             | GsMemoryType::CachedMemory

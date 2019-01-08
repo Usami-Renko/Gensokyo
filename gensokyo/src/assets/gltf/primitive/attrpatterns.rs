@@ -3,7 +3,7 @@ use crate::assets::gltf::error::GltfError;
 use crate::utils::types::{ Point3F, Point2F, Vector3F, Vector4F };
 
 use gsvk::buffer::instance::GsVertexBlock;
-use gsvk::memory::transfer::BufferDataUploader;
+use gsvk::memory::transfer::GsBufferDataUploader;
 use gsvk::memory::AllocatorError;
 use gsvk::types::vkbytes;
 use gsma::data_size;
@@ -69,7 +69,7 @@ pub(super) trait GPAttribute {
 
     fn attribute_size(&self) -> vkbytes;
 
-    fn upload(&self, to: &GsVertexBlock, by: &mut BufferDataUploader) -> Result<(), AllocatorError>;
+    fn upload(&self, to: &GsVertexBlock, by: &mut GsBufferDataUploader) -> Result<(), AllocatorError>;
 
     fn update_transform(&mut self, transform: &nalgebra::Matrix4<f32>);
 }
@@ -286,7 +286,7 @@ macro_rules! define_gpa {
                 data_size!(self.data, $name_vertex)
             }
 
-            fn upload(&self, to: &GsVertexBlock, by: &mut BufferDataUploader) -> Result<(), AllocatorError> {
+            fn upload(&self, to: &GsVertexBlock, by: &mut GsBufferDataUploader) -> Result<(), AllocatorError> {
 
                 let _  = by.upload(to, &self.data)?;
                 Ok(())

@@ -47,10 +47,15 @@ impl GsMemoryAbstract for GsDeviceMemory {
 
 impl GsBufferMemoryAbs for GsDeviceMemory {
 
-    fn to_agency(&self, device: &GsDevice, physical: &GsPhyDevice, allocate_infos: &BufferAllocateInfos) -> Result<Box<dyn MemoryDataDelegate>, MemoryError> {
+    fn to_upload_agency(&self, device: &GsDevice, physical: &GsPhyDevice, allot_infos: &BufferAllocateInfos) -> Result<Box<dyn MemoryDataDelegate>, MemoryError> {
 
-        let agency = DeviceDataAgency::new(device, physical, allocate_infos)?;
+        let agency = DeviceDataAgency::new(device, physical, allot_infos)?;
         Ok(Box::new(agency))
+    }
+
+    fn to_update_agency(&self) -> Result<Box<dyn MemoryDataDelegate>, MemoryError> {
+        /// Device memory is unable to update directly.
+        unreachable!()
     }
 }
 

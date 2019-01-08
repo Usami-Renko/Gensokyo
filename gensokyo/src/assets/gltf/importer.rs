@@ -10,7 +10,7 @@ use gsvk::core::device::GsDevice;
 
 use gsvk::buffer::allocator::types::BufferMemoryTypeAbs;
 use gsvk::buffer::allocator::{ GsBufferAllocator, GsBufferDistributor };
-use gsvk::memory::transfer::BufferDataUploader;
+use gsvk::memory::transfer::GsBufferDataUploader;
 use gsvk::memory::AllocatorError;
 use gsvk::command::GsCommandRecorder;
 
@@ -134,6 +134,6 @@ pub(super) trait GltfHierachyIndex: Sized {
 pub(super) trait GltfHierachyInstance: Sized {
     type HierachyDataType;
 
-    fn upload(&self, uploader: &mut BufferDataUploader, data: &Self::HierachyDataType) -> Result<(), AllocatorError>;
+    fn upload(&self, uploader: &mut GsBufferDataUploader, data: &Self::HierachyDataType) -> Result<(), AllocatorError>;
     fn record_command(&self, recorder: &GsCommandRecorder);
 }
