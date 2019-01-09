@@ -3,7 +3,7 @@ use crate::core::device::GsDevice;
 
 use crate::buffer::BufferInstance;
 use crate::memory::instance::GsBufferMemory;
-use crate::memory::transfer::traits::MemoryDataDelegate;
+use crate::memory::transfer::traits::{ MemoryDataDelegate };
 use crate::memory::error::AllocatorError;
 
 pub struct GsBufferDataUpdater {
@@ -37,6 +37,14 @@ impl GsBufferDataUpdater {
         Ok(self)
     }
 
+    pub fn update_v2(&mut self, to: &impl BufferUpdateDst) -> Result<&mut GsBufferDataUpdater, AllocatorError> {
+
+        let func = to.update_func();
+        func(to, self)?;
+
+        Ok(self)
+    }
+
     pub fn finish(&mut self) -> Result<(), AllocatorError> {
 
         self.is_finished = true;
@@ -49,4 +57,9 @@ impl Drop for GsBufferDataUpdater {
     fn drop(&mut self) {
         debug_assert!(self.is_finished, "function GsBufferDataUpdater::finish must be call before it drops.");
     }
+}
+
+pub trait BufferUpdateDst {
+
+    fn update_func(&self) -> Box<dyn Fn(&Self, &mut GsBufferDataUpdater) -> Result<(), AllocatorError>>;
 }

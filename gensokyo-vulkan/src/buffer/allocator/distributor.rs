@@ -9,6 +9,7 @@ use crate::buffer::allocator::types::BufferMemoryTypeAbs;
 use crate::buffer::instance::{ GsVertexBlock, GsIndexBlock, GsUniformBlock, GsImgsrcBlock };
 use crate::buffer::repository::GsBufferRepository;
 use crate::memory::instance::GsBufferMemory;
+use crate::memory::types::Host;
 use crate::memory::AllocatorError;
 
 use crate::types::vkbytes;
@@ -54,13 +55,6 @@ impl<M> GsBufferDistributor<M> where M: BufferMemoryTypeAbs {
         GsIndexBlock::new(buffer_block, index)
     }
 
-    pub fn acquire_uniform(&self, index: BufferBlockIndex) -> Result<GsUniformBlock, AllocatorError> {
-
-        let buffer_block = self.gen_buffer_block(&index);
-        let block = GsUniformBlock::new(buffer_block, index)?;
-        Ok(block)
-    }
-
     pub fn acquire_imgsrc(&self, index: BufferBlockIndex) -> GsImgsrcBlock {
 
         let buffer_block = self.gen_buffer_block(&index);
@@ -79,5 +73,15 @@ impl<M> GsBufferDistributor<M> where M: BufferMemoryTypeAbs {
             self.spaces[index.value],
             self.offsets[index.value],
         )
+    }
+}
+
+impl GsBufferDistributor<Host> {
+
+    pub fn acquire_uniform(&self, index: BufferBlockIndex) -> Result<GsUniformBlock, AllocatorError> {
+
+        let buffer_block = self.gen_buffer_block(&index);
+        let block = GsUniformBlock::new(buffer_block, index)?;
+        Ok(block)
     }
 }

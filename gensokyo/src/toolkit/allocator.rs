@@ -16,7 +16,6 @@ use gsvk::types::vkDim2D;
 
 use crate::config::resources::ResourceConfig;
 use crate::assets::io::ImageLoader;
-use crate::assets::gltf::importer::GsGltfAllocator;
 
 pub struct AllocatorKit {
 
@@ -58,9 +57,5 @@ impl AllocatorKit {
 
     pub fn image_loader(&self) -> ImageLoader {
         ImageLoader::new(self.config.image_load.clone())
-    }
-
-    pub fn gltf_allocator<M: BufferMemoryTypeAbs>(&self, typ: M) -> GsGltfAllocator<M> {
-        GsGltfAllocator::new(&self.physical, &self.device, typ)
     }
 }

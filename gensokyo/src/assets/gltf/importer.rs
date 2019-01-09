@@ -1,18 +1,15 @@
 
 use crate::assets::gltf::traits::{ GsGltfHierachy, GltfHierachyIndex };
-use crate::assets::gltf::storage::{ GltfRawDataAgency, GsGltfRepository, GsGltfStorage, GsGltfEntity };
-use crate::assets::gltf::scene::{ GsGltfScene, GltfSceneIndex };
-use crate::assets::gltf::material::storage::GltfShareResourceTmp;
-use crate::assets::gltf::material::GltfPbrUniform;
+use crate::assets::gltf::storage::{ GltfRawDataAgency, GsGltfStorage, GltfShareResource };
+use crate::assets::gltf::scene::{ GsGltfScene, GltfSceneInstance, GltfSceneIndex };
+use crate::assets::gltf::material::{ GltfShareResourceTmp, GltfPbrUniform };
 use crate::assets::gltf::error::GltfError;
 use crate::assets::error::AssetsError;
 
-use gsvk::core::physical::GsPhyDevice;
-use gsvk::core::device::GsDevice;
-
 use gsvk::buffer::allocator::types::BufferMemoryTypeAbs;
 use gsvk::buffer::allocator::{ GsBufferAllocator, GsBufferDistributor, BufferBlockIndex };
-use gsvk::buffer::instance::UniformBlockInfo;
+use gsvk::buffer::instance::{ GsUniformBlock, UniformBlockInfo };
+use gsvk::memory::types::Host;
 use gsvk::memory::AllocatorError;
 use gsvk::types::vkuint;
 
@@ -25,7 +22,7 @@ pub struct GsGltfImporter;
 impl GsGltfImporter {
 
     /// Try to load a glTF file(read to memory) with its path, and return its model data if succeed.
-    pub fn load(path: impl AsRef<Path>) -> Result<GsGltfStorage, AssetsError> {
+    pub fn load(path: impl AsRef<Path>) -> Result<(GsGltfStorage, GltfShareResource), AssetsError> {
 
         let (doc, data_buffer, data_image) = gltf::import(path)
             .map_err(|e| AssetsError::Gltf(GltfError::Loading(e)))?;
@@ -54,82 +51,75 @@ impl GsGltfImporter {
         // update the transformation of glTF data.
         scene_data.apply_transform(&());
 
-        let target = GsGltfStorage::new(scene_data, share_resource.into_resource());
+        let target = GsGltfStorage::new(scene_data);
+        Ok((target, share_resource.into_resource()))
+    }
+
+    pub fn set_render(pbr_uniform_binding: vkuint, uniform_allocator: &mut GsBufferAllocator<Host>) -> Result<GltfRenderInfo, AllocatorError> {
+
+        // allocate uniform buffer for pbr shading.
+        // uniform count should always be 1.
+        let pbr_uniform_info = UniformBlockInfo::new(pbr_uniform_binding, 1, data_size!(GltfPbrUniform));
+        let pbr_uniform_index = uniform_allocator.append_buffer(pbr_uniform_info)?;
+
+        let target = GltfRenderInfo { pbr_uniform_index };
+        Ok(target)
+    }
+
+    pub fn set_data<M>(model: &GsGltfStorage, share_res: GltfShareResource, to: &mut GsBufferAllocator<M>) -> Result<GltfDataInfo, AllocatorError> where M: BufferMemoryTypeAbs {
+
+        let scene_index = model.allocate(to)?; // allocate vertex buffer.
+
+        let target = GltfDataInfo { scene_index, share_res };
         Ok(target)
     }
 }
 
-pub struct GsGltfAllocator<M> where M: BufferMemoryTypeAbs {
-
-    allocator: GsBufferAllocator<M>,
-}
-
-pub struct GsModelIndex {
-
-    scene_index: GltfSceneIndex,
-    pbr_uniform_index: BufferBlockIndex,
-}
-
+// ------------------------------------------------------------------------------------
 pub struct GltfRenderInfo {
-    pbr_uniform_binding: vkuint,
-}
 
-impl<M> GsGltfAllocator<M> where M: BufferMemoryTypeAbs {
-
-    pub(crate) fn new(physical: &GsPhyDevice, device: &GsDevice, typ: M) -> GsGltfAllocator<M> {
-        GsGltfAllocator {
-            allocator: GsBufferAllocator::new(physical, device, typ),
-        }
-    }
-
-    pub fn append_model(&mut self, model: &GsGltfStorage, render_info: GltfRenderInfo) -> Result<GsModelIndex, AllocatorError> {
-
-        // allocate uniform buffer for pbr shading.
-        // uniform count should always be 1.
-        let pbr_uniform_info = UniformBlockInfo::new(render_info.pbr_uniform_binding, 1, data_size!(GltfPbrUniform));
-        let pbr_uniform_index = self.allocator.append_buffer(pbr_uniform_info)?;
-
-        // allocate vertex buffer.
-        let scene_index = model.allocate(&mut self.allocator)?;
-
-        let model_index = GsModelIndex { scene_index, pbr_uniform_index };
-        Ok(model_index)
-    }
-
-    pub fn allocate(self) -> Result<GsGltfDistributor<M>, AllocatorError> {
-
-        let result = GsGltfDistributor {
-            distributor: self.allocator.allocate()?,
-        };
-        Ok(result)
-    }
+    pbr_uniform_index: BufferBlockIndex,
 }
 
 impl GltfRenderInfo {
 
-    pub fn new(pbr_uniform_binding: vkuint) -> GltfRenderInfo {
-        GltfRenderInfo { pbr_uniform_binding }
+    pub fn into_entity(self, from: &GsBufferDistributor<Host>) -> Result<GltfRenderEntity, AllocatorError> {
+
+        let target = GltfRenderEntity {
+            pbr_uniform: from.acquire_uniform(self.pbr_uniform_index)?,
+        };
+        Ok(target)
     }
 }
 
-pub struct GsGltfDistributor<M> where M: BufferMemoryTypeAbs {
+pub struct GltfRenderEntity {
 
-    distributor: GsBufferDistributor<M>,
+    pub(super) pbr_uniform: GsUniformBlock,
+}
+// ------------------------------------------------------------------------------------
+
+// ------------------------------------------------------------------------------------
+pub struct GltfDataInfo {
+
+    scene_index: GltfSceneIndex,
+    share_res: GltfShareResource,
 }
 
-impl<M> GsGltfDistributor<M> where M: BufferMemoryTypeAbs {
+impl GltfDataInfo {
 
-    pub fn acquire_model(&self, index: GsModelIndex) -> Result<GsGltfEntity, AllocatorError> {
+    pub fn into_entity<M>(self, from: &GsBufferDistributor<M>) -> GltfDataEntity
+        where M: BufferMemoryTypeAbs {
 
-        let pbr_uniform = self.distributor.acquire_uniform(index.pbr_uniform_index)?;
-        let scene = index.scene_index.distribute(&self.distributor);
-
-        let entity = GsGltfEntity::new(scene, pbr_uniform);
-        Ok(entity)
-    }
-
-    pub fn into_repository(self) -> GsGltfRepository<M> {
-
-        GsGltfRepository::new(self.distributor.into_repository())
+        GltfDataEntity {
+            scene: self.scene_index.distribute(from),
+            share_res: self.share_res,
+        }
     }
 }
+
+pub struct GltfDataEntity {
+
+    pub(super) scene: GltfSceneInstance,
+    pub(super) share_res: GltfShareResource,
+}
+// ------------------------------------------------------------------------------------

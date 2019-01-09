@@ -1,8 +1,8 @@
 
-use crate::assets::gltf::storage::GltfRawDataAgency;
+use crate::assets::gltf::storage::{ GltfRawDataAgency, GltfShareResource };
 use crate::assets::gltf::traits::{ GsGltfHierachy, GltfHierachyIndex, GltfHierachyInstance };
 use crate::assets::gltf::primitive::{ GsGltfPrimitive, GltfPrimitiveIndex, GltfPrimitiveInstance, GltfPrimitiveVerification };
-use crate::assets::gltf::material::storage::{ GltfShareResource, GltfShareResourceTmp };
+use crate::assets::gltf::material::GltfShareResourceTmp;
 use crate::assets::gltf::error::GltfError;
 use crate::utils::types::Matrix4F;
 
@@ -86,14 +86,6 @@ impl<'a> GsGltfHierachy<'a> for GsGltfMesh {
 
         Ok(GltfMeshIndex { indices })
     }
-
-    fn update_uniform(&self, updater: &mut GsBufferDataUpdater, to: &GsUniformBlock, res: &GltfShareResource) -> Result<(), AllocatorError> {
-
-        for primitive_instance in self.primitives.iter() {
-            primitive_instance.update_uniform(updater, to, res)?;
-        }
-        Ok(())
-    }
 }
 
 impl GltfHierachyIndex for GltfMeshIndex {
@@ -119,6 +111,14 @@ impl GltfHierachyInstance for GltfMeshInstance {
             .zip(data.primitives.iter()) {
 
             primitive_instance.upload(uploader, primitive_data)?;
+        }
+        Ok(())
+    }
+
+    fn update_uniform(&self, updater: &mut GsBufferDataUpdater, to: &GsUniformBlock, res: &GltfShareResource) -> Result<(), AllocatorError> {
+
+        for primitive_instance in self.primitives.iter() {
+            primitive_instance.update_uniform(updater, to, res)?;
         }
         Ok(())
     }

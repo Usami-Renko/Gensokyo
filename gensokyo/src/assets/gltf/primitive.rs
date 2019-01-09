@@ -6,9 +6,9 @@ mod mode;
 
 pub(super) mod material;
 
-use crate::assets::gltf::storage::GltfRawDataAgency;
+use crate::assets::gltf::storage::{ GltfRawDataAgency, GltfShareResource };
 use crate::assets::gltf::traits::{ GsGltfHierachy, GltfHierachyIndex, GltfHierachyInstance };
-use crate::assets::gltf::material::storage::{ GltfShareResource, GltfShareResourceTmp };
+use crate::assets::gltf::material::GltfShareResourceTmp;
 use crate::assets::gltf::error::GltfError;
 use crate::utils::types::Matrix4F;
 
@@ -47,6 +47,8 @@ pub(super) struct GltfPrimitiveIndex {
     element_count: vkuint,
     attributes_index: BufferBlockIndex,
     indices_index: Option<BufferBlockIndex>,
+
+    material: GltfPrimitiveMaterial,
 }
 
 pub(super) struct GltfPrimitiveInstance {
@@ -54,6 +56,8 @@ pub(super) struct GltfPrimitiveInstance {
     element_count: vkuint,
     attributes_block: GsVertexBlock,
     index_block: Option<GsIndexBlock>,
+
+    material: GltfPrimitiveMaterial,
 }
 
 impl<'a> GsGltfHierachy<'a> for GsGltfPrimitive {
@@ -114,15 +118,9 @@ impl<'a> GsGltfHierachy<'a> for GsGltfPrimitive {
             element_count    : self.element_count as _,
             attributes_index : self.attributes.append_allocation(allocator)?,
             indices_index    : self.indices.append_allocation(allocator)?,
+            material         : self.material.clone(),
         };
         Ok(index)
-    }
-
-    fn update_uniform(&self, updater: &mut GsBufferDataUpdater, to: &GsUniformBlock, res: &GltfShareResource) -> Result<(), AllocatorError> {
-
-        self.material.update_uniform(to, updater, res)?;
-
-        Ok(())
     }
 }
 
@@ -136,6 +134,7 @@ impl GltfHierachyIndex for GltfPrimitiveIndex {
             element_count: self.element_count,
             index_block: self.indices_index.and_then(|block| Some(distributor.acquire_index(block))),
             attributes_block: distributor.acquire_vertex(self.attributes_index),
+            material: self.material,
         }
     }
 }
@@ -150,6 +149,12 @@ impl GltfHierachyInstance for GltfPrimitiveInstance {
         // upload indices data to vulkan.
         data.indices.upload(&self.index_block, uploader)?;
 
+        Ok(())
+    }
+
+    fn update_uniform(&self, updater: &mut GsBufferDataUpdater, to: &GsUniformBlock, res: &GltfShareResource) -> Result<(), AllocatorError> {
+
+        self.material.update_uniform(to, updater, res)?;
         Ok(())
     }
 

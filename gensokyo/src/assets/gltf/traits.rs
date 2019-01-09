@@ -1,6 +1,6 @@
 
-use crate::assets::gltf::storage::GltfRawDataAgency;
-use crate::assets::gltf::material::storage::{ GltfShareResource, GltfShareResourceTmp };
+use crate::assets::gltf::storage::{ GltfRawDataAgency, GltfShareResource };
+use crate::assets::gltf::material::GltfShareResourceTmp;
 use crate::assets::gltf::error::GltfError;
 
 use gsvk::buffer::allocator::types::BufferMemoryTypeAbs;
@@ -26,8 +26,6 @@ pub(super) trait GsGltfHierachy<'a>: Sized {
 
     fn allocate<M>(&self, allocator: &mut GsBufferAllocator<M>) -> Result<Self::HierachyIndex, AllocatorError>
         where M: BufferMemoryTypeAbs;
-
-    fn update_uniform(&self, updater: &mut GsBufferDataUpdater, to: &GsUniformBlock, res: &GltfShareResource) -> Result<(), AllocatorError>;
 }
 
 pub(super) trait GltfHierachyIndex: Sized {
@@ -41,5 +39,6 @@ pub(super) trait GltfHierachyInstance: Sized {
     type HierachyDataType;
 
     fn upload(&self, uploader: &mut GsBufferDataUploader, data: &Self::HierachyDataType) -> Result<(), AllocatorError>;
+    fn update_uniform(&self, updater: &mut GsBufferDataUpdater, to: &GsUniformBlock, res: &GltfShareResource) -> Result<(), AllocatorError>;
     fn record_command(&self, recorder: &GsCommandRecorder);
 }

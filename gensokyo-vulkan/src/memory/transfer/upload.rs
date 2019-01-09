@@ -41,6 +41,14 @@ impl GsBufferDataUploader {
         Ok(self)
     }
 
+    pub fn upload_v2<D>(&mut self, to: &impl BufferUploadDst<D>, data: &D) -> Result<&mut GsBufferDataUploader, AllocatorError> {
+
+        let func = to.upload_func();
+        func(to, self, data)?;
+
+        Ok(self)
+    }
+
     pub fn finish(&mut self) -> Result<(), AllocatorError> {
 
         self.is_finished = true;
@@ -53,4 +61,9 @@ impl Drop for GsBufferDataUploader {
     fn drop(&mut self) {
         debug_assert!(self.is_finished, "function GsBufferDataUploader::finish must be call before it drops.");
     }
+}
+
+pub trait BufferUploadDst<D> {
+
+    fn upload_func(&self) -> Box<dyn Fn(&Self, &mut GsBufferDataUploader, &D) -> Result<(), AllocatorError>>;
 }

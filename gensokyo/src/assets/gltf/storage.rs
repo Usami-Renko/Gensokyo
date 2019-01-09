@@ -1,16 +1,16 @@
 
+use crate::assets::gltf::importer::{ GltfRenderEntity, GltfDataEntity };
 use crate::assets::gltf::traits::{ GsGltfHierachy, GltfHierachyInstance };
-use crate::assets::gltf::scene::{ GsGltfScene, GltfSceneInstance, GltfSceneIndex };
-use crate::assets::gltf::material::storage::GltfShareResource;
+use crate::assets::gltf::scene::{ GsGltfScene, GltfSceneIndex };
+use crate::assets::gltf::material::{ GsGltfMaterial, GsGltfTexture, GsGltfSampler };
 
 use gsvk::buffer::allocator::types::BufferMemoryTypeAbs;
 use gsvk::buffer::allocator::GsBufferAllocator;
 use gsvk::buffer::instance::GsUniformBlock;
-use gsvk::buffer::GsBufferRepository;
-use gsvk::memory::transfer::{ GsBufferDataUploader, GsBufferDataUpdater };
+use gsvk::memory::transfer::{ GsBufferDataUploader, BufferUploadDst };
+use gsvk::memory::transfer::{ GsBufferDataUpdater, BufferUpdateDst };
 use gsvk::memory::AllocatorError;
 use gsvk::command::GsCommandRecorder;
-
 
 // ------------------------------------------------------------------------------------
 pub(super) struct GltfRawDataAgency {
@@ -21,25 +21,57 @@ pub(super) struct GltfRawDataAgency {
 // ------------------------------------------------------------------------------------
 
 // ------------------------------------------------------------------------------------
+#[derive(Default)]
+pub struct GltfShareResource {
+
+    pub(crate) materials: Vec<GsGltfMaterial>,
+    pub(crate)textures : Vec<GsGltfTexture>,
+    pub(crate)samplers : Vec<GsGltfSampler>,
+}
+// ------------------------------------------------------------------------------------
+
+// ------------------------------------------------------------------------------------
 pub struct GsGltfEntity {
 
-    scene: GltfSceneInstance,
-    uniform: GsUniformBlock,
+    data  : GltfDataEntity,
+    render: GltfRenderEntity,
 }
 
 impl GsGltfEntity {
 
-    pub(super) fn new(scene: GltfSceneInstance, uniform: GsUniformBlock) -> GsGltfEntity {
-        GsGltfEntity { scene, uniform }
+    pub fn new(render: GltfRenderEntity, data: GltfDataEntity) -> GsGltfEntity {
+        GsGltfEntity { data, render }
     }
 
     pub fn record_command(&self, recorder: &GsCommandRecorder) {
 
-        self.scene.record_command(recorder);
+        self.data.scene.record_command(recorder);
     }
 
     pub fn uniform_ref(&self) -> &GsUniformBlock {
-        &self.uniform
+        &self.render.pbr_uniform
+    }
+}
+
+impl BufferUploadDst<GsGltfStorage> for GsGltfEntity {
+
+    fn upload_func(&self) -> Box<dyn Fn(&Self, &mut GsBufferDataUploader, &GsGltfStorage) -> Result<(), AllocatorError>> {
+
+        let func = |gltf_entity: &GsGltfEntity, uploader: &mut GsBufferDataUploader, data: &GsGltfStorage| {
+            gltf_entity.data.scene.upload(uploader, &data.scene)
+        };
+        Box::new(func)
+    }
+}
+
+impl BufferUpdateDst for GsGltfEntity {
+
+    fn update_func(&self) -> Box<dyn Fn(&Self, &mut GsBufferDataUpdater) -> Result<(), AllocatorError>> {
+
+        let func = |gltf_entity: &GsGltfEntity, updater: &mut GsBufferDataUpdater| {
+            gltf_entity.data.scene.update_uniform(updater, &gltf_entity.render.pbr_uniform, &gltf_entity.data.share_res)
+        };
+        Box::new(func)
     }
 }
 // ------------------------------------------------------------------------------------
@@ -48,14 +80,12 @@ impl GsGltfEntity {
 pub struct GsGltfStorage {
 
     scene: GsGltfScene,
-    #[allow(dead_code)]
-    resource: GltfShareResource, // just keep it exist until it drops.
 }
 
 impl GsGltfStorage {
 
-    pub(super) fn new(scene: GsGltfScene, res: GltfShareResource) -> GsGltfStorage {
-        GsGltfStorage { scene, resource: res }
+    pub(super) fn new(scene: GsGltfScene) -> GsGltfStorage {
+        GsGltfStorage { scene }
     }
 
     pub(super) fn allocate<M>(&self, allocator: &mut GsBufferAllocator<M>) -> Result<GltfSceneIndex, AllocatorError>
@@ -65,83 +95,6 @@ impl GsGltfStorage {
 
     pub fn apply_transform(&mut self) {
         self.scene.apply_transform(&());
-    }
-}
-// ------------------------------------------------------------------------------------
-
-// ------------------------------------------------------------------------------------
-pub struct GsGltfRepository<M> where M: BufferMemoryTypeAbs {
-
-    repository: GsBufferRepository<M>,
-}
-
-impl<M> GsGltfRepository<M> where M: BufferMemoryTypeAbs {
-
-    pub(super) fn new(repo: GsBufferRepository<M>) -> GsGltfRepository<M> {
-
-        GsGltfRepository {
-            repository: repo,
-        }
-    }
-
-    pub fn data_uploader(&mut self) -> Result<GltfDataUploader, AllocatorError> {
-
-        let target = GltfDataUploader {
-            uploader: self.repository.data_uploader()?,
-        };
-        Ok(target)
-    }
-
-    pub fn uniform_updater(&mut self) -> Result<GltfDataUniformUpdater, AllocatorError> {
-
-        let target = GltfDataUniformUpdater {
-            updater: self.repository.data_updater()?,
-        };
-        Ok(target)
-    }
-}
-// ------------------------------------------------------------------------------------
-
-// ------------------------------------------------------------------------------------
-pub struct GltfDataUploader {
-
-    uploader: GsBufferDataUploader,
-}
-
-impl GltfDataUploader {
-
-    pub fn upload(&mut self, to: &GsGltfEntity, data_storage: &GsGltfStorage) -> Result<&mut GltfDataUploader, AllocatorError> {
-
-        to.scene.upload(&mut self.uploader, &data_storage.scene)?;
-
-        Ok(self)
-    }
-
-    pub fn finish(&mut self) -> Result<(), AllocatorError> {
-
-        self.uploader.finish()
-    }
-}
-// ------------------------------------------------------------------------------------
-
-// ------------------------------------------------------------------------------------
-pub struct GltfDataUniformUpdater {
-
-    updater: GsBufferDataUpdater,
-}
-
-impl GltfDataUniformUpdater {
-
-    pub fn update_uniform(&mut self, to: &GsGltfEntity, data_storage: &GsGltfStorage) -> Result<&mut GltfDataUniformUpdater, AllocatorError> {
-
-        data_storage.scene.update_uniform(&mut self.updater, &to.uniform, &data_storage.resource)?;
-
-        Ok(self)
-    }
-
-    pub fn finish(&mut self) -> Result<(), AllocatorError> {
-
-        self.updater.finish()
     }
 }
 // ------------------------------------------------------------------------------------

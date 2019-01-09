@@ -1,8 +1,8 @@
 
-use crate::assets::gltf::storage::GltfRawDataAgency;
+use crate::assets::gltf::storage::{ GltfRawDataAgency, GltfShareResource };
 use crate::assets::gltf::traits::{ GsGltfHierachy, GltfHierachyIndex, GltfHierachyInstance };
 use crate::assets::gltf::mesh::{ GsGltfMesh, GltfMeshIndex, GltfMeshInstance, GltfMeshVerification };
-use crate::assets::gltf::material::storage::{ GltfShareResource, GltfShareResourceTmp };
+use crate::assets::gltf::material::GltfShareResourceTmp;
 use crate::assets::gltf::error::GltfError;
 use crate::utils::types::Matrix4F;
 
@@ -128,19 +128,6 @@ impl<'a> GsGltfHierachy<'a> for GsGltfNode {
         let target = GltfNodeIndex { root_index, children_indices };
         Ok(target)
     }
-
-    fn update_uniform(&self, updater: &mut GsBufferDataUpdater, to: &GsUniformBlock, res: &GltfShareResource) -> Result<(), AllocatorError> {
-
-        if let Some(ref mesh) = self.mesh {
-            mesh.update_uniform(updater, to, res)?;
-        }
-
-        for child_node in self.children.iter() {
-            child_node.update_uniform(updater, to, res)?;
-        }
-
-        Ok(())
-    }
 }
 
 impl GltfHierachyIndex for GltfNodeIndex {
@@ -180,6 +167,19 @@ impl GltfHierachyInstance for GltfNodeInstance {
 
         for (child_node, child_data) in self.children.iter().zip(data.children.iter()) {
             child_node.upload(uploader, child_data)?;
+        }
+
+        Ok(())
+    }
+
+    fn update_uniform(&self, updater: &mut GsBufferDataUpdater, to: &GsUniformBlock, res: &GltfShareResource) -> Result<(), AllocatorError> {
+
+        if let Some(ref mesh) = self.mesh {
+            mesh.update_uniform(updater, to, res)?;
+        }
+
+        for child_node in self.children.iter() {
+            child_node.update_uniform(updater, to, res)?;
         }
 
         Ok(())

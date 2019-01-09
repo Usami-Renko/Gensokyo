@@ -22,7 +22,7 @@ pub struct GltfModelViewer<T: ShaderInputDefination> {
 
     model_entity: GsGltfEntity,
     #[allow(dead_code)]
-    model_repository: GsGltfRepository<Device>,
+    model_repository: GsBufferRepository<Device>,
 
     ubo_data: Vec<UboObject>,
     ubo_storage: GsBufferRepository<Host>,
@@ -57,7 +57,7 @@ impl<T: ShaderInputDefination> GltfModelViewer<T> {
             .screen_aspect_ratio(screen_dimension.width as f32 / screen_dimension.height as f32)
             .into_stage_camera();
 
-        let (model_entity, model_repository) = loader.assets(|kit| {
+        let (ubo_buffer, ubo_storage, model_entity, model_repository) = loader.assets(|kit| {
             Self::load_model(kit, &paths)
         })?;
 
@@ -68,8 +68,8 @@ impl<T: ShaderInputDefination> GltfModelViewer<T> {
                 model     : Matrix4::identity(),
             }
         ];
-        let (ubo_buffer, ubo_storage, ubo_set, desc_storage) = loader.assets(|kit| {
-            Self::ubo(kit, &model_entity, &ubo_data)
+        let (ubo_set, desc_storage) = loader.assets(|kit| {
+            Self::ubo(kit, &ubo_buffer, &model_entity)
         })?;
 
         let (depth_attachment, image_storage) = loader.assets(|kit| {
@@ -109,50 +109,51 @@ impl<T: ShaderInputDefination> GltfModelViewer<T> {
 
         self.ubo_storage.data_updater()?
             .update(&self.ubo_buffer, &self.ubo_data)?
+            .update_v2(&self.model_entity)?
             .finish()?;
 
         Ok(())
     }
 
-    fn load_model(kit: AllocatorKit, paths: &FilePathConstants) -> Result<(GsGltfEntity, GsGltfRepository<Device>), ProcedureError> {
+    fn load_model(kit: AllocatorKit, paths: &FilePathConstants) -> Result<(GsUniformBlock, GsBufferRepository<Host>, GsGltfEntity, GsBufferRepository<Device>), ProcedureError> {
 
-        let model_data_source = GsGltfImporter::load(Path::new(paths.model_path))?;
-        let mut model_allocator = kit.gltf_allocator(BufferStorageType::DEVICE);
+        // allocate uniform data buffer.
+        let mut ubo_allocator = kit.buffer(BufferStorageType::HOST);
 
-        let model_render_info = GltfRenderInfo::new(1);
-        let model_index = model_allocator.append_model(&model_data_source, model_render_info)?;
+        let ubo_info = UniformBlockInfo::new(0, 1, data_size!(UboObject));
+        let ubo_index = ubo_allocator.append_buffer(ubo_info)?;
+
+        // load and allocate model data.
+        let (model_data, model_shares) = GsGltfImporter::load(Path::new(paths.model_path))?;;
+        let mut model_allocator = kit.buffer(BufferStorageType::DEVICE);
+
+        let model_render_info = GsGltfImporter::set_render(1, &mut ubo_allocator)?;
+        let model_data_info = GsGltfImporter::set_data(&model_data, model_shares, &mut model_allocator)?;
+
+        let ubo_distributor = ubo_allocator.allocate()?;
         let model_distributor = model_allocator.allocate()?;
 
-        let model_entity = model_distributor.acquire_model(model_index)?;
+        let model_render_entity = model_render_info.into_entity(&ubo_distributor)?;
+        let model_data_entity = model_data_info.into_entity(&model_distributor);
+
+        let model_entity = GsGltfEntity::new(model_render_entity, model_data_entity);
+        let ubo_buffer = ubo_distributor.acquire_uniform(ubo_index)?;
+
+        let ubo_repository = ubo_distributor.into_repository();
         let mut model_repository = model_distributor.into_repository();
 
         model_repository.data_uploader()?
-            .upload(&model_entity, &model_data_source)?
-            .finish()?;
-        model_repository.uniform_updater()?
-            .update_uniform(&model_entity, &model_data_source)?
+            .upload_v2(&model_entity, &model_data)?
             .finish()?;
 
-        Ok((model_entity, model_repository))
+        Ok((ubo_buffer, ubo_repository, model_entity, model_repository))
     }
 
-    fn ubo(kit: AllocatorKit, model: &GsGltfEntity, ubo_data: &Vec<UboObject>) -> Result<(GsUniformBlock, GsBufferRepository<Host>, DescriptorSet, GsDescriptorRepository), ProcedureError> {
-
-        // allocate uniform data buffer.
-        let mut buffer_allocator = kit.buffer(BufferStorageType::HOST);
-        let ubo_info = UniformBlockInfo::new(0, 1, data_size!(UboObject));
-        let ubo_index = buffer_allocator.append_buffer(ubo_info)?;
-        let buffer_distributor = buffer_allocator.allocate()?;
-        let ubo_buffer = buffer_distributor.acquire_uniform(ubo_index)?;
-
-        let mut ubo_storage = buffer_distributor.into_repository();
-        ubo_storage.data_uploader()?
-            .upload(&ubo_buffer, ubo_data)?
-            .finish()?;
+    fn ubo(kit: AllocatorKit, ubo_buffer: &GsUniformBlock, model: &GsGltfEntity) -> Result<(DescriptorSet, GsDescriptorRepository), ProcedureError> {
 
         // allocate uniform descriptor.
         let mut descriptor_set_config = DescriptorSetConfig::init(vk::DescriptorSetLayoutCreateFlags::empty());
-        descriptor_set_config.add_buffer_binding(&ubo_buffer, GsDescBindingStage::VERTEX);
+        descriptor_set_config.add_buffer_binding(ubo_buffer, GsDescBindingStage::VERTEX);
         descriptor_set_config.add_buffer_binding(model.uniform_ref(), GsDescBindingStage::FRAGMENT);
 
         let mut descriptor_allocator = kit.descriptor(vk::DescriptorPoolCreateFlags::empty());
@@ -163,7 +164,7 @@ impl<T: ShaderInputDefination> GltfModelViewer<T> {
 
         let desc_storage = descriptor_distributor.into_repository();
 
-        Ok((ubo_buffer, ubo_storage, ubo_set, desc_storage))
+        Ok((ubo_set, desc_storage))
     }
 
     fn image(kit: AllocatorKit) -> Result<(GsDepthStencilAttachment, GsImageRepository<Device>), ProcedureError> {
