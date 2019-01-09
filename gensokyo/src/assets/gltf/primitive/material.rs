@@ -1,24 +1,34 @@
 
-use crate::assets::gltf::material::GsGltfMaterial;
-use crate::assets::gltf::material::storage::GltfShareResourceTmp;
+use crate::assets::gltf::material::storage::{ GltfShareResource, GltfShareResourceTmp };
 
-use std::rc::Rc;
+use gsvk::buffer::instance::GsUniformBlock;
+use gsvk::memory::transfer::GsBufferDataUpdater;
+use gsvk::memory::AllocatorError;
 
+type GltfStorageIndex = usize;
 
 pub(super) struct GltfPrimitiveMaterial {
 
-    data: Option<Rc<GsGltfMaterial>>,
+    index: Option<GltfStorageIndex>,
 }
 
 impl GltfPrimitiveMaterial {
 
     pub fn read(primitive: &gltf::Primitive, res: &mut GltfShareResourceTmp) -> GltfPrimitiveMaterial {
 
-        let data = res.load_material(primitive);
-        GltfPrimitiveMaterial { data }
+        let index = res.load_material(primitive);
+        GltfPrimitiveMaterial { index }
     }
 
-    pub fn is_contain_material(&self) -> bool {
-        self.data.is_some()
+    pub fn update_uniform(&self, to: &GsUniformBlock, updater: &mut GsBufferDataUpdater, res: &GltfShareResource) -> Result<(), AllocatorError> {
+
+        if let Some(mat_index) = self.index {
+            let material = res.material(mat_index);
+            let transfer_data = material.to_uniform_data();
+
+            updater.update(to, &[transfer_data])?;
+        }
+
+        Ok(())
     }
 }

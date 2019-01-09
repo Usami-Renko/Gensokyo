@@ -4,7 +4,7 @@ use gsvk::buffer::allocator::types::BufferMemoryTypeAbs;
 use gsvk::buffer::instance::{ IndexBlockInfo, GsIndexBlock };
 use gsvk::memory::AllocatorError;
 use gsvk::memory::transfer::GsBufferDataUploader;
-use gsvk::types::{ vkuint, vkbytes };
+use gsvk::types::vkuint;
 use gsma::data_size;
 
 #[derive(Default)]

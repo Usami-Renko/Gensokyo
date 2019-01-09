@@ -54,7 +54,7 @@ impl<M> GsBufferDistributor<M> where M: BufferMemoryTypeAbs {
         GsIndexBlock::new(buffer_block, index)
     }
 
-    pub fn acquire_uniform(&self, index: BufferBlockIndex) ->  Result<GsUniformBlock, AllocatorError> {
+    pub fn acquire_uniform(&self, index: BufferBlockIndex) -> Result<GsUniformBlock, AllocatorError> {
 
         let buffer_block = self.gen_buffer_block(&index);
         let block = GsUniformBlock::new(buffer_block, index)?;

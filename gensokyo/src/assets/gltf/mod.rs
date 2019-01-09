@@ -8,3 +8,5 @@ mod node;
 mod mesh;
 mod primitive;
 mod material;
+
+mod traits;

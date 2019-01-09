@@ -66,9 +66,7 @@ impl DescriptorSetLayoutInfo {
                 .or(Err(DescriptorError::SetLayoutCreationError))?
         };
 
-        let set_layout = GsDescriptorSetLayout {
-            handle,
-        };
+        let set_layout = GsDescriptorSetLayout { handle };
         Ok(set_layout)
     }
 }

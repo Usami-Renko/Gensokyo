@@ -1,14 +1,15 @@
 
 use crate::assets::gltf::storage::GltfRawDataAgency;
-use crate::assets::gltf::importer::{ GsGltfHierachy, GltfHierachyIndex, GltfHierachyInstance };
+use crate::assets::gltf::traits::{ GsGltfHierachy, GltfHierachyIndex, GltfHierachyInstance };
 use crate::assets::gltf::node::{ GsGltfNode, GltfNodeIndex, GltfNodeInstance, GltfNodeVerification };
-use crate::assets::gltf::material::storage::GltfShareResourceTmp;
+use crate::assets::gltf::material::storage::{ GltfShareResource, GltfShareResourceTmp };
 use crate::assets::gltf::error::GltfError;
 use crate::utils::types::Matrix4F;
 
 use gsvk::buffer::allocator::{ GsBufferAllocator, GsBufferDistributor };
 use gsvk::buffer::allocator::types::BufferMemoryTypeAbs;
-use gsvk::memory::transfer::GsBufferDataUploader;
+use gsvk::buffer::instance::GsUniformBlock;
+use gsvk::memory::transfer::{ GsBufferDataUploader, GsBufferDataUpdater };
 use gsvk::memory::AllocatorError;
 use gsvk::command::GsCommandRecorder;
 
@@ -84,6 +85,15 @@ impl<'a> GsGltfHierachy<'a> for GsGltfScene {
         }
 
         Ok(GltfSceneIndex { indices })
+    }
+
+    fn update_uniform(&self, updater: &mut GsBufferDataUpdater, to: &GsUniformBlock, res: &GltfShareResource) -> Result<(), AllocatorError> {
+
+        for node in self.nodes.iter() {
+            node.update_uniform(updater, to, res)?;
+        }
+
+        Ok(())
     }
 }
 

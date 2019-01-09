@@ -1,4 +1,6 @@
 
+use crate::utils::types::Vector4F;
+
 use gsvk::types::vkfloat;
 
 pub struct GsGltfMaterial {
@@ -28,5 +30,18 @@ impl GsGltfMaterial {
         }
     }
 
+    pub fn to_uniform_data(&self) -> GltfPbrUniform {
 
+        GltfPbrUniform {
+            base_color_factor: Vector4F::from(self.pbr.base_color_factor),
+            metallic_factor: self.pbr.metallic_factor,
+        }
+    }
+}
+
+// TODO: Test aligment.
+#[derive(Debug, Clone, Copy)]
+pub struct GltfPbrUniform {
+    base_color_factor: Vector4F,
+    metallic_factor  : vkfloat,
 }

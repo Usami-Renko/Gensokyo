@@ -65,10 +65,7 @@ impl DescriptorPoolInfo {
                 .or(Err(DescriptorError::PoolCreationError))?
         };
 
-        let descriptor_pool = GsDescriptorPool {
-            handle,
-        };
-
+        let descriptor_pool = GsDescriptorPool { handle };
         Ok(descriptor_pool)
     }
 }

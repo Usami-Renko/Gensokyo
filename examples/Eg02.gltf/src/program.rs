@@ -69,7 +69,7 @@ impl<T: ShaderInputDefination> GltfModelViewer<T> {
             }
         ];
         let (ubo_buffer, ubo_storage, ubo_set, desc_storage) = loader.assets(|kit| {
-            Self::ubo(kit, &ubo_data)
+            Self::ubo(kit, &model_entity, &ubo_data)
         })?;
 
         let (depth_attachment, image_storage) = loader.assets(|kit| {
@@ -119,20 +119,24 @@ impl<T: ShaderInputDefination> GltfModelViewer<T> {
         let model_data_source = GsGltfImporter::load(Path::new(paths.model_path))?;
         let mut model_allocator = kit.gltf_allocator(BufferStorageType::DEVICE);
 
-        let model_index = model_allocator.append_model(&model_data_source)?;
+        let model_render_info = GltfRenderInfo::new(1);
+        let model_index = model_allocator.append_model(&model_data_source, model_render_info)?;
         let model_distributor = model_allocator.allocate()?;
 
-        let model_entity = model_distributor.acquire_model(model_index);
+        let model_entity = model_distributor.acquire_model(model_index)?;
         let mut model_repository = model_distributor.into_repository();
 
         model_repository.data_uploader()?
             .upload(&model_entity, &model_data_source)?
             .finish()?;
+        model_repository.uniform_updater()?
+            .update_uniform(&model_entity, &model_data_source)?
+            .finish()?;
 
         Ok((model_entity, model_repository))
     }
 
-    fn ubo(kit: AllocatorKit, ubo_data: &Vec<UboObject>) -> Result<(GsUniformBlock, GsBufferRepository<Host>, DescriptorSet, GsDescriptorRepository), ProcedureError> {
+    fn ubo(kit: AllocatorKit, model: &GsGltfEntity, ubo_data: &Vec<UboObject>) -> Result<(GsUniformBlock, GsBufferRepository<Host>, DescriptorSet, GsDescriptorRepository), ProcedureError> {
 
         // allocate uniform data buffer.
         let mut buffer_allocator = kit.buffer(BufferStorageType::HOST);
@@ -149,6 +153,7 @@ impl<T: ShaderInputDefination> GltfModelViewer<T> {
         // allocate uniform descriptor.
         let mut descriptor_set_config = DescriptorSetConfig::init(vk::DescriptorSetLayoutCreateFlags::empty());
         descriptor_set_config.add_buffer_binding(&ubo_buffer, GsDescBindingStage::VERTEX);
+        descriptor_set_config.add_buffer_binding(model.uniform_ref(), GsDescBindingStage::FRAGMENT);
 
         let mut descriptor_allocator = kit.descriptor(vk::DescriptorPoolCreateFlags::empty());
         let desc_index = descriptor_allocator.append_set(descriptor_set_config);

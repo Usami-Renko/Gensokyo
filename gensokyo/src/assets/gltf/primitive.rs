@@ -7,8 +7,8 @@ mod mode;
 pub(super) mod material;
 
 use crate::assets::gltf::storage::GltfRawDataAgency;
-use crate::assets::gltf::importer::{ GsGltfHierachy, GltfHierachyIndex, GltfHierachyInstance };
-use crate::assets::gltf::material::storage::GltfShareResourceTmp;
+use crate::assets::gltf::traits::{ GsGltfHierachy, GltfHierachyIndex, GltfHierachyInstance };
+use crate::assets::gltf::material::storage::{ GltfShareResource, GltfShareResourceTmp };
 use crate::assets::gltf::error::GltfError;
 use crate::utils::types::Matrix4F;
 
@@ -19,8 +19,8 @@ use self::material::GltfPrimitiveMaterial;
 
 use gsvk::buffer::allocator::{ GsBufferAllocator, GsBufferDistributor, BufferBlockIndex };
 use gsvk::buffer::allocator::types::BufferMemoryTypeAbs;
-use gsvk::buffer::instance::{ GsVertexBlock, GsIndexBlock };
-use gsvk::memory::transfer::GsBufferDataUploader;
+use gsvk::buffer::instance::{ GsVertexBlock, GsIndexBlock, GsUniformBlock };
+use gsvk::memory::transfer::{ GsBufferDataUploader, GsBufferDataUpdater };
 use gsvk::memory::AllocatorError;
 use gsvk::command::GsCommandRecorder;
 use gsvk::types::vkuint;
@@ -116,6 +116,13 @@ impl<'a> GsGltfHierachy<'a> for GsGltfPrimitive {
             indices_index    : self.indices.append_allocation(allocator)?,
         };
         Ok(index)
+    }
+
+    fn update_uniform(&self, updater: &mut GsBufferDataUpdater, to: &GsUniformBlock, res: &GltfShareResource) -> Result<(), AllocatorError> {
+
+        self.material.update_uniform(to, updater, res)?;
+
+        Ok(())
     }
 }
 

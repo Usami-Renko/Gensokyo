@@ -91,7 +91,11 @@ pub struct DescriptorSet {
 
     pub(crate) entity: DescriptorSetEntity,
     pub(crate) layout: GsDescriptorSetLayout,
-    _set_index: usize,
+
+    /// `set_index` is the `set` value used in shader code, like the following example shader snippet:
+    ///
+    /// layout (set = 1, binding = 0) uniform UniformBlock { mat4 projection; }
+    set_index: usize,
 }
 
 impl DescriptorSet {
@@ -105,8 +109,12 @@ impl DescriptorSet {
         DescriptorSet {
             entity: DescriptorSetEntity::new(from, binding_indices),
             layout: from.layout(),
-            _set_index: set_index,
+            set_index,
         }
+    }
+
+    pub fn set_index(&self) -> usize {
+        self.set_index.clone()
     }
 }
 

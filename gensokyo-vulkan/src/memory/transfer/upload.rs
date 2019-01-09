@@ -51,6 +51,6 @@ impl GsBufferDataUploader {
 impl Drop for GsBufferDataUploader {
 
     fn drop(&mut self) {
-        debug_assert!(self.is_finished);
+        debug_assert!(self.is_finished, "function GsBufferDataUploader::finish must be call before it drops.");
     }
 }

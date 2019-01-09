@@ -2,10 +2,10 @@
 #[macro_export]
 macro_rules! data_size {
     ($data:expr, $d_type:ty) => (
-        (::std::mem::size_of::<$d_type>() * $data.len()) as vkbytes
+        (::std::mem::size_of::<$d_type>() * $data.len()) as u64
     );
     ($d_type:ty) => (
-        (::std::mem::size_of::<$d_type>()) as vkbytes
+        (::std::mem::size_of::<$d_type>()) as u64
     );
 }
 

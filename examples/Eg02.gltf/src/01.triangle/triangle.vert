@@ -3,7 +3,7 @@
 
 #extension GL_ARB_separate_shader_objects: enable
 
-layout (binding = 0, set = 0) uniform UboOjbect {
+layout (set = 0, binding = 0) uniform UboOjbect {
     mat4 projection;
     mat4 view;
     mat4 model;

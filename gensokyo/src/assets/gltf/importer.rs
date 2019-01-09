@@ -1,7 +1,9 @@
 
+use crate::assets::gltf::traits::{ GsGltfHierachy, GltfHierachyIndex };
 use crate::assets::gltf::storage::{ GltfRawDataAgency, GsGltfRepository, GsGltfStorage, GsGltfEntity };
 use crate::assets::gltf::scene::{ GsGltfScene, GltfSceneIndex };
 use crate::assets::gltf::material::storage::GltfShareResourceTmp;
+use crate::assets::gltf::material::GltfPbrUniform;
 use crate::assets::gltf::error::GltfError;
 use crate::assets::error::AssetsError;
 
@@ -9,10 +11,12 @@ use gsvk::core::physical::GsPhyDevice;
 use gsvk::core::device::GsDevice;
 
 use gsvk::buffer::allocator::types::BufferMemoryTypeAbs;
-use gsvk::buffer::allocator::{ GsBufferAllocator, GsBufferDistributor };
-use gsvk::memory::transfer::GsBufferDataUploader;
+use gsvk::buffer::allocator::{ GsBufferAllocator, GsBufferDistributor, BufferBlockIndex };
+use gsvk::buffer::instance::UniformBlockInfo;
 use gsvk::memory::AllocatorError;
-use gsvk::command::GsCommandRecorder;
+use gsvk::types::vkuint;
+
+use gsma::data_size;
 
 use std::path::Path;
 
@@ -61,7 +65,13 @@ pub struct GsGltfAllocator<M> where M: BufferMemoryTypeAbs {
 }
 
 pub struct GsModelIndex {
-    index: GltfSceneIndex,
+
+    scene_index: GltfSceneIndex,
+    pbr_uniform_index: BufferBlockIndex,
+}
+
+pub struct GltfRenderInfo {
+    pbr_uniform_binding: vkuint,
 }
 
 impl<M> GsGltfAllocator<M> where M: BufferMemoryTypeAbs {
@@ -72,10 +82,18 @@ impl<M> GsGltfAllocator<M> where M: BufferMemoryTypeAbs {
         }
     }
 
-    pub fn append_model(&mut self, model: &GsGltfStorage) -> Result<GsModelIndex, AllocatorError> {
+    pub fn append_model(&mut self, model: &GsGltfStorage, render_info: GltfRenderInfo) -> Result<GsModelIndex, AllocatorError> {
 
-        let index = model.allocate(&mut self.allocator)?;
-        Ok(GsModelIndex { index })
+        // allocate uniform buffer for pbr shading.
+        // uniform count should always be 1.
+        let pbr_uniform_info = UniformBlockInfo::new(render_info.pbr_uniform_binding, 1, data_size!(GltfPbrUniform));
+        let pbr_uniform_index = self.allocator.append_buffer(pbr_uniform_info)?;
+
+        // allocate vertex buffer.
+        let scene_index = model.allocate(&mut self.allocator)?;
+
+        let model_index = GsModelIndex { scene_index, pbr_uniform_index };
+        Ok(model_index)
     }
 
     pub fn allocate(self) -> Result<GsGltfDistributor<M>, AllocatorError> {
@@ -87,6 +105,13 @@ impl<M> GsGltfAllocator<M> where M: BufferMemoryTypeAbs {
     }
 }
 
+impl GltfRenderInfo {
+
+    pub fn new(pbr_uniform_binding: vkuint) -> GltfRenderInfo {
+        GltfRenderInfo { pbr_uniform_binding }
+    }
+}
+
 pub struct GsGltfDistributor<M> where M: BufferMemoryTypeAbs {
 
     distributor: GsBufferDistributor<M>,
@@ -94,46 +119,17 @@ pub struct GsGltfDistributor<M> where M: BufferMemoryTypeAbs {
 
 impl<M> GsGltfDistributor<M> where M: BufferMemoryTypeAbs {
 
-    pub fn acquire_model(&self, index: GsModelIndex) -> GsGltfEntity {
+    pub fn acquire_model(&self, index: GsModelIndex) -> Result<GsGltfEntity, AllocatorError> {
 
-        let scene = index.index.distribute(&self.distributor);
-        GsGltfEntity::new(scene)
+        let pbr_uniform = self.distributor.acquire_uniform(index.pbr_uniform_index)?;
+        let scene = index.scene_index.distribute(&self.distributor);
+
+        let entity = GsGltfEntity::new(scene, pbr_uniform);
+        Ok(entity)
     }
 
     pub fn into_repository(self) -> GsGltfRepository<M> {
 
         GsGltfRepository::new(self.distributor.into_repository())
     }
-}
-
-pub(super) trait GsGltfHierachy<'a>: Sized {
-    type HierachyRawType;
-    type HierachyVerifyType;
-    type HierachyIndex;
-    type HierachyTransform;
-
-    fn from_hierachy(hierachy: Self::HierachyRawType, agency: &GltfRawDataAgency, res: &mut GltfShareResourceTmp) -> Result<Self, GltfError>;
-
-    fn generate_verification(&self) -> Option<Self::HierachyVerifyType>;
-
-    fn verify(&self, verification: &Self::HierachyVerifyType) -> bool;
-
-    fn apply_transform(&mut self, transform: &Self::HierachyTransform);
-
-    fn allocate<M>(&self, allocator: &mut GsBufferAllocator<M>) -> Result<Self::HierachyIndex, AllocatorError>
-        where M: BufferMemoryTypeAbs;
-}
-
-pub(super) trait GltfHierachyIndex: Sized {
-    type HierachyInstance;
-
-    fn distribute<M>(self, distributor: &GsBufferDistributor<M>) -> Self::HierachyInstance
-        where M: BufferMemoryTypeAbs;
-}
-
-pub(super) trait GltfHierachyInstance: Sized {
-    type HierachyDataType;
-
-    fn upload(&self, uploader: &mut GsBufferDataUploader, data: &Self::HierachyDataType) -> Result<(), AllocatorError>;
-    fn record_command(&self, recorder: &GsCommandRecorder);
 }

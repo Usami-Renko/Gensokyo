@@ -1,7 +1,6 @@
 
 use crate::assets::gltf::material::{ GsGltfMaterial, GsGltfTexture, GsGltfSampler };
 
-use std::rc::Rc;
 use std::collections::HashMap;
 
 type GltfReferenceIndex = usize;
@@ -11,40 +10,32 @@ type GltfStorageIndex   = usize;
 #[derive(Default)]
 pub(crate) struct GltfShareResourceTmp {
 
-    materials: Vec<Rc<GsGltfMaterial>>,
-    #[allow(dead_code)]
-    textures : Vec<Rc<GsGltfTexture>>,
-    #[allow(dead_code)]
-    samplers : Vec<Rc<GsGltfSampler>>,
+    materials: Vec<GsGltfMaterial>,
+    textures : Vec<GsGltfTexture>,
+    samplers : Vec<GsGltfSampler>,
 
     material_indices: HashMap<GltfReferenceIndex, GltfStorageIndex>,
-    #[allow(dead_code)]
     texture_indices : HashMap<GltfReferenceIndex, GltfStorageIndex>,
-    #[allow(dead_code)]
     sampler_indices : HashMap<GltfReferenceIndex, GltfStorageIndex>,
 }
 
 impl GltfShareResourceTmp {
 
-    pub fn load_material(&mut self, primitive: &gltf::Primitive) -> Option<Rc<GsGltfMaterial>> {
+    pub fn load_material(&mut self, primitive: &gltf::Primitive) -> Option<GltfStorageIndex> {
 
         let raw_material = primitive.material();
         let gltf_index = raw_material.index()?;
 
-        if let Some(res_index) = self.material_indices.get(&gltf_index) {
+        self.material_indices.get(&gltf_index)
+            .cloned()
+            .or_else(|| {
+                let dst_material = GsGltfMaterial::new(&raw_material);
 
-            let dst_material = self.materials[*res_index].clone();
-            Some(dst_material.clone())
-        } else {
-
-            let new_material = Rc::new(GsGltfMaterial::new(&raw_material));
-            let dst_material = new_material.clone();
-
-            let res_index = self.materials.len();
-            self.material_indices.insert(gltf_index, res_index);
-            self.materials.push(new_material);
-            Some(dst_material)
-        }
+                let res_index = self.materials.len();
+                self.material_indices.insert(gltf_index, res_index);
+                self.materials.push(dst_material);
+                Some(res_index)
+            })
     }
 
     pub fn into_resource(self) -> GltfShareResource {
@@ -59,8 +50,23 @@ impl GltfShareResourceTmp {
 #[derive(Default)]
 pub(crate) struct GltfShareResource {
 
-    materials: Vec<Rc<GsGltfMaterial>>,
-    textures : Vec<Rc<GsGltfTexture>>,
-    samplers : Vec<Rc<GsGltfSampler>>,
+    materials: Vec<GsGltfMaterial>,
+    textures : Vec<GsGltfTexture>,
+    samplers : Vec<GsGltfSampler>,
+}
+
+impl GltfShareResource {
+
+    pub fn material(&self, at: GltfStorageIndex) -> &GsGltfMaterial {
+        &self.materials[at]
+    }
+
+    pub fn texture(&self, at: GltfStorageIndex) -> &GsGltfTexture {
+        &self.textures[at]
+    }
+
+    pub fn sampler(&self, at: GltfStorageIndex) -> &GsGltfSampler {
+        &self.samplers[at]
+    }
 }
 // ------------------------------------------------------------------------------------
