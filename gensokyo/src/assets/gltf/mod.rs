@@ -1,12 +1,8 @@
 
-pub mod importer;
-pub mod storage;
-pub mod error;
-
-mod scene;
-mod node;
-mod mesh;
-mod primitive;
+mod levels;
 mod material;
+mod primitive;
 
-mod traits;
+pub mod data;
+pub mod importer;
+pub mod error;

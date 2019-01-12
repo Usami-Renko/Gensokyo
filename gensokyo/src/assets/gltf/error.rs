@@ -9,6 +9,7 @@ pub enum GltfError {
     ModelContentMissing,
     UnsupportAttributes,
     UnknownAttribute,
+    UnsupportRenderMode,
     VerificationError,
 }
 
@@ -22,6 +23,7 @@ impl fmt::Display for GltfError {
             | GltfError::ModelContentMissing => String::from("There is no model scene in this gltf file."),
             | GltfError::UnsupportAttributes => String::from("Unsupport glTF primitive attributes combination."),
             | GltfError::UnknownAttribute    => String::from("Unknown property was found when reading glTF."),
+            | GltfError::UnsupportRenderMode => String::from("Unsupport glTF primitive render mode."),
             | GltfError::VerificationError   => String::from("Failed to verify the content of glTF."),
         };
 

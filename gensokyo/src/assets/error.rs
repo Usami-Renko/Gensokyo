@@ -4,7 +4,7 @@ use std::error::Error;
 
 use gsma::impl_from_err;
 
-use crate::assets::gltf::error::GltfError;
+use crate::assets::glTF::error::GltfError;
 
 #[derive(Debug)]
 pub enum AssetsError {

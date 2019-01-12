@@ -37,7 +37,7 @@ impl GsBufferDataUpdater {
         Ok(self)
     }
 
-    pub fn update_v2(&mut self, to: &impl BufferUpdateDst) -> Result<&mut GsBufferDataUpdater, AllocatorError> {
+    pub fn update_v2(&mut self, to: &impl GsBufferUpdatable) -> Result<&mut GsBufferDataUpdater, AllocatorError> {
 
         let func = to.update_func();
         func(to, self)?;
@@ -59,7 +59,7 @@ impl Drop for GsBufferDataUpdater {
     }
 }
 
-pub trait BufferUpdateDst {
+pub trait GsBufferUpdatable {
 
     fn update_func(&self) -> Box<dyn Fn(&Self, &mut GsBufferDataUpdater) -> Result<(), AllocatorError>>;
 }

@@ -41,7 +41,7 @@ impl GsBufferDataUploader {
         Ok(self)
     }
 
-    pub fn upload_v2<D>(&mut self, to: &impl BufferUploadDst<D>, data: &D) -> Result<&mut GsBufferDataUploader, AllocatorError> {
+    pub fn upload_v2<D>(&mut self, to: &impl GsBufferUploadable<D>, data: &D) -> Result<&mut GsBufferDataUploader, AllocatorError> {
 
         let func = to.upload_func();
         func(to, self, data)?;
@@ -63,7 +63,7 @@ impl Drop for GsBufferDataUploader {
     }
 }
 
-pub trait BufferUploadDst<D> {
+pub trait GsBufferUploadable<D> {
 
     fn upload_func(&self) -> Box<dyn Fn(&Self, &mut GsBufferDataUploader, &D) -> Result<(), AllocatorError>>;
 }

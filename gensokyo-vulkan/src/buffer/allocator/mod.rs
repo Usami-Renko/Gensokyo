@@ -1,5 +1,5 @@
 
-pub use self::target::GsBufferAllocator;
+pub use self::target::{ GsBufferAllocator, GsBufferAllocatable };
 pub use self::distributor::GsBufferDistributor;
 pub use self::index::{ BufferBlockIndex, BufferDistAttachment };
 pub use self::memory::BufferAllocateInfos;

@@ -1,5 +1,6 @@
 
-use crate::assets::gltf::error::GltfError;
+use crate::assets::glTF::error::GltfError;
+use crate::assets::glTF::data::IntermediateglTFData;
 use crate::utils::types::{ Point3F, Point2F, Vector3F, Vector4F };
 
 use gsvk::buffer::instance::GsVertexBlock;
@@ -12,205 +13,229 @@ type Vector4U = nalgebra::Vector4<u16>;
 
 use std::ops::{ BitAnd, BitOr, BitOrAssign, BitAndAssign };
 
+
+// --------------------------------------------------------------------------------------
+/// glTF Primitive attributes flags.
 #[derive(Debug, Clone, Copy, Eq, PartialEq)]
-pub struct GPAFlag(u32);
+pub struct GsglTFAttrFlag(u32);
 
-impl GPAFlag {
-    pub const NONE      : GPAFlag = GPAFlag(0b0);
-    pub const POSITION  : GPAFlag = GPAFlag(0b1);
-    pub const NORMAL    : GPAFlag = GPAFlag(0b10);
-    pub const TANGENT   : GPAFlag = GPAFlag(0b100);
-    pub const TEXCOORD_0: GPAFlag = GPAFlag(0b1000);
-    pub const TEXCOORD_1: GPAFlag = GPAFlag(0b10000);
-    pub const COLOR_0   : GPAFlag = GPAFlag(0b100000);
-    pub const JOINTS_0  : GPAFlag = GPAFlag(0b1000000);
-    pub const WEIGHTS_0 : GPAFlag = GPAFlag(0b10000000);
+impl GsglTFAttrFlag {
+    pub const NONE      : GsglTFAttrFlag = GsglTFAttrFlag(0b0);
+    pub const POSITION  : GsglTFAttrFlag = GsglTFAttrFlag(0b1);
+    pub const NORMAL    : GsglTFAttrFlag = GsglTFAttrFlag(0b10);
+    pub const TANGENT   : GsglTFAttrFlag = GsglTFAttrFlag(0b100);
+    pub const TEXCOORD_0: GsglTFAttrFlag = GsglTFAttrFlag(0b1000);
+    pub const TEXCOORD_1: GsglTFAttrFlag = GsglTFAttrFlag(0b10000);
+    pub const COLOR_0   : GsglTFAttrFlag = GsglTFAttrFlag(0b100000);
+    pub const JOINTS_0  : GsglTFAttrFlag = GsglTFAttrFlag(0b1000000);
+    pub const WEIGHTS_0 : GsglTFAttrFlag = GsglTFAttrFlag(0b10000000);
 
-    pub const GPAP       : GPAFlag = GPAFlag(0b1);
-    pub const GPAPN      : GPAFlag = GPAFlag(0b11);
-    pub const GPAPNTE0   : GPAFlag = GPAFlag(0b1101);
-    pub const GPAULTIMATE: GPAFlag = GPAFlag(0b11111111);
-}
+    // POSITION.
+    pub const GPAP       : GsglTFAttrFlag = GsglTFAttrFlag(0b1);
+    // POSITION, NORMAL.
+    pub const GPAPN      : GsglTFAttrFlag = GsglTFAttrFlag(0b11);
+    // POSITION, NORMAL, TEXCOORD_0.
+    pub const GPAPNTE0   : GsglTFAttrFlag = GsglTFAttrFlag(0b1101);
+    // POSITION, NORMAL, TANGENT, TEXCOORD_0, TEXCOORD_1, COLOR_0, JOINTS_0, WEIGHTS_0.
+    pub const GPAULTIMATE: GsglTFAttrFlag = GsglTFAttrFlag(0b11111111);
 
-impl BitAnd for GPAFlag {
-    type Output = Self;
-
-    fn bitand(self, rhs: Self) -> Self {
-        GPAFlag(self.0 & rhs.0)
+    pub fn vertex_size(&self) -> Option<vkbytes> {
+        match *self {
+            | GsglTFAttrFlag::GPAP        => Some(data_size!(GPAP)),
+            | GsglTFAttrFlag::GPAPN       => Some(data_size!(GPAPN)),
+            | GsglTFAttrFlag::GPAPNTE0    => Some(data_size!(GPAPNTe0)),
+            | GsglTFAttrFlag::GPAULTIMATE => Some(data_size!(GPAUltimate)),
+            | _ => None,
+        }
     }
 }
 
-impl BitAndAssign for GPAFlag {
+impl BitAnd for GsglTFAttrFlag {
+    type Output = Self;
+
+    fn bitand(self, rhs: Self) -> Self {
+        GsglTFAttrFlag(self.0 & rhs.0)
+    }
+}
+
+impl BitAndAssign for GsglTFAttrFlag {
 
     fn bitand_assign(&mut self, rhs: Self) {
         self.0 &= rhs.0
     }
 }
 
-impl BitOr for GPAFlag {
+impl BitOr for GsglTFAttrFlag {
     type Output = Self;
 
     fn bitor(self, rhs: Self) -> Self {
-        GPAFlag(self.0 | rhs.0)
+        GsglTFAttrFlag(self.0 | rhs.0)
     }
 }
 
-impl BitOrAssign for GPAFlag {
+impl BitOrAssign for GsglTFAttrFlag {
 
     fn bitor_assign(&mut self, rhs: Self) {
         self.0 |= rhs.0;
     }
 }
+// --------------------------------------------------------------------------------------
 
-pub(super) trait GPAttribute {
+// --------------------------------------------------------------------------------------
+/// glTF Primitive attribute.
+pub(crate) trait GPAttribute {
 
-    fn load<'a, 's, F>(reader: &gltf::mesh::Reader<'a, 's, F>) -> Result<Self, GltfError>
-        where Self: Sized, F: Clone + Fn(gltf::Buffer<'a>) -> Option<&'s [u8]>;
+    fn extend(&mut self, primitive: &gltf::Primitive, source: &IntermediateglTFData) -> Result<usize, GltfError>;
 
-    fn attribute_size(&self) -> vkbytes;
+    fn data_length(&self) -> usize;
 
     fn upload(&self, to: &GsVertexBlock, by: &mut GsBufferDataUploader) -> Result<(), AllocatorError>;
-
-    fn update_transform(&mut self, transform: &nalgebra::Matrix4<f32>);
 }
 
-
 macro_rules! read_attribute {
-    ($target:ident, $reader:ident, $VertexType:ident, position) => {
-        if $target.data.is_empty() {
-            $target.data = $reader.read_positions()
+    ($target:ident, $reader:ident, $origin_length:ident, $VertexType:ident, position) => {
+        if $target.data.len() == $origin_length {
+            let new_vertexs = $reader.read_positions()
                 .ok_or(GltfError::ModelContentMissing)?
                 .map(|pos| {
                     let position = Point3F::from(pos);
                     $VertexType { position, ..Default::default() }
-                }).collect();
+                }).collect::<Vec<_>>();
+            $target.data.extend(new_vertexs);
         } else {
             let pos_iter = $reader.read_positions()
                 .ok_or(GltfError::ModelContentMissing)?;
             for (i, pos) in pos_iter.enumerate() {
-                $target.data[i].position = Point3F::from(pos);
+                $target.data[i + $origin_length].position = Point3F::from(pos);
             }
         }
     };
-    ($target:ident, $reader:ident, $VertexType:ident, normal) => {
-        if $target.data.is_empty() {
-            $target.data = $reader.read_normals()
+    ($target:ident, $reader:ident, $origin_length:ident, $VertexType:ident, normal) => {
+        if $target.data.len() == $origin_length {
+            let new_vertexs = $reader.read_normals()
                 .ok_or(GltfError::ModelContentMissing)?
                 .map(|nor| {
                     let normal = Vector3F::from(nor);
                     $VertexType { normal, ..Default::default() }
-                }).collect();
+                }).collect::<Vec<_>>();
+            $target.data.extend(new_vertexs);
         } else {
             let normal_iter = $reader.read_normals()
                 .ok_or(GltfError::ModelContentMissing)?;
             for (i, normal) in normal_iter.enumerate() {
-                $target.data[i].normal = Vector3F::from(normal);
+                $target.data[i + $origin_length].normal = Vector3F::from(normal);
             }
         }
     };
-    ($target:ident, $reader:ident, $VertexType:ident, tangents) => {
-        if $target.data.is_empty() {
-            $target.data = $reader.read_tangents()
+    ($target:ident, $reader:ident, $origin_length:ident, $VertexType:ident, tangents) => {
+        if $target.data.len() == $origin_length {
+            let new_vertexs = $reader.read_tangents()
                 .ok_or(GltfError::ModelContentMissing)?
                 .map(|tan| {
                     let tangents = Vector4F::from(tan);
                     $VertexType { tangents, ..Default::default() }
-                }).collect();
+                }).collect::<Vec<_>>();
+            $target.data.extend(new_vertexs);
         } else {
             let tangents_iter = $reader.read_tangents()
                 .ok_or(GltfError::ModelContentMissing)?;
             for (i, tangent) in tangents_iter.enumerate() {
-                $target.data[i].tangents = Vector4F::from(tangent);
+                $target.data[i + $origin_length].tangents = Vector4F::from(tangent);
             }
         }
     };
-    ($target:ident, $reader:ident, $VertexType:ident, texcoord_0) => {
-        if $target.data.is_empty() {
-            $target.data = $reader.read_tex_coords(0)
+    ($target:ident, $reader:ident, $origin_length:ident, $VertexType:ident, texcoord_0) => {
+        if $target.data.len() == $origin_length {
+            let new_vertexs = $reader.read_tex_coords(0)
                 .ok_or(GltfError::ModelContentMissing)?
                 .into_f32()
                 .map(|texcoord| {
                     let texcoord_0 = Point2F::from(texcoord);
                     $VertexType { texcoord_0, ..Default::default() }
-                }).collect();
+                }).collect::<Vec<_>>();
+            $target.data.extend(new_vertexs);
         } else {
             let texcoord_0_iter = $reader.read_tex_coords(0)
                 .ok_or(GltfError::ModelContentMissing)?
                 .into_f32();
             for (i, texcoord_0) in texcoord_0_iter.enumerate() {
-                $target.data[i].texcoord_0 = Point2F::from(texcoord_0);
+                $target.data[i + $origin_length].texcoord_0 = Point2F::from(texcoord_0);
             }
         }
     };
-    ($target:ident, $reader:ident, $VertexType:ident, texcoord_1) => {
-        if $target.data.is_empty() {
-            $target.data = $reader.read_tex_coords(1)
+    ($target:ident, $reader:ident, $origin_length:ident, $VertexType:ident, texcoord_1) => {
+        if $target.data.len() == $origin_length {
+            let new_vertexs = $reader.read_tex_coords(1)
                 .ok_or(GltfError::ModelContentMissing)?
                 .into_f32()
                 .map(|texcoord| {
                     let texcoord_1 = Point2F::from(texcoord);
                     $VertexType { texcoord_1, ..Default::default() }
-                }).collect();
+                }).collect::<Vec<_>>();
+            $target.data.extend(new_vertexs);
         } else {
             let texcoord_1_iter = $reader.read_tex_coords(1)
                 .ok_or(GltfError::ModelContentMissing)?
                 .into_f32();
             for (i, texcoord_1) in texcoord_1_iter.enumerate() {
-                $target.data[i].texcoord_1 = Point2F::from(texcoord_1);
+                $target.data[i + $origin_length].texcoord_1 = Point2F::from(texcoord_1);
             }
         }
     };
-    ($target:ident, $reader:ident, $VertexType:ident, color_0) => {
-        if $target.data.is_empty() {
-            $target.data = $reader.read_colors(0)
+    ($target:ident, $reader:ident, $origin_length:ident, $VertexType:ident, color_0) => {
+        if $target.data.len() == $origin_length {
+            let new_vertexs = $reader.read_colors(0)
                 .ok_or(GltfError::ModelContentMissing)?
                 .into_rgba_f32()
                 .map(|color| {
                     let color_0 = Vector4F::from(color);
                     $VertexType { color_0, ..Default::default() }
-                }).collect();
+                }).collect::<Vec<_>>();
+            $target.data.extend(new_vertexs);
         } else {
             let color_0_iter = $reader.read_colors(0)
                 .ok_or(GltfError::ModelContentMissing)?
                 .into_rgba_f32();
             for (i, color_0) in color_0_iter.enumerate() {
-                $target.data[i].color_0 = Vector4F::from(color_0);
+                $target.data[i + $origin_length].color_0 = Vector4F::from(color_0);
             }
         }
     };
-    ($target:ident, $reader:ident, $VertexType:ident, joints_0) => {
-        if $target.data.is_empty() {
-            $target.data = $reader.read_joints(0)
+    ($target:ident, $reader:ident, $origin_length:ident, $VertexType:ident, joints_0) => {
+        if $target.data.len() == $origin_length {
+            let new_vertexs = $reader.read_joints(0)
                 .ok_or(GltfError::ModelContentMissing)?
                 .into_u16()
                 .map(|joint| {
                     let joints_0 = Vector4U::from(joint);
                     $VertexType { joints_0, ..Default::default() }
-                }).collect();
+                }).collect::<Vec<_>>();
+            $target.data.extend(new_vertexs);
         } else {
             let joints_0_iter = $reader.read_joints(0)
                 .ok_or(GltfError::ModelContentMissing)?
                 .into_u16();
             for (i, joints_0) in joints_0_iter.enumerate() {
-                $target.data[i].joints_0 = Vector4U::from(joints_0);
+                $target.data[i + $origin_length].joints_0 = Vector4U::from(joints_0);
             }
         }
     };
-    ($target:ident, $reader:ident, $VertexType:ident, weights_0) => {
-        if $target.data.is_empty() {
-            $target.data = $reader.read_weights(0)
+    ($target:ident, $reader:ident, $origin_length:ident, $VertexType:ident, weights_0) => {
+        if $target.data.len() == $origin_length {
+            let new_vertexs = $reader.read_weights(0)
                 .ok_or(GltfError::ModelContentMissing)?
                 .into_f32()
                 .map(|weight| {
                     let weights_0 = Vector4F::from(weight);
                     $VertexType { weights_0, ..Default::default() }
-                }).collect();
+                }).collect::<Vec<_>>();
+            $target.data.extend(new_vertexs);
         } else {
             let weights_0_iter = $reader.read_weights(0)
                 .ok_or(GltfError::ModelContentMissing)?
                 .into_f32();
             for (i, weights_0) in weights_0_iter.enumerate() {
-                $target.data[i].weights_0 = Vector4F::from(weights_0);
+                $target.data[i + $origin_length].weights_0 = Vector4F::from(weights_0);
             }
         }
     };
@@ -246,7 +271,7 @@ macro_rules! define_gpa {
     }) => {
 
         #[derive(Default)]
-        pub(super) struct $name_gpa {
+        pub(crate) struct $name_gpa {
             data: Vec<$name_vertex>,
         }
 
@@ -270,33 +295,26 @@ macro_rules! define_gpa {
 
         impl GPAttribute for $name_gpa {
 
-            fn load<'a, 's, F>(reader: &gltf::mesh::Reader<'a, 's, F>) -> Result<Self, GltfError>
-                where Self: Sized, F: Clone + Fn(gltf::Buffer<'a>) -> Option<&'s [u8]> {
+            fn extend(&mut self, primitive: &gltf::Primitive, source: &IntermediateglTFData) -> Result<usize, GltfError> {
 
-                let mut target = $name_gpa::default();
-
+                let reader = primitive.reader(|b| Some(&source.data_buffer[b.index()]));
+                let origin_length = self.data.len();
                 $(
-                    read_attribute!(target, reader, $name_vertex, $attribute);
+                    read_attribute!(self, reader, origin_length, $name_vertex, $attribute);
                 )*
 
-                Ok(target)
+                let extend_length = self.data.len() - origin_length;
+                Ok(extend_length)
             }
 
-            fn attribute_size(&self) -> vkbytes {
-                data_size!(self.data, $name_vertex)
+            fn data_length(&self) -> usize {
+                self.data.len()
             }
 
             fn upload(&self, to: &GsVertexBlock, by: &mut GsBufferDataUploader) -> Result<(), AllocatorError> {
 
                 let _  = by.upload(to, &self.data)?;
                 Ok(())
-            }
-
-            fn update_transform(&mut self, transform: &nalgebra::Matrix4<f32>) {
-
-                self.data.iter_mut().for_each(|vertex| {
-                    vertex.position = transform.transform_point(&vertex.position);
-                });
             }
         }
     };
@@ -321,3 +339,4 @@ define_gpa!(GPAPNTe0, GPAPNTe0Vertex, {
 define_gpa!(GPAUltimate, GPAUltimateVertex, {
     position, normal, tangents, texcoord_0, texcoord_1, color_0, joints_0, weights_0,
 });
+// --------------------------------------------------------------------------------------

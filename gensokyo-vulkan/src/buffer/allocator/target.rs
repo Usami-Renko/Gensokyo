@@ -68,6 +68,12 @@ impl<M> GsBufferAllocator<M> where M: BufferMemoryTypeAbs {
         Ok(index)
     }
 
+    pub fn append_allocate<R>(&mut self, info: &impl GsBufferAllocatable<M, R>) -> Result<R, AllocatorError> {
+
+        let allot_func = info.allot_func();
+        allot_func(info, self)
+    }
+
     fn gen_buffer(&mut self, info: &impl BufferBlockInfo, typ: BufferInstanceType) -> Result<GsBuffer, AllocatorError> {
 
         if typ.check_storage_validity(self.storage_type.memory_type()) == false {
@@ -123,4 +129,10 @@ impl<M> GsBufferAllocator<M> where M: BufferMemoryTypeAbs {
         self.spaces.clear();
         self.memory_filter.reset();
     }
+}
+
+
+pub trait GsBufferAllocatable<M, R> where Self: Sized, M: BufferMemoryTypeAbs {
+
+    fn allot_func(&self) -> Box<dyn Fn(&Self, &mut GsBufferAllocator<M>) -> Result<R, AllocatorError>>;
 }

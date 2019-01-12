@@ -1,2 +1,4 @@
 
-pub struct GsGltfSampler;
+pub struct GsglTFSamplerData {
+
+}

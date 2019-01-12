@@ -1,0 +1,108 @@
+
+use crate::assets::glTF::data::{ IntermediateglTFData, GsglTFLoadingData };
+use crate::assets::glTF::levels::traits::{ GsglTFLevelEntity, GsglTFArchitecture };
+use crate::assets::glTF::primitive::templates::GsglTFAttrFlag;
+use crate::assets::glTF::error::GltfError;
+
+use gsvk::command::GsCommandRecorder;
+use gsvk::types::{ vkbytes, vkuint };
+
+// --------------------------------------------------------------------------------------
+/// A wrapper class for primitive level in glTF, containing the render parameters read from glTF file.
+pub(super) struct GsglTFPrimitiveEntity {
+
+    method: GsglTFDrawMethod,
+    offset: vkbytes,
+}
+
+impl<'a> GsglTFLevelEntity<'a> for GsglTFPrimitiveEntity {
+    type LevelglTFType = gltf::Primitive<'a>;
+
+    fn read_architecture(level: Self::LevelglTFType) -> Result<GsglTFArchitecture<Self>, GltfError> {
+
+        if level.mode() != gltf::mesh::Mode::Triangles {
+            // Currently only support Triangle topology.
+            return Err(GltfError::UnsupportRenderMode)
+        }
+
+        let mut attr_flag = GsglTFAttrFlag::NONE;
+        for (attribute, _accessor) in level.attributes() {
+            match attribute {
+                | gltf::Semantic::Positions    => attr_flag |= GsglTFAttrFlag::POSITION,
+                | gltf::Semantic::Normals      => attr_flag |= GsglTFAttrFlag::NORMAL,
+                | gltf::Semantic::Tangents     => attr_flag |= GsglTFAttrFlag::TANGENT,
+                | gltf::Semantic::Colors(0)    => attr_flag |= GsglTFAttrFlag::COLOR_0,
+                | gltf::Semantic::TexCoords(0) => attr_flag |= GsglTFAttrFlag::TEXCOORD_0,
+                | gltf::Semantic::TexCoords(1) => attr_flag |= GsglTFAttrFlag::TEXCOORD_1,
+                | gltf::Semantic::Joints(0)    => attr_flag |= GsglTFAttrFlag::JOINTS_0,
+                | gltf::Semantic::Weights(0)   => attr_flag |= GsglTFAttrFlag::WEIGHTS_0,
+                | _ => return Err(GltfError::UnsupportAttributes)
+            }
+        }
+
+        // the draw parameters will be set in `Self::read_data` method, so fill 0 here.
+        let draw_method = match level.indices() {
+            | Some(_) => GsglTFDrawMethod::DrawIndex {  index_count: 0,  first_index: 0 },
+            | None    => GsglTFDrawMethod::DrawArray { vertex_count: 0, first_vertex: 0 },
+        };
+
+        let arch_target = GsglTFArchitecture {
+            arch: GsglTFPrimitiveEntity {
+                method: draw_method,
+                offset: 0, // the property will be set in `Self::read_data` method.
+            },
+            flag: attr_flag,
+        };
+        Ok(arch_target)
+    }
+
+    fn read_data(&mut self, level: Self::LevelglTFType, source: &IntermediateglTFData, data: &mut GsglTFLoadingData) -> Result<(), GltfError> {
+
+        // load attributes data.
+        let vertex_extend_info = data.extend_attributes(&level, source)?;
+        self.offset = vertex_extend_info.start_offset;
+
+        let reader = level.reader(|b| Some(&source.data_buffer[b.index()]));
+        // load indices.
+        let indices_extend_info = data.extend_indices(&reader)?;
+
+        // set the draw parameter.
+        self.method = match self.method {
+            | GsglTFDrawMethod::DrawArray { .. } => {
+                GsglTFDrawMethod::DrawArray {
+                    vertex_count: vertex_extend_info.start_index,
+                    first_vertex: vertex_extend_info.extend_vertex_count,
+                }
+            },
+            | GsglTFDrawMethod::DrawIndex { .. } => {
+                GsglTFDrawMethod::DrawIndex {
+                    index_count: indices_extend_info.start_index,
+                    first_index: indices_extend_info.extend_indices_count,
+                }
+            },
+        };
+
+        Ok(())
+    }
+
+    fn record_command(&self, recorder: &GsCommandRecorder) {
+
+        match self.method {
+            | GsglTFDrawMethod::DrawArray { vertex_count, first_vertex } => {
+                recorder.draw(vertex_count, 1, first_vertex, 0);
+            },
+            | GsglTFDrawMethod::DrawIndex { index_count, first_index } => {
+                recorder.draw_indexed(index_count, 1, first_index, 0, 0);
+            },
+        }
+    }
+}
+// --------------------------------------------------------------------------------------
+
+// -------------------------------------------------------------------------------------
+#[derive(Debug, Clone, Eq, PartialEq)]
+pub(super) enum GsglTFDrawMethod {
+    DrawArray { vertex_count: vkuint, first_vertex: vkuint },
+    DrawIndex {  index_count: vkuint,  first_index: vkuint },
+}
+// --------------------------------------------------------------------------------------

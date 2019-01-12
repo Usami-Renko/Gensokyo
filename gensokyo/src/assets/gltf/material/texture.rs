@@ -1,4 +1,4 @@
 
-pub struct GsGltfTexture {
+pub struct GsglTFTextureData {
 
 }

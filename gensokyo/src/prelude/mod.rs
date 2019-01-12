@@ -11,6 +11,6 @@ pub use crate::input::{ ActionNerve, SceneAction, GsKeycode };
 pub use crate::assets::camera::{ GsCameraFactory, GsCameraAbstract };
 pub use crate::assets::camera::{ GsStageCamera, GsFlightCamera };
 
-pub use crate::assets::gltf::importer::GsGltfImporter;
-pub use crate::assets::gltf::storage::{ GsGltfEntity, GsGltfStorage };
-pub use crate::assets::gltf::error::GltfError;
+pub use crate::assets::glTF::importer::GsglTFImporter;
+pub use crate::assets::glTF::data::{ GsglTFModel, GsglTFDataStorage };
+pub use crate::assets::glTF::error::GltfError;
