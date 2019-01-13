@@ -4,9 +4,13 @@ use ash::vk;
 use gsvk::core::device::GsDevice;
 use gsvk::core::device::DeviceQueueIdentifier;
 
-use gsvk::command::GsCommandPool;
-use gsvk::command::{ GsCommandBuffer, GsCommandRecorder };
+use gsvk::pipeline::target::{ GsPipeline, GsVkPipelineType };
+
+use gsvk::command::{ GsCommandBuffer, GsCommandPool };
+use gsvk::command::{ GsVkCommandType, GsCmdRecorder };
 use gsvk::command::CommandError;
+
+use gsvk::utils::phantom::Copy;
 
 pub struct CommandKit {
 
@@ -28,8 +32,13 @@ impl CommandKit {
         GsCommandPool::setup(&self.device, queue, vk::CommandPoolCreateFlags::empty())
     }
 
-    pub fn recorder(&self, command: GsCommandBuffer) -> GsCommandRecorder {
+    pub fn copy_recorder(&self, command: GsCommandBuffer) -> GsCmdRecorder<r#Copy> {
+        GsCmdRecorder::new_copy(&self.device, command)
+    }
 
-        GsCommandRecorder::new(&self.device, command)
+    pub fn pipeline_recorder<T>(&self, pipeline: &GsPipeline<T>, command: GsCommandBuffer) -> GsCmdRecorder<T>
+        where T: GsVkPipelineType + GsVkCommandType {
+
+        GsCmdRecorder::new(&self.device, command, pipeline)
     }
 }

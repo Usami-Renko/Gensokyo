@@ -4,8 +4,9 @@ use crate::core::device::GsDevice;
 use crate::types::vkbytes;
 
 use crate::memory::{ GsMemoryAbstract, MemoryFilter };
-use crate::memory::types::{ GsMemoryType, Device, Cached };
+use crate::memory::types::GsMemoryType;
 use crate::memory::instance::{ GsImageMemory, GsCachedMemory, GsDeviceMemory };
+use crate::utils::phantom::{ Device, Cached };
 use crate::memory::MemoryError;
 
 pub trait ImageMemoryTypeAbs: Copy {

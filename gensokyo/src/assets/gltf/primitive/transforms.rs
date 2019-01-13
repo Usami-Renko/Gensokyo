@@ -181,7 +181,7 @@ macro_rules! define_gnp {
             fn upload(&self, to: &GsUniformBuffer, by: &mut GsBufferDataUploader, alignment: vkbytes) -> Result<(), AllocatorError> {
 
                 let _ = by.upload_align(to, &self.data, alignment)?;
-                unimplemented!()
+                Ok(())
             }
         }
     };

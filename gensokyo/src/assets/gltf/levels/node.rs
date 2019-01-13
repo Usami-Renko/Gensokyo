@@ -1,5 +1,5 @@
 
-use crate::assets::glTF::data::{ IntermediateglTFData, GsglTFLoadingData };
+use crate::assets::glTF::data::{ IntermediateglTFData, GsglTFLoadingData, GsglTFCmdRecordInfo };
 use crate::assets::glTF::levels::traits::{ GsglTFLevelEntity, GsglTFArchitecture };
 use crate::assets::glTF::levels::mesh::GsglTFMeshEntity;
 use crate::assets::glTF::primitive::attributes::GsglTFAttrFlags;
@@ -7,7 +7,9 @@ use crate::assets::glTF::primitive::transforms::GsglTFNodeUniformFlags;
 use crate::assets::glTF::error::GltfError;
 use crate::utils::types::Matrix4F;
 
-use gsvk::command::GsCommandRecorder;
+use gsvk::command::{ GsCmdRecorder, GsCmdGraphicsApi };
+use gsvk::utils::phantom::Graphics;
+use gsvk::types::vkuint;
 
 // --------------------------------------------------------------------------------------
 /// A wrapper class for node level in glTF, containing the render parameters read from glTF file.
@@ -36,10 +38,10 @@ impl GsglTFNodeEntity {
 }
 
 impl<'a> GsglTFLevelEntity<'a> for GsglTFNodeEntity {
-    type LevelglTFMessage = (gltf::Node<'a>, &'a mut usize);
-    type LevelglTFData    = gltf::Node<'a>;
+    type GltfArchLevel = (gltf::Node<'a>, &'a mut usize);
+    type GltfDataLevel = gltf::Node<'a>;
 
-    fn read_architecture(level: Self::LevelglTFMessage) -> Result<GsglTFArchitecture<Self>, GltfError> {
+    fn read_architecture(level: Self::GltfArchLevel) -> Result<GsglTFArchitecture<Self>, GltfError> {
 
         let mut attr_flag = GsglTFAttrFlags::NONE;
         let mut node_flag = GsglTFNodeUniformFlags::NONE;
@@ -83,7 +85,7 @@ impl<'a> GsglTFLevelEntity<'a> for GsglTFNodeEntity {
         Ok(target_arch)
     }
 
-    fn read_data(&mut self, level: Self::LevelglTFData, source: &IntermediateglTFData, data: &mut GsglTFLoadingData) -> Result<(), GltfError> {
+    fn read_data(&mut self, level: Self::GltfDataLevel, source: &IntermediateglTFData, data: &mut GsglTFLoadingData) -> Result<(), GltfError> {
 
         // read the Mesh data referred by current Node.
         if let Some(ref mut mesh) = self.local_mesh {
@@ -102,20 +104,25 @@ impl<'a> GsglTFLevelEntity<'a> for GsglTFNodeEntity {
 
         Ok(())
     }
+}
 
-    fn record_command(&self, recorder: &GsCommandRecorder) {
+impl GsglTFNodeEntity {
+
+    pub(super) fn record_command(&self, recorder: &GsCmdRecorder<Graphics>, mess: &mut GsglTFCmdRecordInfo) {
 
         if let Some(ref mesh) = self.local_mesh {
 
-            // bind dynamic uniform buffer.
-            // TODO: Refactor recorder to adapt this code.
-            // recorder.bind_descriptor_sets();
+            // recalculate the dynamic offset.
+            let dyn_offset = (mess.uniform_alignment as vkuint) * (self.draw_order.unwrap() as vkuint);
+            mess.binding_sets[mess.gltf_uniform_index].dynamic_offset = Some(dyn_offset);
+            // rebind the DescriptorSets.
+            recorder.bind_descriptor_sets(0, &mess.binding_sets);
 
             mesh.record_command(recorder);
         }
 
         for child_node in self.children.iter() {
-            child_node.record_command(recorder);
+            child_node.record_command(recorder, mess);
         }
     }
 }

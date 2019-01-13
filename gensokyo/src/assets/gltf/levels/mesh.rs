@@ -6,7 +6,8 @@ use crate::assets::glTF::primitive::attributes::GsglTFAttrFlags;
 use crate::assets::glTF::primitive::transforms::GsglTFNodeUniformFlags;
 use crate::assets::glTF::error::GltfError;
 
-use gsvk::command::GsCommandRecorder;
+use gsvk::command::GsCmdRecorder;
+use gsvk::utils::phantom::Graphics;
 
 // --------------------------------------------------------------------------------------
 /// A wrapper class for mesh level in glTF, containing the render parameters read from glTF file.
@@ -16,10 +17,10 @@ pub(super) struct GsglTFMeshEntity {
 }
 
 impl<'a> GsglTFLevelEntity<'a> for GsglTFMeshEntity {
-    type LevelglTFMessage = gltf::Mesh<'a>;
-    type LevelglTFData    = gltf::Mesh<'a>;
+    type GltfArchLevel = gltf::Mesh<'a>;
+    type GltfDataLevel = gltf::Mesh<'a>;
 
-    fn read_architecture(level: Self::LevelglTFMessage) -> Result<GsglTFArchitecture<Self>, GltfError> {
+    fn read_architecture(level: Self::GltfArchLevel) -> Result<GsglTFArchitecture<Self>, GltfError> {
 
         let mut attr_flag = GsglTFAttrFlags::NONE;
 
@@ -40,7 +41,7 @@ impl<'a> GsglTFLevelEntity<'a> for GsglTFMeshEntity {
         Ok(arch_target)
     }
 
-    fn read_data(&mut self, level: Self::LevelglTFData, source: &IntermediateglTFData, data: &mut GsglTFLoadingData) -> Result<(), GltfError> {
+    fn read_data(&mut self, level: Self::GltfDataLevel, source: &IntermediateglTFData, data: &mut GsglTFLoadingData) -> Result<(), GltfError> {
 
         for (primitive_entity, primitive_level) in self.primitives.iter_mut().zip(level.primitives()) {
             primitive_entity.read_data(primitive_level, source, data)?;
@@ -48,8 +49,11 @@ impl<'a> GsglTFLevelEntity<'a> for GsglTFMeshEntity {
 
         Ok(())
     }
+}
 
-    fn record_command(&self, recorder: &GsCommandRecorder) {
+impl GsglTFMeshEntity {
+
+    pub(super) fn record_command(&self, recorder: &GsCmdRecorder<Graphics>) {
 
         for primitive in self.primitives.iter() {
             primitive.record_command(recorder);

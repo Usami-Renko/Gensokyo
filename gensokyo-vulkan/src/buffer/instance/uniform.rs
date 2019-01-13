@@ -148,10 +148,6 @@ impl BufferCopiable for GsUniformBuffer {
 
 impl GsUniformBuffer {
 
-    fn usage(&self) -> UniformUsage {
-        self.usage.clone()
-    }
-
     pub fn dyn_alignment(&self) -> Option<vkbytes> {
         match self.usage {
             | UniformUsage::Common => None,

@@ -9,6 +9,7 @@ use crate::image::allocator::ImageAllocateInfo;
 use crate::image::instance::traits::ImageBarrierBundleAbs;
 use crate::memory::transfer::DataCopyer;
 use crate::memory::AllocatorError;
+use crate::command::GsCmdCopyApi;
 
 //  Depth Stencil Image Barrier Bundle
 pub struct DepSteImageBarrierBundle {

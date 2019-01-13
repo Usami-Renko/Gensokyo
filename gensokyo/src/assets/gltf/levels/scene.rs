@@ -1,5 +1,5 @@
 
-use crate::assets::glTF::data::{ IntermediateglTFData, GsglTFLoadingData };
+use crate::assets::glTF::data::{ IntermediateglTFData, GsglTFLoadingData, GsglTFCmdRecordInfo };
 use crate::assets::glTF::levels::traits::{ GsglTFLevelEntity, GsglTFArchitecture };
 use crate::assets::glTF::levels::node::GsglTFNodeEntity;
 use crate::assets::glTF::primitive::attributes::GsglTFAttrFlags;
@@ -7,7 +7,8 @@ use crate::assets::glTF::primitive::transforms::GsglTFNodeUniformFlags;
 use crate::assets::glTF::error::GltfError;
 use crate::utils::types::Matrix4F;
 
-use gsvk::command::GsCommandRecorder;
+use gsvk::command::GsCmdRecorder;
+use gsvk::utils::phantom::Graphics;
 
 // --------------------------------------------------------------------------------------
 /// A wrapper class for scene level in glTF, containing the render parameters read from glTF file.
@@ -17,10 +18,10 @@ pub struct GsglTFSceneEntity {
 }
 
 impl<'a> GsglTFLevelEntity<'a> for GsglTFSceneEntity {
-    type LevelglTFMessage = gltf::Scene<'a>;
-    type LevelglTFData    = gltf::Scene<'a>;
+    type GltfArchLevel = gltf::Scene<'a>;
+    type GltfDataLevel = gltf::Scene<'a>;
 
-    fn read_architecture(level: Self::LevelglTFMessage) -> Result<GsglTFArchitecture<Self>, GltfError> {
+    fn read_architecture(level: Self::GltfArchLevel) -> Result<GsglTFArchitecture<Self>, GltfError> {
 
         let mut attr_flag = GsglTFAttrFlags::NONE;
         let mut node_flag = GsglTFNodeUniformFlags::NONE;
@@ -44,7 +45,7 @@ impl<'a> GsglTFLevelEntity<'a> for GsglTFSceneEntity {
         Ok(target_arch)
     }
 
-    fn read_data(&mut self, level: Self::LevelglTFData, source: &IntermediateglTFData, data: &mut GsglTFLoadingData) -> Result<(), GltfError> {
+    fn read_data(&mut self, level: Self::GltfDataLevel, source: &IntermediateglTFData, data: &mut GsglTFLoadingData) -> Result<(), GltfError> {
 
         for (node_entity, node_level) in self.nodes.iter_mut().zip(level.nodes()) {
 
@@ -56,12 +57,15 @@ impl<'a> GsglTFLevelEntity<'a> for GsglTFSceneEntity {
 
         Ok(())
     }
+}
+// --------------------------------------------------------------------------------------
 
-    fn record_command(&self, recorder: &GsCommandRecorder) {
+impl GsglTFSceneEntity {
+
+    pub(crate) fn record_command(&self, recorder: &GsCmdRecorder<Graphics>, mess: &mut GsglTFCmdRecordInfo) {
 
         for node in self.nodes.iter() {
-            node.record_command(recorder);
+            node.record_command(recorder, mess);
         }
     }
 }
-// --------------------------------------------------------------------------------------

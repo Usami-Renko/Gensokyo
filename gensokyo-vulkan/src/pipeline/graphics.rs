@@ -17,13 +17,14 @@ use crate::pipeline::{
     state::blend::GsBlendState,
     state::tessellation::GsTessellationState,
     pass::GsRenderPass,
-    graphics::{ GsGraphicsPipeline, GraphicsPipelineContainer },
+    target::GsPipeline,
     layout::PipelineLayoutBuilder,
     error::PipelineError,
 };
 
 use crate::descriptor::DescriptorSet;
 use crate::types::vkDim2D;
+use crate::utils::phantom::Graphics;
 
 use std::ptr;
 
@@ -101,7 +102,7 @@ impl GraphicsPipelineBuilder {
         pipeline_index
     }
 
-    pub fn build(mut self) -> Result<GraphicsPipelineContainer, PipelineError> {
+    pub fn build(mut self) -> Result<Vec<GsPipeline<Graphics>>, PipelineError> {
 
         for config in self.configs.iter_mut() {
             let mut shader_modules = vec![];
@@ -164,12 +165,11 @@ impl GraphicsPipelineBuilder {
 
         let mut pipelines = vec![];
         for (i, config) in self.configs.into_iter().enumerate() {
-            let pipeline = GsGraphicsPipeline::new(&self.device, handles[i], layouts[i], config.render_pass);
+            let pipeline = GsPipeline::new(&self.device, handles[i], layouts[i], config.render_pass);
             pipelines.push(pipeline);
         }
 
-        let container = GraphicsPipelineContainer::new(pipelines);
-        Ok(container)
+        Ok(pipelines)
     }
 
     fn destroy_shader_modules(&self) {

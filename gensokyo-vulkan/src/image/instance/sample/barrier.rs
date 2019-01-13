@@ -16,8 +16,9 @@ use crate::image::instance::traits::ImageBarrierBundleAbs;
 use crate::image::allocator::ImageAllocateInfo;
 
 use crate::memory::transfer::DataCopyer;
-use crate::memory::types::Staging;
 use crate::memory::AllocatorError;
+use crate::command::GsCmdCopyApi;
+use crate::utils::phantom::Staging;
 
 pub struct SampleImageBarrierBundle {
 

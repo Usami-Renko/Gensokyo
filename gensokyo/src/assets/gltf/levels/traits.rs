@@ -4,8 +4,6 @@ use crate::assets::glTF::primitive::transforms::GsglTFNodeUniformFlags;
 use crate::assets::glTF::primitive::attributes::GsglTFAttrFlags;
 use crate::assets::glTF::error::GltfError;
 
-use gsvk::command::GsCommandRecorder;
-
 pub(crate) struct GsglTFArchitecture<T> {
 
     pub arch: T,
@@ -14,13 +12,11 @@ pub(crate) struct GsglTFArchitecture<T> {
 }
 
 pub(crate) trait GsglTFLevelEntity<'a>: Sized {
-    type LevelglTFMessage;
-    type LevelglTFData;
+    type GltfArchLevel;
+    type GltfDataLevel;
 
     /// Load the architecture of glTF, and decide the vertex type to store attributes of glTF primitive.
-    fn read_architecture(level: Self::LevelglTFMessage) -> Result<GsglTFArchitecture<Self>, GltfError>;
+    fn read_architecture(level: Self::GltfArchLevel) -> Result<GsglTFArchitecture<Self>, GltfError>;
     /// Read the data of primitive. Including attributes, materials, textures, samplers, etc...
-    fn read_data(&mut self, level: Self::LevelglTFData, source: &IntermediateglTFData, data: &mut GsglTFLoadingData) -> Result<(), GltfError>;
-    /// Record the draw command to vk::CommandBuffer.
-    fn record_command(&self, recorder: &GsCommandRecorder);
+    fn read_data(&mut self, level: Self::GltfDataLevel, source: &IntermediateglTFData, data: &mut GsglTFLoadingData) -> Result<(), GltfError>;
 }

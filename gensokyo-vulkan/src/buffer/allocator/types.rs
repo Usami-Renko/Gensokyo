@@ -4,8 +4,10 @@ use ash::vk;
 use crate::core::device::GsDevice;
 
 use crate::memory::MemoryMappable;
-use crate::memory::types::{ GsMemoryType, Host, Device, Cached, Staging };
+use crate::memory::types::GsMemoryType;
 use crate::memory::MemoryError;
+
+use crate::utils::phantom::{ Host, Device, Cached, Staging };
 
 pub trait BufferMemoryTypeAbs: Copy + Sized {
     const MEMORY_TYPE: GsMemoryType;

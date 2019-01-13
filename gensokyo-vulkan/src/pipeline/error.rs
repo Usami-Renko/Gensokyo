@@ -37,7 +37,6 @@ pub enum PipelineError {
     RenderPass(RenderPassError),
     PipelineCreationError,
     LayoutCreationError,
-    PipelineTakeError,
 }
 
 impl Error for PipelineError {}
@@ -51,7 +50,6 @@ impl fmt::Display for PipelineError {
             | PipelineError::RenderPass(e) => write!(f, "{}", e),
             | PipelineError::PipelineCreationError => write!(f, "Failed to create Pipeline."),
             | PipelineError::LayoutCreationError   => write!(f, "Failed to create Pipeline Layout."),
-            | PipelineError::PipelineTakeError     => write!(f, "The pipeline has been taken."),
         }
     }
 }

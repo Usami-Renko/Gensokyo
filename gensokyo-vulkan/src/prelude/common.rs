@@ -4,7 +4,7 @@ pub use crate::core::device::queue::QueueSubmitBundle;
 
 pub use crate::types::{ vkuint, vkbytes, vkfloat, vkDim2D, vkDim3D };
 
-pub use crate::memory::types::Host;
-pub use crate::memory::types::Cached;
-pub use crate::memory::types::Device;
-pub use crate::memory::types::Staging;
+pub use crate::utils::phantom::Host;
+pub use crate::utils::phantom::Cached;
+pub use crate::utils::phantom::Device;
+pub use crate::utils::phantom::Staging;

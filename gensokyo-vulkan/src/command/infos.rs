@@ -14,5 +14,5 @@ pub type CmdDepthBoundInfo = DepthBoundInfo;
 pub struct CmdDescriptorSetBindInfo<'a> {
 
     pub set: &'a DescriptorSet,
-    pub dynamic_offsets: Option<&'a [vkuint]>
+    pub dynamic_offset: Option<vkuint>,
 }

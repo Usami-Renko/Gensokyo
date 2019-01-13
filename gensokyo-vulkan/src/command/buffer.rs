@@ -1,10 +1,6 @@
 
 use ash::vk;
 
-use crate::core::device::GsDevice;
-
-use crate::command::record::GsCommandRecorder;
-
 #[derive(Debug, Clone, Copy, Eq, PartialEq)]
 pub enum CmdBufferUsage {
 
@@ -51,10 +47,5 @@ impl GsCommandBuffer {
 
     pub(crate) fn new(handle: vk::CommandBuffer, usage: CmdBufferUsage) -> GsCommandBuffer {
         GsCommandBuffer { handle, usage }
-    }
-
-    pub(crate) fn setup_record(self, device: &GsDevice) -> GsCommandRecorder {
-
-        GsCommandRecorder::new(device, self)
     }
 }

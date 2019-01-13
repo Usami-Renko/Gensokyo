@@ -1,6 +1,6 @@
 
 use crate::assets::glTF::importer::GsglTFEntity;
-use crate::assets::glTF::levels::{ GsglTFNodeEntity, GsglTFLevelEntity };
+use crate::assets::glTF::levels::GsglTFNodeEntity;
 use crate::assets::glTF::error::GltfError;
 
 use crate::assets::glTF::material::material::GsglTFMaterialData;
@@ -18,9 +18,10 @@ use gsvk::buffer::instance::{ GsIndexBuffer, IIndices };
 use gsvk::buffer::instance::{ GsUniformBuffer, IUniform };
 use gsvk::utils::assign::GsAssignIndex;
 use gsvk::memory::transfer::{ GsBufferDataUploader, GsBufferUploadable };
-use gsvk::memory::types::Host;
 use gsvk::memory::AllocatorError;
-use gsvk::command::GsCommandRecorder;
+use gsvk::command::{ GsCmdRecorder, GsCmdGraphicsApi, CmdDescriptorSetBindInfo };
+use gsvk::descriptor::DescriptorSet;
+use gsvk::utils::phantom::{ Graphics, Host };
 use gsvk::types::{ vkuint, vkbytes };
 
 // ------------------------------------------------------------------------------------
@@ -233,11 +234,19 @@ pub struct GsglTFModel {
     uniform: GsUniformBuffer,
 }
 
+pub(crate) struct GsglTFCmdRecordInfo<'i> {
+    pub binding_sets: Vec<CmdDescriptorSetBindInfo<'i>>,
+    pub uniform_alignment: vkbytes,
+    pub gltf_uniform_index: usize,
+}
+
 impl GsglTFEntity {
 
     pub fn assign<M>(self,
+
          vertex_index : GsglTFVertexAllotIndex,  vertex_distributor: &GsBufferDistributor<M>,
          uniform_index: GsglTFUniformAllotIndex, uniform_distributor: &GsBufferDistributor<Host>)
+
         -> GsglTFModel where M: BufferMemoryTypeAbs {
 
         GsglTFModel {
@@ -266,7 +275,7 @@ impl<'d, 's: 'd> GsglTFModel {
         }
     }
 
-    pub fn record_command(&self, recorder: &GsCommandRecorder) {
+    pub fn record_command<'i>(&self, recorder: &GsCmdRecorder<Graphics>, gltf_set: &DescriptorSet, binding_sets: Vec<CmdDescriptorSetBindInfo<'i>>) {
 
         // bind the whole vertex buffer.
         recorder.bind_vertex_buffers(0, &[&self.vertex]);
@@ -276,8 +285,23 @@ impl<'d, 's: 'd> GsglTFModel {
             recorder.bind_index_buffer(indices_block, 0);
         }
 
+        // Prepare binding DescriptorSets.
+        let uniform_index = binding_sets.len(); // get the location of glTF descriptorSet.
+        let mut binding_sets = binding_sets; // make it mutable.
+
+        binding_sets.push(CmdDescriptorSetBindInfo {
+            set: gltf_set,
+            dynamic_offset: None,
+        });
+
+        let mut record_info = GsglTFCmdRecordInfo {
+            binding_sets,
+            uniform_alignment: self.uniform.dyn_alignment().unwrap(), // unwrap will always succeed.
+            gltf_uniform_index: uniform_index,
+        };
+
         // call the draw command.
-        self.entity.scene.record_command(recorder);
+        self.entity.scene.record_command(recorder, &mut record_info);
     }
 }
 // ------------------------------------------------------------------------------------

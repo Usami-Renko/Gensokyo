@@ -8,7 +8,7 @@ use crate::buffer::allocator::types::BufferMemoryTypeAbs;
 use crate::buffer::traits::BufferInstance;
 use crate::buffer::repository::GsBufferRepository;
 use crate::memory::instance::GsBufferMemory;
-use crate::memory::types::Host;
+use crate::utils::phantom::Host;
 
 use crate::buffer::instance::{
     GsVertexBuffer, IVertex,

@@ -6,13 +6,14 @@ use crate::core::device::queue::GsTransfer;
 
 use crate::buffer::BufferCopiable;
 use crate::image::ImageCopiable;
-use crate::command::GsCommandRecorder;
+use crate::command::{ GsCmdRecorder, GsCmdCopyApi };
 use crate::memory::error::AllocatorError;
+use crate::utils::phantom::Copy;
 
 pub struct DataCopyer {
 
     transfer: GsTransfer,
-    recorder: GsCommandRecorder,
+    recorder: GsCmdRecorder<r#Copy>,
 }
 
 impl DataCopyer {
@@ -21,7 +22,7 @@ impl DataCopyer {
 
         let transfer = GsLogicalDevice::transfer(device);
         let command = transfer.command()?;
-        let recorder = command.setup_record(device);
+        let recorder = GsCmdRecorder::new_copy(device, command);
 
         let _ = recorder.begin_record(vk::CommandBufferUsageFlags::ONE_TIME_SUBMIT)?;
 
@@ -48,7 +49,7 @@ impl DataCopyer {
             },
         ];
 
-        let _ = self.recorder.copy_buffer(src.handle, dst.handle, &copy_region);
+        let _ = self.recorder.copy_buf2buf(src.handle, dst.handle, &copy_region);
 
         self
     }
@@ -76,7 +77,7 @@ impl DataCopyer {
             },
         ];
 
-        let _ = self.recorder.copy_buffer_to_image(src.handle, dst.handle, dst.layout, &copy_regions);
+        let _ = self.recorder.copy_buf2img(src.handle, dst.handle, dst.layout, &copy_regions);
 
         self
     }
@@ -98,7 +99,7 @@ impl DataCopyer {
             },
         ];
 
-        let _ = self.recorder.copy_image_to_buffer(src.handle, src.layout, dst.handle, &copy_regions);
+        let _ = self.recorder.copy_img2buf(src.handle, src.layout, dst.handle, &copy_regions);
 
         self
     }
@@ -119,7 +120,7 @@ impl DataCopyer {
             },
         ];
 
-        let _ = self.recorder.copy_image(src.handle, src.layout, dst.handle, dst.layout, &copy_regions);
+        let _ = self.recorder.copy_img2img(src.handle, src.layout, dst.handle, dst.layout, &copy_regions);
 
         self
     }
@@ -133,7 +134,7 @@ impl DataCopyer {
         Ok(())
     }
 
-    pub fn recorder(&self) -> &GsCommandRecorder {
+    pub fn recorder(&self) -> &GsCmdRecorder<r#Copy> {
         &self.recorder
     }
 }

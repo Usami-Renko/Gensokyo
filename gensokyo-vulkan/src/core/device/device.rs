@@ -64,11 +64,6 @@ impl GsLogicalDevice {
         Ok(())
     }
 
-    pub fn transfer(device: &GsDevice) -> GsTransfer {
-
-        device.transfer_queue.transfer(device)
-    }
-
     pub fn submit(&self, bundles: &[QueueSubmitBundle], fence: Option<&GsFence>, queue_ident: DeviceQueueIdentifier) -> Result<(), SyncError> {
 
         // TODO: Add configuration to select submit queue family
@@ -128,6 +123,11 @@ impl GsLogicalDevice {
 
             self.handle.destroy_device(None);
         }
+    }
+
+    pub fn transfer(device: &GsDevice) -> GsTransfer {
+
+        device.transfer_queue.transfer(device)
     }
 
     pub fn queue_handle_by_identifier(&self, identifier: DeviceQueueIdentifier) -> &GsQueue {

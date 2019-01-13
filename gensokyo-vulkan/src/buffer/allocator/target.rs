@@ -56,21 +56,6 @@ impl<M> GsBufferAllocator<M> where M: BufferMemoryTypeAbs {
     pub fn assign<Info, Index>(&mut self, info: Info) -> Result<GsAssignIndex<Index>, AllocatorError>
         where Info: BufferInfoAbstract<Index> {
 
-        let (buffer, buffer_description) = self.gen_buffer(&info)?;
-
-        let dst_index = GsAssignIndex {
-            allot_info: info.into_index(),
-            assign_index: self.buffers.len(),
-        };
-
-        self.append_allot(buffer, buffer_description);
-
-        Ok(dst_index)
-    }
-
-    fn gen_buffer<Info, Index>(&mut self, info: &Info) -> Result<(GsBuffer, BufferDescInfo), AllocatorError>
-        where Info: BufferInfoAbstract<Index> {
-
         // check if the usage of buffer valid.
         if Info::check_storage_validity(self.storage_type.memory_type()) == false {
             return Err(AllocatorError::UnsupportBufferUsage)
@@ -80,17 +65,19 @@ impl<M> GsBufferAllocator<M> where M: BufferMemoryTypeAbs {
         let buffer = buffer_description.build(&self.device, self.storage_type, None)?;
         self.memory_filter.filter(&buffer)?;
 
-        Ok((buffer, buffer_description))
-    }
-
-    fn append_allot(&mut self, buffer: GsBuffer, buffer_desc: BufferDescInfo) {
+        let dst_index = GsAssignIndex {
+            allot_info: info.into_index(),
+            assign_index: self.buffers.len(),
+        };
 
         // get buffer aligment.
         let aligment_space = buffer.aligment_size();
 
         self.spaces.push(aligment_space);
         self.buffers.push(buffer);
-        self.allot_infos.push(aligment_space, buffer_desc);
+        self.allot_infos.push(aligment_space, buffer_description);
+
+        Ok(dst_index)
     }
 
     pub fn append_allocate<R>(&mut self, info: &impl GsBufferAllocatable<M, R>) -> Result<R, AllocatorError> {

@@ -10,7 +10,6 @@ use crate::buffer::allocator::BufferAllocateInfos;
 use crate::memory::target::GsMemory;
 use crate::memory::types::GsMemoryType;
 use crate::memory::utils::{ MemoryMapStatus, MemoryRange, MemoryMapAlias, MemoryWritePtr };
-use crate::memory::types::Staging;
 use crate::memory::traits::{ GsMemoryAbstract, MemoryMappable };
 use crate::memory::filter::MemoryFilter;
 use crate::memory::transfer::DataCopyer;
@@ -18,6 +17,7 @@ use crate::memory::instance::GsBufferMemoryAbs;
 use crate::memory::transfer::MemoryDataDelegate;
 use crate::memory::error::{ MemoryError, AllocatorError };
 
+use crate::utils::phantom::Staging;
 use crate::types::vkbytes;
 
 

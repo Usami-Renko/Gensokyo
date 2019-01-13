@@ -5,7 +5,8 @@ use crate::assets::glTF::primitive::attributes::GsglTFAttrFlags;
 use crate::assets::glTF::primitive::transforms::GsglTFNodeUniformFlags;
 use crate::assets::glTF::error::GltfError;
 
-use gsvk::command::GsCommandRecorder;
+use gsvk::command::{ GsCmdRecorder, GsCmdGraphicsApi };
+use gsvk::utils::phantom::Graphics;
 use gsvk::types::{ vkbytes, vkuint };
 
 // --------------------------------------------------------------------------------------
@@ -17,10 +18,10 @@ pub(super) struct GsglTFPrimitiveEntity {
 }
 
 impl<'a> GsglTFLevelEntity<'a> for GsglTFPrimitiveEntity {
-    type LevelglTFMessage = gltf::Primitive<'a>;
-    type LevelglTFData    = gltf::Primitive<'a>;
+    type GltfArchLevel = gltf::Primitive<'a>;
+    type GltfDataLevel = gltf::Primitive<'a>;
 
-    fn read_architecture(level: Self::LevelglTFMessage) -> Result<GsglTFArchitecture<Self>, GltfError> {
+    fn read_architecture(level: Self::GltfArchLevel) -> Result<GsglTFArchitecture<Self>, GltfError> {
 
         if level.mode() != gltf::mesh::Mode::Triangles {
             // Currently only support Triangle topology.
@@ -59,7 +60,7 @@ impl<'a> GsglTFLevelEntity<'a> for GsglTFPrimitiveEntity {
         Ok(arch_target)
     }
 
-    fn read_data(&mut self, level: Self::LevelglTFData, source: &IntermediateglTFData, data: &mut GsglTFLoadingData) -> Result<(), GltfError> {
+    fn read_data(&mut self, level: Self::GltfDataLevel, source: &IntermediateglTFData, data: &mut GsglTFLoadingData) -> Result<(), GltfError> {
 
         // load attributes data.
         let vertex_extend_info = data.extend_attributes(&level, source)?;
@@ -87,8 +88,11 @@ impl<'a> GsglTFLevelEntity<'a> for GsglTFPrimitiveEntity {
 
         Ok(())
     }
+}
 
-    fn record_command(&self, recorder: &GsCommandRecorder) {
+impl GsglTFPrimitiveEntity {
+
+    pub(super) fn record_command(&self, recorder: &GsCmdRecorder<Graphics>) {
 
         match self.method {
             | GsglTFDrawMethod::DrawArray { vertex_count, first_vertex } => {

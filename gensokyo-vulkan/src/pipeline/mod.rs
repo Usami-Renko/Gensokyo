@@ -1,5 +1,6 @@
 
 pub mod config;
+pub mod target;
 pub mod graphics;
 pub mod compute;
 pub mod pass;
