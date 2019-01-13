@@ -73,13 +73,14 @@ impl PhysicalInspector {
 
             let physical = GsPhysicalDevice {
                 handle: physical_device,
-                families, features, extensions, memory,
+                properties, families, features, extensions, memory,
             };
-            optimal_device = Some(physical);
 
             if VERBOSE {
-                properties.print_device_detail();
+                physical.properties.print_device_detail();
             }
+
+            optimal_device = Some(physical);
 
             break
         }

@@ -2,18 +2,17 @@
 use crate::core::device::GsDevice;
 use crate::core::physical::GsPhyDevice;
 
-use crate::buffer::target::GsBuffer;
-use crate::buffer::traits::BufferBlockInfo;
-use crate::buffer::instance::BufferInstanceType;
+use crate::buffer::target::{ GsBuffer, BufferDescInfo };
+use crate::buffer::instance::types::BufferInfoAbstract;
 use crate::buffer::error::BufferError;
 use crate::memory::{ MemoryFilter, MemoryDstEntity };
 use crate::memory::AllocatorError;
 
-use crate::buffer::allocator::index::BufferBlockIndex;
 use crate::buffer::allocator::types::BufferMemoryTypeAbs;
 use crate::buffer::allocator::memory::{ BufferAllocateInfos, BufMemAllocator };
 use crate::buffer::allocator::distributor::GsBufferDistributor;
 
+use crate::utils::assign::GsAssignIndex;
 use crate::types::vkbytes;
 
 use std::marker::PhantomData;
@@ -54,36 +53,50 @@ impl<M> GsBufferAllocator<M> where M: BufferMemoryTypeAbs {
         }
     }
 
-    pub fn append_buffer(&mut self, info: impl BufferBlockInfo) -> Result<BufferBlockIndex, AllocatorError> {
+    pub fn assign<Info, Index>(&mut self, info: Info) -> Result<GsAssignIndex<Index>, AllocatorError>
+        where Info: BufferInfoAbstract<Index> {
 
-        let buffer = self.gen_buffer(&info, info.typ())?;
+        let (buffer, buffer_description) = self.gen_buffer(&info)?;
+
+        let dst_index = GsAssignIndex {
+            allot_info: info.into_index(),
+            assign_index: self.buffers.len(),
+        };
+
+        self.append_allot(buffer, buffer_description);
+
+        Ok(dst_index)
+    }
+
+    fn gen_buffer<Info, Index>(&mut self, info: &Info) -> Result<(GsBuffer, BufferDescInfo), AllocatorError>
+        where Info: BufferInfoAbstract<Index> {
+
+        // check if the usage of buffer valid.
+        if Info::check_storage_validity(self.storage_type.memory_type()) == false {
+            return Err(AllocatorError::UnsupportBufferUsage)
+        }
+
+        let buffer_description = BufferDescInfo::new(info.estimate_size(), Info::VK_FLAG);
+        let buffer = buffer_description.build(&self.device, self.storage_type, None)?;
+        self.memory_filter.filter(&buffer)?;
+
+        Ok((buffer, buffer_description))
+    }
+
+    fn append_allot(&mut self, buffer: GsBuffer, buffer_desc: BufferDescInfo) {
+
+        // get buffer aligment.
         let aligment_space = buffer.aligment_size();
-
-        let index = info.to_block_index(self.buffers.len());
 
         self.spaces.push(aligment_space);
         self.buffers.push(buffer);
-        self.allot_infos.push(aligment_space, info.into_desc());
-
-        Ok(index)
+        self.allot_infos.push(aligment_space, buffer_desc);
     }
 
     pub fn append_allocate<R>(&mut self, info: &impl GsBufferAllocatable<M, R>) -> Result<R, AllocatorError> {
 
         let allot_func = info.allot_func();
         allot_func(info, self)
-    }
-
-    fn gen_buffer(&mut self, info: &impl BufferBlockInfo, typ: BufferInstanceType) -> Result<GsBuffer, AllocatorError> {
-
-        if typ.check_storage_validity(self.storage_type.memory_type()) == false {
-            return Err(AllocatorError::UnsupportBufferUsage)
-        }
-
-        let buffer = info.as_desc_ref().build(&self.device, self.storage_type, None)?;
-        self.memory_filter.filter(&buffer)?;
-
-        Ok(buffer)
     }
 
     pub fn allocate(self) -> Result<GsBufferDistributor<M>, AllocatorError> {
@@ -122,15 +135,15 @@ impl<M> GsBufferAllocator<M> where M: BufferMemoryTypeAbs {
 
     pub fn reset(&mut self) {
 
-        self.buffers.iter()
-            .for_each(|buffer| buffer.destroy(&self.device));
-        self.buffers.clear();
+        for buffer in self.buffers.iter() {
+            buffer.destroy(&self.device);
+        }
 
+        self.buffers.clear();
         self.spaces.clear();
         self.memory_filter.reset();
     }
 }
-
 
 pub trait GsBufferAllocatable<M, R> where Self: Sized, M: BufferMemoryTypeAbs {
 

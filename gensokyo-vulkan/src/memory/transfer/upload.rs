@@ -8,7 +8,7 @@ use crate::buffer::allocator::BufferAllocateInfos;
 use crate::memory::instance::GsBufferMemory;
 use crate::memory::transfer::traits::MemoryDataDelegate;
 use crate::memory::error::AllocatorError;
-
+use crate::types::vkbytes;
 
 pub struct GsBufferDataUploader {
 
@@ -35,8 +35,16 @@ impl GsBufferDataUploader {
 
     pub fn upload(&mut self, to: &impl BufferInstance, data: &[impl Copy]) -> Result<&mut GsBufferDataUploader, AllocatorError> {
 
-        let writer = self.agency.acquire_write_ptr(to.as_block_ref(), to.repository_index())?;
+        let writer = to.acquire_write_ptr(&mut self.agency)?;
         writer.write_data(data);
+
+        Ok(self)
+    }
+
+    pub fn upload_align(&mut self, to: &impl BufferInstance, data: &[impl Copy], element_alignment: vkbytes) -> Result<&mut GsBufferDataUploader, AllocatorError> {
+
+        let writer = to.acquire_write_ptr(&mut self.agency)?;
+        writer.write_data_with_alignment(data, element_alignment);
 
         Ok(self)
     }

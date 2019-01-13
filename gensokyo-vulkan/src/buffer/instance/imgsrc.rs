@@ -1,74 +1,62 @@
 
 use ash::vk;
 
-use crate::buffer::target::BufferDescInfo;
 use crate::buffer::entity::BufferBlock;
-use crate::buffer::instance::enums::BufferInstanceType;
-use crate::buffer::allocator::BufferBlockIndex;
-use crate::buffer::traits::{ BufferInstance, BufferBlockInfo };
-use crate::buffer::traits::{ BufferCopiable, BufferCopyInfo };
+use crate::buffer::traits::{ BufferInstance, BufferCopiable, BufferCopyInfo };
+use crate::buffer::instance::types::BufferInfoAbstract;
 
+use crate::memory::transfer::MemoryDataDelegate;
+use crate::memory::{ MemoryWritePtr, MemoryError };
 use crate::types::vkbytes;
 
-pub struct ImgsrcBlockInfo {
+pub struct GsBufImgsrcInfo {
 
-    info: BufferDescInfo,
+    estimate_size: vkbytes
 }
 
-impl ImgsrcBlockInfo {
+impl BufferInfoAbstract<IImgSrc> for GsBufImgsrcInfo {
+    const VK_FLAG: vk::BufferUsageFlags = vk::BufferUsageFlags::TRANSFER_SRC;
 
-    pub fn new(estimate_size: vkbytes) -> ImgsrcBlockInfo {
+    fn estimate_size(&self) -> vkbytes {
+        self.estimate_size
+    }
 
-        ImgsrcBlockInfo {
-            info: BufferDescInfo::new(estimate_size, vk::BufferUsageFlags::TRANSFER_SRC),
-        }
+    fn into_index(self) -> IImgSrc {
+        IImgSrc {}
     }
 }
 
-impl BufferBlockInfo for ImgsrcBlockInfo {
-    const INSTANCE_TYPE: BufferInstanceType = BufferInstanceType::ImageSrcBuffer;
+impl GsBufImgsrcInfo {
 
-    fn as_desc_ref(&self) -> &BufferDescInfo {
-        &self.info
-    }
+    pub fn new(estimate_size: vkbytes) -> GsBufImgsrcInfo {
 
-    fn into_desc(self) -> BufferDescInfo {
-        self.info
+        GsBufImgsrcInfo { estimate_size }
     }
 }
 
-pub struct GsImgsrcBlock {
+pub struct IImgSrc {
+    // Empty.
+}
+
+pub struct GsImgsrcBuffer {
 
     block: BufferBlock,
     repository_index: usize,
 }
 
-impl GsImgsrcBlock {
+impl BufferInstance for GsImgsrcBuffer {
+    type InfoType = IImgSrc;
 
-    pub(crate) fn new(block: BufferBlock, index: BufferBlockIndex) -> GsImgsrcBlock {
-        GsImgsrcBlock {
-            block,
-            repository_index: index.value,
-        }
+    fn new(block: BufferBlock, _info: Self::InfoType, repository_index: usize) -> Self {
+        GsImgsrcBuffer { block, repository_index }
+    }
+
+    fn acquire_write_ptr(&self, agency: &mut Box<dyn MemoryDataDelegate>) -> Result<MemoryWritePtr, MemoryError> {
+        agency.acquire_write_ptr(&self.block, self.repository_index)
     }
 }
 
-impl BufferInstance for GsImgsrcBlock {
-
-    fn typ(&self) -> BufferInstanceType {
-        BufferInstanceType::ImageSrcBuffer
-    }
-
-    fn as_block_ref(&self) -> &BufferBlock {
-        &self.block
-    }
-
-    fn repository_index(&self) -> usize {
-        self.repository_index
-    }
-}
-
-impl BufferCopiable for GsImgsrcBlock {
+impl BufferCopiable for GsImgsrcBuffer {
 
     fn copy_info(&self) -> BufferCopyInfo {
         BufferCopyInfo::new(&self.block, 0, self.block.size)

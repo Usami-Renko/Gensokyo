@@ -1,12 +1,12 @@
 
-pub use self::imgsrc::{ GsImgsrcBlock, ImgsrcBlockInfo };
-pub use self::index::{ GsIndexBlock, IndexBlockInfo };
-pub use self::uniform::{ GsUniformBlock, UniformBlockInfo, UniformAttachment };
-pub use self::vertex::{ GsVertexBlock, VertexBlockInfo };
-pub use self::enums::BufferInstanceType;
+pub use self::imgsrc::{ GsImgsrcBuffer, IImgSrc, GsBufImgsrcInfo };
+pub use self::index::{ GsIndexBuffer, IIndices, GsBufIndicesInfo };
+pub use self::uniform::{ GsUniformBuffer, IUniform, GsBufUniformInfo };
+pub use self::vertex::{ GsVertexBuffer, IVertex, GsBufVertexInfo };
+
+pub mod types;
 
 mod imgsrc;
 mod index;
 mod uniform;
 mod vertex;
-mod enums;

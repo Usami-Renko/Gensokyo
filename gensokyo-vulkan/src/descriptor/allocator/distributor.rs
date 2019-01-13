@@ -2,10 +2,12 @@
 use crate::core::device::GsDevice;
 
 use crate::descriptor::{ GsDescriptorPool, GsDescriptorSet, DescriptorSetConfig };
-
 use crate::descriptor::set::DescriptorSet;
+use crate::descriptor::binding::DescriptorWriteInfo;
 use crate::descriptor::repository::GsDescriptorRepository;
-use crate::descriptor::allocator::index::DescriptorSetIndex;
+use crate::descriptor::allocator::index::IDescriptorSet;
+
+use crate::utils::assign::GsAssignIndex;
 
 pub struct GsDescriptorDistributor {
 
@@ -14,7 +16,7 @@ pub struct GsDescriptorDistributor {
     sets   : Vec<GsDescriptorSet>,
     configs: Vec<DescriptorSetConfig>,
 
-    update_sets: Vec<DescriptorSetIndex>,
+    update_sets: Vec<IDescriptorSet>,
 }
 
 impl GsDescriptorDistributor {
@@ -27,13 +29,15 @@ impl GsDescriptorDistributor {
         }
     }
 
-    pub fn acquire_set(&mut self, index: DescriptorSetIndex) -> DescriptorSet {
+    pub fn acquire_set(&mut self, index: GsAssignIndex<IDescriptorSet>) -> DescriptorSet {
 
-        let set = &self.sets[index.value];
-        let config = &self.configs[index.value];
-        self.update_sets.push(index.clone());
+        let set_index = index.assign_index;
+        let set = &self.sets[set_index];
+        let config = &self.configs[set_index];
 
-        DescriptorSet::new(set, config, index.value)
+        self.update_sets.push(index.take_info());
+
+        DescriptorSet::new(set, config, set_index)
     }
 
     pub fn into_repository(self) -> GsDescriptorRepository {
@@ -47,12 +51,12 @@ impl GsDescriptorDistributor {
 
         let mut write_infos = Vec::with_capacity(self.update_sets.len());
 
-        for set_index in self.update_sets.iter() {
+        for set in self.update_sets.iter() {
 
-            let config = &self.configs[set_index.value];
-            let update_set = &self.sets[set_index.value];
+            let config = &self.configs[set.set_index];
+            let update_set = &self.sets[set.set_index];
 
-            let set_write_infos: Vec<_> = config.iter_binding()
+            let set_write_infos: Vec<DescriptorWriteInfo> = config.iter_binding()
                 .map(|binding| binding.write_set(update_set))
                 .collect();
             write_infos.extend(set_write_infos);

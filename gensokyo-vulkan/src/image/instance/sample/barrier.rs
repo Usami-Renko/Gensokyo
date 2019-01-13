@@ -4,10 +4,9 @@ use ash::vk;
 use crate::core::device::GsDevice;
 use crate::core::physical::GsPhyDevice;
 
-use crate::buffer::BufferInstance;
 use crate::buffer::allocator::GsBufferAllocator;
 use crate::buffer::allocator::types::BufferStorageType;
-use crate::buffer::instance::{ GsImgsrcBlock, ImgsrcBlockInfo };
+use crate::buffer::instance::{ GsImgsrcBuffer, GsBufImgsrcInfo };
 use crate::buffer::GsBufferRepository;
 
 use crate::image::barrier::GsImageBarrier;
@@ -49,7 +48,7 @@ impl ImageBarrierBundleAbs for SampleImageBarrierBundle {
 
         // copy buffer to image.
         for (i, &index) in self.info_indices.iter().enumerate() {
-            copyer.copy_buffer_to_image(buffer_blocks[i].as_block_ref(), &infos[index]);
+            copyer.copy_buffer_to_image(&buffer_blocks[i], &infos[index]);
         }
 
         // make image barrier transition for final layout.
@@ -78,15 +77,15 @@ impl SampleImageBarrierBundle {
         }
     }
 
-    fn create_staging_repository(&mut self, physical: &GsPhyDevice, device: &GsDevice, infos: &Vec<ImageAllocateInfo>) -> Result<(GsBufferRepository<Staging>, Vec<GsImgsrcBlock>), AllocatorError> {
+    fn create_staging_repository(&mut self, physical: &GsPhyDevice, device: &GsDevice, infos: &Vec<ImageAllocateInfo>) -> Result<(GsBufferRepository<Staging>, Vec<GsImgsrcBuffer>), AllocatorError> {
 
         let mut staging_indices = vec![];
 
         let mut staging_allocator = GsBufferAllocator::new(physical, device, BufferStorageType::STAGING);
 
         for &index in self.info_indices.iter() {
-            let img_info = ImgsrcBlockInfo::new(infos[index].space);
-            let buffer_index = staging_allocator.append_buffer(img_info)?;
+            let img_info = GsBufImgsrcInfo::new(infos[index].space);
+            let buffer_index = staging_allocator.assign(img_info)?;
             staging_indices.push(buffer_index);
         }
 
@@ -101,7 +100,7 @@ impl SampleImageBarrierBundle {
         Ok((distributor.into_repository(), staging_buffers))
     }
 
-    fn upload_staging_data(&self, staging_repository: &mut GsBufferRepository<Staging>, img_data_blocks: &[GsImgsrcBlock], infos: &Vec<ImageAllocateInfo>) -> Result<(), AllocatorError> {
+    fn upload_staging_data(&self, staging_repository: &mut GsBufferRepository<Staging>, img_data_blocks: &[GsImgsrcBuffer], infos: &Vec<ImageAllocateInfo>) -> Result<(), AllocatorError> {
 
         let mut uploader = staging_repository.data_uploader()?;
 

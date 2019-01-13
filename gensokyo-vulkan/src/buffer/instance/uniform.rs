@@ -1,101 +1,132 @@
 
 use ash::vk;
 
-use crate::buffer::target::BufferDescInfo;
+use crate::core::physical::GsPhysicalDevice;
+
 use crate::buffer::entity::BufferBlock;
-use crate::buffer::instance::enums::BufferInstanceType;
-use crate::buffer::traits::{ BufferInstance, BufferBlockInfo };
-use crate::buffer::traits::{ BufferCopiable, BufferCopyInfo };
-use crate::buffer::allocator::{ BufferBlockIndex, BufferDistAttachment };
-use crate::buffer::error::BufferError;
+use crate::buffer::instance::types::BufferInfoAbstract;
+use crate::buffer::traits::{ BufferInstance, BufferCopiable, BufferCopyInfo };
 
 use crate::descriptor::DescriptorBufferBindableTarget;
 use crate::descriptor::{ DescriptorBindingContent, DescriptorBufferBindingInfo };
 use crate::descriptor::{ GsDescriptorType, BufferDescriptorType };
 
+use crate::memory::transfer::MemoryDataDelegate;
+use crate::memory::{ MemoryWritePtr, MemoryError };
+
 use crate::types::{ vkuint, vkbytes };
 
 #[derive(Debug, Clone)]
-pub struct UniformBlockInfo {
+pub struct GsBufUniformInfo {
 
-    info: BufferDescInfo,
+    usage: UniformUsage,
     binding: DescriptorBindingContent,
     element_size: vkbytes,
 }
 
-impl UniformBlockInfo {
+#[derive(Debug, Clone)]
+enum UniformUsage {
+    Common,
+    Dynamic { slice_count: vkuint, slice_size: vkbytes, alignment: vkbytes },
+}
 
-    pub fn new(binding: vkuint, count: vkuint, element_size: vkbytes) -> UniformBlockInfo {
+impl GsBufUniformInfo {
 
-        let estimate_size = (count as vkbytes) * element_size;
+    /// Prepare to create a Common Uniform Buffer.
+    pub fn new(binding: vkuint, descriptor_count: vkuint, element_size: vkbytes) -> GsBufUniformInfo {
 
-        UniformBlockInfo {
-            info: BufferDescInfo::new(estimate_size, vk::BufferUsageFlags::UNIFORM_BUFFER),
+        GsBufUniformInfo {
+            usage: UniformUsage::Common,
             binding: DescriptorBindingContent {
-                binding, count,
+                binding,
+                count: descriptor_count,
                 descriptor_type: GsDescriptorType::Buffer(BufferDescriptorType::UniformBuffer),
             },
             element_size,
         }
     }
-}
 
-impl BufferBlockInfo for UniformBlockInfo {
-    const INSTANCE_TYPE: BufferInstanceType = BufferInstanceType::UniformBuffer;
+    /// Prepare to create a Dynamic Uniform Buffer.
+    pub fn new_dyn(binding: vkuint, descriptor_count: vkuint, slice_size: vkbytes, slice_count: usize) -> GsBufUniformInfo {
 
-    fn as_desc_ref(&self) -> &BufferDescInfo {
-        &self.info
-    }
-
-    fn into_desc(self) -> BufferDescInfo {
-        self.info
-    }
-
-    fn to_block_index(&self, index: usize) -> BufferBlockIndex {
-
-        let attachment = UniformAttachment {
-            binding: self.binding.clone(),
-            element_size: self.element_size,
-        };
-
-        BufferBlockIndex {
-            value: index,
-            attachment: Some(BufferDistAttachment::Uniform(attachment)),
+        GsBufUniformInfo {
+            // alignment will be set when add it to allocator.
+            usage: UniformUsage::Dynamic {
+                slice_count: slice_count as vkuint,
+                slice_size,
+                alignment: 0,
+            },
+            binding: DescriptorBindingContent {
+                binding,
+                count: descriptor_count,
+                descriptor_type: GsDescriptorType::Buffer(BufferDescriptorType::UniformBufferDynamic),
+            },
+            element_size: slice_size * (slice_count as vkbytes),
         }
     }
 }
 
-pub struct GsUniformBlock {
+impl BufferInfoAbstract<IUniform> for GsBufUniformInfo {
+    const VK_FLAG: vk::BufferUsageFlags = vk::BufferUsageFlags::UNIFORM_BUFFER;
 
-    binding: DescriptorBindingContent,
+    fn estimate_size(&self) -> vkbytes {
+        
+        (self.binding.count as vkbytes) * self.element_size
+    }
 
-    block: BufferBlock,
-    repository_index: usize,
-    element_size: vkbytes,
-}
+    fn into_index(self) -> IUniform {
+        
+        IUniform {
+            usage: self.usage,
+            binding: self.binding,
+            element_size: self.element_size,
+        }
+    }
 
-impl GsUniformBlock {
-
-    pub(crate) fn new(block: BufferBlock, index: BufferBlockIndex) -> Result<GsUniformBlock, BufferError> {
-
-        let repository_index = index.value;
-        let attachment = index.attachment
-            .and_then(|attachment| match attachment {
-                | BufferDistAttachment::Uniform(uniform_attachment) => Some(uniform_attachment),
-            }).ok_or(BufferError::NoBufferAttachError)?;
-
-        let block = GsUniformBlock {
-            binding      : attachment.binding,
-            element_size : attachment.element_size,
-            block,
-            repository_index,
-        };
-
-        Ok(block)
+    // Handle uniform buffer particularly.
+    fn check_limits(&mut self, physical: &GsPhysicalDevice) {
+        self.usage.set_alignment(physical);
     }
 }
 
-impl DescriptorBufferBindableTarget for GsUniformBlock {
+pub struct IUniform {
+
+    usage: UniformUsage,
+    binding: DescriptorBindingContent,
+    element_size: vkbytes,
+}
+
+
+pub struct GsUniformBuffer {
+
+    usage: UniformUsage,
+    binding: DescriptorBindingContent,
+    element_size: vkbytes,
+
+    block: BufferBlock,
+    repository_index: usize,
+}
+
+
+impl BufferInstance for GsUniformBuffer {
+    type InfoType = IUniform;
+
+    fn new(block: BufferBlock, info: Self::InfoType, repository_index: usize) -> Self {
+
+        GsUniformBuffer {
+            usage: info.usage,
+            binding: info.binding,
+            element_size: info.element_size,
+            block, repository_index,
+        }
+    }
+
+    fn acquire_write_ptr(&self, agency: &mut Box<dyn MemoryDataDelegate>) -> Result<MemoryWritePtr, MemoryError> {
+        agency.acquire_write_ptr(&self.block, self.repository_index)
+    }
+}
+
+impl DescriptorBufferBindableTarget for GsUniformBuffer {
 
     fn binding_info(&self, sub_block_indices: Option<Vec<vkuint>>) -> DescriptorBufferBindingInfo {
 
@@ -108,30 +139,36 @@ impl DescriptorBufferBindableTarget for GsUniformBlock {
     }
 }
 
-impl BufferInstance for GsUniformBlock {
-
-    fn typ(&self) -> BufferInstanceType {
-        BufferInstanceType::UniformBuffer
-    }
-
-    fn as_block_ref(&self) -> &BufferBlock {
-        &self.block
-    }
-
-    fn repository_index(&self) -> usize {
-        self.repository_index
-    }
-}
-
-impl BufferCopiable for GsUniformBlock {
+impl BufferCopiable for GsUniformBuffer {
 
     fn copy_info(&self) -> BufferCopyInfo {
         BufferCopyInfo::new(&self.block, 0, self.block.size)
     }
 }
 
-pub struct UniformAttachment {
+impl GsUniformBuffer {
 
-    binding: DescriptorBindingContent,
-    element_size: vkbytes,
+    fn usage(&self) -> UniformUsage {
+        self.usage.clone()
+    }
+
+    pub fn dyn_alignment(&self) -> Option<vkbytes> {
+        match self.usage {
+            | UniformUsage::Common => None,
+            | UniformUsage::Dynamic { alignment, .. } => Some(alignment)
+        }
+    }
+}
+
+
+impl UniformUsage {
+
+    pub(crate) fn set_alignment(&mut self, physical: &GsPhysicalDevice) {
+        match self {
+            | UniformUsage::Common => {},
+            | UniformUsage::Dynamic { slice_count: _, slice_size: _, ref mut alignment } => {
+                *alignment = physical.properties.limits().min_uniform_buffer_offset_alignment;
+            },
+        }
+    }
 }

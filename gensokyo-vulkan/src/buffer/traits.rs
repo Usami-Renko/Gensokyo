@@ -1,38 +1,17 @@
 
 use ash::vk;
 
-use crate::buffer::instance::BufferInstanceType;
 use crate::buffer::entity::BufferBlock;
-use crate::buffer::target::BufferDescInfo;
-use crate::buffer::allocator::BufferBlockIndex;
+use crate::memory::transfer::MemoryDataDelegate;
+use crate::memory::{ MemoryWritePtr, MemoryError };
 use crate::types::vkbytes;
 
 pub trait BufferInstance: BufferCopiable {
+    type InfoType;
 
-    fn typ(&self) -> BufferInstanceType;
+    fn new(block: BufferBlock, info: Self::InfoType, repository_index: usize) -> Self;
 
-    fn as_block_ref(&self) -> &BufferBlock;
-    fn repository_index(&self) -> usize;
-}
-
-pub trait BufferBlockInfo {
-    const INSTANCE_TYPE: BufferInstanceType;
-
-    fn typ(&self) -> BufferInstanceType {
-        Self::INSTANCE_TYPE
-    }
-
-    fn as_desc_ref(&self) -> &BufferDescInfo;
-
-    fn into_desc(self) -> BufferDescInfo;
-
-    fn to_block_index(&self, index: usize) -> BufferBlockIndex {
-
-        BufferBlockIndex {
-            value: index,
-            attachment: None,
-        }
-    }
+    fn acquire_write_ptr(&self, agency: &mut Box<dyn MemoryDataDelegate>) -> Result<MemoryWritePtr, MemoryError>;
 }
 
 pub trait BufferCopiable: Sized {

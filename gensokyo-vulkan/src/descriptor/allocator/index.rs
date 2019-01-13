@@ -1,6 +1,6 @@
 
 #[derive(Debug, Clone)]
-pub struct DescriptorSetIndex {
+pub struct IDescriptorSet {
 
-    pub(super) value: usize,
+    pub(crate) set_index: usize,
 }

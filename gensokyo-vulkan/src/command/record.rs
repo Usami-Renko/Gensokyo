@@ -2,19 +2,16 @@
 use ash::vk;
 use ash::version::DeviceV1_0;
 
-use gsma::collect_handle;
-
 use crate::core::device::GsDevice;
 
 use crate::command::buffer::{ GsCommandBuffer, CmdBufferUsage };
 use crate::command::infos::{ CmdViewportInfo, CmdScissorInfo, CmdDepthBiasInfo, CmdDepthBoundInfo };
+use crate::command::infos::CmdDescriptorSetBindInfo;
 use crate::command::traits::IntoVKBarrier;
 use crate::command::error::CommandError;
 
-use crate::buffer::BufferInstance;
-use crate::buffer::instance::{ GsVertexBlock, GsIndexBlock };
+use crate::buffer::instance::{ GsVertexBuffer, GsIndexBuffer };
 use crate::image::GsImageBarrier;
-use crate::descriptor::DescriptorSet;
 use crate::pipeline::graphics::GsGraphicsPipeline;
 
 use crate::types::{ vkuint, vksint, vkfloat, vkbytes };
@@ -200,15 +197,14 @@ impl GsCommandRecorder {
         self
     }
 
-    pub fn bind_vertex_buffers(&self, first_binding: vkuint, blocks: &[&GsVertexBlock]) -> &GsCommandRecorder {
+    pub fn bind_vertex_buffers(&self, first_binding: vkuint, buffers: &[&GsVertexBuffer]) -> &GsCommandRecorder {
 
         let mut handles = vec![];
         let mut offsets  = vec![];
 
-        for block in blocks.into_iter() {
+        for block in buffers.into_iter() {
 
-            let block = block.as_block_ref();
-            handles.push(block.handle);
+            handles.push(block.render_info());
             // TODO: Add configuration for offset parameter.
             offsets.push(0);
         }
@@ -219,25 +215,34 @@ impl GsCommandRecorder {
         self
     }
 
-    pub fn bind_index_buffer(&self, block: &GsIndexBlock, offset: vkbytes) -> &GsCommandRecorder {
+    pub fn bind_index_buffer(&self, buffer: &GsIndexBuffer, offset: vkbytes) -> &GsCommandRecorder {
 
-        let block = block.as_block_ref();
+        let (indices_handle, indices_type) = buffer.render_info();
 
         unsafe {
             // TODO: Add configuration for IndexType.
-            self.device.handle.cmd_bind_index_buffer(self.handle, block.handle, offset, vk::IndexType::UINT32)
+            self.device.handle.cmd_bind_index_buffer(self.handle, indices_handle, offset, indices_type)
         };
         self
     }
 
-    pub fn bind_descriptor_sets(&self, pipeline: &GsGraphicsPipeline, first_set: vkuint, sets: &[&DescriptorSet]) -> &GsCommandRecorder {
+    pub fn bind_descriptor_sets(&self, pipeline: &GsGraphicsPipeline, first_set: vkuint, infos: &[CmdDescriptorSetBindInfo]) -> &GsCommandRecorder {
 
-        let handles: Vec<vk::DescriptorSet> = collect_handle!(sets, entity);
+        let mut handles = vec![];
+        let mut dynamic_offsets = vec![];
+
+        for set_info in infos.iter() {
+            handles.push(set_info.set.entity.handle);
+
+            if let Some(dyn_offsets) = set_info.dynamic_offsets {
+                dynamic_offsets.extend(dyn_offsets.to_owned());
+            }
+        }
 
         unsafe {
             // TODO: Currently dynamic_offsets field is not configuration.
             self.device.handle.cmd_bind_descriptor_sets(
-                self.handle, pipeline.bind_point(), pipeline.layout.handle, first_set, &handles, &[])
+                self.handle, pipeline.bind_point(), pipeline.layout.handle, first_set, &handles, &dynamic_offsets)
         };
         self
     }

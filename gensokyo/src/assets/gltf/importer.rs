@@ -27,11 +27,10 @@ impl GsglTFImporter {
             .ok_or(GltfError::ModelContentMissing)?;
 
         let arch = GsglTFSceneEntity::read_architecture(dst_scene.clone())?;
-        let mut loading_data = GsglTFLoadingData::new(arch.flag)?;
+        let mut loading_data = GsglTFLoadingData::new(arch.attr_flags, arch.node_flags)?;
 
         let mut dst_entity = GsglTFEntity { scene: arch.arch };
         dst_entity.scene.read_data(dst_scene, &intermediate_data, &mut loading_data)?;
-        dst_entity.scene.update_transforms(); // update node's transformation.
 
         Ok((dst_entity, loading_data.into_storage()))
     }

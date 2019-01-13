@@ -4,6 +4,7 @@ use ash::version::InstanceV1_0;
 
 use crate::core::instance::GsInstance;
 use crate::core::physical::family::PhysicalQueueFamilies;
+use crate::core::physical::property::PhysicalProperties;
 use crate::core::physical::features::PhyscialFeatures;
 use crate::core::physical::extension::PhysicalExtension;
 use crate::core::physical::memory::PhysicalMemory;
@@ -12,6 +13,7 @@ pub struct GsPhysicalDevice {
 
     pub(crate) handle: vk::PhysicalDevice,
 
+    pub(crate) properties: PhysicalProperties,
     pub(crate) families: PhysicalQueueFamilies,
     pub(crate) features: PhyscialFeatures,
     pub(crate) extensions: PhysicalExtension,

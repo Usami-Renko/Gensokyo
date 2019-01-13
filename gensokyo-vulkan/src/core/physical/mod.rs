@@ -19,6 +19,5 @@ mod property;
 mod memory;
 mod family;
 mod extension;
-mod limits;
 
 mod config;

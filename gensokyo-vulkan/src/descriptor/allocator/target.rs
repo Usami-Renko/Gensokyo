@@ -6,9 +6,10 @@ use crate::core::device::GsDevice;
 use crate::descriptor::DescriptorSetConfig;
 use crate::descriptor::DescriptorPoolInfo;
 use crate::descriptor::GsDescriptorType;
-use crate::descriptor::allocator::index::DescriptorSetIndex;
+use crate::descriptor::allocator::index::IDescriptorSet;
 use crate::descriptor::allocator::distributor::GsDescriptorDistributor;
 
+use crate::utils::assign::GsAssignIndex;
 use crate::memory::AllocatorError;
 use crate::types::vkuint;
 
@@ -34,14 +35,19 @@ impl GsDescriptorAllocator {
         }
     }
 
-    pub fn append_set(&mut self, config: DescriptorSetConfig) -> DescriptorSetIndex {
+    pub fn append_set(&mut self, config: DescriptorSetConfig) -> GsAssignIndex<IDescriptorSet> {
 
-        let index = DescriptorSetIndex {
-            value: self.set_configs.len(),
+        let set_index = self.set_configs.len();
+        let dst_index = GsAssignIndex {
+            allot_info: IDescriptorSet {
+                set_index,
+            },
+            assign_index: set_index,
         };
+
         self.set_configs.push(config);
 
-        index
+        dst_index
     }
 
     pub fn allocate(self) -> Result<GsDescriptorDistributor, AllocatorError> {
@@ -50,9 +56,9 @@ impl GsDescriptorAllocator {
         let pool_sizes = self.pool_sizes();
         let mut pool_info = DescriptorPoolInfo::new(self.pool_flag);
 
-        pool_sizes.iter().for_each(|pool_size| {
+        for pool_size in pool_sizes.iter() {
             pool_info.add_pool_size(pool_size.0, pool_size.1);
-        });
+        }
         let pool = pool_info.build(&self.device)?;
 
         // descriptor layout

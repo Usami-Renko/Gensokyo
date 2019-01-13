@@ -62,6 +62,10 @@ impl PhysicalProperties {
         println!("\tDevice API version: ({}, {}, {})", major, minor, patch);
         println!("\tDevice Type: {}", device_type);
     }
+
+    pub fn limits(&self) -> &vk::PhysicalDeviceLimits {
+        &self.handle.limits
+    }
 }
 
 impl PhysicalInspectProperty for PhysicalProperties {

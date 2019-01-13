@@ -3,7 +3,7 @@ use crate::core::device::GsDevice;
 
 use crate::buffer::BufferInstance;
 use crate::memory::instance::GsBufferMemory;
-use crate::memory::transfer::traits::{ MemoryDataDelegate };
+use crate::memory::transfer::traits::MemoryDataDelegate;
 use crate::memory::error::AllocatorError;
 
 pub struct GsBufferDataUpdater {
@@ -31,7 +31,7 @@ impl GsBufferDataUpdater {
 
     pub fn update(&mut self, to: &impl BufferInstance, data: &[impl Copy]) -> Result<&mut GsBufferDataUpdater, AllocatorError> {
 
-        let writer = self.agency.acquire_write_ptr(to.as_block_ref(), to.repository_index())?;
+        let writer = to.acquire_write_ptr(&mut self.agency)?;
         writer.write_data(data);
 
         Ok(self)

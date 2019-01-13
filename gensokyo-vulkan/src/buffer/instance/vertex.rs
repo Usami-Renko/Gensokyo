@@ -1,79 +1,73 @@
 
 use ash::vk;
 
-use crate::buffer::target::BufferDescInfo;
 use crate::buffer::entity::BufferBlock;
-use crate::buffer::instance::enums::BufferInstanceType;
-use crate::buffer::allocator::BufferBlockIndex;
-use crate::buffer::traits::{ BufferInstance, BufferBlockInfo };
-use crate::buffer::traits::{ BufferCopiable, BufferCopyInfo };
+use crate::buffer::traits::{ BufferInstance, BufferCopiable, BufferCopyInfo };
+use crate::buffer::instance::types::BufferInfoAbstract;
 
+use crate::memory::transfer::MemoryDataDelegate;
+use crate::memory::{ MemoryWritePtr, MemoryError };
 use crate::types::vkbytes;
 
 #[derive(Debug, Clone)]
-pub struct VertexBlockInfo {
+pub struct GsBufVertexInfo {
 
-    info: BufferDescInfo,
+    vertex_size: vkbytes,
+    vertex_count: usize,
 }
 
-impl VertexBlockInfo {
+impl BufferInfoAbstract<IVertex> for GsBufVertexInfo {
+    const VK_FLAG: vk::BufferUsageFlags = vk::BufferUsageFlags::VERTEX_BUFFER;
 
-    pub fn new(estimate_size: vkbytes) -> VertexBlockInfo {
+    fn estimate_size(&self) -> vkbytes {
+        (self.vertex_count as vkbytes) * self.vertex_size
+    }
 
-        VertexBlockInfo {
-            info: BufferDescInfo::new(estimate_size, vk::BufferUsageFlags::VERTEX_BUFFER),
-        }
+    fn into_index(self) -> IVertex {
+        IVertex {}
     }
 }
 
-impl BufferBlockInfo for VertexBlockInfo {
-    const INSTANCE_TYPE: BufferInstanceType = BufferInstanceType::VertexBuffer;
+impl GsBufVertexInfo {
 
-    fn as_desc_ref(&self) -> &BufferDescInfo {
-        &self.info
+    pub fn new(vertex_size: vkbytes, vertex_count: usize) -> GsBufVertexInfo {
+        GsBufVertexInfo { vertex_size, vertex_count }
     }
+}
 
-    fn into_desc(self) -> BufferDescInfo {
-        self.info
-    }
+pub struct IVertex {
+    // Empty.
 }
 
 #[derive(Default)]
-pub struct GsVertexBlock {
+pub struct GsVertexBuffer {
 
     block: BufferBlock,
     repository_index: usize,
 }
 
-impl GsVertexBlock {
+impl BufferInstance for GsVertexBuffer {
+    type InfoType = IVertex;
 
-    pub(crate) fn new(block: BufferBlock, index: BufferBlockIndex) -> GsVertexBlock {
+    fn new(block: BufferBlock, _info: Self::InfoType, repository_index: usize) -> Self {
+        GsVertexBuffer { block, repository_index }
+    }
 
-        GsVertexBlock {
-            block,
-            repository_index: index.value,
-        }
+    fn acquire_write_ptr(&self, agency: &mut Box<dyn MemoryDataDelegate>) -> Result<MemoryWritePtr, MemoryError> {
+        agency.acquire_write_ptr(&self.block, self.repository_index)
     }
 }
 
-impl BufferInstance for GsVertexBlock {
-
-    fn typ(&self) -> BufferInstanceType {
-        BufferInstanceType::VertexBuffer
-    }
-
-    fn as_block_ref(&self) -> &BufferBlock {
-        &self.block
-    }
-
-    fn repository_index(&self) -> usize {
-        self.repository_index
-    }
-}
-
-impl BufferCopiable for GsVertexBlock {
+impl BufferCopiable for GsVertexBuffer {
 
     fn copy_info(&self) -> BufferCopyInfo {
         BufferCopyInfo::new(&self.block, 0, self.block.size)
+    }
+}
+
+impl GsVertexBuffer {
+
+    pub(crate) fn render_info(&self) -> vk::Buffer {
+        self.block.handle
     }
 }

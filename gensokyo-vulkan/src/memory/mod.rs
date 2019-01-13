@@ -1,7 +1,7 @@
 
 pub use self::target::GsMemory;
 pub use self::traits::{ GsMemoryAbstract, MemoryMappable };
-pub use self::utils::{ MemoryRange, MemoryMapStatus };
+pub use self::utils::{ MemoryRange, MemoryWritePtr, MemoryMapStatus };
 pub use self::filter::MemoryFilter;
 pub use self::traits::MemoryDstEntity;
 pub use self::error::{ MemoryError, AllocatorError };

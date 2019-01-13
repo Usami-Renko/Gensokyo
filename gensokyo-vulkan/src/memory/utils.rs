@@ -2,8 +2,9 @@
 use ash::vk;
 
 use crate::memory::traits::MemoryMappable;
-
 use crate::types::{ vkptr, vkbytes };
+
+use std::mem;
 
 #[derive(Debug, Clone, Copy)]
 pub struct MemoryRange {
@@ -81,11 +82,10 @@ impl MemoryWritePtr {
         MemoryWritePtr { ptr, size }
     }
 
+    // FIXME: This function haven't been tested.
     pub fn write_data<D: Copy>(&self, data: &[D]) {
 
-        use std::mem;
-
-        let mut vert_algn = unsafe {
+        let mut vert_align = unsafe {
             ash::util::Align::new(
                 self.ptr,
                 mem::align_of::<D>() as vkbytes,
@@ -93,6 +93,20 @@ impl MemoryWritePtr {
             )
         };
 
-        vert_algn.copy_from_slice(data);
+        vert_align.copy_from_slice(data);
+    }
+
+    // FIXME: This function haven't been tested.
+    pub fn write_data_with_alignment<D: Copy>(&self, data: &[D], alignment: vkbytes) {
+
+        let mut vert_align = unsafe {
+            ash::util::Align::new(
+                self.ptr,
+                alignment,
+                self.size,
+            )
+        };
+
+        vert_align.copy_from_slice(data);
     }
 }
