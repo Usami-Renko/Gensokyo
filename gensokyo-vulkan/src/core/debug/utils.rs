@@ -30,9 +30,9 @@ unsafe extern "system" fn vulkan_debug_utils_callback(
 pub struct GsDebugUtils {
 
     /// the handle of `vk::DebugUtils` object.
-    loader: ash::extensions::DebugUtils,
+    loader: ash::extensions::ext::DebugUtils,
     /// the handle of callback function used in Validation Layer.
-    utils_messager: vk::DebugUtilsMessengerEXT,
+    utils_messenger: vk::DebugUtilsMessengerEXT,
 }
 
 /// The configuration parameters used in the initialization of `vk::DebugUtils`.
@@ -45,12 +45,12 @@ pub struct DebugUtilsConfig {
 
 impl GsDebugUtils {
 
-    /// Initialize debug report extension loader and `vk::DebugUtilsMessagerExt` object.
+    /// Initialize debug report extension loader and `vk::DebugUtilsMessengerExt` object.
     pub fn setup(instance: &GsInstance, config: &DebugUtilsConfig) -> Result<GsDebugUtils, ValidationError> {
 
-        let loader = ash::extensions::DebugUtils::new(&instance.entry, &instance.handle);
+        let loader = ash::extensions::ext::DebugUtils::new(&instance.entry, &instance.handle);
 
-        let messager_create_info = vk::DebugUtilsMessengerCreateInfoEXT {
+        let messenger_create_info = vk::DebugUtilsMessengerCreateInfoEXT {
             s_type: vk::StructureType::DEBUG_UTILS_MESSENGER_CREATE_INFO_EXT,
             p_next: ptr::null(),
             flags            : config.flags,
@@ -60,15 +60,12 @@ impl GsDebugUtils {
             p_user_data      : ptr::null_mut(),
         };
 
-        let utils_messager = unsafe {
-            loader.create_debug_utils_messenger_ext(&messager_create_info, None)
+        let utils_messenger = unsafe {
+            loader.create_debug_utils_messenger(&messenger_create_info, None)
                 .or(Err(ValidationError::DebugUtilsCallbackCreationEror))?
         };
 
-        let utils = GsDebugUtils {
-            loader, utils_messager,
-        };
-
+        let utils = GsDebugUtils { loader, utils_messenger };
         Ok(utils)
     }
 }
@@ -78,7 +75,7 @@ impl DebugInstance for GsDebugUtils {
     /// Destroy the `vk::DebugUtils` object.
     fn destroy(&self) {
         unsafe {
-            self.loader.destroy_debug_utils_messenger_ext(self.utils_messager, None);
+            self.loader.destroy_debug_utils_messenger(self.utils_messenger, None);
         }
     }
 }

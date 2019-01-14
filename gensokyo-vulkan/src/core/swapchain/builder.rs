@@ -91,15 +91,15 @@ impl<'s> SwapchainBuilder<'s> {
             old_swapchain: old_chain.and_then(|c| Some(c.handle)).unwrap_or(vk::SwapchainKHR::null()),
         };
 
-        let loader = ash::extensions::Swapchain::new(&instance.handle, &self.device.handle);
+        let loader = ash::extensions::khr::Swapchain::new(&instance.handle, &self.device.handle);
 
         let handle = unsafe {
-            loader.create_swapchain_khr(&swapchain_create_info, None)
+            loader.create_swapchain(&swapchain_create_info, None)
                 .or(Err(SwapchainInitError::SwapchianCreationError))?
         };
 
         let images: Vec<GsImage> = unsafe {
-            loader.get_swapchain_images_khr(handle)
+            loader.get_swapchain_images(handle)
                 .or(Err(SwapchainInitError::SwapchainImageGetError))?
                 .iter().map(|&img_handle| GsImage::from_swapchain(img_handle))
                 .collect()

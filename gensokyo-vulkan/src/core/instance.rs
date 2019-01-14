@@ -152,10 +152,10 @@ fn instance_extensions_to_names(extensions: &[InstanceExtensionType]) -> Vec<*co
 
     extensions.iter().map(|extension| {
         match extension {
-            | InstanceExtensionType::Surface         => ash::extensions::Surface::name().as_ptr(),
+            | InstanceExtensionType::Surface         => ash::extensions::khr::Surface::name().as_ptr(),
             | InstanceExtensionType::PlatformSurface => platforms::platform_surface_names().as_ptr(),
-            | InstanceExtensionType::DebugReport     => ash::extensions::DebugReport::name().as_ptr(),
-            | InstanceExtensionType::DebugUtils      => ash::extensions::DebugUtils::name().as_ptr(),
+            | InstanceExtensionType::DebugReport     => ash::extensions::ext::DebugReport::name().as_ptr(),
+            | InstanceExtensionType::DebugUtils      => ash::extensions::ext::DebugUtils::name().as_ptr(),
         }
     }).collect()
 }

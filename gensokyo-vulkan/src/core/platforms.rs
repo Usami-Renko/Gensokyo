@@ -5,11 +5,11 @@ use ash::version::{ EntryV1_0, InstanceV1_0 };
 use std::ffi::CStr;
 
 #[cfg(target_os = "macos")]
-use ash::extensions::MacOSSurface;
+use ash::extensions::mvk::MacOSSurface;
 #[cfg(all(unix, not(target_os = "android"), not(target_os = "macos")))]
-use ash::extensions::XlibSurface;
+use ash::extensions::khr::XlibSurface;
 #[cfg(target_os = "windows")]
-use ash::extensions::Win32Surface;
+use ash::extensions::khr::Win32Surface;
 
 #[cfg(target_os = "macos")]
 use metal::CoreAnimationLayer;
@@ -59,7 +59,7 @@ pub unsafe fn generate_surface<E: EntryV1_0, I: InstanceV1_0>(
         dpy    : x11_display as *mut vk::Display,
     };
     let xlib_surface_loader = XlibSurface::new(entry, instance);
-    xlib_surface_loader.create_xlib_surface_khr(&x11_create_info, None)
+    xlib_surface_loader.create_xlib_surface(&x11_create_info, None)
 }
 
 /// get the required surface used in macOS.
@@ -124,6 +124,6 @@ pub unsafe fn generate_surface<E: EntryV1_0, I: InstanceV1_0>(
         hinstance,
     };
     let win32_surface_loader = Win32Surface::new(entry, instance);
-    win32_surface_loader.create_win32_surface_khr(&win32_create_info, None)
+    win32_surface_loader.create_win32_surface(&win32_create_info, None)
 }
 // ------------------------------------------------------------------------

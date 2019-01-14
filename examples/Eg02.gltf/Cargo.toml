@@ -11,9 +11,8 @@ gensokyo = { package = "gensokyo", path = "../../gensokyo" }
 gensokyo-vulkan = { package = "gensokyo-vulkan", path = "../../gensokyo-vulkan" }
 gensokyo-macros = { package = "gensokyo-macros", path = "../../gensokyo-macros" }
 
-ash = "0.26.0"
+ash = "0.27.1"
 nalgebra = "0.16"
-toml = "0.4"
 
 [[bin]]
 name = "01"

@@ -19,7 +19,7 @@ pub struct GsSwapchain {
     /// handle of `vk::SwapchainKHR`.
     pub(crate) handle: vk::SwapchainKHR,
     /// the extension loader provides functions for creation and destruction of `vk::SwapchainKHR` object.
-    loader: ash::extensions::Swapchain,
+    loader: ash::extensions::khr::Swapchain,
 
     /// the presentable image objects associated with the swapchain.
     ///
@@ -39,7 +39,7 @@ pub struct GsSwapchain {
 
 impl GsSwapchain {
 
-    pub(crate) fn new(handle: vk::SwapchainKHR, loader: ash::extensions::Swapchain, images: Vec<GsImage>, views: Vec<GsImageView>, format: vk::Format, extent: vkDim2D, image_acquire_time: vklint) -> GsSwapchain {
+    pub(crate) fn new(handle: vk::SwapchainKHR, loader: ash::extensions::khr::Swapchain, images: Vec<GsImage>, views: Vec<GsImageView>, format: vk::Format, extent: vkDim2D, image_acquire_time: vklint) -> GsSwapchain {
 
         GsSwapchain {
             handle, loader, images, views, format, extent, image_acquire_time
@@ -61,7 +61,7 @@ impl GsSwapchain {
 
         // execute next image acquire operation.
         let (image_index, is_sub_optimal) = unsafe {
-            self.loader.acquire_next_image_khr(self.handle, self.image_acquire_time, semaphore, fence)
+            self.loader.acquire_next_image(self.handle, self.image_acquire_time, semaphore, fence)
                 .map_err(|error| match error {
                     | vk::Result::TIMEOUT => SwapchainRuntimeError::AcquireTimeOut,
                     | vk::Result::ERROR_OUT_OF_DATE_KHR => SwapchainRuntimeError::SurfaceOutOfDate,
@@ -103,7 +103,7 @@ impl GsSwapchain {
         };
 
         let is_sub_optimal = unsafe {
-            self.loader.queue_present_khr(device.queue_handle_by_identifier(queue).handle, &present_info)
+            self.loader.queue_present(device.queue_handle_by_identifier(queue).handle, &present_info)
                 .or(Err(SwapchainRuntimeError::Unknown))?
         };
 
@@ -125,7 +125,7 @@ impl GsSwapchain {
 
         // destroy the swapchain itself.
         unsafe {
-            self.loader.destroy_swapchain_khr(self.handle, None);
+            self.loader.destroy_swapchain(self.handle, None);
         }
     }
 

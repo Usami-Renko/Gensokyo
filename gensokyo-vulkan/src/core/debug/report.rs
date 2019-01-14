@@ -30,7 +30,7 @@ unsafe extern "system" fn vulkan_debug_report_callback(
 pub struct GsDebugReport {
 
     /// the handle of `vk::DebugReport` object.
-    loader: ash::extensions::DebugReport,
+    loader: ash::extensions::ext::DebugReport,
     /// the handle of callback function used in Validation Layer.
     callback: vk::DebugReportCallbackEXT,
 }
@@ -47,9 +47,9 @@ impl GsDebugReport {
     pub fn setup(instance: &GsInstance, config: &DebugReportConfig) -> Result<GsDebugReport, ValidationError> {
 
         // load the debug extension.
-        let loader = ash::extensions::DebugReport::new(&instance.entry, &instance.handle);
+        let loader = ash::extensions::ext::DebugReport::new(&instance.entry, &instance.handle);
 
-        // configurate debug callback.
+        // configure debug callback.
         let debug_callback_create_info = vk::DebugReportCallbackCreateInfoEXT {
             s_type      : vk::StructureType::DEBUG_REPORT_CALLBACK_CREATE_INFO_EXT,
             p_next      : ptr::null(),
@@ -60,7 +60,7 @@ impl GsDebugReport {
         };
 
         let callback = unsafe {
-            loader.create_debug_report_callback_ext(&debug_callback_create_info, None)
+            loader.create_debug_report_callback(&debug_callback_create_info, None)
                 .or(Err(ValidationError::DebugReportCallbackCreationError))?
         };
 
@@ -77,7 +77,7 @@ impl DebugInstance for GsDebugReport {
     /// Destroy the `vk::DebugReport` object.
     fn destroy(&self) {
         unsafe {
-            self.loader.destroy_debug_report_callback_ext(self.callback, None);
+            self.loader.destroy_debug_report_callback(self.callback, None);
         }
     }
 }

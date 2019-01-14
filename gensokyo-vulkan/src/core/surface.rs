@@ -13,7 +13,7 @@ pub struct GsSurface {
     /// the handle of `vk::SurfaceKHR`.
     pub(crate) handle: vk::SurfaceKHR,
     /// the extension loader provides functions for creation and destruction of `vk::SurfaceKHR` object.
-    loader: ash::extensions::Surface,
+    loader: ash::extensions::khr::Surface,
 }
 
 impl GsSurface {
@@ -26,7 +26,7 @@ impl GsSurface {
                 .or(Err(SurfaceError::SurfaceCreationError))?
         };
 
-        let loader = ash::extensions::Surface::new(&instance.entry, &instance.handle);
+        let loader = ash::extensions::khr::Surface::new(&instance.entry, &instance.handle);
 
         let surface = GsSurface {
             handle, loader,
@@ -41,7 +41,7 @@ impl GsSurface {
     pub fn query_is_family_presentable(&self, physical_device: vk::PhysicalDevice, queue_family_index: vkuint) -> bool {
 
         unsafe {
-            self.loader.get_physical_device_surface_support_khr(physical_device, queue_family_index, self.handle)
+            self.loader.get_physical_device_surface_support(physical_device, queue_family_index, self.handle)
         }
     }
 
@@ -51,7 +51,7 @@ impl GsSurface {
     pub fn query_capabilities(&self, physical_device: vk::PhysicalDevice) -> Result<vk::SurfaceCapabilitiesKHR, SurfaceError> {
 
         unsafe {
-            self.loader.get_physical_device_surface_capabilities_khr(physical_device, self.handle)
+            self.loader.get_physical_device_surface_capabilities(physical_device, self.handle)
                 .or(Err(SurfaceError::QueryCapabilitiesError))
         }
     }
@@ -60,7 +60,7 @@ impl GsSurface {
     pub fn query_formats(&self, physical_device: vk::PhysicalDevice) -> Result<Vec<vk::SurfaceFormatKHR>, SurfaceError> {
 
         unsafe {
-            self.loader.get_physical_device_surface_formats_khr(physical_device, self.handle)
+            self.loader.get_physical_device_surface_formats(physical_device, self.handle)
                 .or(Err(SurfaceError::QueryFormatsError))
         }
     }
@@ -69,7 +69,7 @@ impl GsSurface {
     pub fn query_present_modes(&self, physical_device: vk::PhysicalDevice) -> Result<Vec<vk::PresentModeKHR>, SurfaceError> {
 
         unsafe {
-            self.loader.get_physical_device_surface_present_modes_khr(physical_device, self.handle)
+            self.loader.get_physical_device_surface_present_modes(physical_device, self.handle)
                 .or(Err(SurfaceError::QueryPresentModeError))
         }
     }
@@ -78,7 +78,7 @@ impl GsSurface {
     pub fn destroy(&self) {
 
         unsafe {
-            self.loader.destroy_surface_khr(self.handle, None);
+            self.loader.destroy_surface(self.handle, None);
         }
     }
 }
