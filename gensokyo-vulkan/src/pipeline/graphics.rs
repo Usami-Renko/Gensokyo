@@ -18,7 +18,7 @@ use crate::pipeline::{
     state::tessellation::GsTessellationState,
     pass::GsRenderPass,
     target::GsPipeline,
-    layout::PipelineLayoutBuilder,
+    layout::{ PipelineLayoutBuilder, ToPushConstant },
     error::PipelineError,
 };
 
@@ -264,13 +264,18 @@ impl GraphicsPipelineConfig {
         self
     }
 
-    pub fn with_tessllation(mut self, tessellation: GsTessellationState) -> GraphicsPipelineConfig {
+    pub fn with_tessellation(mut self, tessellation: GsTessellationState) -> GraphicsPipelineConfig {
         self.states.tessellation = Some(tessellation);
         self
     }
 
     pub fn add_descriptor_set(mut self, set: &DescriptorSet) -> GraphicsPipelineConfig {
         self.layout_builder.add_descriptor_layout(&set.layout);
+        self
+    }
+
+    pub fn add_push_constants(mut self, constants: impl ToPushConstant) -> GraphicsPipelineConfig {
+        self.layout_builder.add_push_constant(constants);
         self
     }
 }

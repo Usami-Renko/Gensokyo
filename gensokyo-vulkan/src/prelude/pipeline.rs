@@ -1,5 +1,5 @@
 
-pub use crate::pipeline::target::GsPipeline;
+pub use crate::pipeline::target::{ GsPipeline, GsPipelineStage };
 
 pub use crate::pipeline::shader::GsShaderInfo;
 pub use crate::pipeline::shader::{ VertexInputDescription, GsVertexInputAttribute, GsVertexInputBinding };
@@ -16,5 +16,6 @@ pub use crate::pipeline::state::{
 };
 
 pub use crate::pipeline::pass::SubpassStage;
+pub use crate::pipeline::push_constant::GsPushConstant;
 
 pub use crate::utils::phantom::{ Graphics, Compute };

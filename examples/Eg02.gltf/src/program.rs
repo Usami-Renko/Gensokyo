@@ -152,8 +152,8 @@ impl<T: ShaderInputDefination> GltfModelViewer<T> {
 
         // allocate uniform descriptor.
         let mut descriptor_set_config = DescriptorSetConfig::init(vk::DescriptorSetLayoutCreateFlags::empty());
-        descriptor_set_config.add_buffer_binding(ubo_buffer, GsDescBindingStage::VERTEX);
-        descriptor_set_config.add_buffer_binding(model, GsDescBindingStage::VERTEX);
+        descriptor_set_config.add_buffer_binding(ubo_buffer, GsPipelineStage::VERTEX);
+        descriptor_set_config.add_buffer_binding(model, GsPipelineStage::VERTEX);
 
         let mut descriptor_allocator = kit.descriptor(vk::DescriptorPoolCreateFlags::empty());
         let desc_index = descriptor_allocator.append_set(descriptor_set_config);
@@ -185,12 +185,12 @@ impl<T: ShaderInputDefination> GltfModelViewer<T> {
 
         // shaders
         let vertex_shader = GsShaderInfo::from_source(
-            vk::ShaderStageFlags::VERTEX,
+            GsPipelineStage::VERTEX,
             Path::new(paths.vertex_shader),
             None,
             "[Vertex Shader]");
         let fragment_shader = GsShaderInfo::from_source(
-            vk::ShaderStageFlags::FRAGMENT,
+            GsPipelineStage::FRAGMENT,
             Path::new(paths.framment_shader),
             None,
             "[Fragment Shader]");

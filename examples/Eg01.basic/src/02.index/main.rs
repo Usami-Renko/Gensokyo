@@ -122,12 +122,12 @@ impl DrawIndexProcedure {
 
         // shaders
         let vertex_shader = GsShaderInfo::from_source(
-            vk::ShaderStageFlags::VERTEX,
+            GsPipelineStage::VERTEX,
             Path::new(VERTEX_SHADER_SOURCE_PATH),
             None,
             "[Vertex Shader]");
         let fragment_shader = GsShaderInfo::from_source(
-            vk::ShaderStageFlags::FRAGMENT,
+            GsPipelineStage::FRAGMENT,
             Path::new(FRAGMENT_SHADER_SOURCE_PATH),
             None,
             "[Fragment Shader]");

@@ -14,6 +14,8 @@ ash       = "0.27.1" # ash is the vulkan bindings for Rust.
 num       = "0.2"    # num crate is a collection of numeric types and traits for Rust.
 memoffset = "0.2"    # memoffset provides C-Like offset_of functionality for Rust structs.
 shaderc   = "0.3.10" # shaderc is the Rust bindings for the shaderc library.
+serde     = "1.0.80" # A generic serialization/deserialization framework.
+bincode   = "1.0.1"  # Uses serde for transforming structs into bytes.
 # error-chain = "0.12.0" # Consistent error handling for Rust.
 # rayon = "1.0.2" # Rayon is a data-parallelism library for Rust.
 

@@ -24,7 +24,7 @@ pub struct SwapchainBuilder<'s> {
     surface: &'s GsSurface,
 
     support: SwapchainSupport,
-    image_share_info: SwapchainImageShaingInfo,
+    image_share_info: SwapchainImageSharingInfo,
     image_count: vkuint,
     acquire_image_time: vklint,
 }
@@ -75,7 +75,7 @@ impl<'s> SwapchainBuilder<'s> {
             // what kind of operations we'll use the images in the swap chain for.
             image_usage              : vk::ImageUsageFlags::COLOR_ATTACHMENT,
             // for range or image subresources accessing,
-            // use exclusize mode in single queue family or concurrent mode in multiple queue families.
+            // use exclusive mode in single queue family or concurrent mode in multiple queue families.
             image_sharing_mode       : self.image_share_info.mode,
             // only use this field in concurrent mode.
             queue_family_index_count : self.image_share_info.queue_family_indices.len() as _,
@@ -123,24 +123,24 @@ impl<'s> SwapchainBuilder<'s> {
 }
 
 
-struct SwapchainImageShaingInfo {
+struct SwapchainImageSharingInfo {
 
     mode: vk::SharingMode,
     queue_family_indices: Vec<vkuint>,
 }
 
-fn sharing_mode(device: &GsDevice) -> SwapchainImageShaingInfo {
+fn sharing_mode(device: &GsDevice) -> SwapchainImageSharingInfo {
 
     let graphics_queue = device.queue_handle_by_identifier(DeviceQueueIdentifier::Graphics);
     let present_queue = device.queue_handle_by_identifier(DeviceQueueIdentifier::Present);
 
     if graphics_queue.family_index == present_queue.family_index {
-        SwapchainImageShaingInfo {
+        SwapchainImageSharingInfo {
             mode: vk::SharingMode::EXCLUSIVE,
             queue_family_indices: vec![],
         }
     } else {
-        SwapchainImageShaingInfo {
+        SwapchainImageSharingInfo {
             mode: vk::SharingMode::CONCURRENT,
             queue_family_indices: vec![
                 graphics_queue.family_index,

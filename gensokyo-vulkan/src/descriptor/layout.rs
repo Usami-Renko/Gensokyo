@@ -27,16 +27,16 @@ impl DescriptorSetLayoutInfo {
 
     pub fn add_binding(&mut self, info: &Box<DescriptorBindingInfo>, stages: vk::ShaderStageFlags) -> usize {
 
-        let binding_contnet = info.borrow_binding_content();
+        let binding_content = info.borrow_binding_content();
 
         let binding = vk::DescriptorSetLayoutBinding {
             // binding is the binding number of this entry and corresponds to a resource of the same binding number in the shader stages.
-            binding: binding_contnet.binding,
-            // desc_type specifyies which type of resource descriptors are used for this binding.
-            descriptor_type : binding_contnet.descriptor_type.to_raw(),
+            binding: binding_content.binding,
+            // desc_type specifies which type of resource descriptors are used for this binding.
+            descriptor_type : binding_content.descriptor_type.to_raw(),
             // descriptor_count is the number of descriptors contained in the binding, accessed in a shader as an array.
             // If descriptor_count is zero, this binding entry is reserved and the resource must not be accessed from any stage via this binding within any pipeline using the set layout.
-            descriptor_count: binding_contnet.count,
+            descriptor_count: binding_content.count,
             // stage_flags specifying which pipeline shader stages can access a resource for this binding.
             // ShaderStageType::AllStage is a shorthand specifying that all defined shader stages,
             // including any additional stages defined by extensions, can access the resource.

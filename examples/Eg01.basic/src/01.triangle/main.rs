@@ -109,11 +109,11 @@ impl TriangleProcedure {
 
         // shaders
         let vertex_shader = GsShaderInfo::from_spirv(
-            vk::ShaderStageFlags::VERTEX,
+            GsPipelineStage::VERTEX,
             Path::new(VERTEX_SHADER_SPIRV_PATH),
             None);
         let fragment_shader = GsShaderInfo::from_spirv(
-            vk::ShaderStageFlags::FRAGMENT,
+            GsPipelineStage::FRAGMENT,
             Path::new(FRAGMENT_SHADER_SPIRV_PATH),
             None);
         let shader_infos = vec![

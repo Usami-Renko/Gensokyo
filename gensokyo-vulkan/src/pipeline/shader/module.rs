@@ -4,6 +4,7 @@ use ash::version::DeviceV1_0;
 
 use crate::core::device::GsDevice;
 
+use crate::pipeline::target::GsPipelineStage;
 use crate::pipeline::shader::shaderc::GsShaderCompiler;
 use crate::pipeline::error::{ ShaderError, PipelineError };
 
@@ -15,7 +16,7 @@ use std::ptr;
 
 pub struct GsShaderInfo {
 
-    stage: vk::ShaderStageFlags,
+    stage: GsPipelineStage,
     path : PathBuf,
     main : String,
 
@@ -30,7 +31,7 @@ enum ShaderSourcePattern {
 
 impl GsShaderInfo {
 
-    pub fn from_source(stage: vk::ShaderStageFlags, source_path: impl AsRef<Path>, main_func: Option<&str>, tag_name: &str) -> GsShaderInfo {
+    pub fn from_source(stage: GsPipelineStage, source_path: impl AsRef<Path>, main_func: Option<&str>, tag_name: &str) -> GsShaderInfo {
 
         let path = PathBuf::from(source_path.as_ref());
         let main = main_func
@@ -44,7 +45,7 @@ impl GsShaderInfo {
         }
     }
 
-    pub fn from_spirv(stage: vk::ShaderStageFlags, spirv_path: impl AsRef<Path>, main_func: Option<&str>) -> GsShaderInfo {
+    pub fn from_spirv(stage: GsPipelineStage, spirv_path: impl AsRef<Path>, main_func: Option<&str>) -> GsShaderInfo {
 
         let path = PathBuf::from(spirv_path.as_ref());
         let main = main_func
@@ -65,7 +66,7 @@ impl GsShaderInfo {
         let codes = match self.pattern {
             | ShaderSourcePattern::SourceCode => {
                 let source = load_to_str(&self.path)?;
-                let kind = cast_shaderc_kind(self.stage);
+                let kind = cast_shaderc_kind(self.stage.0);
                 // TODO: handle unwrap().
                 let tag_name = self.tag_name.as_ref().unwrap();
 
@@ -80,7 +81,7 @@ impl GsShaderInfo {
 
         let shader_module = GsShaderModule {
             handle,
-            stage: self.stage,
+            stage: self.stage.0,
             // TODO: handle unwrap().
             main : CString::new(self.main.as_str()).unwrap(),
         };

@@ -7,9 +7,11 @@ use crate::command::infos::{ CmdViewportInfo, CmdScissorInfo, CmdDepthBiasInfo, 
 use crate::command::infos::CmdDescriptorSetBindInfo;
 
 use crate::pipeline::target::{ GsPipeline, GsVkPipelineType };
+use crate::pipeline::push_constant::GsPushConstant;
 use crate::buffer::instance::{ GsVertexBuffer, GsIndexBuffer };
 use crate::utils::phantom::Graphics;
 use crate::types::{ vkuint, vksint, vkfloat, vkbytes };
+
 
 impl GsVkCommandType for Graphics {
     // Empty...
@@ -82,6 +84,8 @@ pub trait GsCmdGraphicsApi {
     ///
     /// `reference` specifies the set of stencil state for which to update the reference value.
     fn set_stencil_reference(&self, face: vk::StencilFaceFlags, reference: vkuint) -> &Self;
+
+    fn push_constants(&self, constants: GsPushConstant, offset: vkbytes) -> &Self;
 
     fn bind_pipeline(&self) -> &Self;
 
@@ -165,6 +169,12 @@ impl GsCmdGraphicsApi for GsCmdRecorder<Graphics> {
     fn set_stencil_reference(&self, face: vk::StencilFaceFlags, reference: vkuint) -> &Self {
         unsafe {
             self.device.handle.cmd_set_stencil_reference(self.cmd_handle, face, reference);
+        } self
+    }
+
+    fn push_constants(&self, constants: GsPushConstant, offset: vkbytes) -> &Self {
+        unsafe {
+            self.device.handle.cmd_push_constants(self.cmd_handle, self.pipeline_layout, constants.range().stage_flags, offset as _, constants.data())
         } self
     }
 

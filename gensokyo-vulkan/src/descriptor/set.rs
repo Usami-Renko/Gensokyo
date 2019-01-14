@@ -8,6 +8,8 @@ use crate::descriptor::entity::DescriptorSetEntity;
 use crate::descriptor::binding::DescriptorBindingInfo;
 use crate::descriptor::binding::{ DescriptorBufferBindableTarget, DescriptorImageBindableTarget };
 
+use crate::pipeline::target::GsPipelineStage;
+
 use std::slice::Iter;
 
 pub struct GsDescriptorSet {
@@ -53,19 +55,19 @@ impl DescriptorSetConfig {
         }
     }
 
-    pub fn add_buffer_binding(&mut self, bind_target: &impl DescriptorBufferBindableTarget, stage: GsDescBindingStage) {
+    pub fn add_buffer_binding(&mut self, bind_target: &impl DescriptorBufferBindableTarget, stage: GsPipelineStage) {
 
         let binding_info = bind_target.binding_info(None);
         self.add_binding(Box::new(binding_info), stage);
     }
 
-    pub fn add_image_binding(&mut self, bind_target: &impl DescriptorImageBindableTarget, stage: GsDescBindingStage) {
+    pub fn add_image_binding(&mut self, bind_target: &impl DescriptorImageBindableTarget, stage: GsPipelineStage) {
 
         let binding_info = bind_target.binding_info();
         self.add_binding(Box::new(binding_info), stage);
     }
 
-    fn add_binding(&mut self, binding: Box<dyn DescriptorBindingInfo>, stage: GsDescBindingStage) {
+    fn add_binding(&mut self, binding: Box<dyn DescriptorBindingInfo>, stage: GsPipelineStage) {
 
         self.bindings.push(binding);
         self.stage_flags.push(stage.0);
@@ -116,12 +118,4 @@ impl DescriptorSet {
     pub fn set_index(&self) -> usize {
         self.set_index.clone()
     }
-}
-
-
-pub struct GsDescBindingStage(vk::ShaderStageFlags);
-
-impl GsDescBindingStage {
-    pub const VERTEX  : GsDescBindingStage = GsDescBindingStage(vk::ShaderStageFlags::VERTEX);
-    pub const FRAGMENT: GsDescBindingStage = GsDescBindingStage(vk::ShaderStageFlags::FRAGMENT);
 }

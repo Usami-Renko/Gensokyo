@@ -6,7 +6,7 @@ pub use self::binding::{
     DescriptorBufferBindableTarget, DescriptorImageBindableTarget,
 };
 pub use self::layout::{ GsDescriptorSetLayout, DescriptorSetLayoutInfo };
-pub use self::set::{ GsDescriptorSet, DescriptorSetConfig, DescriptorSet, GsDescBindingStage };
+pub use self::set::{ GsDescriptorSet, DescriptorSetConfig, DescriptorSet };
 pub use self::pool::{ GsDescriptorPool, DescriptorPoolInfo };
 pub use self::entity::DescriptorSetEntity;
 pub use self::types::{ GsDescriptorType, BufferDescriptorType, ImageDescriptorType };

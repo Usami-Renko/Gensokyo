@@ -3,8 +3,8 @@ use ash::vk;
 use ash::version::DeviceV1_0;
 
 use crate::core::device::GsDevice;
+use crate::pipeline::push_constant::GsPushConstant;
 use crate::pipeline::error::PipelineError;
-
 use crate::descriptor::GsDescriptorSetLayout;
 
 use std::ptr;
@@ -40,8 +40,9 @@ impl PipelineLayoutBuilder {
     pub fn add_descriptor_layout(&mut self, layout: &GsDescriptorSetLayout) {
         self.descriptor_layouts.push(layout.handle);
     }
-    pub fn add_push_constant(&mut self, constant: vk::PushConstantRange) {
-        self.push_constants.push(constant);
+
+    pub fn add_push_constant(&mut self, constant: impl ToPushConstant) {
+        self.push_constants.push(constant.push_constant().range());
     }
 }
 
@@ -58,4 +59,9 @@ impl GsPipelineLayout {
             device.handle.destroy_pipeline_layout(self.handle, None);
         }
     }
+}
+
+pub trait ToPushConstant {
+
+    fn push_constant(&self) -> &GsPushConstant;
 }

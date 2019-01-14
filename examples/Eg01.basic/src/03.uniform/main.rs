@@ -135,7 +135,7 @@ impl UniformBufferProcedure {
 
         // descriptor
         let mut descriptor_set_config = DescriptorSetConfig::init(vk::DescriptorSetLayoutCreateFlags::empty());
-        descriptor_set_config.add_buffer_binding(ubo_buffer, GsDescBindingStage::VERTEX);
+        descriptor_set_config.add_buffer_binding(ubo_buffer, GsPipelineStage::VERTEX);
 
         let mut descriptor_allocator = kit.descriptor(vk::DescriptorPoolCreateFlags::empty());
         let descriptor_index = descriptor_allocator.append_set(descriptor_set_config);
@@ -151,12 +151,12 @@ impl UniformBufferProcedure {
 
         // shaders
         let vertex_shader = GsShaderInfo::from_source(
-            vk::ShaderStageFlags::VERTEX,
+            GsPipelineStage::VERTEX,
             Path::new(VERTEX_SHADER_SOURCE_PATH),
             None,
             "[Vertex Shader]");
         let fragment_shader = GsShaderInfo::from_source(
-            vk::ShaderStageFlags::FRAGMENT,
+            GsPipelineStage::FRAGMENT,
             Path::new(FRAGMENT_SHADER_SOURCE_PATH),
             None,
             "[Fragment Shader]");

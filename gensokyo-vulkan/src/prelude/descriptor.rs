@@ -5,4 +5,3 @@ pub use crate::descriptor::GsDescriptorRepository;
 
 pub use crate::descriptor::DescriptorSetConfig;
 pub use crate::descriptor::DescriptorSet;
-pub use crate::descriptor::GsDescBindingStage;
