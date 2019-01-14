@@ -48,10 +48,10 @@ struct DrawIndexProcedure {
 
     #[allow(dead_code)]
     buffer_storage: GsBufferRepository<Cached>,
-    vertex_buffer : GsVertexBlock,
-    index_buffer  : GsIndexBlock,
+    vertex_buffer : GsVertexBuffer,
+    index_buffer  : GsIndexBuffer,
 
-    graphics_pipeline: GsGraphicsPipeline,
+    graphics_pipeline: GsPipeline<Graphics>,
 
     command_pool   : GsCommandPool,
     command_buffers: Vec<GsCommandBuffer>,
@@ -93,16 +93,16 @@ impl DrawIndexProcedure {
         Ok(procecure)
     }
 
-    fn assets(kit: AllocatorKit, vertex_data: &Vec<Vertex>, index_data: &Vec<vkuint>) -> Result<(GsVertexBlock, GsIndexBlock, GsBufferRepository<Cached>), ProcedureError> {
+    fn assets(kit: AllocatorKit, vertex_data: &Vec<Vertex>, index_data: &Vec<vkuint>) -> Result<(GsVertexBuffer, GsIndexBuffer, GsBufferRepository<Cached>), ProcedureError> {
 
         // vertex & index buffer
         let mut buffer_allocator = kit.buffer(BufferStorageType::CACHED);
 
-        let vertex_info = VertexBlockInfo::new(data_size!(vertex_data, Vertex));
-        let vertex_index = buffer_allocator.append_buffer(vertex_info)?;
+        let vertex_info = GsBufVertexInfo::new(data_size!(Vertex), vertex_data.len());
+        let vertex_index = buffer_allocator.assign(vertex_info)?;
 
-        let index_info = IndexBlockInfo::new(data_size!(index_data, vkuint));
-        let index_index = buffer_allocator.append_buffer(index_info)?;
+        let index_info = GsBufIndicesInfo::new(index_data.len());
+        let index_index = buffer_allocator.assign(index_info)?;
 
         let buffer_distributor = buffer_allocator.allocate()?;
         let vertex_buffer = buffer_distributor.acquire_vertex(vertex_index);
@@ -118,7 +118,7 @@ impl DrawIndexProcedure {
         Ok((vertex_buffer, index_buffer, buffer_storage))
     }
 
-    fn pipelines(kit: PipelineKit) -> Result<GsGraphicsPipeline, ProcedureError> {
+    fn pipelines(kit: PipelineKit) -> Result<GsPipeline<Graphics>, ProcedureError> {
 
         // shaders
         let vertex_shader = GsShaderInfo::from_source(
@@ -155,15 +155,15 @@ impl DrawIndexProcedure {
             .finish();
 
         let mut pipeline_builder = kit.graphics_pipeline_builder()?;
-        let pipeline_index = pipeline_builder.add_config(pipeline_config);
+        pipeline_builder.add_config(pipeline_config);
 
         let mut pipelines = pipeline_builder.build()?;
-        let graphics_pipeline = pipelines.take_at(pipeline_index)?;
+        let graphics_pipeline = pipelines.pop().unwrap();
 
         Ok(graphics_pipeline)
     }
 
-    fn sync_resources(kit: SyncKit, graphics_pipeline: &GsGraphicsPipeline) -> Result<Vec<GsSemaphore>, ProcedureError> {
+    fn sync_resources(kit: SyncKit, graphics_pipeline: &GsPipeline<Graphics>) -> Result<Vec<GsSemaphore>, ProcedureError> {
 
         // sync
         let mut present_availables = vec![];
@@ -175,7 +175,7 @@ impl DrawIndexProcedure {
         Ok(present_availables)
     }
 
-    fn commands(kit: CommandKit, graphics_pipeline: &GsGraphicsPipeline, vertex_buffer: &GsVertexBlock, index_buffer: &GsIndexBlock, index_count: usize) -> Result<(GsCommandPool, Vec<GsCommandBuffer>), ProcedureError> {
+    fn commands(kit: CommandKit, graphics_pipeline: &GsPipeline<Graphics>, vertex_buffer: &GsVertexBuffer, index_buffer: &GsIndexBuffer, index_count: usize) -> Result<(GsCommandPool, Vec<GsCommandBuffer>), ProcedureError> {
 
         let command_pool = kit.pool(DeviceQueueIdentifier::Graphics)?;
         let mut command_buffers = vec![];
@@ -185,11 +185,11 @@ impl DrawIndexProcedure {
             .allocate(CmdBufferUsage::UnitaryCommand, command_buffer_count)?;
 
         for (frame_index, command) in raw_commands.into_iter().enumerate() {
-            let mut recorder = kit.recorder(command);
+            let mut recorder = kit.pipeline_recorder(graphics_pipeline, command);
 
             recorder.begin_record(vk::CommandBufferUsageFlags::SIMULTANEOUS_USE)?
                 .begin_render_pass(graphics_pipeline, frame_index)
-                .bind_pipeline(graphics_pipeline)
+                .bind_pipeline()
                 .bind_vertex_buffers(0, &[vertex_buffer])
                 .bind_index_buffer(index_buffer, 0)
                 .draw_indexed(index_count as vkuint, 1, 0, 0, 0)

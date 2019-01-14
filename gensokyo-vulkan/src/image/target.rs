@@ -69,8 +69,8 @@ impl MemoryDstEntity for GsImage {
 
     fn aligment_size(&self) -> vkbytes {
 
-        use crate::utils::memory::bind_to_alignment;
-        bind_to_alignment(self.requirement.size, self.requirement.alignment)
+        use crate::utils::memory::bound_to_alignment;
+        bound_to_alignment(self.requirement.size, self.requirement.alignment)
     }
 }
 

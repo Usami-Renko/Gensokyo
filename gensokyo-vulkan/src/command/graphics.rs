@@ -17,7 +17,7 @@ impl GsVkCommandType for Graphics {
 
 pub trait GsCmdGraphicsApi {
 
-    fn begin_render_pass(&self, pipeline: GsPipeline<Graphics>, framebuffer_index: usize) -> &Self;
+    fn begin_render_pass(&self, pipeline: &GsPipeline<Graphics>, framebuffer_index: usize) -> &Self;
 
     /// Set the viewport dynamically.
     /// Before using this function, the `ViewportStateType::Dynamic` or `ViewportStateType::DynamicViewportFixedScissor` must be set to ViewportState in pipeline creation(by calling `GraphicsPipelineConfig::setup_viewport()`).
@@ -100,7 +100,7 @@ pub trait GsCmdGraphicsApi {
 
 impl GsCmdGraphicsApi for GsCmdRecorder<Graphics> {
 
-    fn begin_render_pass(&self, pipeline: GsPipeline<Graphics>, framebuffer_index: usize) -> &Self {
+    fn begin_render_pass(&self, pipeline: &GsPipeline<Graphics>, framebuffer_index: usize) -> &Self {
 
         let begin_info = pipeline.pass.begin_info(framebuffer_index);
         unsafe {

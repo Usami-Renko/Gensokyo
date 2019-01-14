@@ -20,7 +20,7 @@ use gsvk::utils::assign::GsAssignIndex;
 use gsvk::memory::transfer::{ GsBufferDataUploader, GsBufferUploadable };
 use gsvk::memory::AllocatorError;
 use gsvk::command::{ GsCmdRecorder, GsCmdGraphicsApi, CmdDescriptorSetBindInfo };
-use gsvk::descriptor::DescriptorSet;
+use gsvk::descriptor::{ DescriptorSet, DescriptorBufferBindableTarget, DescriptorBufferBindingInfo };
 use gsvk::utils::phantom::{ Graphics, Host };
 use gsvk::types::{ vkuint, vkbytes };
 
@@ -302,6 +302,13 @@ impl<'d, 's: 'd> GsglTFModel {
 
         // call the draw command.
         self.entity.scene.record_command(recorder, &mut record_info);
+    }
+}
+
+impl DescriptorBufferBindableTarget for GsglTFModel {
+
+    fn binding_info(&self, sub_block_indices: Option<Vec<vkuint>>) -> DescriptorBufferBindingInfo {
+        self.uniform.binding_info(sub_block_indices)
     }
 }
 // ------------------------------------------------------------------------------------

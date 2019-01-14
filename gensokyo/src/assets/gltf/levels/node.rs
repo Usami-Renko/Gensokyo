@@ -53,10 +53,10 @@ impl<'a> GsglTFLevelEntity<'a> for GsglTFNodeEntity {
         // first, read the mesh referenced by current node.
         let (local_mesh, draw_order) = if let Some(gltf_mesh) = level.0.mesh() {
 
-            // Update the draw order index whenever it read a new node recursively.
-            (*level.1) += 1;
             // Record the draw order of current node.
             let draw_order = level.1.clone();
+            // Update the draw order index whenever it read a new node recursively.
+            (*level.1) += 1;
 
             let mesh_arch = GsglTFMeshEntity::read_architecture(gltf_mesh)?;
             attr_flag |= mesh_arch.attr_flags;

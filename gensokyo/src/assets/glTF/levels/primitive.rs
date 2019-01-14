@@ -80,8 +80,8 @@ impl<'a> GsglTFLevelEntity<'a> for GsglTFPrimitiveEntity {
             },
             | GsglTFDrawMethod::DrawIndex { .. } => {
                 GsglTFDrawMethod::DrawIndex {
-                    index_count: indices_extend_info.start_index,
-                    first_index: indices_extend_info.extend_indices_count,
+                    index_count: indices_extend_info.extend_indices_count,
+                    first_index: indices_extend_info.start_index,
                 }
             },
         };

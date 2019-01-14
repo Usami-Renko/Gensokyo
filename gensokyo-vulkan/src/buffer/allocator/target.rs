@@ -61,6 +61,9 @@ impl<M> GsBufferAllocator<M> where M: BufferMemoryTypeAbs {
             return Err(AllocatorError::UnsupportBufferUsage)
         }
 
+        let mut info = info; // make it mutable.
+        info.check_limits(&self.physical);
+
         let buffer_description = BufferDescInfo::new(info.estimate_size(), Info::VK_FLAG);
         let buffer = buffer_description.build(&self.device, self.storage_type, None)?;
         self.memory_filter.filter(&buffer)?;
@@ -80,7 +83,7 @@ impl<M> GsBufferAllocator<M> where M: BufferMemoryTypeAbs {
         Ok(dst_index)
     }
 
-    pub fn append_allocate<R>(&mut self, info: &impl GsBufferAllocatable<M, R>) -> Result<R, AllocatorError> {
+    pub fn assign_v2<R>(&mut self, info: &impl GsBufferAllocatable<M, R>) -> Result<R, AllocatorError> {
 
         let allot_func = info.allot_func();
         allot_func(info, self)

@@ -28,11 +28,11 @@ pub struct DepthProcedure {
     ubo_data   : Vec<UboObject>,
 
     buffer_storage: GsBufferRepository<Host>,
-    vertex_buffer : GsVertexBlock,
-    index_buffer  : GsIndexBlock,
-    ubo_buffer    : GsUniformBlock,
+    vertex_buffer : GsVertexBuffer,
+    index_buffer  : GsIndexBuffer,
+    ubo_buffer    : GsUniformBuffer,
 
-    pipeline: GsGraphicsPipeline,
+    pipeline: GsPipeline<Graphics>,
 
     #[allow(dead_code)]
     desc_storage: GsDescriptorRepository,
@@ -121,25 +121,25 @@ impl DepthProcedure {
         Ok(())
     }
 
-    fn buffers(kit: AllocatorKit, vertex_data: &Vec<Vertex>, index_data: &Vec<vkuint>, ubo_data: &Vec<UboObject>) -> Result<(GsVertexBlock, GsIndexBlock, GsUniformBlock, GsBufferRepository<Host>), ProcedureError> {
+    fn buffers(kit: AllocatorKit, vertex_data: &Vec<Vertex>, index_data: &Vec<vkuint>, ubo_data: &Vec<UboObject>) -> Result<(GsVertexBuffer, GsIndexBuffer, GsUniformBuffer, GsBufferRepository<Host>), ProcedureError> {
 
         // vertex, index and uniform buffer
         let mut buffer_allocator = kit.buffer(BufferStorageType::HOST);
 
-        let vertex_info = VertexBlockInfo::new(data_size!(vertex_data, Vertex));
-        let vertex_index = buffer_allocator.append_buffer(vertex_info)?;
+        let vertex_info = GsBufVertexInfo::new(data_size!(Vertex), vertex_data.len());
+        let vertex_index = buffer_allocator.assign(vertex_info)?;
 
-        let index_info = IndexBlockInfo::new(data_size!(index_data, vkuint));
-        let index_index = buffer_allocator.append_buffer(index_info)?;
+        let index_info = GsBufIndicesInfo::new(index_data.len());
+        let index_index = buffer_allocator.assign(index_info)?;
 
-        let ubo_info = UniformBlockInfo::new(0, 1, data_size!(UboObject));
-        let ubo_index = buffer_allocator.append_buffer(ubo_info)?;
+        let ubo_info = GsBufUniformInfo::new(0, 1, data_size!(UboObject));
+        let ubo_index = buffer_allocator.assign(ubo_info)?;
 
         let buffer_distributor = buffer_allocator.allocate()?;
 
         let vertex_buffer = buffer_distributor.acquire_vertex(vertex_index);
         let index_buffer = buffer_distributor.acquire_index(index_index);
-        let ubo_buffer = buffer_distributor.acquire_uniform(ubo_index)?;
+        let ubo_buffer = buffer_distributor.acquire_uniform(ubo_index);
 
         let mut buffer_storage = buffer_distributor.into_repository();
         buffer_storage.data_uploader()?
@@ -166,7 +166,7 @@ impl DepthProcedure {
         Ok((depth_attachment, image_storage))
     }
 
-    fn ubo(kit: AllocatorKit, ubo_buffer: &GsUniformBlock) -> Result<(DescriptorSet, GsDescriptorRepository), ProcedureError> {
+    fn ubo(kit: AllocatorKit, ubo_buffer: &GsUniformBuffer) -> Result<(DescriptorSet, GsDescriptorRepository), ProcedureError> {
 
         // descriptor
         let mut descriptor_set_config = DescriptorSetConfig::init(vk::DescriptorSetLayoutCreateFlags::empty());
@@ -183,7 +183,7 @@ impl DepthProcedure {
         Ok((ubo_set, desc_storage))
     }
 
-    fn pipelines(kit: PipelineKit, ubo_set: &DescriptorSet, depth_image: &GsDepthStencilAttachment) -> Result<GsGraphicsPipeline, ProcedureError> {
+    fn pipelines(kit: PipelineKit, ubo_set: &DescriptorSet, depth_image: &GsDepthStencilAttachment) -> Result<GsPipeline<Graphics>, ProcedureError> {
 
         // shaders
         let vertex_shader = GsShaderInfo::from_source(
@@ -228,15 +228,15 @@ impl DepthProcedure {
             .finish();
 
         let mut pipeline_builder = kit.graphics_pipeline_builder()?;
-        let pipeline_index = pipeline_builder.add_config(pipeline_config);
+        pipeline_builder.add_config(pipeline_config);
 
         let mut pipelines = pipeline_builder.build()?;
-        let graphics_pipeline = pipelines.take_at(pipeline_index)?;
+        let graphics_pipeline = pipelines.pop().unwrap();
 
         Ok(graphics_pipeline)
     }
 
-    fn sync_resources(kit: SyncKit, graphics_pipeline: &GsGraphicsPipeline) -> Result<Vec<GsSemaphore>, ProcedureError> {
+    fn sync_resources(kit: SyncKit, graphics_pipeline: &GsPipeline<Graphics>) -> Result<Vec<GsSemaphore>, ProcedureError> {
 
         // sync
         let mut present_availables = vec![];
@@ -248,7 +248,7 @@ impl DepthProcedure {
         Ok(present_availables)
     }
 
-    fn commands(kit: CommandKit, graphics_pipeline: &GsGraphicsPipeline, vertex_buffer: &GsVertexBlock, index_buffer: &GsIndexBlock, ubo_set: &DescriptorSet, index_count: usize) -> Result<(GsCommandPool, Vec<GsCommandBuffer>), ProcedureError> {
+    fn commands(kit: CommandKit, graphics_pipeline: &GsPipeline<Graphics>, vertex_buffer: &GsVertexBuffer, index_buffer: &GsIndexBuffer, ubo_set: &DescriptorSet, index_count: usize) -> Result<(GsCommandPool, Vec<GsCommandBuffer>), ProcedureError> {
 
         let command_pool = kit.pool(DeviceQueueIdentifier::Graphics)?;
         let mut command_buffers = vec![];
@@ -258,14 +258,14 @@ impl DepthProcedure {
             .allocate(CmdBufferUsage::UnitaryCommand, command_buffer_count)?;
 
         for (frame_index, command) in raw_commands.into_iter().enumerate() {
-            let mut recorder = kit.recorder(command);
+            let mut recorder = kit.pipeline_recorder(graphics_pipeline, command);
 
             recorder.begin_record(vk::CommandBufferUsageFlags::SIMULTANEOUS_USE)?
                 .begin_render_pass(graphics_pipeline, frame_index)
-                .bind_pipeline(graphics_pipeline)
+                .bind_pipeline()
                 .bind_vertex_buffers(0, &[vertex_buffer])
                 .bind_index_buffer(index_buffer, 0)
-                .bind_descriptor_sets(graphics_pipeline, 0, &[ubo_set])
+                .bind_descriptor_sets(0, &[CmdDescriptorSetBindInfo { set: ubo_set, dynamic_offset: None }])
                 .draw_indexed(index_count as vkuint, 1, 0, 0, 0)
                 .end_render_pass();
 

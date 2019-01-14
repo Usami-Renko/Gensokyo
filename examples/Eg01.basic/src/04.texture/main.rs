@@ -49,7 +49,7 @@ struct TextureMappingProcedure {
     vertex_data   : Vec<Vertex>,
     #[allow(dead_code)]
     buffer_storage: GsBufferRepository<Cached>,
-    vertex_buffer : GsVertexBlock,
+    vertex_buffer : GsVertexBuffer,
 
     #[allow(dead_code)]
     desc_storage  : GsDescriptorRepository,
@@ -58,7 +58,7 @@ struct TextureMappingProcedure {
     image_storage : GsImageRepository<Device>,
     sample_image  : GsSampleImage,
 
-    graphics_pipeline: GsGraphicsPipeline,
+    graphics_pipeline: GsPipeline<Graphics>,
 
     command_pool   : GsCommandPool,
     command_buffers: Vec<GsCommandBuffer>,
@@ -107,12 +107,12 @@ impl TextureMappingProcedure {
         Ok(procecure)
     }
 
-    fn vertex_buffer(kit: AllocatorKit, vertex_data: &Vec<Vertex>) -> Result<(GsVertexBlock, GsBufferRepository<Cached>), ProcedureError> {
+    fn vertex_buffer(kit: AllocatorKit, vertex_data: &Vec<Vertex>) -> Result<(GsVertexBuffer, GsBufferRepository<Cached>), ProcedureError> {
 
         let mut buffer_allocator = kit.buffer(BufferStorageType::CACHED);
 
-        let vertex_info = VertexBlockInfo::new(data_size!(vertex_data, Vertex));
-        let vertex_index = buffer_allocator.append_buffer(vertex_info)?;
+        let vertex_info = GsBufVertexInfo::new(data_size!(Vertex), vertex_data.len());
+        let vertex_index = buffer_allocator.assign(vertex_info)?;
 
         let vertex_distributor = buffer_allocator.allocate()?;
 
@@ -160,7 +160,7 @@ impl TextureMappingProcedure {
         Ok((sampler_set, descriptor_storage))
     }
 
-    fn pipelines(kit: PipelineKit, sampler_set: &DescriptorSet) -> Result<GsGraphicsPipeline, ProcedureError> {
+    fn pipelines(kit: PipelineKit, sampler_set: &DescriptorSet) -> Result<GsPipeline<Graphics>, ProcedureError> {
 
         // shaders
         let vertex_shader = GsShaderInfo::from_source(
@@ -198,15 +198,15 @@ impl TextureMappingProcedure {
             .finish();
 
         let mut pipeline_builder = kit.graphics_pipeline_builder()?;
-        let pipeline_index = pipeline_builder.add_config(pipeline_config);
+        pipeline_builder.add_config(pipeline_config);
 
         let mut pipelines = pipeline_builder.build()?;
-        let graphics_pipeline = pipelines.take_at(pipeline_index)?;
+        let graphics_pipeline = pipelines.pop().unwrap();
 
         Ok(graphics_pipeline)
     }
 
-    fn sync_resources(kit: SyncKit, graphics_pipeline: &GsGraphicsPipeline) -> Result<Vec<GsSemaphore>, ProcedureError> {
+    fn sync_resources(kit: SyncKit, graphics_pipeline: &GsPipeline<Graphics>) -> Result<Vec<GsSemaphore>, ProcedureError> {
 
         // sync
         let mut present_availables = vec![];
@@ -218,7 +218,7 @@ impl TextureMappingProcedure {
         Ok(present_availables)
     }
 
-    fn commands(kit: CommandKit, graphics_pipeline: &GsGraphicsPipeline, vertex_buffer: &GsVertexBlock, sampler_set: &DescriptorSet, vertex_data: &Vec<Vertex>) -> Result<(GsCommandPool, Vec<GsCommandBuffer>), ProcedureError> {
+    fn commands(kit: CommandKit, graphics_pipeline: &GsPipeline<Graphics>, vertex_buffer: &GsVertexBuffer, sampler_set: &DescriptorSet, vertex_data: &Vec<Vertex>) -> Result<(GsCommandPool, Vec<GsCommandBuffer>), ProcedureError> {
 
         let command_pool = kit.pool(DeviceQueueIdentifier::Graphics)?;
         let mut command_buffers = vec![];
@@ -228,13 +228,13 @@ impl TextureMappingProcedure {
             .allocate(CmdBufferUsage::UnitaryCommand, command_buffer_count)?;
 
         for (frame_index, command) in raw_commands.into_iter().enumerate() {
-            let mut recorder = kit.recorder(command);
+            let mut recorder = kit.pipeline_recorder(graphics_pipeline, command);
 
             recorder.begin_record(vk::CommandBufferUsageFlags::SIMULTANEOUS_USE)?
                 .begin_render_pass(graphics_pipeline, frame_index)
-                .bind_pipeline(graphics_pipeline)
+                .bind_pipeline()
                 .bind_vertex_buffers(0, &[vertex_buffer])
-                .bind_descriptor_sets(graphics_pipeline, 0, &[sampler_set])
+                .bind_descriptor_sets(0, &[CmdDescriptorSetBindInfo { set: sampler_set, dynamic_offset: None }])
                 .draw(vertex_data.len() as vkuint, 1, 0, 0)
                 .end_render_pass();
 

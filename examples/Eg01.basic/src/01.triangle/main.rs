@@ -43,9 +43,9 @@ struct TriangleProcedure {
     vertex_data: Vec<Vertex>,
     #[allow(dead_code)]
     vertex_storage: GsBufferRepository<Host>,
-    vertex_buffer : GsVertexBlock,
+    vertex_buffer : GsVertexBuffer,
 
-    graphics_pipeline: GsGraphicsPipeline,
+    graphics_pipeline: GsPipeline<Graphics>,
 
     command_pool   : GsCommandPool,
     command_buffers: Vec<GsCommandBuffer>,
@@ -85,16 +85,16 @@ impl TriangleProcedure {
         Ok(procecure)
     }
 
-    fn assets(kit: AllocatorKit, vertex_data: &Vec<Vertex>) -> Result<(GsVertexBlock, GsBufferRepository<Host>), ProcedureError> {
+    fn assets(kit: AllocatorKit, vertex_data: &Vec<Vertex>) -> Result<(GsVertexBuffer, GsBufferRepository<Host>), ProcedureError> {
 
         // vertex buffer
         let mut vertex_allocator = kit.buffer(BufferStorageType::HOST);
 
-        let vertex_info = VertexBlockInfo::new(data_size!(vertex_data, Vertex));
-        let block_index = vertex_allocator.append_buffer(vertex_info)?;
+        let vertex_info = GsBufVertexInfo::new(data_size!(Vertex), vertex_data.len());
+        let vertex_index = vertex_allocator.assign(vertex_info)?;
 
         let buffer_distributor = vertex_allocator.allocate()?;
-        let vertex_buffer = buffer_distributor.acquire_vertex(block_index);
+        let vertex_buffer = buffer_distributor.acquire_vertex(vertex_index);
 
         let mut vertex_storage = buffer_distributor.into_repository();
 
@@ -105,7 +105,7 @@ impl TriangleProcedure {
         Ok((vertex_buffer, vertex_storage))
     }
 
-    fn pipelines(kit: PipelineKit) -> Result<GsGraphicsPipeline, ProcedureError> {
+    fn pipelines(kit: PipelineKit) -> Result<GsPipeline<Graphics>, ProcedureError> {
 
         // shaders
         let vertex_shader = GsShaderInfo::from_spirv(
@@ -140,15 +140,15 @@ impl TriangleProcedure {
             .finish();
 
         let mut pipeline_builder = kit.graphics_pipeline_builder()?;
-        let pipeline_index = pipeline_builder.add_config(pipeline_config);
+        pipeline_builder.add_config(pipeline_config);
 
         let mut pipelines = pipeline_builder.build()?;
-        let graphics_pipeline = pipelines.take_at(pipeline_index)?;
+        let graphics_pipeline = pipelines.pop().unwrap();
 
         Ok(graphics_pipeline)
     }
 
-    fn sync_resources(kit: SyncKit, graphics_pipeline: &GsGraphicsPipeline) -> Result<Vec<GsSemaphore>, ProcedureError> {
+    fn sync_resources(kit: SyncKit, graphics_pipeline: &GsPipeline<Graphics>) -> Result<Vec<GsSemaphore>, ProcedureError> {
 
         // sync
         let mut present_availables = vec![];
@@ -160,7 +160,7 @@ impl TriangleProcedure {
         Ok(present_availables)
     }
 
-    fn commands(kit: CommandKit, graphics_pipeline: &GsGraphicsPipeline, vertex_buffer: &GsVertexBlock, data: &Vec<Vertex>) -> Result<(GsCommandPool, Vec<GsCommandBuffer>), ProcedureError> {
+    fn commands(kit: CommandKit, graphics_pipeline: &GsPipeline<Graphics>, vertex_buffer: &GsVertexBuffer, data: &Vec<Vertex>) -> Result<(GsCommandPool, Vec<GsCommandBuffer>), ProcedureError> {
 
         let command_pool = kit.pool(DeviceQueueIdentifier::Graphics)?;
         let mut command_buffers = vec![];
@@ -170,11 +170,11 @@ impl TriangleProcedure {
             .allocate(CmdBufferUsage::UnitaryCommand, command_buffer_count)?;
 
         for (frame_index, command) in raw_commands.into_iter().enumerate() {
-            let mut recorder = kit.recorder(command);
+            let mut recorder = kit.pipeline_recorder(&graphics_pipeline, command);
 
             recorder.begin_record(vk::CommandBufferUsageFlags::SIMULTANEOUS_USE)?
                 .begin_render_pass(graphics_pipeline, frame_index)
-                .bind_pipeline(graphics_pipeline)
+                .bind_pipeline()
                 .bind_vertex_buffers(0, &[vertex_buffer])
                 .draw(data.len() as vkuint, 1, 0, 0)
                 .end_render_pass();

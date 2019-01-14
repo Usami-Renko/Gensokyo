@@ -15,6 +15,7 @@ use crate::memory::transfer::MemoryDataDelegate;
 use crate::memory::{ MemoryWritePtr, MemoryError };
 
 use crate::types::{ vkuint, vkbytes };
+use crate::utils::memory::bound_to_alignment;
 
 #[derive(Debug, Clone)]
 pub struct GsBufUniformInfo {
@@ -50,11 +51,10 @@ impl GsBufUniformInfo {
     pub fn new_dyn(binding: vkuint, descriptor_count: vkuint, slice_size: vkbytes, slice_count: usize) -> GsBufUniformInfo {
 
         GsBufUniformInfo {
-            // alignment will be set when add it to allocator.
             usage: UniformUsage::Dynamic {
                 slice_count: slice_count as vkuint,
                 slice_size,
-                alignment: 0,
+                alignment: 0, // alignment will be set when add it to allocator.
             },
             binding: DescriptorBindingContent {
                 binding,
@@ -70,8 +70,15 @@ impl BufferInfoAbstract<IUniform> for GsBufUniformInfo {
     const VK_FLAG: vk::BufferUsageFlags = vk::BufferUsageFlags::UNIFORM_BUFFER;
 
     fn estimate_size(&self) -> vkbytes {
-        
-        (self.binding.count as vkbytes) * self.element_size
+
+        match self.usage {
+            | UniformUsage::Common => {
+                (self.binding.count as vkbytes) * self.element_size
+            },
+            | UniformUsage::Dynamic { slice_count, slice_size, alignment } => {
+                bound_to_alignment(slice_size, alignment) * (slice_count as vkbytes) * (self.binding.count as vkbytes)
+            },
+        }
     }
 
     fn into_index(self) -> IUniform {
@@ -133,8 +140,14 @@ impl DescriptorBufferBindableTarget for GsUniformBuffer {
         DescriptorBufferBindingInfo {
             content: self.binding.clone(),
             element_indices: sub_block_indices.unwrap_or(vec![0]),
-            element_size: self.element_size,
             buffer_handle: self.block.handle,
+            element_size: match self.usage {
+                | UniformUsage::Common => self.element_size,
+                | UniformUsage::Dynamic { slice_size, alignment, .. } => {
+                    // bind_to_alignment(slice_size, alignment) * (slice_count as vkbytes)
+                    bound_to_alignment(slice_size, alignment)
+                },
+            },
         }
     }
 }

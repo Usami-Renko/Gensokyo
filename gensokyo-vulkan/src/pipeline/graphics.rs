@@ -94,12 +94,9 @@ impl GraphicsPipelineBuilder {
         Ok(())
     }
 
-    pub fn add_config(&mut self, config: GraphicsPipelineConfig) -> usize {
+    pub fn add_config(&mut self, config: GraphicsPipelineConfig) {
 
-        let pipeline_index = self.configs.len();
         self.configs.push(config);
-
-        pipeline_index
     }
 
     pub fn build(mut self) -> Result<Vec<GsPipeline<Graphics>>, PipelineError> {
