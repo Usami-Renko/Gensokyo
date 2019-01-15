@@ -1,9 +1,10 @@
 
 use crate::assets::glTF::importer::GsglTFEntity;
 use crate::assets::glTF::levels::GsglTFNodeEntity;
+use crate::assets::glTF::asset::{ GsglTFAssetLib, GsglTFPhyLimits };
 use crate::assets::glTF::error::GltfError;
 
-use crate::assets::glTF::material::material::GsglTFMaterialData;
+use crate::assets::glTF::material::material::MaterialConstants;
 use crate::assets::glTF::material::sampler::GsglTFSamplerData;
 use crate::assets::glTF::material::texture::GsglTFTextureData;
 
@@ -16,19 +17,29 @@ use gsvk::buffer::allocator::{ GsBufferAllocator, GsBufferAllocatable, GsBufferD
 use gsvk::buffer::instance::{ GsVertexBuffer, IVertex };
 use gsvk::buffer::instance::{ GsIndexBuffer, IIndices };
 use gsvk::buffer::instance::{ GsUniformBuffer, IUniform };
-use gsvk::utils::assign::GsAssignIndex;
+
 use gsvk::memory::transfer::{ GsBufferDataUploader, GsBufferUploadable };
 use gsvk::memory::AllocatorError;
+
+use gsvk::pipeline::target::GsPipelineStage;
+use gsvk::pipeline::layout::GsPushConstantRange;
+
 use gsvk::command::{ GsCmdRecorder, GsCmdGraphicsApi, CmdDescriptorSetBindInfo };
 use gsvk::descriptor::{ DescriptorSet, DescriptorBufferBindableTarget, DescriptorBufferBindingInfo };
+
+use gsvk::utils::assign::GsAssignIndex;
 use gsvk::utils::phantom::{ Graphics, Host };
+
 use gsvk::types::{ vkuint, vkbytes };
+
+use std::mem;
 
 // ------------------------------------------------------------------------------------
 pub(crate) struct IntermediateglTFData {
     pub doc: gltf::Document,
     pub data_buffer: Vec<gltf::buffer::Data>,
     pub data_image : Vec<gltf::image::Data>,
+    pub limits: GsglTFPhyLimits,
 }
 // ------------------------------------------------------------------------------------
 
@@ -39,9 +50,8 @@ pub(crate) struct GsglTFLoadingData {
     indices: GsglTFIndicesData,
     node_transforms: GsglTFNodesData,
 
-    materials: Vec<GsglTFMaterialData>,
-    textures: Vec<GsglTFTextureData>,
-    samplers: Vec<GsglTFSamplerData>,
+    textures : GsglTFAssetLib<GsglTFTextureData, GsglTFTextureData>,
+    samplers : GsglTFAssetLib<GsglTFSamplerData, GsglTFSamplerData>,
 }
 
 pub(crate) struct AttrExtendInfo {
@@ -66,9 +76,8 @@ impl GsglTFLoadingData {
             indices: GsglTFIndicesData::default(),
             node_transforms: GsglTFNodesData::new(node_flag)?,
 
-            materials: vec![],
-            textures : vec![],
-            samplers : vec![],
+            textures : Default::default(),
+            samplers : Default::default(),
         };
         Ok(loading_data)
     }
@@ -115,9 +124,8 @@ impl GsglTFLoadingData {
             attributes: self.attributes,
             indices: self.indices,
             node_transforms: self.node_transforms,
-            materials: self.materials,
-            textures: self.textures,
-            samplers: self.samplers,
+            textures : self.textures.into_data(),
+            samplers : self.samplers.into_data(),
         }
     }
 }
@@ -130,8 +138,6 @@ pub struct GsglTFDataStorage {
     indices: GsglTFIndicesData,
     node_transforms: GsglTFNodesData,
 
-    #[allow(dead_code)]
-    materials: Vec<GsglTFMaterialData>,
     #[allow(dead_code)]
     textures : Vec<GsglTFTextureData>,
     #[allow(dead_code)]
@@ -199,8 +205,8 @@ impl<'d> GsBufferAllocatable<Host, GsglTFUniformAllotIndex> for GUDADelegate<'d>
 
         let func = |data_storage: &GUDADelegate, allocator: &mut GsBufferAllocator<Host>| {
 
-            let uniform_index = data_storage.node_transforms.uniform_info(data_storage.uniform_binding);
-            let uniform_index = allocator.assign(uniform_index)?;
+            let uniform_info = data_storage.node_transforms.uniform_info(data_storage.uniform_binding);
+            let uniform_index = allocator.assign(uniform_info)?;
 
             let allot_index = GsglTFUniformAllotIndex {
                 uniform: uniform_index,
@@ -302,6 +308,10 @@ impl<'d, 's: 'd> GsglTFModel {
 
         // call the draw command.
         self.entity.scene.record_command(recorder, &mut record_info);
+    }
+
+    pub fn pushconst_description(&self) -> GsPushConstantRange {
+        GsPushConstantRange::new(GsPipelineStage::FRAGMENT, 0, mem::size_of::<MaterialConstants>() as vkuint)
     }
 }
 

@@ -1,10 +1,12 @@
 
 use crate::assets::glTF::data::{ IntermediateglTFData, GsglTFLoadingData };
 use crate::assets::glTF::levels::traits::{ GsglTFLevelEntity, GsglTFArchitecture };
+use crate::assets::glTF::material::material::GsglTFMaterialData;
 use crate::assets::glTF::primitive::attributes::GsglTFAttrFlags;
 use crate::assets::glTF::primitive::transforms::GsglTFNodeUniformFlags;
 use crate::assets::glTF::error::GltfError;
 
+use gsvk::pipeline::target::GsPipelineStage;
 use gsvk::command::{ GsCmdRecorder, GsCmdGraphicsApi };
 use gsvk::utils::phantom::Graphics;
 use gsvk::types::{ vkbytes, vkuint };
@@ -13,8 +15,12 @@ use gsvk::types::{ vkbytes, vkuint };
 /// A wrapper class for primitive level in glTF, containing the render parameters read from glTF file.
 pub(super) struct GsglTFPrimitiveEntity {
 
-    method: GsglTFDrawMethod,
+    /// the draw parameters for rendering.
+    method: DrawMethod,
+    /// the starting offset of attributes in vertex buffer.
     offset: vkbytes,
+    /// the render information of material data.
+    material: Vec<u8>,
 }
 
 impl<'a> GsglTFLevelEntity<'a> for GsglTFPrimitiveEntity {
@@ -45,14 +51,16 @@ impl<'a> GsglTFLevelEntity<'a> for GsglTFPrimitiveEntity {
 
         // the draw parameters will be set in `Self::read_data` method, so fill 0 here.
         let draw_method = match level.indices() {
-            | Some(_) => GsglTFDrawMethod::DrawIndex {  index_count: 0,  first_index: 0 },
-            | None    => GsglTFDrawMethod::DrawArray { vertex_count: 0, first_vertex: 0 },
+            | Some(_) => DrawMethod::DrawIndex {  index_count: 0,  first_index: 0 },
+            | None    => DrawMethod::DrawArray { vertex_count: 0, first_vertex: 0 },
         };
 
         let arch_target = GsglTFArchitecture {
             arch: GsglTFPrimitiveEntity {
                 method: draw_method,
-                offset: 0, // the property will be set in `Self::read_data` method.
+                // the following properties will be set in `Self::read_data` method.
+                offset: 0,
+                material: Vec::new(),
             },
             attr_flags: attr_flag,
             node_flags: GsglTFNodeUniformFlags::NONE,
@@ -66,20 +74,24 @@ impl<'a> GsglTFLevelEntity<'a> for GsglTFPrimitiveEntity {
         let vertex_extend_info = data.extend_attributes(&level, source)?;
         self.offset = vertex_extend_info.start_offset;
 
-        let reader = level.reader(|b| Some(&source.data_buffer[b.index()]));
         // load indices.
+        let reader = level.reader(|b| Some(&source.data_buffer[b.index()]));
         let indices_extend_info = data.extend_indices(&reader)?;
+
+        // load material.
+        let raw_material = GsglTFMaterialData::from(&level.material());
+        self.material = raw_material.into_data(&source.limits)?;
 
         // set the draw parameter.
         self.method = match self.method {
-            | GsglTFDrawMethod::DrawArray { .. } => {
-                GsglTFDrawMethod::DrawArray {
+            | DrawMethod::DrawArray { .. } => {
+                DrawMethod::DrawArray {
                     vertex_count: vertex_extend_info.start_index,
                     first_vertex: vertex_extend_info.extend_vertex_count,
                 }
             },
-            | GsglTFDrawMethod::DrawIndex { .. } => {
-                GsglTFDrawMethod::DrawIndex {
+            | DrawMethod::DrawIndex { .. } => {
+                DrawMethod::DrawIndex {
                     index_count: indices_extend_info.extend_indices_count,
                     first_index: indices_extend_info.start_index,
                 }
@@ -95,10 +107,12 @@ impl GsglTFPrimitiveEntity {
     pub(super) fn record_command(&self, recorder: &GsCmdRecorder<Graphics>) {
 
         match self.method {
-            | GsglTFDrawMethod::DrawArray { vertex_count, first_vertex } => {
+            | DrawMethod::DrawArray { vertex_count, first_vertex } => {
+                recorder.push_constants(GsPipelineStage::FRAGMENT, 0, &self.material);
                 recorder.draw(vertex_count, 1, first_vertex, 0);
             },
-            | GsglTFDrawMethod::DrawIndex { index_count, first_index } => {
+            | DrawMethod::DrawIndex { index_count, first_index } => {
+                recorder.push_constants(GsPipelineStage::FRAGMENT, 0, &self.material);
                 recorder.draw_indexed(index_count, 1, first_index, 0, 0);
             },
         }
@@ -108,7 +122,7 @@ impl GsglTFPrimitiveEntity {
 
 // -------------------------------------------------------------------------------------
 #[derive(Debug, Clone, Eq, PartialEq)]
-pub(super) enum GsglTFDrawMethod {
+enum DrawMethod {
     DrawArray { vertex_count: vkuint, first_vertex: vkuint },
     DrawIndex {  index_count: vkuint,  first_index: vkuint },
 }

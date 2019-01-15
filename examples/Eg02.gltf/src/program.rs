@@ -77,7 +77,7 @@ impl<T: ShaderInputDefination> GltfModelViewer<T> {
         })?;
 
         let pipeline = loader.pipelines(|kit| {
-            Self::pipelines(kit, &paths, &ubo_set, &depth_attachment)
+            Self::pipelines(kit, &paths, &ubo_set, &dst_model, &depth_attachment)
         })?;
 
         let present_availables = loader.syncs(|kit| {
@@ -124,7 +124,8 @@ impl<T: ShaderInputDefination> GltfModelViewer<T> {
         let ubo_index = ubo_allocator.assign(ubo_info)?;
 
         // load and allocate model data.
-        let (model_entity, model_data) = GsglTFImporter::load(Path::new(paths.model_path))?;;
+        let gltf_importer = kit.gltf_loader();
+        let (model_entity, model_data) = gltf_importer.load(Path::new(paths.model_path))?;
 
         let model_vertex_index = model_allocator.assign_v2(&model_data.vertex_allot_delegate())?;
         let model_uniform_index = ubo_allocator.assign_v2(&model_data.uniform_allot_delegate(1))?;
@@ -181,7 +182,7 @@ impl<T: ShaderInputDefination> GltfModelViewer<T> {
         Ok((depth_attachment, image_storage))
     }
 
-    fn pipelines(kit: PipelineKit, paths: &FilePathConstants, ubo_set: &DescriptorSet, depth_image: &GsDepthStencilAttachment) -> Result<GsPipeline<Graphics>, ProcedureError> {
+    fn pipelines(kit: PipelineKit, paths: &FilePathConstants, ubo_set: &DescriptorSet, model: &GsglTFModel, depth_image: &GsDepthStencilAttachment) -> Result<GsPipeline<Graphics>, ProcedureError> {
 
         // shaders
         let vertex_shader = GsShaderInfo::from_source(
@@ -223,6 +224,7 @@ impl<T: ShaderInputDefination> GltfModelViewer<T> {
         let pipeline_config = kit.pipeline_config(shader_infos, vertex_input_desc, render_pass)
             .with_depth_stencil(depth_stencil)
             .add_descriptor_set(ubo_set)
+            .add_push_constants(model.pushconst_description())
             .finish();
 
         let mut pipeline_builder = kit.graphics_pipeline_builder()?;
@@ -309,7 +311,7 @@ impl<T: ShaderInputDefination> GraphicsRoutine for GltfModelViewer<T> {
     fn reload_res(&mut self, loader: AssetsLoader) -> Result<(), ProcedureError> {
 
         self.pipeline = loader.pipelines(|kit| {
-            Self::pipelines(kit, &self.paths, &self.ubo_set, &self.depth_attachment)
+            Self::pipelines(kit, &self.paths, &self.ubo_set, &self.dst_model, &self.depth_attachment)
         })?;
 
         self.present_availables = loader.syncs(|kit| {

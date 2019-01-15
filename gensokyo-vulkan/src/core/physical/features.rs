@@ -7,8 +7,8 @@ use crate::core::physical::config::PhysicalInspectProperty;
 
 pub(crate) struct PhyscialFeatures {
 
-    availables : vk::PhysicalDeviceFeatures,
-    enables    : vk::PhysicalDeviceFeatures,
+    availables: vk::PhysicalDeviceFeatures,
+    enables   : vk::PhysicalDeviceFeatures,
 }
 
 #[derive(Debug, Clone)]

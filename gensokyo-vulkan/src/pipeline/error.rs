@@ -36,8 +36,6 @@ pub enum PipelineError {
     Shaderc(ShaderCompileError),
     RenderPass(RenderPassError),
     PipelineCreationError,
-    PushConstReachMaxSize,
-    PushConstSerialize(Box<bincode::ErrorKind>),
     LayoutCreationError,
 }
 
@@ -47,16 +45,11 @@ impl fmt::Display for PipelineError {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
 
         match self {
-            | PipelineError::Shader(e)     => write!(f, "{}", e),
-            | PipelineError::Shaderc(e)    => write!(f, "{}", e),
+            | PipelineError::Shader(e) => write!(f, "{}", e),
+            | PipelineError::Shaderc(e) => write!(f, "{}", e),
             | PipelineError::RenderPass(e) => write!(f, "{}", e),
-            | PipelineError::PipelineCreationError =>
-                write!(f, "Failed to create Pipeline."),
-            | PipelineError::PushConstReachMaxSize =>
-                write!(f, "Push constant is two big, please reduce its size or use uniform buffer."),
-            | PipelineError::PushConstSerialize(e) => write!(f, "{}", e),
-            | PipelineError::LayoutCreationError =>
-                write!(f, "Failed to create Pipeline Layout."),
+            | PipelineError::PipelineCreationError => write!(f, "Failed to create Pipeline."),
+            | PipelineError::LayoutCreationError => write!(f, "Failed to create Pipeline Layout."),
         }
     }
 }

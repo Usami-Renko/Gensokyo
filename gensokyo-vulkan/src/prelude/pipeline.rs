@@ -16,6 +16,6 @@ pub use crate::pipeline::state::{
 };
 
 pub use crate::pipeline::pass::SubpassStage;
-pub use crate::pipeline::push_constant::GsPushConstant;
+pub use crate::pipeline::layout::GsPushConstantRange;
 
 pub use crate::utils::phantom::{ Graphics, Compute };

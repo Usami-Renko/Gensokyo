@@ -22,17 +22,17 @@ pub(crate) struct GsglTFNodeEntity {
     // only node with `local_mesh` contains draw_order property.
     draw_order: Option<usize>,
     /// the transform property of current node.
-    pub transform: Matrix4F,
+    pub local_transform: Matrix4F,
 }
 
 impl GsglTFNodeEntity {
 
     /// Apply parent node's transformation to current node level.
     pub(super) fn combine_transform(&mut self, parent_transform: &Matrix4F) {
-        self.transform = self.transform * parent_transform;
+        self.local_transform = parent_transform * self.local_transform;
 
         for child_node in self.children.iter_mut() {
-            child_node.combine_transform(&self.transform);
+            child_node.combine_transform(&self.local_transform);
         }
     }
 }
@@ -78,7 +78,7 @@ impl<'a> GsglTFLevelEntity<'a> for GsglTFNodeEntity {
         }
 
         let target_arch = GsglTFArchitecture {
-            arch: GsglTFNodeEntity { local_mesh, children, draw_order, transform },
+            arch: GsglTFNodeEntity { local_mesh, children, draw_order, local_transform: transform },
             attr_flags: attr_flag,
             node_flags: node_flag,
         };

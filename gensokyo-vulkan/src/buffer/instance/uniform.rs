@@ -176,7 +176,7 @@ impl UniformUsage {
         match self {
             | UniformUsage::Common => {},
             | UniformUsage::Dynamic { slice_count: _, slice_size: _, ref mut alignment } => {
-                *alignment = physical.properties.limits().min_uniform_buffer_offset_alignment;
+                *alignment = physical.limits().min_uniform_buffer_offset_alignment;
             },
         }
     }

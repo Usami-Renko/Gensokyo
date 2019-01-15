@@ -18,7 +18,7 @@ use crate::pipeline::{
     state::tessellation::GsTessellationState,
     pass::GsRenderPass,
     target::GsPipeline,
-    layout::{ PipelineLayoutBuilder, ToPushConstant },
+    layout::{ PipelineLayoutBuilder, GsPushConstantRange },
     error::PipelineError,
 };
 
@@ -274,8 +274,8 @@ impl GraphicsPipelineConfig {
         self
     }
 
-    pub fn add_push_constants(mut self, constants: impl ToPushConstant) -> GraphicsPipelineConfig {
-        self.layout_builder.add_push_constant(constants);
+    pub fn add_push_constants(mut self, range: GsPushConstantRange) -> GraphicsPipelineConfig {
+        self.layout_builder.add_push_constant(range);
         self
     }
 }

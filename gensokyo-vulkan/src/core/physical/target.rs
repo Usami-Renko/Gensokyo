@@ -33,6 +33,10 @@ impl GsPhysicalDevice {
             format_properties.buffer_features.contains(query.buffers)
     }
 
+    pub fn limits(&self) -> &vk::PhysicalDeviceLimits {
+        &self.properties.handle.limits
+    }
+
     pub fn destroy(&self) {
         // No method for delete physical device
         // leave it empty

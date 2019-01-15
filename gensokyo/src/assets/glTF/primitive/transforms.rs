@@ -117,7 +117,7 @@ pub(crate) trait GNProperties {
 macro_rules! read_transform {
     ($target:ident, $node:ident, $uniform_type:ident, transform) => {
         let new_uniforms = $uniform_type {
-            transform: $node.transform.clone(),
+            transform: $node.local_transform.clone(),
             ..Default::default()
         };
         $target.data.push(new_uniforms);

@@ -12,7 +12,7 @@ use crate::utils::cast;
 
 pub(crate) struct PhysicalProperties {
 
-    handle: vk::PhysicalDeviceProperties,
+    pub(super) handle: vk::PhysicalDeviceProperties,
     device_name: String,
     api_version: vkuint,
     device_type: vk::PhysicalDeviceType,
@@ -61,10 +61,6 @@ impl PhysicalProperties {
         println!("\tDevice Name: {}", self.device_name);
         println!("\tDevice API version: ({}, {}, {})", major, minor, patch);
         println!("\tDevice Type: {}", device_type);
-    }
-
-    pub fn limits(&self) -> &vk::PhysicalDeviceLimits {
-        &self.handle.limits
     }
 }
 
