@@ -242,7 +242,7 @@ pub struct GsglTFModel {
 
 pub(crate) struct GsglTFCmdRecordInfo<'i> {
     pub binding_sets: Vec<CmdDescriptorSetBindInfo<'i>>,
-    pub uniform_alignment: vkbytes,
+    pub uniform_aligned_size: vkbytes,
     pub gltf_uniform_index: usize,
 }
 
@@ -302,7 +302,7 @@ impl<'d, 's: 'd> GsglTFModel {
 
         let mut record_info = GsglTFCmdRecordInfo {
             binding_sets,
-            uniform_alignment: self.uniform.dyn_alignment().unwrap(), // unwrap will always succeed.
+            uniform_aligned_size: self.uniform.alignment_size(),
             gltf_uniform_index: uniform_index,
         };
 

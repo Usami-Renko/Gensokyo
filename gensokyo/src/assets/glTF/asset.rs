@@ -1,4 +1,6 @@
 
+// TODO: Remove #[allow(dead_code)]
+
 use gsvk::core::physical::GsPhysicalDevice;
 use gsvk::types::vkuint;
 
@@ -13,6 +15,7 @@ pub(super) struct GsglTFAssetLib<Asset, AssetData>
     where Asset: GsglTFAsset<AssetData> {
 
     phantom_type: PhantomData<AssetData>,
+    #[allow(dead_code)]
     indices: HashMap<ReferenceIndex, StorageIndex>,
     assets: Vec<Asset>,
 }
@@ -32,6 +35,7 @@ impl<Asset, AssetData> Default for GsglTFAssetLib<Asset, AssetData>
 impl<Asset, AssetData> GsglTFAssetLib<Asset, AssetData>
     where Asset: GsglTFAsset<AssetData> {
 
+    #[allow(dead_code)]
     pub fn load<Document>(&mut self, doc: Document, ref_index: ReferenceIndex) -> StorageIndex
         where Asset: From<Document> {
 

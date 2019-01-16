@@ -6,7 +6,7 @@ pub fn bound_to_alignment(bound_value: vkbytes, alignment: vkbytes) -> vkbytes {
 
     // Implementation 1.
     // if bound_value % alignment == 0 {
-    //     bind_value
+    //     bound_value
     // } else if bound_value < alignment {
     //     alignment
     // } else {

@@ -7,15 +7,12 @@ edition     = "2018"
 description = "Basic examples of gensokyo Engine."
 
 [dependencies]
-gensokyo = { package = "gensokyo", path = "../../gensokyo" }
-gensokyo-vulkan = { package = "gensokyo-vulkan", path = "../../gensokyo-vulkan" }
-gensokyo-macros = { package = "gensokyo-macros", path = "../../gensokyo-macros" }
-
-# gs   = { package = "gensokyo", path = "../../gensokyo" }
-# gsvk = { package = "gensokyo-vulkan", path = "../../gensokyo-vulkan" }
-# gsma = { package = "gensokyo-macros", path = "../../gensokyo-macros" }
 ash      = "0.27.1"
 nalgebra = "0.16"
+
+gsma = { package = "gensokyo-macros", path = "../../gensokyo-macros" }
+gsvk = { package = "gensokyo-vulkan", path = "../../gensokyo-vulkan" }
+gs   = { package = "gensokyo", path = "../../gensokyo" }
 
 
 [[bin]]

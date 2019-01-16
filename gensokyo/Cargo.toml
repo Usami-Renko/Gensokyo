@@ -24,8 +24,5 @@ bincode      = "1.0.1"  # Uses serde for transforming structs into bytes.
 # error-chain = "0.12.0" # Consistent error handling for Rust.
 # rayon = "1.0.2" # Rayon is a data-parallelism library for Rust.
 
-gensokyo-vulkan = { package = "gensokyo-vulkan", path = "../gensokyo-vulkan" }
-gensokyo-macros = { package = "gensokyo-macros", path = "../gensokyo-macros" }
-
-# gsvk = { package = "gensokyo-vulkan", path = "../gensokyo-vulkan" }
-# gsma = { package = "gensokyo-macros", path = "../gensokyo-macros" }
+gsvk = { package = "gensokyo-vulkan", path = "../gensokyo-vulkan" }
+gsma = { package = "gensokyo-macros", path = "../gensokyo-macros" }

@@ -106,13 +106,13 @@ impl GsglTFPrimitiveEntity {
 
     pub(super) fn record_command(&self, recorder: &GsCmdRecorder<Graphics>) {
 
+        recorder.push_constants(GsPipelineStage::FRAGMENT, 0, &self.material);
+
         match self.method {
             | DrawMethod::DrawArray { vertex_count, first_vertex } => {
-                recorder.push_constants(GsPipelineStage::FRAGMENT, 0, &self.material);
                 recorder.draw(vertex_count, 1, first_vertex, 0);
             },
             | DrawMethod::DrawIndex { index_count, first_index } => {
-                recorder.push_constants(GsPipelineStage::FRAGMENT, 0, &self.material);
                 recorder.draw_indexed(index_count, 1, first_index, 0, 0);
             },
         }

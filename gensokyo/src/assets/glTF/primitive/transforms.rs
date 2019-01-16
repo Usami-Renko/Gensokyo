@@ -120,6 +120,7 @@ macro_rules! read_transform {
             transform: $node.local_transform.clone(),
             ..Default::default()
         };
+        // println!("transform: {:?}", new_uniforms.transform);
         $target.data.push(new_uniforms);
     };
 }

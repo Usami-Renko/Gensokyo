@@ -17,6 +17,7 @@ impl GsglTFIndicesData {
     pub fn extend<'a, 's, F>(&mut self, reader: &gltf::mesh::Reader<'a, 's, F>) -> Result<usize, GltfError>
         where F: Clone + Fn(gltf::Buffer<'a>) -> Option<&'s [u8]> {
 
+        // TODO: Support other integer type.
         let new_indices: Vec<vkuint> = reader.read_indices()
             .and_then(|index_iter| {
                 Some(index_iter.into_u32().collect())

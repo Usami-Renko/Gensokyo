@@ -141,13 +141,7 @@ impl DescriptorBufferBindableTarget for GsUniformBuffer {
             content: self.binding.clone(),
             element_indices: sub_block_indices.unwrap_or(vec![0]),
             buffer_handle: self.block.handle,
-            element_size: match self.usage {
-                | UniformUsage::Common => self.element_size,
-                | UniformUsage::Dynamic { slice_size, alignment, .. } => {
-                    // bind_to_alignment(slice_size, alignment) * (slice_count as vkbytes)
-                    bound_to_alignment(slice_size, alignment)
-                },
-            },
+            element_size: self.alignment_size(),
         }
     }
 }
@@ -165,6 +159,15 @@ impl GsUniformBuffer {
         match self.usage {
             | UniformUsage::Common => None,
             | UniformUsage::Dynamic { alignment, .. } => Some(alignment)
+        }
+    }
+
+    pub fn alignment_size(&self) -> vkbytes {
+        match self.usage {
+            | UniformUsage::Common => self.element_size,
+            | UniformUsage::Dynamic { alignment, slice_size, ..} => {
+                bound_to_alignment(slice_size, alignment)
+            }
         }
     }
 }

@@ -20,7 +20,7 @@ pub(crate) struct GsglTFNodeEntity {
 
     // the drawing order of node hierarchy.
     // only node with `local_mesh` contains draw_order property.
-    draw_order: Option<usize>,
+    draw_order: usize,
     /// the transform property of current node.
     pub local_transform: Matrix4F,
 }
@@ -47,23 +47,23 @@ impl<'a> GsglTFLevelEntity<'a> for GsglTFNodeEntity {
         let mut node_flag = GsglTFNodeUniformFlags::NONE;
 
         // read transform.
-        let transform = Matrix4F::from(level.0.transform().matrix());
+        let local_transform = Matrix4F::from(level.0.transform().matrix());
         node_flag |= GsglTFNodeUniformFlags::TRANSFORM_MATRIX;
 
         // first, read the mesh referenced by current node.
-        let (local_mesh, draw_order) = if let Some(gltf_mesh) = level.0.mesh() {
+        let (local_mesh, draw_order) = if let Some(glTF_mesh) = level.0.mesh() {
 
             // Record the draw order of current node.
             let draw_order = level.1.clone();
             // Update the draw order index whenever it read a new node recursively.
-            (*level.1) += 1;
+            *(level.1) += 1;
 
-            let mesh_arch = GsglTFMeshEntity::read_architecture(gltf_mesh)?;
+            let mesh_arch = GsglTFMeshEntity::read_architecture(glTF_mesh)?;
             attr_flag |= mesh_arch.attr_flags;
 
-            (Some(mesh_arch.arch), Some(draw_order))
+            (Some(mesh_arch.arch), draw_order)
         } else {
-            (None, None)
+            (None, 0)
         };
 
         // and then, read the child nodes of current node recursively.
@@ -78,7 +78,7 @@ impl<'a> GsglTFLevelEntity<'a> for GsglTFNodeEntity {
         }
 
         let target_arch = GsglTFArchitecture {
-            arch: GsglTFNodeEntity { local_mesh, children, draw_order, local_transform: transform },
+            arch: GsglTFNodeEntity { local_mesh, children, draw_order, local_transform },
             attr_flags: attr_flag,
             node_flags: node_flag,
         };
@@ -94,6 +94,7 @@ impl<'a> GsglTFLevelEntity<'a> for GsglTFNodeEntity {
         }
 
         if self.local_mesh.is_some() {
+            // debug_assert_eq!(self.draw_order, data.node_transforms.data_content().data_length());
             data.extend_transforms(self);
         }
 
@@ -113,7 +114,7 @@ impl GsglTFNodeEntity {
         if let Some(ref mesh) = self.local_mesh {
 
             // recalculate the dynamic offset.
-            let dyn_offset = (mess.uniform_alignment as vkuint) * (self.draw_order.unwrap() as vkuint);
+            let dyn_offset = (mess.uniform_aligned_size as vkuint) * (self.draw_order as vkuint);
             mess.binding_sets[mess.gltf_uniform_index].dynamic_offset = Some(dyn_offset);
             // rebind the DescriptorSets.
             recorder.bind_descriptor_sets(0, &mess.binding_sets);

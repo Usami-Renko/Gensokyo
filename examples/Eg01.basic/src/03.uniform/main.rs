@@ -1,8 +1,5 @@
 
-// TODO: Rename crate in Cargo.toml.
-extern crate gensokyo as gs;
-extern crate gensokyo_vulkan as gsvk;
-extern crate gensokyo_macros as gsma;
+// TODO: Remove all #[allow(dead_code)]
 
 use ash::vk;
 use gs::prelude::*;

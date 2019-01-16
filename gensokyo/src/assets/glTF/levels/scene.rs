@@ -49,9 +49,9 @@ impl<'a> GsglTFLevelEntity<'a> for GsglTFSceneEntity {
 
         for (node_entity, node_level) in self.nodes.iter_mut().zip(level.nodes()) {
 
-            // update node's transformation.
+            // first, update node's transformation.
             node_entity.combine_transform(&Matrix4F::identity());
-
+            // then read the transform data. The order is important.
             node_entity.read_data(node_level, source, data)?;
         }
 
