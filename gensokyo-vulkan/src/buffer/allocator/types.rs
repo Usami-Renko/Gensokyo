@@ -5,8 +5,8 @@ use crate::core::device::GsDevice;
 
 use crate::memory::MemoryMappable;
 use crate::memory::types::GsMemoryType;
-use crate::memory::MemoryError;
 
+use crate::error::VkResult;
 use crate::utils::phantom::{ Host, Device, Cached, Staging };
 
 pub trait BufferMemoryTypeAbs: Copy + Sized {
@@ -18,7 +18,7 @@ pub trait BufferMemoryTypeAbs: Copy + Sized {
 
     fn complement_usage(&self, origin: vk::BufferUsageFlags) -> vk::BufferUsageFlags;
 
-    fn map_memory_if_need(&self, _device: &GsDevice, _mapable_memory: &mut MemoryMappable) -> Result<(), MemoryError> { Ok(()) }
+    fn map_memory_if_need(&self, _device: &GsDevice, _mappable_memory: &mut MemoryMappable) -> VkResult<()> { Ok(()) }
 }
 
 #[derive(Debug, Clone, Copy, Eq, PartialEq)]
@@ -39,8 +39,8 @@ impl BufferMemoryTypeAbs for Host {
         origin
     }
 
-    fn map_memory_if_need(&self, device: &GsDevice, mapable_memory: &mut MemoryMappable) -> Result<(), MemoryError> {
-        mapable_memory.map_range(device, None)
+    fn map_memory_if_need(&self, device: &GsDevice, mappable_memory: &mut MemoryMappable) -> VkResult<()> {
+        mappable_memory.map_range(device, None)
     }
 }
 

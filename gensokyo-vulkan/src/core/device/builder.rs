@@ -9,7 +9,7 @@ use crate::core::device::enums::{ PrefabQueuePriority, DeviceQueueIndex, QueueRe
 use crate::core::device::queue::{ GsGraphicsQueue, GsPresentQueue, GsTransferQueue };
 use crate::core::device::queue::{ GsQueue, QueueUsage };
 use crate::core::device::queue::{ QueueRequester, SFSQ, SFMQ };
-use crate::core::error::LogicalDeviceError;
+use crate::error::{ VkResult, VkError };
 
 use crate::utils::cast;
 use crate::VERBOSE;
@@ -49,9 +49,9 @@ impl<'a> LogicalDeviceBuilder<'a> {
         self.queue_request.request_queue(usage, priority.unwrap_or(PrefabQueuePriority::Highest))
     }
 
-    pub fn build(&mut self) -> Result<(GsLogicalDevice, Vec<GsQueue>), LogicalDeviceError> {
+    pub fn build(&mut self) -> VkResult<(GsLogicalDevice, Vec<GsQueue>)> {
 
-        // Configurate queue.
+        // Configure queue.
         let _ = self.queue_request.request_queue(QueueUsage::Graphics, PrefabQueuePriority::Highest);
         let _ = self.queue_request.request_queue(QueueUsage::Present, PrefabQueuePriority::Highest);
         let _ = self.queue_request.request_queue(QueueUsage::Transfer, PrefabQueuePriority::Highest);
@@ -72,7 +72,7 @@ impl<'a> LogicalDeviceBuilder<'a> {
                 }
             }).collect();
 
-        // Configurate device features, layers and extensions.
+        // Configure device features, layers and extensions.
         let enable_features = self.physical.features.enable_features();
         let enable_layer_names = cast::cstrings2ptrs(&self.instance.enable_layer_names);
         let enable_extension_names = cast::cstrings2ptrs(self.physical.extensions.borrow_enable_extensions());
@@ -94,7 +94,7 @@ impl<'a> LogicalDeviceBuilder<'a> {
 
         let handle = unsafe {
             self.instance.handle.create_device(self.physical.handle, &device_create_info, None)
-                .or(Err(LogicalDeviceError::DeviceCreationError))?
+                .or(Err(VkError::create("Logical Device")))?
         };
 
         if VERBOSE {

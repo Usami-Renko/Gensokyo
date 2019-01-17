@@ -16,7 +16,8 @@ use crate::image::instance::traits::ImageBarrierBundleAbs;
 use crate::image::allocator::ImageAllocateInfo;
 
 use crate::memory::transfer::DataCopyer;
-use crate::memory::AllocatorError;
+
+use crate::error::VkResult;
 use crate::command::GsCmdCopyApi;
 use crate::utils::phantom::Staging;
 
@@ -30,7 +31,7 @@ pub struct SampleImageBarrierBundle {
 
 impl ImageBarrierBundleAbs for SampleImageBarrierBundle {
 
-    fn make_transfermation(&mut self, physical: &GsPhyDevice, device: &GsDevice, copyer: &DataCopyer, infos: &mut Vec<ImageAllocateInfo>) -> Result<(), AllocatorError> {
+    fn make_barrier_transform(&mut self, physical: &GsPhyDevice, device: &GsDevice, copyer: &DataCopyer, infos: &mut Vec<ImageAllocateInfo>) -> VkResult<()> {
 
         // create staging buffer and memories
         let (mut staging_repository, buffer_blocks) = self.create_staging_repository(physical, device, infos)?;
@@ -78,7 +79,7 @@ impl SampleImageBarrierBundle {
         }
     }
 
-    fn create_staging_repository(&mut self, physical: &GsPhyDevice, device: &GsDevice, infos: &Vec<ImageAllocateInfo>) -> Result<(GsBufferRepository<Staging>, Vec<GsImgsrcBuffer>), AllocatorError> {
+    fn create_staging_repository(&mut self, physical: &GsPhyDevice, device: &GsDevice, infos: &Vec<ImageAllocateInfo>) -> VkResult<(GsBufferRepository<Staging>, Vec<GsImgsrcBuffer>)> {
 
         let mut staging_indices = vec![];
 
@@ -101,7 +102,7 @@ impl SampleImageBarrierBundle {
         Ok((distributor.into_repository(), staging_buffers))
     }
 
-    fn upload_staging_data(&self, staging_repository: &mut GsBufferRepository<Staging>, img_data_blocks: &[GsImgsrcBuffer], infos: &Vec<ImageAllocateInfo>) -> Result<(), AllocatorError> {
+    fn upload_staging_data(&self, staging_repository: &mut GsBufferRepository<Staging>, img_data_blocks: &[GsImgsrcBuffer], infos: &Vec<ImageAllocateInfo>) -> VkResult<()> {
 
         let mut uploader = staging_repository.data_uploader()?;
 

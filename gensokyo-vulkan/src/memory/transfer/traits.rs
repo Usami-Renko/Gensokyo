@@ -2,13 +2,13 @@
 use crate::core::device::GsDevice;
 use crate::buffer::BufferBlock;
 use crate::memory::utils::MemoryWritePtr;
-use crate::memory::error::{ MemoryError, AllocatorError };
+use crate::error::VkResult;
 
 pub trait MemoryDataDelegate {
 
-    fn prepare(&mut self, device: &GsDevice) -> Result<(), MemoryError>;
+    fn prepare(&mut self, device: &GsDevice) -> VkResult<()>;
 
-    fn acquire_write_ptr(&mut self, block: &BufferBlock, repository_index: usize) -> Result<MemoryWritePtr, MemoryError>;
+    fn acquire_write_ptr(&mut self, block: &BufferBlock, repository_index: usize) -> VkResult<MemoryWritePtr>;
 
-    fn finish(&mut self, device: &GsDevice) -> Result<(), AllocatorError>;
+    fn finish(&mut self, device: &GsDevice) -> VkResult<()>;
 }

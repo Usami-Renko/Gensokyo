@@ -6,6 +6,5 @@ pub mod surface;
 pub mod physical;
 pub mod device;
 pub mod swapchain;
-pub mod error;
 
 mod platforms;

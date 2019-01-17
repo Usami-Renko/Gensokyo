@@ -16,7 +16,7 @@ pub struct MemoryRange {
 #[derive(Debug, Clone)]
 pub struct MemoryMapStatus {
 
-    /// The begining data ptr of the whole memory.
+    /// The beginning data ptr of the whole memory.
     data_ptr: Option<vkptr>,
 }
 

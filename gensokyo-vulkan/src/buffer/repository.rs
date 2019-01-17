@@ -9,8 +9,8 @@ use crate::buffer::allocator::types::BufferMemoryTypeAbs;
 use crate::memory::types::GsMemoryType;
 use crate::memory::instance::GsBufferMemory;
 use crate::memory::transfer::{ GsBufferDataUploader, GsBufferDataUpdater };
-use crate::memory::{ AllocatorError, MemoryError };
 
+use crate::error::{ VkResult, VkError };
 use crate::types::vkbytes;
 
 use std::marker::PhantomData;
@@ -46,12 +46,12 @@ impl<M> GsBufferRepository<M> where M: BufferMemoryTypeAbs {
         }
     }
 
-    pub fn data_uploader(&mut self) -> Result<GsBufferDataUploader, AllocatorError> {
+    pub fn data_uploader(&mut self) -> VkResult<GsBufferDataUploader> {
 
         GsBufferDataUploader::new(&self.physical, &self.device, &self.memory, &self.allocate_infos)
     }
 
-    pub fn data_updater(&mut self) -> Result<GsBufferDataUpdater, AllocatorError> {
+    pub fn data_updater(&mut self) -> VkResult<GsBufferDataUpdater> {
 
         match self.memory.memory_type() {
             | GsMemoryType::HostMemory => {
@@ -60,7 +60,7 @@ impl<M> GsBufferRepository<M> where M: BufferMemoryTypeAbs {
             | GsMemoryType::StagingMemory
             | GsMemoryType::CachedMemory
             | GsMemoryType::DeviceMemory => {
-                return Err(AllocatorError::Memory(MemoryError::MemoryUnableToUpdate))
+                return Err(VkError::device("This type of memory is not support to use updater."))
             },
         }
     }

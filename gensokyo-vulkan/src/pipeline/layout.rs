@@ -4,9 +4,9 @@ use ash::version::DeviceV1_0;
 
 use crate::core::device::GsDevice;
 use crate::pipeline::target::GsPipelineStage;
-use crate::pipeline::error::PipelineError;
 use crate::descriptor::GsDescriptorSetLayout;
 
+use crate::error::{ VkResult, VkError };
 use crate::types::vkuint;
 
 use std::ptr;
@@ -20,7 +20,7 @@ pub struct PipelineLayoutBuilder {
 
 impl PipelineLayoutBuilder {
 
-    pub fn build(&self, device: &GsDevice) -> Result<vk::PipelineLayout, PipelineError> {
+    pub fn build(&self, device: &GsDevice) -> VkResult<vk::PipelineLayout> {
 
         let create_info = vk::PipelineLayoutCreateInfo {
             s_type: vk::StructureType::PIPELINE_LAYOUT_CREATE_INFO,
@@ -35,7 +35,7 @@ impl PipelineLayoutBuilder {
 
         unsafe {
             device.handle.create_pipeline_layout(&create_info, None)
-                .or(Err(PipelineError::LayoutCreationError))
+                .or(Err(VkError::create("Pipeline Layout")))
         }
     }
 

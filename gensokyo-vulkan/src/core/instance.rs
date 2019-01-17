@@ -6,10 +6,11 @@ use ash::version::InstanceV1_0;
 use crate::core::debug;
 use crate::core::debug::{ ValidationConfig, DebugInstanceType };
 use crate::core::platforms;
-use crate::core::error::InstanceError;
 
 use crate::utils::cast;
 use crate::types::vkuint;
+
+use crate::error::{ VkResult, VkErrorKind, VkError };
 
 use std::ptr;
 use std::ffi::CString;
@@ -36,15 +37,15 @@ enum InstanceExtensionType {
 impl GsInstance {
 
     /// Initialize `vk::Instance` object.
-    pub fn new(config: &InstanceConfig, validation: &ValidationConfig) -> Result<GsInstance, InstanceError> {
+    pub fn new(config: &InstanceConfig, validation: &ValidationConfig) -> VkResult<GsInstance> {
 
         let entry = ash::Entry::new()
-            .or(Err(InstanceError::EntryCreationError))?;
+            .or(Err(VkErrorKind::Unlink(String::from("Entry"))))?;
 
         let app_name = cast::string2cstring((&config.application_name).into())
-            .ok_or(InstanceError::InvalidNameCastingError)?;
+            .ok_or(VkError::str_convert("Vulkan Application Name"))?;
         let engine_name = cast::string2cstring((&config.engine_name).into())
-            .ok_or(InstanceError::InvalidNameCastingError)?;
+            .ok_or(VkError::str_convert("Vulkan Engine Name"))?;
 
         let application_info = vk::ApplicationInfo {
             s_type              : vk::StructureType::APPLICATION_INFO,
@@ -78,7 +79,7 @@ impl GsInstance {
         // create vk::Instance object.
         let handle = unsafe {
             entry.create_instance(&instance_create_info, None)
-                .or(Err(InstanceError::InstanceCreationError))?
+                .map_err(|e| VkError::unlink(format!("Instance({})", e)))?
         };
 
         let instance = GsInstance {
@@ -120,7 +121,7 @@ impl GsInstance {
 /// Convenient function to get the names of required vulkan layers.
 ///
 /// Return an vector of CString if succeeds, or an error explan the detail.
-fn required_layers(entry: &ash::Entry, validation: &ValidationConfig) -> Result<Vec<CString>, InstanceError> {
+fn required_layers(entry: &ash::Entry, validation: &ValidationConfig) -> VkResult<Vec<CString>> {
 
     // required validation layer name if need  ---------------------------
     let mut enable_layer_names = vec![];
@@ -131,11 +132,11 @@ fn required_layers(entry: &ash::Entry, validation: &ValidationConfig) -> Result<
             for layer in validation.required_validation_layers.iter() {
 
                 let layer_name = cast::string2cstring(Some(layer))
-                    .ok_or(InstanceError::InvalidNameCastingError)?;
+                    .ok_or(VkError::str_convert("Vulkan Layers Name"))?;
                 enable_layer_names.push(layer_name);
             }
         } else {
-            return Err(InstanceError::ValidationLayerNotSupportError)
+            return Err(VkError::unsupported("Validation Layer"))
         }
     }
     // -------------------------------------------------------------------

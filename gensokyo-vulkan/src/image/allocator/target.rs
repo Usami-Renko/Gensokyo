@@ -15,12 +15,11 @@ use crate::image::instance::sample::{ SampleImageInfo, SampleImageBarrierBundle 
 use crate::image::instance::depth::{ DepthStencilAttachmentInfo, DepSteImageBarrierBundle };
 use crate::image::allocator::types::ImageMemoryTypeAbs;
 use crate::image::allocator::distributor::GsImageDistributor;
-use crate::image::error::ImageError;
 
 use crate::memory::{ MemoryFilter, MemoryDstEntity };
 use crate::memory::transfer::DataCopyer;
-use crate::memory::AllocatorError;
 
+use crate::error::{ VkResult, VkError };
 use crate::types::vkbytes;
 
 use std::collections::HashMap;
@@ -36,9 +35,9 @@ pub struct GsImageAllocator<M> where M: ImageMemoryTypeAbs {
     physical: GsPhyDevice,
     device  : GsDevice,
 
-    image_infos : Vec<ImageAllocateInfo>,
+    image_infos: Vec<ImageAllocateInfo>,
 
-    memory_filter : MemoryFilter,
+    memory_filter: MemoryFilter,
 }
 
 impl<M> GsImageAllocator<M> where M: ImageMemoryTypeAbs {
@@ -58,20 +57,20 @@ impl<M> GsImageAllocator<M> where M: ImageMemoryTypeAbs {
         }
     }
 
-    pub fn append_sample_image(&mut self, info: &mut SampleImageInfo) -> Result<(), AllocatorError> {
+    pub fn append_sample_image(&mut self, info: &mut SampleImageInfo) -> VkResult<()> {
 
         let storage = info.take_storage()
-            .ok_or(AllocatorError::DuplicateAppendImage)?;
+            .ok_or(VkError::sync("Duplicate append image to allocator."))?;
         self.append_image(info, storage)
     }
 
-    pub fn append_depth_stencil_image(&mut self, info: &mut DepthStencilAttachmentInfo) -> Result<(), AllocatorError> {
+    pub fn append_depth_stencil_image(&mut self, info: &mut DepthStencilAttachmentInfo) -> VkResult<()> {
 
         let storage = info.gen_storage_info();
         self.append_image(info, storage)
     }
 
-    fn append_image(&mut self, info: &mut impl ImageInstanceInfoAbs, storage: ImageStorageInfo) -> Result<(), AllocatorError> {
+    fn append_image(&mut self, info: &mut impl ImageInstanceInfoAbs, storage: ImageStorageInfo) -> VkResult<()> {
 
         let image = info.build_image(&self.device)?;
         self.memory_filter.filter(&image)?;
@@ -82,10 +81,10 @@ impl<M> GsImageAllocator<M> where M: ImageMemoryTypeAbs {
         Ok(())
     }
 
-    pub fn allocate(mut self) -> Result<GsImageDistributor<M>, AllocatorError> {
+    pub fn allocate(mut self) -> VkResult<GsImageDistributor<M>> {
 
         if self.image_infos.is_empty() {
-            return Err(AllocatorError::Image(ImageError::NoImageAppendError))
+            return Err(VkError::sync("There must be images appended to allocator before allocate memory."))
         }
 
         // 1.select memory type for image.
@@ -109,7 +108,7 @@ impl<M> GsImageAllocator<M> where M: ImageMemoryTypeAbs {
 
         let mut barrier_bundles = collect_barrier_bundle(&self.image_infos);
         for bundle in barrier_bundles.iter_mut() {
-            bundle.make_transfermation(&self.physical, &self.device, &copyer, &mut self.image_infos)?;
+            bundle.make_barrier_transform(&self.physical, &self.device, &copyer, &mut self.image_infos)?;
         }
 
         // 5.execute image barrier transition.
@@ -121,10 +120,10 @@ impl<M> GsImageAllocator<M> where M: ImageMemoryTypeAbs {
 
     pub fn reset(&mut self) {
 
-        self.image_infos.iter().for_each(|image_info| {
+        for image_info in self.image_infos.iter() {
             image_info.destroy(&self.device);
-        });
-
+        }
+        self.image_infos.clear();
         self.memory_filter.reset();
     }
 }
@@ -148,7 +147,7 @@ impl ImageAllocateInfo {
 
     pub fn new(typ: ImageInstanceType, storage: ImageStorageInfo, image: GsImage, image_desc: ImageDescInfo, view_desc: ImageViewDescInfo) -> ImageAllocateInfo {
 
-        let space = image.aligment_size();
+        let space = image.alignment_size();
 
         ImageAllocateInfo {
             typ, image, image_desc, view_desc, storage, space,
@@ -176,7 +175,7 @@ impl ImageCopiable for ImageAllocateInfo {
     fn copy_info(&self) -> ImageCopyInfo {
 
         use crate::image::utils::image_subrange_to_layers;
-        // The layout paramater is the destination layout after data copy.
+        // The layout parameter is the destination layout after data copy.
         // This value should be vk::TransferDstOptimal.
         let subrange_layers = image_subrange_to_layers(&self.view_desc.subrange);
         ImageCopyInfo::new(&self.image, subrange_layers, self.final_layout, self.storage.dimension)

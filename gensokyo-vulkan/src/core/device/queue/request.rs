@@ -2,24 +2,24 @@
 use ash::vk;
 use ash::version::DeviceV1_0;
 
-use crate::types::vkuint;
 
 use crate::core::physical::GsPhysicalDevice;
 use crate::core::device::enums::{ DeviceQueueIndex, PrefabQueuePriority };
 use crate::core::device::queue::target::{ GsQueue, QueueUsage, QueueInitInfo };
-use crate::core::error::QueueError;
+
+use crate::types::vkuint;
+use crate::error::{ VkResult, VkError };
 
 pub trait QueueRequester {
 
     /// Request a new virtual queue in Device creation, return its reference index.
     fn request_queue(&mut self, usage: QueueUsage, priority: PrefabQueuePriority) -> DeviceQueueIndex;
     /// Check if device support current requested queues and generate physical queues based on current requested virtual queues.
-    fn inspect_queue_availability(&mut self, physical: &GsPhysicalDevice) -> Result<(), QueueError>;
+    fn inspect_queue_availability(&mut self, physical: &GsPhysicalDevice) -> VkResult<()>;
     /// Generate `QueueInitInfo` based on current requested queues information.
-    fn to_queue_infos(&self) -> Result<Vec<QueueInitInfo>, QueueError>;
+    fn to_queue_infos(&self) -> VkResult<Vec<QueueInitInfo>>;
     /// Get the handle of Queue from Vulkan, and collect all virtual queues into `GsQueue`.
-    fn collect_queues(&self, device: &ash::Device) -> Result<Vec<GsQueue>, QueueError>;
-
+    fn collect_queues(&self, device: &ash::Device) -> VkResult<Vec<GsQueue>>;
     /// Print the information of requested queues.
     fn print_message(&self);
 }
@@ -75,7 +75,7 @@ impl QueueRequester for SFSQ {
         DeviceQueueIndex(reference_index)
     }
 
-    fn inspect_queue_availability(&mut self, physical: &GsPhysicalDevice) -> Result<(), QueueError> {
+    fn inspect_queue_availability(&mut self, physical: &GsPhysicalDevice) -> VkResult<()> {
 
         let optimal_family = select_optimal_queue_family(physical, &self.vir_queues,
             |family_index, requested_capability| {
@@ -95,11 +95,11 @@ impl QueueRequester for SFSQ {
             Ok(())
 
         } else {
-            Err(QueueError::QueueOpsUnsupport)
+            Err(VkError::unsupported("Required Queue Operations"))
         }
     }
 
-    fn to_queue_infos(&self) -> Result<Vec<QueueInitInfo>, QueueError> {
+    fn to_queue_infos(&self) -> VkResult<Vec<QueueInitInfo>> {
 
         if let Some(ref phy_queue) = self.phy_queue {
             let result = QueueInitInfo {
@@ -109,11 +109,11 @@ impl QueueRequester for SFSQ {
 
             Ok(vec![result])
         } else {
-            Err(QueueError::PhyQueueNotYetGenerate)
+            Err(VkError::sync("`inspect_queue_available()` method must be call before using `to_queue_infos()` function."))
         }
     }
 
-    fn collect_queues(&self, device: &ash::Device) -> Result<Vec<GsQueue>, QueueError> {
+    fn collect_queues(&self, device: &ash::Device) -> VkResult<Vec<GsQueue>> {
 
         if let Some(ref phy_queue) = self.phy_queue {
 
@@ -127,7 +127,7 @@ impl QueueRequester for SFSQ {
 
             Ok(queues)
         } else {
-            Err(QueueError::PhyQueueNotYetGenerate)
+            Err(VkError::sync("`inspect_queue_available()` method must be call before using `collect_queues()` function."))
         }
     }
 
@@ -186,7 +186,7 @@ impl QueueRequester for SFMQ {
         DeviceQueueIndex(reference_index)
     }
 
-    fn inspect_queue_availability(&mut self, physical: &GsPhysicalDevice) -> Result<(), QueueError> {
+    fn inspect_queue_availability(&mut self, physical: &GsPhysicalDevice) -> VkResult<()> {
 
         let optimal_family = select_optimal_queue_family(physical, &self.vir_queues,
             |family_index, requested_capability| {
@@ -209,15 +209,15 @@ impl QueueRequester for SFMQ {
 
             Ok(())
         } else {
-            Err(QueueError::QueueOpsUnsupport)
+            Err(VkError::unsupported("Required Queue Operations"))
         }
     }
 
-    fn to_queue_infos(&self) -> Result<Vec<QueueInitInfo>, QueueError> {
+    fn to_queue_infos(&self) -> VkResult<Vec<QueueInitInfo>> {
 
         if self.phy_queues.is_empty() {
 
-            Err(QueueError::PhyQueueNotYetGenerate)
+            Err(VkError::sync("`inspect_queue_available()` method must be call before using `to_queue_infos()` function."))
         } else {
 
             let priorities = self.phy_queues.iter()
@@ -232,11 +232,11 @@ impl QueueRequester for SFMQ {
         }
     }
 
-    fn collect_queues(&self, device: &ash::Device) -> Result<Vec<GsQueue>, QueueError> {
+    fn collect_queues(&self, device: &ash::Device) -> VkResult<Vec<GsQueue>> {
 
         if self.phy_queues.is_empty() {
 
-            Err(QueueError::PhyQueueNotYetGenerate)
+            Err(VkError::sync("`inspect_queue_available()` method must be call before using `collect_queues()` function."))
         } else {
 
             let queue_handles: Vec<vk::Queue> = unsafe {

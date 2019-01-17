@@ -6,10 +6,8 @@ use num::clamp;
 
 use crate::core::surface::GsSurface;
 use crate::core::swapchain::SwapchainConfig;
-use crate::core::swapchain::error::SwapchainInitError;
-use crate::core::error::SurfaceError;
-
 use crate::types::{ vkDim2D, vkuint };
+use crate::error::{ VkResult, VkError };
 
 pub struct SwapchainSupport {
 
@@ -22,7 +20,7 @@ pub struct SwapchainSupport {
 
 impl SwapchainSupport {
 
-    pub fn query_support(surface: &GsSurface, physical: vk::PhysicalDevice, config: &SwapchainConfig) -> Result<SwapchainSupport, SurfaceError> {
+    pub fn query_support(surface: &GsSurface, physical: vk::PhysicalDevice, config: &SwapchainConfig) -> VkResult<SwapchainSupport> {
 
         let support = SwapchainSupport {
             capabilities  : surface.query_capabilities(physical)?,
@@ -33,7 +31,7 @@ impl SwapchainSupport {
         Ok(support)
     }
 
-    pub fn optimal_extent(&self, window: &winit::Window) -> Result<vkDim2D, SwapchainInitError> {
+    pub fn optimal_extent(&self, window: &winit::Window) -> VkResult<vkDim2D> {
 
         const SPECIAL_EXTEND: vkuint = 0xFFFF_FFFF;
 
@@ -41,7 +39,7 @@ impl SwapchainSupport {
             self.capabilities.current_extent.height == SPECIAL_EXTEND {
 
             let window_size = window.get_inner_size()
-                .ok_or(SwapchainInitError::SurfaceNotExistError)?;
+                .ok_or(VkError::window("get Window dimension"))?;
 
             vkDim2D {
                 width: clamp(

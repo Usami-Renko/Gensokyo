@@ -7,15 +7,14 @@ use crate::core::physical::GsPhyDevice;
 use crate::image::target::GsImage;
 use crate::image::storage::ImageStorageInfo;
 use crate::image::allocator::ImageAllocateInfo;
-use crate::image::error::ImageError;
 use crate::memory::transfer::DataCopyer;
-use crate::memory::AllocatorError;
 
+use crate::error::VkResult;
 use crate::types::vkuint;
 
 pub trait ImageInstanceInfoAbs: Sized {
 
-    fn build_image(&self, device: &GsDevice) -> Result<GsImage, ImageError>;
+    fn build_image(&self, device: &GsDevice) -> VkResult<GsImage>;
     fn allocate_index(&self) -> Option<usize>;
     fn set_allocate_index(&mut self, value: usize);
     fn allocate_info(&self, image: GsImage, storage: ImageStorageInfo) -> ImageAllocateInfo;
@@ -50,5 +49,5 @@ pub trait GsImageViewDescAbs: Sized {
 /// Image Barrier Bundle Abstract.
 pub trait ImageBarrierBundleAbs {
 
-    fn make_transfermation(&mut self, physical: &GsPhyDevice, device: &GsDevice, copyer: &DataCopyer, infos: &mut Vec<ImageAllocateInfo>) -> Result<(), AllocatorError>;
+    fn make_barrier_transform(&mut self, physical: &GsPhyDevice, device: &GsDevice, copyer: &DataCopyer, infos: &mut Vec<ImageAllocateInfo>) -> VkResult<()>;
 }

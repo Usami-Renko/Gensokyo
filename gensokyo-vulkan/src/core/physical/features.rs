@@ -5,7 +5,7 @@ use ash::version::InstanceV1_0;
 use crate::core::instance::GsInstance;
 use crate::core::physical::config::PhysicalInspectProperty;
 
-pub(crate) struct PhyscialFeatures {
+pub(crate) struct PhysicalFeatures {
 
     availables: vk::PhysicalDeviceFeatures,
     enables   : vk::PhysicalDeviceFeatures,
@@ -17,15 +17,15 @@ pub struct PhysicalFeatureConfig {
     pub require_features: vk::PhysicalDeviceFeatures,
 }
 
-impl PhyscialFeatures {
+impl PhysicalFeatures {
 
-    pub fn query(instance: &GsInstance, physical_device: vk::PhysicalDevice) -> PhyscialFeatures {
+    pub fn query(instance: &GsInstance, physical_device: vk::PhysicalDevice) -> PhysicalFeatures {
 
         let available_features = unsafe {
             instance.handle.get_physical_device_features(physical_device)
         };
 
-        PhyscialFeatures {
+        PhysicalFeatures {
             availables: available_features,
             enables: Default::default(),
         }
@@ -85,7 +85,7 @@ macro_rules! impl_physical_features {
 }
 
 impl_physical_features!(
-    PhyscialFeatures, {
+    PhysicalFeatures, {
     robust_buffer_access,
     full_draw_index_uint32,
     image_cube_array,

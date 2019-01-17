@@ -6,8 +6,8 @@ use crate::core::device::GsDevice;
 
 use crate::image::traits::ImageHandleEntity;
 use crate::memory::MemoryDstEntity;
-use crate::image::error::ImageError;
 
+use crate::error::{ VkResult, VkError };
 use crate::types::{ vkuint, vkbytes, vkDim3D };
 
 use std::ptr;
@@ -22,18 +22,6 @@ pub struct GsImage {
 }
 
 impl GsImage {
-
-    pub(crate) fn from_swapchain(handle: vk::Image) -> GsImage {
-
-        GsImage {
-            handle,
-            requirement: vk::MemoryRequirements {
-                size: 0,
-                alignment: 0,
-                memory_type_bits: 0,
-            }
-        }
-    }
 
     fn new(device: &GsDevice, handle: vk::Image) -> GsImage {
 
@@ -54,6 +42,20 @@ impl GsImage {
     }
 }
 
+impl From<vk::Image> for GsImage {
+
+    fn from(handle: vk::Image) -> GsImage {
+        GsImage {
+            handle,
+            requirement: vk::MemoryRequirements {
+                size: 0,
+                alignment: 0,
+                memory_type_bits: 0,
+            }
+        }
+    }
+}
+
 impl ImageHandleEntity for GsImage {
 
     fn handle(&self) -> vk::Image {
@@ -67,7 +69,7 @@ impl MemoryDstEntity for GsImage {
         self.requirement.memory_type_bits
     }
 
-    fn aligment_size(&self) -> vkbytes {
+    fn alignment_size(&self) -> vkbytes {
 
         use crate::utils::memory::bound_to_alignment;
         bound_to_alignment(self.requirement.size, self.requirement.alignment)
@@ -84,7 +86,7 @@ pub struct ImageDescInfo {
 
 impl ImageDescInfo {
 
-    pub fn build(&self, device: &GsDevice) -> Result<GsImage, ImageError> {
+    pub fn build(&self, device: &GsDevice) -> VkResult<GsImage> {
 
         let image_create_info = vk::ImageCreateInfo {
             s_type : vk::StructureType::IMAGE_CREATE_INFO,
@@ -106,7 +108,7 @@ impl ImageDescInfo {
 
         let handle = unsafe {
             device.handle.create_image(&image_create_info, None)
-                .or(Err(ImageError::ImageCreationError))?
+                .or(Err(VkError::create("Image View")))?
         };
 
         let image = GsImage::new(device, handle);

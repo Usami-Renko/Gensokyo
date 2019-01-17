@@ -3,7 +3,7 @@ use ash::vk;
 
 use crate::core::instance::GsInstance;
 use crate::core::platforms;
-use crate::core::error::SurfaceError;
+use crate::error::{ VkResult, VkError };
 
 use crate::types::vkuint;
 
@@ -19,11 +19,11 @@ pub struct GsSurface {
 impl GsSurface {
 
     /// Initialize surface extension loader and `vk::Surface` object.
-    pub fn new(instance: &GsInstance, window: &winit::Window) -> Result<GsSurface, SurfaceError> {
+    pub fn new(instance: &GsInstance, window: &winit::Window) -> VkResult<GsSurface> {
 
         let handle = unsafe {
             platforms::generate_surface(&instance.entry, &instance.handle, window)
-                .or(Err(SurfaceError::SurfaceCreationError))?
+                .or(Err(VkError::unlink("Platform Surface")))?
         };
 
         let loader = ash::extensions::khr::Surface::new(&instance.entry, &instance.handle);
@@ -48,29 +48,29 @@ impl GsSurface {
     /// Query the basic capabilities of a surface.
     ///
     /// capabilities usually needs in swapchain creation.
-    pub fn query_capabilities(&self, physical_device: vk::PhysicalDevice) -> Result<vk::SurfaceCapabilitiesKHR, SurfaceError> {
+    pub fn query_capabilities(&self, physical_device: vk::PhysicalDevice) -> VkResult<vk::SurfaceCapabilitiesKHR> {
 
         unsafe {
             self.loader.get_physical_device_surface_capabilities(physical_device, self.handle)
-                .or(Err(SurfaceError::QueryCapabilitiesError))
+                .or(Err(VkError::query("Surface Capabilities")))
         }
     }
 
     /// Query the supported swapchain format tuples for a surface.
-    pub fn query_formats(&self, physical_device: vk::PhysicalDevice) -> Result<Vec<vk::SurfaceFormatKHR>, SurfaceError> {
+    pub fn query_formats(&self, physical_device: vk::PhysicalDevice) -> VkResult<Vec<vk::SurfaceFormatKHR>> {
 
         unsafe {
             self.loader.get_physical_device_surface_formats(physical_device, self.handle)
-                .or(Err(SurfaceError::QueryFormatsError))
+                .or(Err(VkError::query("Surface Formats")))
         }
     }
 
     /// Query the supported presentation modes for a surface.
-    pub fn query_present_modes(&self, physical_device: vk::PhysicalDevice) -> Result<Vec<vk::PresentModeKHR>, SurfaceError> {
+    pub fn query_present_modes(&self, physical_device: vk::PhysicalDevice) -> VkResult<Vec<vk::PresentModeKHR>> {
 
         unsafe {
             self.loader.get_physical_device_surface_present_modes(physical_device, self.handle)
-                .or(Err(SurfaceError::QueryPresentModeError))
+                .or(Err(VkError::query("Surface Present Modes")))
         }
     }
 

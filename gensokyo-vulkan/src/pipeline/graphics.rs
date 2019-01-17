@@ -19,10 +19,10 @@ use crate::pipeline::{
     pass::GsRenderPass,
     target::GsPipeline,
     layout::{ PipelineLayoutBuilder, GsPushConstantRange },
-    error::PipelineError,
 };
 
 use crate::descriptor::DescriptorSet;
+use crate::error::{ VkResult, VkError };
 use crate::types::vkDim2D;
 use crate::utils::phantom::Graphics;
 
@@ -30,13 +30,13 @@ use std::ptr;
 
 pub struct GraphicsPipelineConfig {
 
-    shaders        : Vec<GsShaderInfo>,
-    states         : PipelineStates,
-    flags          : vk::PipelineCreateFlags,
-    render_pass    : GsRenderPass,
+    shaders: Vec<GsShaderInfo>,
+    states: PipelineStates,
+    flags: vk::PipelineCreateFlags,
+    render_pass: GsRenderPass,
 
-    shader_modules : Vec<GsShaderModule>,
-    layout_builder : PipelineLayoutBuilder,
+    shader_modules: Vec<GsShaderModule>,
+    layout_builder: PipelineLayoutBuilder,
 }
 
 impl GraphicsPipelineConfig {
@@ -75,7 +75,7 @@ pub struct GraphicsPipelineBuilder {
 
 impl GraphicsPipelineBuilder {
 
-    pub fn new(device: &GsDevice) -> Result<GraphicsPipelineBuilder, PipelineError> {
+    pub fn new(device: &GsDevice) -> VkResult<GraphicsPipelineBuilder> {
 
         let builder = GraphicsPipelineBuilder {
             device : device.clone(),
@@ -86,11 +86,9 @@ impl GraphicsPipelineBuilder {
         Ok(builder)
     }
 
-    pub fn set_shaderc(&mut self, configuration: ShadercConfiguration) -> Result<(), PipelineError> {
+    pub fn set_shaderc(&mut self, configuration: ShadercConfiguration) -> VkResult<()> {
 
-        self.shaderc = GsShaderCompiler::setup_from_configuration(configuration)
-            .map_err(|e| PipelineError::Shaderc(e))?;
-
+        self.shaderc = GsShaderCompiler::setup_from_configuration(configuration)?;
         Ok(())
     }
 
@@ -99,7 +97,7 @@ impl GraphicsPipelineBuilder {
         self.configs.push(config);
     }
 
-    pub fn build(mut self) -> Result<Vec<GsPipeline<Graphics>>, PipelineError> {
+    pub fn build(mut self) -> VkResult<Vec<GsPipeline<Graphics>>> {
 
         for config in self.configs.iter_mut() {
             let mut shader_modules = vec![];
@@ -155,7 +153,8 @@ impl GraphicsPipelineBuilder {
         }
 
         let handles = unsafe {
-            self.device.handle.create_graphics_pipelines(vk::PipelineCache::null(), infos.as_slice(), None).unwrap()
+            self.device.handle.create_graphics_pipelines(vk::PipelineCache::null(), infos.as_slice(), None)
+                .or(Err(VkError::create("Graphics Pipelines")))?
         };
 
         self.destroy_shader_modules();

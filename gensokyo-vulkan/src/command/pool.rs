@@ -6,7 +6,7 @@ use gsma::collect_handle;
 
 use crate::core::device::{ GsDevice, DeviceQueueIdentifier };
 use crate::command::buffer::{ GsCommandBuffer, CmdBufferUsage };
-use crate::command::error::CommandError;
+use crate::error::{ VkResult, VkError };
 
 use std::ptr;
 
@@ -20,7 +20,7 @@ impl GsCommandPool {
 
     // TODO: Add configuration for vk::CommandPoolCreateFlags.
     pub fn setup(device: &GsDevice, queue: DeviceQueueIdentifier, flags: vk::CommandPoolCreateFlags)
-        -> Result<GsCommandPool, CommandError> {
+        -> VkResult<GsCommandPool> {
 
         let queue = device.queue_handle_by_identifier(queue);
 
@@ -33,7 +33,7 @@ impl GsCommandPool {
 
         let handle = unsafe {
             device.handle.create_command_pool(&command_info, None)
-                .or(Err(CommandError::PoolCreationError))?
+                .or(Err(VkError::create("Command Pool")))?
         };
 
         let pool = GsCommandPool {
@@ -46,7 +46,7 @@ impl GsCommandPool {
     /// Allocate vk::CommandBuffer from the vk::CommandPool.
     ///
     /// usage indicates the type of command buffer.
-    pub fn allocate(&self, usage: CmdBufferUsage, count: usize) -> Result<Vec<GsCommandBuffer>, CommandError> {
+    pub fn allocate(&self, usage: CmdBufferUsage, count: usize) -> VkResult<Vec<GsCommandBuffer>> {
 
         let allocate_info = vk::CommandBufferAllocateInfo {
             s_type: vk::StructureType::COMMAND_BUFFER_ALLOCATE_INFO,
@@ -58,7 +58,7 @@ impl GsCommandPool {
 
         let handles = unsafe {
             self.device.handle.allocate_command_buffers(&allocate_info)
-                .or(Err(CommandError::BufferAllocateError))?
+                .or(Err(VkError::device("Failed to allocate Command Buffer.")))?
         };
 
         let buffers = handles.iter()

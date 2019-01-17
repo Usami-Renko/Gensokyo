@@ -5,7 +5,9 @@ use crate::core::physical::GsPhyDevice;
 
 use crate::memory::types::GsMemoryType;
 use crate::memory::traits::MemoryDstEntity;
-use crate::memory::error::MemoryError;
+use crate::error::{ VkResult, VkError };
+
+const MEMORY_FILTER_ERROR_MESSAGE: &'static str = "Failed to find suitable memory type for memory allocation.";
 
 pub struct MemoryFilter {
 
@@ -31,34 +33,34 @@ impl MemoryFilter {
         }
     }
 
-    pub fn filter(&mut self, dst_enitty: &impl MemoryDstEntity) -> Result<(), MemoryError> {
+    pub fn filter(&mut self, dst_entity: &impl MemoryDstEntity) -> VkResult<()> {
 
         let new_candidates = self.physical.memory.find_memory_type(
-            dst_enitty.type_bytes(),
+            dst_entity.type_bytes(),
             self.memory_flag,
             if self.candidate_memories.is_empty() { None } else { Some(&self.candidate_memories) }
         );
 
         if new_candidates.is_empty() {
-            Err(MemoryError::NoSuitableMemoryError)
+            Err(VkError::device(MEMORY_FILTER_ERROR_MESSAGE))
         } else {
             self.candidate_memories = new_candidates;
             Ok(())
         }
     }
 
-    pub fn optimal_memory(&self) -> Result<usize, MemoryError> {
+    pub fn optimal_memory(&self) -> VkResult<usize> {
 
         // TODO: Use better method to find optimal memory
         let optimal_index = self.candidate_memories.first()
-            .ok_or(MemoryError::NoSuitableMemoryError)?.clone();
+            .ok_or(VkError::device(MEMORY_FILTER_ERROR_MESSAGE))?.clone();
         Ok(optimal_index)
     }
 
-    pub fn optimal_mem_type(&self) -> Result<vk::MemoryType, MemoryError> {
+    pub fn optimal_mem_type(&self) -> VkResult<vk::MemoryType> {
 
         let optimal_index = self.candidate_memories.first()
-            .ok_or(MemoryError::NoSuitableMemoryError)?.clone();
+            .ok_or(VkError::device(MEMORY_FILTER_ERROR_MESSAGE))?.clone();
         let result = self.physical.memory.memory_type(optimal_index);
 
         Ok(result)

@@ -5,8 +5,7 @@ use ash::version::DeviceV1_0;
 use crate::core::device::GsDevice;
 
 use crate::pipeline::pass::framebuffer::target::GsFramebuffer;
-use crate::pipeline::error::RenderPassError;
-
+use crate::error::{ VkResult, VkError };
 use crate::types::{ vkuint, vkDim2D };
 
 use std::ptr;
@@ -30,7 +29,7 @@ impl FramebufferBuilder {
         }
     }
 
-    pub fn build(self, device: &GsDevice, render_pass: vk::RenderPass) -> Result<GsFramebuffer, RenderPassError> {
+    pub fn build(self, device: &GsDevice, render_pass: vk::RenderPass) -> VkResult<GsFramebuffer> {
 
         let info = vk::FramebufferCreateInfo {
             s_type: vk::StructureType::FRAMEBUFFER_CREATE_INFO,
@@ -47,12 +46,10 @@ impl FramebufferBuilder {
 
         let handle = unsafe {
             device.handle.create_framebuffer(&info, None)
-                .or(Err(RenderPassError::FramebufferCreationError))?
+                .or(Err(VkError::create("FrameBuffer")))?
         };
 
-        let framebuffer = GsFramebuffer {
-            handle,
-        };
+        let framebuffer = GsFramebuffer { handle };
         Ok(framebuffer)
     }
 

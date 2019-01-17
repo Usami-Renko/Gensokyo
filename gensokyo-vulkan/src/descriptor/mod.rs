@@ -11,7 +11,6 @@ pub use self::pool::{ GsDescriptorPool, DescriptorPoolInfo };
 pub use self::entity::DescriptorSetEntity;
 pub use self::types::{ GsDescriptorType, BufferDescriptorType, ImageDescriptorType };
 pub use self::repository::GsDescriptorRepository;
-pub use self::error::DescriptorError;
 
 pub mod allocator;
 
@@ -22,4 +21,3 @@ mod entity;
 mod binding;
 mod types;
 mod repository;
-mod error;

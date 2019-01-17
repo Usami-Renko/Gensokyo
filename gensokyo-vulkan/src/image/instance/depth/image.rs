@@ -9,7 +9,7 @@ use crate::image::instance::ImageInstanceInfoDesc;
 use crate::image::instance::depth::DepthStencilAttachmentInfo;
 use crate::image::allocator::ImageAllocateInfo;
 
-use crate::pipeline::pass::{ RenderAttachement, RenderAttachementPrefab };
+use crate::pipeline::pass::{ RenderAttachment, RenderAttachmentPrefab };
 
 #[derive(Debug, Default)]
 pub struct GsDepthStencilAttachment {
@@ -31,8 +31,8 @@ impl GsDepthStencilAttachment {
         }
     }
 
-    pub fn to_subpass_attachment(&self) -> RenderAttachement {
-        RenderAttachement::setup(RenderAttachementPrefab::DepthAttachment, self.format)
+    pub fn to_subpass_attachment(&self) -> RenderAttachment {
+        RenderAttachment::setup(RenderAttachmentPrefab::DepthAttachment, self.format)
     }
 }
 

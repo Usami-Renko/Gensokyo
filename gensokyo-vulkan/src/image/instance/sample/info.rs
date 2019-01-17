@@ -10,10 +10,10 @@ use crate::image::enums::{ ImageInstanceType, ImagePipelineStage };
 use crate::image::storage::ImageStorageInfo;
 use crate::image::instance::traits::{ ImageInstanceInfoAbs, GsImageDescAbs ,GsImageViewDescAbs };
 use crate::image::allocator::ImageAllocateInfo;
-use crate::image::error::ImageError;
 
 use crate::descriptor::{ DescriptorBindingContent, GsDescriptorType, ImageDescriptorType };
 
+use crate::error::VkResult;
 use crate::types::vkuint;
 
 pub struct SampleImageInfo {
@@ -57,7 +57,7 @@ impl SampleImageInfo {
         }
     }
 
-    pub(crate) fn gen_sample(&self, device: &GsDevice) -> Result<GsSampler, ImageError> {
+    pub(crate) fn gen_sample(&self, device: &GsDevice) -> VkResult<GsSampler> {
         self.sampler_desc.build(device)
     }
 
@@ -72,7 +72,7 @@ impl SampleImageInfo {
 
 impl ImageInstanceInfoAbs for SampleImageInfo {
 
-    fn build_image(&self, device: &GsDevice) -> Result<GsImage, ImageError> {
+    fn build_image(&self, device: &GsDevice) -> VkResult<GsImage> {
         self.image_desc.build(device)
     }
 

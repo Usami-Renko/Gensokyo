@@ -7,7 +7,7 @@ use crate::buffer::allocator::BufferAllocateInfos;
 
 use crate::memory::instance::GsBufferMemory;
 use crate::memory::transfer::traits::MemoryDataDelegate;
-use crate::memory::error::AllocatorError;
+use crate::error::VkResult;
 use crate::types::vkbytes;
 
 pub struct GsBufferDataUploader {
@@ -20,7 +20,7 @@ pub struct GsBufferDataUploader {
 
 impl GsBufferDataUploader {
 
-    pub(crate) fn new(physical: &GsPhyDevice, device: &GsDevice, memory: &GsBufferMemory, allocate_infos: &BufferAllocateInfos) -> Result<GsBufferDataUploader, AllocatorError> {
+    pub(crate) fn new(physical: &GsPhyDevice, device: &GsDevice, memory: &GsBufferMemory, allocate_infos: &BufferAllocateInfos) -> VkResult<GsBufferDataUploader> {
 
         let mut agency = memory.to_upload_agency(device, physical, allocate_infos)?;
         agency.prepare(device)?;
@@ -33,7 +33,7 @@ impl GsBufferDataUploader {
         Ok(uploader)
     }
 
-    pub fn upload(&mut self, to: &impl BufferInstance, data: &[impl Copy]) -> Result<&mut GsBufferDataUploader, AllocatorError> {
+    pub fn upload(&mut self, to: &impl BufferInstance, data: &[impl Copy]) -> VkResult<&mut GsBufferDataUploader> {
 
         let writer = to.acquire_write_ptr(&mut self.agency)?;
         writer.write_data(data);
@@ -41,7 +41,7 @@ impl GsBufferDataUploader {
         Ok(self)
     }
 
-    pub fn upload_align(&mut self, to: &impl BufferInstance, data: &[impl Copy], element_alignment: vkbytes) -> Result<&mut GsBufferDataUploader, AllocatorError> {
+    pub fn upload_align(&mut self, to: &impl BufferInstance, data: &[impl Copy], element_alignment: vkbytes) -> VkResult<&mut GsBufferDataUploader> {
 
         let writer = to.acquire_write_ptr(&mut self.agency)?;
         writer.write_data_with_alignment(data, element_alignment);
@@ -49,7 +49,7 @@ impl GsBufferDataUploader {
         Ok(self)
     }
 
-    pub fn upload_v2<D>(&mut self, to: &impl GsBufferUploadable<D>, data: &D) -> Result<&mut GsBufferDataUploader, AllocatorError> {
+    pub fn upload_v2<D>(&mut self, to: &impl GsBufferUploadable<D>, data: &D) -> VkResult<&mut GsBufferDataUploader> {
 
         let func = to.upload_func();
         func(to, self, data)?;
@@ -57,7 +57,7 @@ impl GsBufferDataUploader {
         Ok(self)
     }
 
-    pub fn finish(&mut self) -> Result<(), AllocatorError> {
+    pub fn finish(&mut self) -> VkResult<()> {
 
         self.is_finished = true;
         self.agency.finish(&self.device)
@@ -73,5 +73,5 @@ impl Drop for GsBufferDataUploader {
 
 pub trait GsBufferUploadable<D> {
 
-    fn upload_func(&self) -> Box<dyn Fn(&Self, &mut GsBufferDataUploader, &D) -> Result<(), AllocatorError>>;
+    fn upload_func(&self) -> Box<dyn Fn(&Self, &mut GsBufferDataUploader, &D) -> VkResult<()>>;
 }

@@ -13,5 +13,7 @@ pub mod utils;
 pub mod types;
 pub mod prelude;
 
+pub mod error;
+
 // TODO: Remove this const variable.
 const VERBOSE: bool = false;

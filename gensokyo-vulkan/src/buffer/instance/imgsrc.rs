@@ -6,12 +6,14 @@ use crate::buffer::traits::{ BufferInstance, BufferCopiable, BufferCopyInfo };
 use crate::buffer::instance::types::BufferInfoAbstract;
 
 use crate::memory::transfer::MemoryDataDelegate;
-use crate::memory::{ MemoryWritePtr, MemoryError };
+use crate::memory::MemoryWritePtr;
+
+use crate::error::VkResult;
 use crate::types::vkbytes;
 
 pub struct GsBufImgsrcInfo {
 
-    estimate_size: vkbytes
+    estimate_size: vkbytes,
 }
 
 impl BufferInfoAbstract<IImgSrc> for GsBufImgsrcInfo {
@@ -51,7 +53,7 @@ impl BufferInstance for GsImgsrcBuffer {
         GsImgsrcBuffer { block, repository_index }
     }
 
-    fn acquire_write_ptr(&self, agency: &mut Box<dyn MemoryDataDelegate>) -> Result<MemoryWritePtr, MemoryError> {
+    fn acquire_write_ptr(&self, agency: &mut Box<dyn MemoryDataDelegate>) -> VkResult<MemoryWritePtr> {
         agency.acquire_write_ptr(&self.block, self.repository_index)
     }
 }

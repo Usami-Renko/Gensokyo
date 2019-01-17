@@ -9,8 +9,8 @@ use crate::image::storage::{ ImageStorageInfo, ImageSource };
 use crate::image::enums::{ ImageInstanceType, DepthStencilImageFormat };
 use crate::image::instance::traits::{ GsImageDescAbs, GsImageViewDescAbs, ImageInstanceInfoAbs };
 use crate::image::allocator::ImageAllocateInfo;
-use crate::image::error::ImageError;
 
+use crate::error::VkResult;
 use crate::types::{ vkuint, vkDim2D, vkDim3D };
 
 pub struct DepthStencilAttachmentInfo {
@@ -61,7 +61,7 @@ impl DepthStencilAttachmentInfo {
 
 impl ImageInstanceInfoAbs for DepthStencilAttachmentInfo {
 
-    fn build_image(&self, device: &GsDevice) -> Result<GsImage, ImageError> {
+    fn build_image(&self, device: &GsDevice) -> VkResult<GsImage> {
         self.image_desc.build(device)
     }
 

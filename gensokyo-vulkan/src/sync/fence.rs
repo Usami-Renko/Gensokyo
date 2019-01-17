@@ -4,7 +4,7 @@ use ash::version::DeviceV1_0;
 
 use crate::core::device::GsDevice;
 
-use crate::sync::error::SyncError;
+use crate::error::{ VkError, VkResult };
 use crate::types::vklint;
 
 use std::ptr;
@@ -17,7 +17,7 @@ pub struct GsFence {
 
 impl GsFence {
 
-    pub fn setup(device: &GsDevice, is_sign: bool) -> Result<GsFence, SyncError> {
+    pub fn setup(device: &GsDevice, is_sign: bool) -> VkResult<GsFence> {
 
         let flags = if is_sign {
             vk::FenceCreateFlags::SIGNALED
@@ -33,7 +33,7 @@ impl GsFence {
 
         let handle = unsafe {
             device.handle.create_fence(&create_info, None)
-                .or(Err(SyncError::FenceCreationError))?
+                .map_err(|_| VkError::create("Fence"))?
         };
 
         let fence = GsFence {
@@ -46,21 +46,13 @@ impl GsFence {
     /// Tell device to wait for this fence.
     ///
     /// To wait for a group of fences, use LogicalDevice::wait_fences() method instead.
-    pub fn wait(&self, timeout: vklint) -> Result<(), SyncError> {
-        unsafe {
-            self.device.handle.wait_for_fences(&[self.handle], true, timeout)
-                .or(Err(SyncError::FenceTimeOutError))?;
-        }
-        Ok(())
+    pub fn wait(&self, timeout: vklint) -> VkResult<()> {
+        self.device.wait_fences(&[self], true, timeout)
     }
 
     /// reset a single fence.
-    pub fn reset(&self) -> Result<(), SyncError> {
-        unsafe {
-            self.device.handle.reset_fences(&[self.handle])
-                .or(Err(SyncError::FenceResetError))?;
-        }
-        Ok(())
+    pub fn reset(&self) -> VkResult<()> {
+        self.device.reset_fences(&[self])
     }
 
     pub fn destroy(&self) {

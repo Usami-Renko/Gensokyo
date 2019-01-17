@@ -4,7 +4,7 @@ use crate::core::device::GsDevice;
 use crate::buffer::BufferInstance;
 use crate::memory::instance::GsBufferMemory;
 use crate::memory::transfer::traits::MemoryDataDelegate;
-use crate::memory::error::AllocatorError;
+use crate::error::VkResult;
 
 pub struct GsBufferDataUpdater {
 
@@ -16,7 +16,7 @@ pub struct GsBufferDataUpdater {
 
 impl GsBufferDataUpdater {
 
-    pub(crate) fn new(device: &GsDevice, memory: &GsBufferMemory) -> Result<GsBufferDataUpdater, AllocatorError> {
+    pub(crate) fn new(device: &GsDevice, memory: &GsBufferMemory) -> VkResult<GsBufferDataUpdater> {
 
         let mut agency = memory.to_update_agency()?;
         agency.prepare(device)?;
@@ -29,7 +29,7 @@ impl GsBufferDataUpdater {
         Ok(updater)
     }
 
-    pub fn update(&mut self, to: &impl BufferInstance, data: &[impl Copy]) -> Result<&mut GsBufferDataUpdater, AllocatorError> {
+    pub fn update(&mut self, to: &impl BufferInstance, data: &[impl Copy]) -> VkResult<&mut GsBufferDataUpdater> {
 
         let writer = to.acquire_write_ptr(&mut self.agency)?;
         writer.write_data(data);
@@ -37,7 +37,7 @@ impl GsBufferDataUpdater {
         Ok(self)
     }
 
-    pub fn update_v2(&mut self, to: &impl GsBufferUpdatable) -> Result<&mut GsBufferDataUpdater, AllocatorError> {
+    pub fn update_v2(&mut self, to: &impl GsBufferUpdatable) -> VkResult<&mut GsBufferDataUpdater> {
 
         let func = to.update_func();
         func(to, self)?;
@@ -45,7 +45,7 @@ impl GsBufferDataUpdater {
         Ok(self)
     }
 
-    pub fn finish(&mut self) -> Result<(), AllocatorError> {
+    pub fn finish(&mut self) -> VkResult<()> {
 
         self.is_finished = true;
         self.agency.finish(&self.device)
@@ -61,5 +61,5 @@ impl Drop for GsBufferDataUpdater {
 
 pub trait GsBufferUpdatable {
 
-    fn update_func(&self) -> Box<dyn Fn(&Self, &mut GsBufferDataUpdater) -> Result<(), AllocatorError>>;
+    fn update_func(&self) -> Box<dyn Fn(&Self, &mut GsBufferDataUpdater) -> VkResult<()>>;
 }

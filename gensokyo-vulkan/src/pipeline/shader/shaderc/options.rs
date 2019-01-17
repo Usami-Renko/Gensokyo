@@ -2,14 +2,14 @@
 use shaderc;
 
 use crate::pipeline::shader::shaderc::vulkan::GLSLVersion;
-use crate::pipeline::shader::shaderc::error::ShaderCompileError;
+use crate::error::{ VkResult, VkError };
 
-pub type ShadercTargetVertion = u32;
+pub type ShadercTargetVersion = u32;
 
 pub struct GsShadercOptions {
 
     pub target_env    : shaderc::TargetEnv,
-    pub target_version: ShadercTargetVertion,
+    pub target_version: ShadercTargetVersion,
     pub lang          : shaderc::SourceLanguage,
 
     // common options
@@ -25,10 +25,10 @@ pub struct GsShadercOptions {
 
 impl GsShadercOptions {
 
-    pub(crate) fn to_shaderc_options(&self) -> Result<shaderc::CompileOptions, ShaderCompileError> {
+    pub(crate) fn to_shaderc_options(&self) -> VkResult<shaderc::CompileOptions> {
 
         let mut options = shaderc::CompileOptions::new()
-            .ok_or(ShaderCompileError::CompileOptionConflict)?;
+            .ok_or(VkError::shaderc("There are conflict in Shader Compile Options."))?;
 
         options.set_target_env(self.target_env, self.target_version);
         options.set_source_language(self.lang);

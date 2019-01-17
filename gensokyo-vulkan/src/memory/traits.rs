@@ -8,7 +8,7 @@ use crate::memory::target::GsMemory;
 use crate::memory::filter::MemoryFilter;
 use crate::memory::types::GsMemoryType;
 use crate::memory::utils::{ MemoryRange, MemoryMapStatus };
-use crate::memory::error::MemoryError;
+use crate::error::{ VkResult, VkError };
 
 use crate::buffer::GsBuffer;
 use crate::image::GsImage;
@@ -23,23 +23,23 @@ pub trait GsMemoryAbstract {
 
     fn target(&self) -> &GsMemory;
 
-    fn allocate(device: &GsDevice, size: vkbytes, filter: &MemoryFilter) -> Result<Self, MemoryError> where Self: Sized;
+    fn allocate(device: &GsDevice, size: vkbytes, filter: &MemoryFilter) -> VkResult<Self> where Self: Sized;
 
-    fn as_mut_mapable(&mut self) -> Option<&mut MemoryMappable>;
+    fn as_mut_mappable(&mut self) -> Option<&mut MemoryMappable>;
 
-    fn bind_to_buffer(&self, device: &GsDevice, buffer: &GsBuffer, memory_offset: vkbytes) -> Result<(), MemoryError> {
+    fn bind_to_buffer(&self, device: &GsDevice, buffer: &GsBuffer, memory_offset: vkbytes) -> VkResult<()> {
 
         unsafe {
             device.handle.bind_buffer_memory(buffer.handle, self.target().handle, memory_offset)
-                .or(Err(MemoryError::BindMemoryError))
+                .or(Err(VkError::device("Failed to bind memory to buffer object.")))
         }
     }
 
-    fn bind_to_image(&self, device: &GsDevice, image: &GsImage, memory_offset: vkbytes) -> Result<(), MemoryError> {
+    fn bind_to_image(&self, device: &GsDevice, image: &GsImage, memory_offset: vkbytes) -> VkResult<()> {
 
         unsafe {
             device.handle.bind_image_memory(image.handle, self.target().handle, memory_offset)
-                .or(Err(MemoryError::BindMemoryError))
+                .or(Err(VkError::device("Failed to bind memory to image object.")))
         }
     }
 
@@ -60,7 +60,7 @@ pub trait MemoryMappable {
     /// Map specific range of the memory.
     ///
     /// If range is None, the function will map the whole memory.
-    fn map_range(&mut self, device: &GsDevice, range: Option<MemoryRange>) -> Result<(), MemoryError> {
+    fn map_range(&mut self, device: &GsDevice, range: Option<MemoryRange>) -> VkResult<()> {
 
         let data_ptr = unsafe {
 
@@ -74,11 +74,11 @@ pub trait MemoryMappable {
                     range.size,
                     // flags is reserved for future use in API version 1.1.82.
                     vk::MemoryMapFlags::empty(),
-                ).or(Err(MemoryError::MapMemoryError))?
+                ).or(Err(VkError::device("An error occurred during mapping memory.")))?
 
             } else {
                 device.handle.map_memory(self.map_handle(), 0, vk::WHOLE_SIZE, vk::MemoryMapFlags::empty())
-                    .or(Err(MemoryError::MapMemoryError))?
+                    .or(Err(VkError::device("An error occurred during mapping memory.")))?
             }
         };
 
@@ -88,7 +88,7 @@ pub trait MemoryMappable {
         Ok(())
     }
 
-    fn flush_ranges(&self, device: &GsDevice, ranges: &Vec<MemoryRange>) -> Result<(), MemoryError> {
+    fn flush_ranges(&self, device: &GsDevice, ranges: &Vec<MemoryRange>) -> VkResult<()> {
 
         let flush_ranges: Vec<vk::MappedMemoryRange> = ranges.iter()
             .map(|range| {
@@ -103,7 +103,7 @@ pub trait MemoryMappable {
 
         unsafe {
             device.handle.flush_mapped_memory_ranges(&flush_ranges)
-                .or(Err(MemoryError::FlushMemoryError))
+                .or(Err(VkError::device("Failed to flush certain range of memory.")))
         }
     }
 
@@ -121,5 +121,5 @@ pub trait MemoryMappable {
 pub trait MemoryDstEntity: Sized {
 
     fn type_bytes(&self) -> vkuint;
-    fn aligment_size(&self) -> vkbytes;
+    fn alignment_size(&self) -> vkbytes;
 }

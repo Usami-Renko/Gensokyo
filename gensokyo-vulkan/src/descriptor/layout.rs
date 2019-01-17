@@ -5,7 +5,7 @@ use ash::version::DeviceV1_0;
 use crate::core::device::GsDevice;
 
 use crate::descriptor::binding::DescriptorBindingInfo;
-use crate::descriptor::error::DescriptorError;
+use crate::error::{ VkResult, VkError };
 
 use std::ptr;
 
@@ -51,7 +51,7 @@ impl DescriptorSetLayoutInfo {
         binding_index
     }
 
-    pub fn build(&self, device: &GsDevice) -> Result<GsDescriptorSetLayout, DescriptorError> {
+    pub fn build(&self, device: &GsDevice) -> VkResult<GsDescriptorSetLayout> {
 
         let layout_info = vk::DescriptorSetLayoutCreateInfo {
             s_type: vk::StructureType::DESCRIPTOR_SET_LAYOUT_CREATE_INFO,
@@ -63,7 +63,7 @@ impl DescriptorSetLayoutInfo {
 
         let handle = unsafe {
             device.handle.create_descriptor_set_layout(&layout_info, None)
-                .or(Err(DescriptorError::SetLayoutCreationError))?
+                .or(Err(VkError::create("Descriptor Set Layout")))?
         };
 
         let set_layout = GsDescriptorSetLayout { handle };

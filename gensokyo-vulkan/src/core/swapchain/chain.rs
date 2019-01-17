@@ -4,7 +4,7 @@ use ash::vk;
 use gsma::collect_handle;
 
 use crate::core::device::{ GsDevice, DeviceQueueIdentifier };
-use crate::core::swapchain::error::SwapchainRuntimeError;
+use crate::error::{ VkResult, VkError };
 
 use crate::image::{ GsImage, GsImageView };
 use crate::sync::{ GsFence, GsSemaphore };
@@ -51,7 +51,7 @@ impl GsSwapchain {
     /// `sign_semaphore` is the semaphore to signal during this function, or None for no semaphore to signal.
     ///
     /// `sign_fence` is the fence to signal during this function, or None for no fence to signal.
-    pub fn next_image(&self, sign_semaphore: Option<&GsSemaphore>, sign_fence: Option<&GsFence>) -> Result<vkuint, SwapchainRuntimeError> {
+    pub fn next_image(&self, sign_semaphore: Option<&GsSemaphore>, sign_fence: Option<&GsFence>) -> VkResult<vkuint> {
 
         // the the handle of semaphore and fence
         let semaphore = sign_semaphore.and_then(|s| Some(s.handle))
@@ -63,14 +63,18 @@ impl GsSwapchain {
         let (image_index, is_sub_optimal) = unsafe {
             self.loader.acquire_next_image(self.handle, self.image_acquire_time, semaphore, fence)
                 .map_err(|error| match error {
-                    | vk::Result::TIMEOUT => SwapchainRuntimeError::AcquireTimeOut,
-                    | vk::Result::ERROR_OUT_OF_DATE_KHR => SwapchainRuntimeError::SurfaceOutOfDate,
-                    | _ => SwapchainRuntimeError::Unknown,
+                    | vk::Result::TIMEOUT => {
+                        VkError::sync("No image became available within the time allowed.")
+                    },
+                    | vk::Result::ERROR_OUT_OF_DATE_KHR => {
+                        VkError::sync("Surface has changed and is not compatible with the swapchain.")
+                    },
+                    | _ => VkError::sync("Get unknown error when acquiring image."),
                 })?
         };
 
         if is_sub_optimal {
-            Err(SwapchainRuntimeError::SubOptimal)
+            Err(VkError::sync("Swapchain does not match the surface properties exactly."))
         } else {
             Ok(image_index)
         }
@@ -85,7 +89,7 @@ impl GsSwapchain {
     ///
     /// `image_index` is the index of swapchain’s presentable images.
     pub fn present(&self, device: &GsDevice, wait_semaphores: &[&GsSemaphore], image_index: vkuint, queue: DeviceQueueIdentifier)
-        -> Result<(), SwapchainRuntimeError> {
+        -> VkResult<()> {
 
         let semaphores: Vec<vk::Semaphore> = collect_handle!(wait_semaphores);
 
@@ -104,11 +108,11 @@ impl GsSwapchain {
 
         let is_sub_optimal = unsafe {
             self.loader.queue_present(device.queue_handle_by_identifier(queue).handle, &present_info)
-                .or(Err(SwapchainRuntimeError::Unknown))?
+                .or(Err(VkError::sync("Get unknown error when acquiring image.")))?
         };
 
         if is_sub_optimal {
-            Err(SwapchainRuntimeError::SubOptimal)
+            Err(VkError::sync("Swapchain does not match the surface properties exactly."))
         } else {
             Ok(())
         }

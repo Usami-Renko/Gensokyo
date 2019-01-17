@@ -3,7 +3,9 @@ use ash::vk;
 
 use crate::buffer::entity::BufferBlock;
 use crate::memory::transfer::MemoryDataDelegate;
-use crate::memory::{ MemoryWritePtr, MemoryError };
+use crate::memory::MemoryWritePtr;
+
+use crate::error::VkResult;
 use crate::types::vkbytes;
 
 pub trait BufferInstance: BufferCopiable {
@@ -11,7 +13,7 @@ pub trait BufferInstance: BufferCopiable {
 
     fn new(block: BufferBlock, info: Self::InfoType, repository_index: usize) -> Self;
 
-    fn acquire_write_ptr(&self, agency: &mut Box<dyn MemoryDataDelegate>) -> Result<MemoryWritePtr, MemoryError>;
+    fn acquire_write_ptr(&self, agency: &mut Box<dyn MemoryDataDelegate>) -> VkResult<MemoryWritePtr>;
 }
 
 pub trait BufferCopiable: Sized {

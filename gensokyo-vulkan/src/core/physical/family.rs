@@ -5,7 +5,7 @@ use ash::version::InstanceV1_0;
 use crate::core::instance::GsInstance;
 use crate::core::surface::GsSurface;
 use crate::core::physical::config::PhysicalInspectProperty;
-use crate::core::error::PhysicalDeviceError;
+use crate::error::{ VkResult, VkError };
 
 use crate::types::vkuint;
 
@@ -44,7 +44,7 @@ pub struct PhysicalQueueFamilyConfig {
 impl PhysicalQueueFamilies {
 
     pub fn query(instance: &GsInstance, physical_device: vk::PhysicalDevice, surface: &GsSurface)
-        -> Result<PhysicalQueueFamilies, PhysicalDeviceError> {
+        -> VkResult<PhysicalQueueFamilies> {
 
         let families = unsafe {
             instance.handle.get_physical_device_queue_family_properties(physical_device)
@@ -73,11 +73,11 @@ impl PhysicalQueueFamilies {
         }
 
         let graphics_index = candidate_graphics_index
-            .ok_or(PhysicalDeviceError::GraphicsQueueNotSupportError)?;
+            .ok_or(VkError::unsupported("Graphics Queue"))?;
         let present_index = candidate_present_index
-            .ok_or(PhysicalDeviceError::PresentQueueNotSupportError)?;
+            .ok_or(VkError::unsupported("Present Queue"))?;
         let transfer_index = candidate_transfer_index
-            .ok_or(PhysicalDeviceError::TransferQueueNotSupportError)?;
+            .ok_or(VkError::unsupported("Transfer Queue"))?;
         let is_share_same_family = graphics_index == present_index && graphics_index == transfer_index;
 
         let family_indices = QueueFamilyIndices {

@@ -3,8 +3,7 @@ use ash::vk;
 use ash::version::DeviceV1_0;
 
 use crate::core::device::GsDevice;
-
-use crate::sync::error::SyncError;
+use crate::error::{ VkResult, VkError };
 
 use std::ptr;
 
@@ -16,7 +15,7 @@ pub struct GsSemaphore {
 
 impl GsSemaphore {
 
-    pub fn setup(device: &GsDevice) -> Result<GsSemaphore, SyncError> {
+    pub fn setup(device: &GsDevice) -> VkResult<GsSemaphore> {
 
         let create_info = vk::SemaphoreCreateInfo {
             s_type: vk::StructureType::SEMAPHORE_CREATE_INFO,
@@ -27,7 +26,7 @@ impl GsSemaphore {
 
         let handle = unsafe {
             device.handle.create_semaphore(&create_info, None)
-                .or(Err(SyncError::SemaphoreCreationError))?
+                .or(Err(VkError::create("Semaphore")))?
         };
 
         let semaphore = GsSemaphore {

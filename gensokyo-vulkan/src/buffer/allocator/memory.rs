@@ -7,8 +7,8 @@ use crate::buffer::allocator::types::BufferMemoryTypeAbs;
 use crate::memory::types::GsMemoryType;
 use crate::memory::{ GsMemoryAbstract, MemoryMappable, MemoryFilter };
 use crate::memory::instance::{ GsBufferMemory, GsHostMemory, GsCachedMemory, GsDeviceMemory, GsStagingMemory };
-use crate::memory::MemoryError;
 
+use crate::error::VkResult;
 use crate::types::vkbytes;
 
 #[derive(Default)]
@@ -42,7 +42,7 @@ pub struct BufMemAllocator<M> where M: BufferMemoryTypeAbs {
 
 impl<M> BufMemAllocator<M> where M: BufferMemoryTypeAbs {
 
-    pub fn allot_memory(phantom_type: M, device: &GsDevice, infos: BufferAllocateInfos, size: vkbytes, filter: &MemoryFilter) -> Result<BufMemAllocator<M>, MemoryError> {
+    pub fn allot_memory(phantom_type: M, device: &GsDevice, infos: BufferAllocateInfos, size: vkbytes, filter: &MemoryFilter) -> VkResult<BufMemAllocator<M>> {
 
         let allocator = BufMemAllocator {
             phantom_type,
@@ -53,9 +53,9 @@ impl<M> BufMemAllocator<M> where M: BufferMemoryTypeAbs {
         Ok(allocator)
     }
 
-    pub fn memory_map_if_need(&mut self, device: &GsDevice) -> Result<(), MemoryError> {
+    pub fn memory_map_if_need(&mut self, device: &GsDevice) -> VkResult<()> {
 
-        if let Some(mapable_memory) = self.memory.as_mut_mapable() {
+        if let Some(mapable_memory) = self.memory.as_mut_mappable() {
             self.phantom_type.map_memory_if_need(device, mapable_memory as &mut MemoryMappable)
         } else {
             Ok(())
@@ -70,7 +70,7 @@ impl<M> BufMemAllocator<M> where M: BufferMemoryTypeAbs {
 
 impl GsMemoryType {
 
-    fn allot_buffer_memory(&self, device: &GsDevice, size: vkbytes, filter: &MemoryFilter) -> Result<GsBufferMemory, MemoryError> {
+    fn allot_buffer_memory(&self, device: &GsDevice, size: vkbytes, filter: &MemoryFilter) -> VkResult<GsBufferMemory> {
 
         let memory = match self {
             | GsMemoryType::HostMemory => {

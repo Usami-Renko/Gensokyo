@@ -5,10 +5,8 @@ use ash::version::DeviceV1_0;
 use crate::core::device::GsDevice;
 
 use crate::command::buffer::{ GsCommandBuffer, CmdBufferUsage };
-use crate::command::error::CommandError;
-
 use crate::pipeline::target::{ GsPipeline, GsVkPipelineType };
-
+use crate::error::{ VkResult, VkError };
 use crate::utils::phantom::Copy;
 
 use std::marker::PhantomData;
@@ -65,7 +63,7 @@ impl GsCmdRecorder<Copy> {
 impl<T: GsVkCommandType> GsCmdRecorder<T> {
 
     // TODO: Add configuration for vk::CommandBufferUsageFlags.
-    pub fn begin_record(&self, flags: vk::CommandBufferUsageFlags) -> Result<&GsCmdRecorder<T>, CommandError> {
+    pub fn begin_record(&self, flags: vk::CommandBufferUsageFlags) -> VkResult<&GsCmdRecorder<T>> {
 
         let begin_info = vk::CommandBufferBeginInfo {
             s_type: vk::StructureType::COMMAND_BUFFER_BEGIN_INFO,
@@ -79,16 +77,16 @@ impl<T: GsVkCommandType> GsCmdRecorder<T> {
 
         unsafe {
             self.device.handle.begin_command_buffer(self.cmd_handle, &begin_info)
-                .or(Err(CommandError::RecordBeginError))?
+                .or(Err(VkError::sync("Failed to begin Command Buffer recording.")))?
         };
         Ok(self)
     }
 
-    pub fn end_record(&mut self) -> Result<GsCommandBuffer, CommandError> {
+    pub fn end_record(&mut self) -> VkResult<GsCommandBuffer> {
 
         let _ = unsafe {
             self.device.handle.end_command_buffer(self.cmd_handle)
-                .or(Err(CommandError::RecordEndError))?
+                .or(Err(VkError::sync("Failed to end Command Buffer recording.")))?
         };
 
         let buffer = GsCommandBuffer::new(self.cmd_handle, self.cmd_usage);

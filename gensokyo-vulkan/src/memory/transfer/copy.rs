@@ -7,7 +7,7 @@ use crate::core::device::queue::GsTransfer;
 use crate::buffer::BufferCopiable;
 use crate::image::ImageCopiable;
 use crate::command::{ GsCmdRecorder, GsCmdCopyApi };
-use crate::memory::error::AllocatorError;
+use crate::error::VkResult;
 use crate::utils::phantom::Copy;
 
 pub struct DataCopyer {
@@ -18,9 +18,9 @@ pub struct DataCopyer {
 
 impl DataCopyer {
 
-    pub fn new(device: &GsDevice) -> Result<DataCopyer, AllocatorError> {
+    pub fn new(device: &GsDevice) -> VkResult<DataCopyer> {
 
-        let transfer = GsLogicalDevice::transfer(device);
+        let transfer = GsLogicalDevice::transfer(device)?;
         let command = transfer.command()?;
         let recorder = GsCmdRecorder::new_copy(device, command);
 
@@ -125,11 +125,11 @@ impl DataCopyer {
         self
     }
 
-    pub fn done(&mut self) -> Result<(), AllocatorError> {
+    pub fn done(&mut self) -> VkResult<()> {
 
         let command = self.recorder.end_record()?;
         self.transfer.commit(command);
-        self.transfer.excute()?;
+        self.transfer.execute()?;
 
         Ok(())
     }

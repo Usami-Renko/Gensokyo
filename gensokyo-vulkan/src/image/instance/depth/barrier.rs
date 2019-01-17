@@ -7,9 +7,10 @@ use crate::core::device::GsDevice;
 use crate::image::barrier::GsImageBarrier;
 use crate::image::allocator::ImageAllocateInfo;
 use crate::image::instance::traits::ImageBarrierBundleAbs;
+
 use crate::memory::transfer::DataCopyer;
-use crate::memory::AllocatorError;
 use crate::command::GsCmdCopyApi;
+use crate::error::VkResult;
 
 //  Depth Stencil Image Barrier Bundle
 pub struct DepSteImageBarrierBundle {
@@ -19,7 +20,7 @@ pub struct DepSteImageBarrierBundle {
 
 impl ImageBarrierBundleAbs for DepSteImageBarrierBundle {
 
-    fn make_transfermation(&mut self, _physical: &GsPhyDevice, _device: &GsDevice, copyer: &DataCopyer, infos: &mut Vec<ImageAllocateInfo>) -> Result<(), AllocatorError> {
+    fn make_barrier_transform(&mut self, _physical: &GsPhyDevice, _device: &GsDevice, copyer: &DataCopyer, infos: &mut Vec<ImageAllocateInfo>) -> VkResult<()> {
 
         let final_barriers = self.info_indices.iter()
             .map(|&index| self.final_barrier(&mut infos[index])).collect();

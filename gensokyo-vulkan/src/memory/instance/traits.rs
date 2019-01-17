@@ -4,7 +4,7 @@ use crate::core::device::GsDevice;
 
 use crate::memory::GsMemoryAbstract;
 use crate::memory::transfer::MemoryDataDelegate;
-use crate::memory::error::MemoryError;
+use crate::error::VkResult;
 
 use crate::buffer::allocator::BufferAllocateInfos;
 
@@ -13,8 +13,8 @@ pub type GsImageMemory  = Box<dyn GsImageMemoryAbs>;
 
 pub trait GsBufferMemoryAbs: GsMemoryAbstract {
 
-    fn to_upload_agency(&self, device: &GsDevice, physical: &GsPhyDevice, allot_infos: &BufferAllocateInfos) -> Result<Box<dyn MemoryDataDelegate>, MemoryError>;
-    fn to_update_agency(&self) -> Result<Box<dyn MemoryDataDelegate>, MemoryError>;
+    fn to_upload_agency(&self, device: &GsDevice, physical: &GsPhyDevice, allot_infos: &BufferAllocateInfos) -> VkResult<Box<dyn MemoryDataDelegate>>;
+    fn to_update_agency(&self) -> VkResult<Box<dyn MemoryDataDelegate>>;
 }
 
 pub trait GsImageMemoryAbs: GsMemoryAbstract {}

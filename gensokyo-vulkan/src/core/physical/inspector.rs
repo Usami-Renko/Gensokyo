@@ -8,13 +8,13 @@ use crate::core::physical::config::{ PhysicalConfig, PhysicalInspectProperty };
 use crate::core::physical::target::GsPhysicalDevice;
 use crate::core::physical::extension::PhysicalExtension;
 use crate::core::physical::family::PhysicalQueueFamilies;
-use crate::core::physical::features::PhyscialFeatures;
+use crate::core::physical::features::PhysicalFeatures;
 use crate::core::physical::memory::PhysicalMemory;
 use crate::core::physical::property::PhysicalProperties;
 
-use crate::VERBOSE;
+use crate::error::{ VkResult, VkError };
 
-use crate::core::error::PhysicalDeviceError;
+use crate::VERBOSE;
 
 pub struct PhysicalInspector {
 
@@ -30,11 +30,11 @@ impl PhysicalInspector {
         }
     }
 
-    pub fn inspect(&self, instance: &GsInstance, surface: &GsSurface) -> Result<GsPhysicalDevice, PhysicalDeviceError> {
+    pub fn inspect(&self, instance: &GsInstance, surface: &GsSurface) -> VkResult<GsPhysicalDevice> {
 
         let alternative_devices = unsafe {
             instance.handle.enumerate_physical_devices()
-                .or(Err(PhysicalDeviceError::EnumerateDeviceError))?
+                .or(Err(VkError::query("Physical Device")))?
         };
 
         let mut optimal_device = None;
@@ -55,7 +55,7 @@ impl PhysicalInspector {
                 continue
             }
 
-            let mut features = PhyscialFeatures::query(instance, physical_device);
+            let mut features = PhysicalFeatures::query(instance, physical_device);
             if features.inspect(&self.config.features) {
                 features.set(&self.config.features)
             } else {
@@ -85,6 +85,6 @@ impl PhysicalInspector {
             break
         }
 
-        optimal_device.ok_or(PhysicalDeviceError::NoSuitableDeviceError)
+        optimal_device.ok_or(VkError::unsupported("Valid Vulkan Device"))
     }
 }

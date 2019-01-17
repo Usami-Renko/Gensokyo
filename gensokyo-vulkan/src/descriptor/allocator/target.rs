@@ -9,8 +9,8 @@ use crate::descriptor::GsDescriptorType;
 use crate::descriptor::allocator::index::IDescriptorSet;
 use crate::descriptor::allocator::distributor::GsDescriptorDistributor;
 
+use crate::error::VkResult;
 use crate::utils::assign::GsAssignIndex;
-use crate::memory::AllocatorError;
 use crate::types::vkuint;
 
 use std::collections::HashMap;
@@ -50,7 +50,7 @@ impl GsDescriptorAllocator {
         dst_index
     }
 
-    pub fn allocate(self) -> Result<GsDescriptorDistributor, AllocatorError> {
+    pub fn allocate(self) -> VkResult<GsDescriptorDistributor> {
 
         // descriptor pool
         let pool_sizes = self.pool_sizes();

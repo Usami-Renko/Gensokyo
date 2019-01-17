@@ -4,9 +4,8 @@ use ash::version::InstanceV1_0;
 
 use crate::core::instance::GsInstance;
 use crate::core::physical::config::PhysicalInspectProperty;
-use crate::core::error::PhysicalDeviceError;
-
 use crate::utils::cast;
+use crate::error::{ VkResult, VkError };
 
 use std::ffi::CString;
 
@@ -42,11 +41,11 @@ pub struct PhysicalExtensionConfig {
 
 impl PhysicalExtension {
 
-    pub fn query(instance: &GsInstance, physical_device: vk::PhysicalDevice) -> Result<PhysicalExtension, PhysicalDeviceError> {
+    pub fn query(instance: &GsInstance, physical_device: vk::PhysicalDevice) -> VkResult<PhysicalExtension> {
 
         let handles = unsafe {
             instance.handle.enumerate_device_extension_properties(physical_device)
-                .or(Err(PhysicalDeviceError::EnumerateExtensionsError))?
+                .or(Err(VkError::query("Device Extensions")))?
         };
 
         let result = PhysicalExtension {
@@ -70,12 +69,12 @@ impl PhysicalInspectProperty for PhysicalExtension {
 
         if config.require_extensions.is_empty() { return true }
 
-        let requrie_extension_names: Vec<CString> = config.require_extensions.iter()
+        let require_extension_names: Vec<CString> = config.require_extensions.iter()
             .map(|e| e.name()).collect();
         let available_extensions: Vec<CString> = self.handles.iter()
             .map(|e| cast::chars2cstring(&e.extension_name)).collect();
 
-        let is_all_extension_available = requrie_extension_names.iter()
+        let is_all_extension_available = require_extension_names.iter()
             .all(|test_extension| {
                 available_extensions.contains(test_extension)
             });

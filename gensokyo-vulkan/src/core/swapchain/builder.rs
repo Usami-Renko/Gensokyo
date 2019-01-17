@@ -10,7 +10,7 @@ use crate::core::surface::GsSurface;
 use crate::core::swapchain::GsChain;
 use crate::core::swapchain::chain::{ GsSwapchain, SwapchainConfig };
 use crate::core::swapchain::support::SwapchainSupport;
-use crate::core::swapchain::error::SwapchainInitError;
+use crate::error::{ VkResult, VkError };
 
 use crate::image::{ GsImage, ImageViewDescInfo };
 
@@ -32,11 +32,9 @@ pub struct SwapchainBuilder<'s> {
 impl<'s> SwapchainBuilder<'s> {
 
     pub fn init(config: &SwapchainConfig, physical: &GsPhyDevice, device: &GsDevice, surface: &'s GsSurface)
-        -> Result<SwapchainBuilder<'s>, SwapchainInitError> {
+        -> VkResult<SwapchainBuilder<'s>> {
 
-        let support = SwapchainSupport::query_support(surface, physical.handle, config)
-            .map_err(|e| SwapchainInitError::SurfacePropertiesQuery(e))?;
-
+        let support = SwapchainSupport::query_support(surface, physical.handle, config)?;
         let image_share_info = sharing_mode(device);
 
         let builder = SwapchainBuilder {
@@ -52,8 +50,7 @@ impl<'s> SwapchainBuilder<'s> {
         Ok(builder)
     }
 
-    pub fn build(self, instance: &GsInstance, old_chain: Option<&GsChain>, window: &winit::Window)
-        -> Result<GsSwapchain, SwapchainInitError> {
+    pub fn build(self, instance: &GsInstance, old_chain: Option<&GsChain>, window: &winit::Window) -> VkResult<GsSwapchain> {
 
         let prefer_format = self.support.optimal_format();
         let prefer_extent = self.support.optimal_extent(window)?;
@@ -95,13 +92,13 @@ impl<'s> SwapchainBuilder<'s> {
 
         let handle = unsafe {
             loader.create_swapchain(&swapchain_create_info, None)
-                .or(Err(SwapchainInitError::SwapchianCreationError))?
+                .or(Err(VkError::create("Swapchain")))?
         };
 
         let images: Vec<GsImage> = unsafe {
             loader.get_swapchain_images(handle)
-                .or(Err(SwapchainInitError::SwapchainImageGetError))?
-                .iter().map(|&img_handle| GsImage::from_swapchain(img_handle))
+                .or(Err(VkError::query("Swapchain Images")))?
+                .into_iter().map(GsImage::from)
                 .collect()
         };
 
@@ -112,8 +109,7 @@ impl<'s> SwapchainBuilder<'s> {
 
         let mut views = vec![];
         for image in images.iter() {
-            let view = view_desc.build_for_swapchain(&self.device, image, prefer_format.format)
-                .or(Err(SwapchainInitError::ImageViewCreationError))?;
+            let view = view_desc.build_for_swapchain(&self.device, image, prefer_format.format)?;
             views.push(view);
         }
 

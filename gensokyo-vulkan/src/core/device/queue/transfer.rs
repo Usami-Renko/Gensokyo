@@ -7,12 +7,11 @@ use gsma::collect_handle;
 use crate::core::device::GsDevice;
 use crate::core::device::device::{ GsLogicalDevice, DeviceConfig };
 use crate::core::device::queue::GsQueue;
-use crate::core::error::LogicalDeviceError;
 
-use crate::sync::{ GsFence, SyncError };
 use crate::command::{ GsCommandBuffer, CmdBufferUsage };
-use crate::command::CommandError;
+use crate::sync::GsFence;
 
+use crate::error::{ VkResult, VkError };
 use crate::types::vklint;
 
 use std::ptr;
@@ -27,7 +26,7 @@ pub struct GsTransferQueue {
 
 impl GsTransferQueue {
 
-    pub fn new(device: &ash::Device, queue: GsQueue, config: &DeviceConfig) -> Result<Self, LogicalDeviceError> {
+    pub fn new(device: &ash::Device, queue: GsQueue, config: &DeviceConfig) -> VkResult<Self> {
 
         let pool = TransferCommandPool::setup(device, &queue)?;
 
@@ -49,16 +48,16 @@ impl GsTransferQueue {
 
 impl GsTransferQueue {
 
-    pub fn transfer(&self, device: &GsDevice) -> GsTransfer {
+    pub fn transfer(&self, device: &GsDevice) -> VkResult<GsTransfer> {
 
-        GsTransfer {
+        let transfer = GsTransfer {
             device: device.clone(),
             command_buffers: vec![],
             // make sign to false, since the fence will be reset whenever transfer start.
-            // TODO: handle unwrap().
-            fence: GsFence::setup(device, false).unwrap(),
+            fence: GsFence::setup(device, false)?,
             transfer_wait_time: self.transfer_wait_time,
-        }
+        };
+        Ok(transfer)
     }
 }
 
@@ -72,9 +71,9 @@ pub struct GsTransfer {
 
 impl GsTransfer {
 
-    pub fn commands(&self, count: usize) -> Result<Vec<GsCommandBuffer>, CommandError> {
+    pub fn commands(&self, count: usize) -> VkResult<Vec<GsCommandBuffer>> {
 
-        // just use a single primary command buffer for transferation.
+        // just use a single primary command buffer for transfer.
         let transfer_queue = self.device.transfer_queue();
         let commands = transfer_queue.pool.allocate(&self.device, count)?;
         Ok(commands)
@@ -85,7 +84,7 @@ impl GsTransfer {
         self.command_buffers.extend(commands);
     }
 
-    pub fn command(&self) -> Result<GsCommandBuffer, CommandError> {
+    pub fn command(&self) -> VkResult<GsCommandBuffer> {
 
         let transfer_queue = self.device.transfer_queue();
         let mut commands = transfer_queue.pool.allocate(&self.device, 1)?;
@@ -96,7 +95,7 @@ impl GsTransfer {
         self.command_buffers.push(command);
     }
 
-    pub fn excute(&mut self) -> Result<(), SyncError> {
+    pub fn execute(&mut self) -> VkResult<()> {
 
         if self.command_buffers.is_empty() {
             return Ok(())
@@ -122,8 +121,8 @@ impl GsTransfer {
 
         unsafe {
             self.device.handle.queue_submit(transfer_queue.queue.handle, &[submit_info], self.fence.handle)
-                .or(Err(SyncError::QueueSubmitError))?;
-        }
+                .or(Err(VkError::sync("Failed to submit command to device.")))?
+        };
 
         self.fence.wait(self.transfer_wait_time)?;
         transfer_queue.pool.free(&self.device, &self.command_buffers);
@@ -149,7 +148,7 @@ struct TransferCommandPool {
 
 impl TransferCommandPool {
 
-    fn setup(device: &ash::Device, queue: &GsQueue) -> Result<TransferCommandPool, CommandError> {
+    fn setup(device: &ash::Device, queue: &GsQueue) -> VkResult<TransferCommandPool> {
 
         let info = vk::CommandPoolCreateInfo {
             s_type: vk::StructureType::COMMAND_POOL_CREATE_INFO,
@@ -162,14 +161,14 @@ impl TransferCommandPool {
 
         let handle = unsafe {
             device.create_command_pool(&info, None)
-                .or(Err(CommandError::PoolCreationError))?
+                .or(Err(VkError::create("Command Pool")))?
         };
 
         let pool = TransferCommandPool { handle };
         Ok(pool)
     }
 
-    fn allocate(&self, device: &GsDevice, count: usize) -> Result<Vec<GsCommandBuffer>, CommandError> {
+    fn allocate(&self, device: &GsDevice, count: usize) -> VkResult<Vec<GsCommandBuffer>> {
 
         let allocate_info = vk::CommandBufferAllocateInfo {
             s_type: vk::StructureType::COMMAND_BUFFER_ALLOCATE_INFO,
@@ -181,7 +180,7 @@ impl TransferCommandPool {
 
         let handles = unsafe {
             device.handle.allocate_command_buffers(&allocate_info)
-                .or(Err(CommandError::BufferAllocateError))?
+                .or(Err(VkError::create("Command Buffer")))?
         };
 
         let buffers = handles.iter()

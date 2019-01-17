@@ -4,10 +4,12 @@ use ash::version::EntryV1_0;
 use crate::core::instance::GsInstance;
 use crate::core::debug::report::{ GsDebugReport, DebugReportConfig };
 use crate::core::debug::utils::{ GsDebugUtils, DebugUtilsConfig };
-use crate::core::error::{ InstanceError, ValidationError };
 
 use crate::VERBOSE;
 use crate::utils::cast;
+
+use crate::error::{ VkResult, VkErrorKind };
+use failure::ResultExt;
 
 /// Wrapper class for the validation tools used in Vulkan.
 ///
@@ -49,7 +51,7 @@ pub struct ValidationConfig {
 impl GsDebugger {
 
     /// Initialize the validation tool in Vulkan which is specified in `config`.
-    pub fn new(instance: &GsInstance, config: &ValidationConfig) -> Result<GsDebugger, ValidationError> {
+    pub fn new(instance: &GsInstance, config: &ValidationConfig) -> VkResult<GsDebugger> {
 
         let target = if config.is_enable == false {
             None
@@ -92,10 +94,10 @@ impl GsDebugger {
 }
 
 /// helper function to check if all required layers of validation layer are satisfied.
-pub(in crate::core) fn is_support_validation_layer(entry: &ash::Entry, required_validation_layers: &[String]) -> Result<bool, InstanceError> {
+pub(in crate::core) fn is_support_validation_layer(entry: &ash::Entry, required_validation_layers: &[String]) -> VkResult<bool> {
 
     let layer_properties = entry.enumerate_instance_layer_properties()
-        .or(Err(InstanceError::LayerPropertiesEnumerateError))?;
+        .with_context(|_| VkErrorKind::Query(String::from("Layer Properties")))?;
 
     // Print the layer name to console in verbose mode.
     if VERBOSE {

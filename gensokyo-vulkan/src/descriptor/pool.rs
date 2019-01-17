@@ -9,8 +9,8 @@ use crate::core::device::GsDevice;
 use crate::descriptor::set::GsDescriptorSet;
 use crate::descriptor::layout::GsDescriptorSetLayout;
 use crate::descriptor::types::GsDescriptorType;
-use crate::descriptor::error::DescriptorError;
 
+use crate::error::{ VkResult, VkError };
 use crate::types::vkuint;
 
 use std::ptr;
@@ -47,7 +47,7 @@ impl DescriptorPoolInfo {
         });
     }
 
-    pub fn build(&self, device: &GsDevice) -> Result<GsDescriptorPool, DescriptorError> {
+    pub fn build(&self, device: &GsDevice) -> VkResult<GsDescriptorPool> {
 
         let max_sets = if self.max_sets == 0 { self.pool_sizes.len() as _ } else { self.max_sets };
 
@@ -62,7 +62,7 @@ impl DescriptorPoolInfo {
 
         let handle = unsafe {
             device.handle.create_descriptor_pool(&info, None)
-                .or(Err(DescriptorError::PoolCreationError))?
+                .or(Err(VkError::create("Descriptor Pool")))?
         };
 
         let descriptor_pool = GsDescriptorPool { handle };
@@ -78,7 +78,7 @@ pub struct GsDescriptorPool {
 
 impl GsDescriptorPool {
 
-    pub fn allocate(&self, device: &GsDevice, layouts: Vec<GsDescriptorSetLayout>) -> Result<Vec<GsDescriptorSet>, DescriptorError> {
+    pub fn allocate(&self, device: &GsDevice, layouts: Vec<GsDescriptorSetLayout>) -> VkResult<Vec<GsDescriptorSet>> {
 
         let layout_handles: Vec<vk::DescriptorSetLayout> = collect_handle!(layouts);
 
@@ -92,7 +92,7 @@ impl GsDescriptorPool {
 
         let handles = unsafe {
             device.handle.allocate_descriptor_sets(&allocate_info)
-                .or(Err(DescriptorError::SetAllocateError))?
+                .or(Err(VkError::device("Failed to allocate Descriptor Set.")))?
         };
 
         let sets = layouts.into_iter().zip(handles.into_iter())

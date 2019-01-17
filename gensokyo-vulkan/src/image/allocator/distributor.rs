@@ -7,10 +7,9 @@ use crate::image::instance::sample::{ GsSampleImage, SampleImageInfo };
 use crate::image::instance::depth::{ GsDepthStencilAttachment, DepthStencilAttachmentInfo };
 use crate::image::instance::ImageInstanceInfoAbs;
 use crate::image::repository::GsImageRepository;
-use crate::image::error::ImageError;
 
 use crate::memory::instance::GsImageMemory;
-use crate::memory::AllocatorError;
+use crate::error::VkResult;
 
 use std::marker::PhantomData;
 
@@ -27,7 +26,7 @@ pub struct GsImageDistributor<M> {
 
 impl<M> GsImageDistributor<M> {
 
-    pub(super) fn new(phantom_type: PhantomData<M>, device: GsDevice, infos: Vec<ImageAllocateInfo>, memory: GsImageMemory) -> Result<GsImageDistributor<M>, AllocatorError> {
+    pub(super) fn new(phantom_type: PhantomData<M>, device: GsDevice, infos: Vec<ImageAllocateInfo>, memory: GsImageMemory) -> VkResult<GsImageDistributor<M>> {
 
         let mut views = vec![];
         for info in infos.iter() {
@@ -43,10 +42,10 @@ impl<M> GsImageDistributor<M> {
         Ok(distributor)
     }
 
-    pub fn acquire_sample_image(&self, info: SampleImageInfo) -> Result<GsSampleImage, AllocatorError> {
+    pub fn acquire_sample_image(&self, info: SampleImageInfo) -> VkResult<GsSampleImage> {
 
-        let allocate_index = info.allocate_index()
-            .ok_or(AllocatorError::Image(ImageError::NotYetAllocateError))?;
+        // TODO: Simplified unwrap() here.
+        let allocate_index = info.allocate_index().unwrap();
         let sampler = info.gen_sample(&self.device)?;
 
         let image = GsSampleImage::setup(
@@ -58,10 +57,10 @@ impl<M> GsImageDistributor<M> {
         Ok(image)
     }
 
-    pub fn acquire_depth_stencil_image(&self, info: DepthStencilAttachmentInfo) -> Result<GsDepthStencilAttachment, AllocatorError> {
+    pub fn acquire_depth_stencil_image(&self, info: DepthStencilAttachmentInfo) -> VkResult<GsDepthStencilAttachment> {
 
-        let allocate_index = info.allocate_index()
-            .ok_or(AllocatorError::Image(ImageError::NotYetAllocateError))?;
+        // TODO: Simplified unwrap() here.
+        let allocate_index = info.allocate_index().unwrap();
 
         let image = GsDepthStencilAttachment::setup(
             info,

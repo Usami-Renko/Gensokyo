@@ -6,14 +6,14 @@ use crate::core::device::GsDevice;
 use crate::core::swapchain::GsChain;
 
 use crate::pipeline::pass::render::GsRenderPass;
-use crate::pipeline::pass::attachment::RenderAttachement;
+use crate::pipeline::pass::attachment::RenderAttachment;
 use crate::pipeline::pass::subpass::{ RenderSubpass, AttachmentType };
 use crate::pipeline::pass::dependency::RenderDependency;
 use crate::pipeline::pass::framebuffer::FramebufferBuilder;
-use crate::pipeline::error::{ RenderPassError, PipelineError };
 
 use crate::image::instance::depth::GsDepthStencilAttachment;
 
+use crate::error::{ VkResult, VkError };
 use crate::types::vkuint;
 
 use std::ptr;
@@ -23,7 +23,7 @@ pub struct RenderPassBuilder {
     device: GsDevice,
     chain : GsChain,
 
-    attachments : Vec<RenderAttachement>,
+    attachments : Vec<RenderAttachment>,
     subpasses   : Vec<RenderSubpass>,
     dependencies: Vec<RenderDependency>,
 
@@ -38,9 +38,9 @@ impl RenderPassBuilder {
             device: device.clone(),
             chain : chain.clone(),
 
-            attachments  : vec!(),
-            subpasses    : vec!(),
-            dependencies : vec!(),
+            attachments : vec!(),
+            subpasses   : vec!(),
+            dependencies: vec!(),
 
             depth: None,
         }
@@ -59,7 +59,7 @@ impl RenderPassBuilder {
     }
 
     /// create a attachment and set its reference to subpass, return the index of this attachment.
-    pub fn add_attachemnt(&mut self, attachment: RenderAttachement, subpass_index: vkuint) -> usize {
+    pub fn add_attachment(&mut self, attachment: RenderAttachment, subpass_index: vkuint) -> usize {
 
         let attachment_ref = vk::AttachmentReference {
             attachment: self.attachments.len() as _,
@@ -95,11 +95,11 @@ impl RenderPassBuilder {
         self.depth = Some(image.entity.view)
     }
 
-    pub fn add_dependenty(&mut self, dependency: RenderDependency) {
+    pub fn add_dependency(&mut self, dependency: RenderDependency) {
         self.dependencies.push(dependency);
     }
 
-    pub fn build(self) -> Result<GsRenderPass, PipelineError> {
+    pub fn build(self) -> VkResult<GsRenderPass> {
 
         let clear_values = self.attachments.iter()
             .map(|a| a.clear_value).collect();
@@ -125,7 +125,7 @@ impl RenderPassBuilder {
 
         let handle = unsafe {
             self.device.handle.create_render_pass(&create_info, None)
-                .or(Err(PipelineError::RenderPass(RenderPassError::RenderPassCreationError)))?
+                .or(Err(VkError::create("Render Pass")))?
         };
 
         // generate framebuffers ---------------------------------------

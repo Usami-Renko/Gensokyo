@@ -6,7 +6,9 @@ use crate::core::device::GsDevice;
 
 use crate::pipeline::target::GsPipelineStage;
 use crate::pipeline::shader::shaderc::GsShaderCompiler;
-use crate::pipeline::error::{ ShaderError, PipelineError };
+use crate::error::{ VkResult, VkError, VkErrorKind };
+
+use failure::ResultExt;
 
 use std::path::{ Path, PathBuf };
 use std::ffi::CString;
@@ -59,7 +61,7 @@ impl GsShaderInfo {
         }
     }
 
-    pub fn build(&self, device: &GsDevice, compiler: &mut GsShaderCompiler) -> Result<GsShaderModule, PipelineError> {
+    pub fn build(&self, device: &GsDevice, compiler: &mut GsShaderCompiler) -> VkResult<GsShaderModule> {
 
         use crate::pipeline::shader::shaderc::cast_shaderc_kind;
 
@@ -88,7 +90,7 @@ impl GsShaderInfo {
         Ok(shader_module)
     }
 
-    fn create_module(&self, device: &GsDevice, codes: &Vec<u8>) -> Result<vk::ShaderModule, ShaderError> {
+    fn create_module(&self, device: &GsDevice, codes: &Vec<u8>) -> VkResult<vk::ShaderModule> {
 
         let module_create_info = vk::ShaderModuleCreateInfo {
             s_type    : vk::StructureType::SHADER_MODULE_CREATE_INFO,
@@ -101,7 +103,7 @@ impl GsShaderInfo {
 
         unsafe {
             device.handle.create_shader_module(&module_create_info, None)
-                .or(Err(ShaderError::ModuleCreationError))
+                .or(Err(VkError::create("Shader Module")))
         }
     }
 }
@@ -140,10 +142,10 @@ impl GsShaderModule {
 }
 
 
-fn load_spriv_bytes(path: &PathBuf) -> Result<Vec<u8>, ShaderError> {
+fn load_spriv_bytes(path: &PathBuf) -> VkResult<Vec<u8>> {
 
     let file = File::open(path.to_owned())
-        .or(Err(ShaderError::SpirvReadError))?;
+        .with_context(|_| VkErrorKind::path(path))?;
     let bytes = file.bytes()
         .filter_map(|byte| byte.ok())
         .collect();
@@ -151,13 +153,13 @@ fn load_spriv_bytes(path: &PathBuf) -> Result<Vec<u8>, ShaderError> {
     Ok(bytes)
 }
 
-fn load_to_str(path: &PathBuf) -> Result<String, ShaderError> {
+fn load_to_str(path: &PathBuf) -> VkResult<String> {
 
     let mut file = File::open(path.to_owned())
-        .or(Err(ShaderError::SourceReadError))?;
+        .with_context(|_| VkErrorKind::path(path))?;
     let mut contents = String::new();
     let _size = file.read_to_string(&mut contents)
-        .or(Err(ShaderError::SourceReadError))?;
+        .or(Err(VkError::other("Unable to read Shader Source code to spirv.")))?;
 
     Ok(contents)
 }

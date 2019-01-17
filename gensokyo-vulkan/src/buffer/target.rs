@@ -5,10 +5,9 @@ use ash::version::DeviceV1_0;
 use crate::core::device::GsDevice;
 
 use crate::buffer::allocator::types::BufferMemoryTypeAbs;
-use crate::buffer::error::BufferError;
-
 use crate::memory::MemoryDstEntity;
 
+use crate::error::{ VkResult, VkError };
 use crate::types::{ vkbytes, vkuint };
 
 use std::ptr;
@@ -46,7 +45,7 @@ impl MemoryDstEntity for GsBuffer {
         self.requirement.memory_type_bits
     }
 
-    fn aligment_size(&self) -> vkbytes {
+    fn alignment_size(&self) -> vkbytes {
 
         use crate::utils::memory::bound_to_alignment;
         bound_to_alignment(self.requirement.size, self.requirement.alignment)
@@ -75,7 +74,7 @@ impl BufferDescInfo {
     ///
     /// If the buffer is accessed by one queue family, set sharing_queue_families to None,
     /// or set it the queue family indices to share accessing.
-    pub fn build(&self, device: &GsDevice, memory_abs: impl BufferMemoryTypeAbs, sharing_queue_families: Option<Vec<vkuint>>) -> Result<GsBuffer, BufferError> {
+    pub fn build(&self, device: &GsDevice, memory_abs: impl BufferMemoryTypeAbs, sharing_queue_families: Option<Vec<vkuint>>) -> VkResult<GsBuffer> {
 
         let (sharing_mode, indices) = match sharing_queue_families {
             | Some(families) => (vk::SharingMode::CONCURRENT, families),
@@ -96,7 +95,7 @@ impl BufferDescInfo {
 
         let handle = unsafe {
             device.handle.create_buffer(&create_info, None)
-                .or(Err(BufferError::BufferCreationError))?
+                .or(Err(VkError::create("vk::Buffer")))?
         };
 
         let buffer = GsBuffer::new(device, handle);

@@ -4,7 +4,7 @@ use ash::version::DeviceV1_0;
 
 use crate::core::device::GsDevice;
 use crate::image::target::{ GsImage, ImageSpecificInfo };
-use crate::image::error::ImageError;
+use crate::error::{ VkResult, VkError };
 
 use std::ptr;
 
@@ -56,7 +56,7 @@ impl ImageViewDescInfo {
         }
     }
 
-    pub fn build(&self, device: &GsDevice, image: &GsImage, specific: &ImageSpecificInfo) -> Result<GsImageView, ImageError> {
+    pub fn build(&self, device: &GsDevice, image: &GsImage, specific: &ImageSpecificInfo) -> VkResult<GsImageView> {
 
         let view_info = vk::ImageViewCreateInfo {
             s_type     : vk::StructureType::IMAGE_VIEW_CREATE_INFO,
@@ -72,16 +72,14 @@ impl ImageViewDescInfo {
 
         let handle = unsafe {
             device.handle.create_image_view(&view_info, None)
-                .or(Err(ImageError::ViewCreationError))?
+                .or(Err(VkError::create("Image View")))?
         };
 
-        let view = GsImageView {
-            handle,
-        };
+        let view = GsImageView { handle };
         Ok(view)
     }
 
-    pub(crate) fn build_for_swapchain(&self, device: &GsDevice, image: &GsImage, format: vk::Format) -> Result<GsImageView, ImageError> {
+    pub(crate) fn build_for_swapchain(&self, device: &GsDevice, image: &GsImage, format: vk::Format) -> VkResult<GsImageView> {
 
         let mut specific = ImageSpecificInfo::default();
         specific.format = format;

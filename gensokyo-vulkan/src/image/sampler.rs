@@ -3,9 +3,7 @@ use ash::vk;
 use ash::version::DeviceV1_0;
 
 use crate::core::device::GsDevice;
-
-use crate::image::error::ImageError;
-
+use crate::error::{ VkResult, VkError };
 use crate::types::{ vkfloat, VK_TRUE, VK_FALSE };
 
 use std::ptr;
@@ -16,12 +14,6 @@ pub struct GsSampler {
 }
 
 impl GsSampler {
-
-    pub fn unitialize() -> GsSampler {
-        GsSampler {
-            handle: vk::Sampler::null(),
-        }
-    }
 
     pub fn destroy(&self, device: &GsDevice) {
         unsafe {
@@ -65,7 +57,7 @@ impl SamplerDescInfo {
     ///
     /// `min` used to clamp the minimum computed LOD value, as described in the Level-of-Detail Operation section.
     ///
-    /// `max` used to clamp the maxinum computed LOD value, as described in the Level-of-Detail Operation section.
+    /// `max` used to clamp the maximum computed LOD value, as described in the Level-of-Detail Operation section.
     pub fn lod(&mut self, mip_bias: vkfloat, min: vkfloat, max: vkfloat) {
 
         self.0.mip_lod_bias = mip_bias;
@@ -125,11 +117,11 @@ impl SamplerDescInfo {
         }
     }
 
-    pub fn build(&self, device: &GsDevice) -> Result<GsSampler, ImageError> {
+    pub fn build(&self, device: &GsDevice) -> VkResult<GsSampler> {
 
         let handle = unsafe {
             device.handle.create_sampler(&self.0, None)
-                .or(Err(ImageError::SamplerCreationError))?
+                .or(Err(VkError::create("Sampler")))?
         };
 
         let sampler = GsSampler { handle };

@@ -7,7 +7,6 @@ pub use self::sampler::{ GsSampler, SamplerDescInfo };
 pub use self::barrier::GsImageBarrier;
 pub use self::entity::ImageEntity;
 pub use self::repository::GsImageRepository;
-pub use self::error::ImageError;
 
 mod target;
 mod view;
@@ -18,7 +17,6 @@ mod sampler;
 mod barrier;
 mod utils;
 mod traits;
-mod error;
 
 pub mod instance;
 pub mod allocator;

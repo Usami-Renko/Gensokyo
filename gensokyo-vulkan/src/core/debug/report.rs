@@ -3,9 +3,9 @@ use ash::vk;
 
 use crate::core::instance::GsInstance;
 use crate::core::debug::debugger::DebugInstance;
-use crate::core::error::ValidationError;
 
 use crate::types::{ vkptr, vkchar, vklint, vksint, VK_FALSE };
+use crate::error::{ VkResult, VkError };
 
 use std::ffi::CStr;
 use std::ptr;
@@ -44,7 +44,7 @@ pub struct DebugReportConfig {
 impl GsDebugReport {
 
     /// Initialize debug extension loader and `vk::DebugReport` object.
-    pub fn setup(instance: &GsInstance, config: &DebugReportConfig) -> Result<GsDebugReport, ValidationError> {
+    pub fn setup(instance: &GsInstance, config: &DebugReportConfig) -> VkResult<GsDebugReport> {
 
         // load the debug extension.
         let loader = ash::extensions::ext::DebugReport::new(&instance.entry, &instance.handle);
@@ -61,7 +61,7 @@ impl GsDebugReport {
 
         let callback = unsafe {
             loader.create_debug_report_callback(&debug_callback_create_info, None)
-                .or(Err(ValidationError::DebugReportCallbackCreationError))?
+                .or(Err(VkError::create("Debug Report Callback")))?
         };
 
         let report = GsDebugReport {

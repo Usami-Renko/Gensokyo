@@ -8,11 +8,11 @@ use crate::core::device::GsDevice;
 use crate::core::device::enums::{ DeviceQueueIdentifier, QueueRequestStrategy };
 use crate::core::device::queue::{ GsGraphicsQueue, GsPresentQueue, GsTransferQueue, GsTransfer };
 use crate::core::device::queue::{ GsQueue, QueueSubmitBundle };
-use crate::core::error::LogicalDeviceError;
 
 use crate::descriptor::DescriptorWriteInfo;
-use crate::sync::{ GsFence, SyncError };
+use crate::sync::GsFence;
 
+use crate::error::{ VkResult, VkError };
 use crate::types::vklint;
 
 use std::ptr;
@@ -41,30 +41,30 @@ impl GsLogicalDevice {
     /// Tell device to wait for a group of fences.
     ///
     /// To wait for a single fence, use GsFence::wait() method instead.
-    pub fn wait_fences(&self, fences: &[GsFence], wait_all: bool, timeout: vklint) -> Result<(), SyncError> {
+    pub fn wait_fences(&self, fences: &[&GsFence], wait_all: bool, timeout: vklint) -> VkResult<()> {
 
         let handles: Vec<vk::Fence> = collect_handle!(fences);
 
         unsafe {
             self.handle.wait_for_fences(&handles, wait_all, timeout)
-                .or(Err(SyncError::FenceTimeOutError))?;
+                .or(Err(VkError::sync("Failed to reset fence.")))?
         }
         Ok(())
     }
 
-    pub fn reset_fences(&self, fences: &[GsFence]) -> Result<(), SyncError> {
+    pub fn reset_fences(&self, fences: &[&GsFence]) -> VkResult<()> {
 
         let handles: Vec<vk::Fence> = collect_handle!(fences);
 
         unsafe {
             self.handle.reset_fences(&handles)
-                .or(Err(SyncError::FenceResetError))?;
+                .or(Err(VkError::sync("Failed to reset fence.")))?
         }
 
         Ok(())
     }
 
-    pub fn submit(&self, bundles: &[QueueSubmitBundle], fence: Option<&GsFence>, queue_ident: DeviceQueueIdentifier) -> Result<(), SyncError> {
+    pub fn submit(&self, bundles: &[QueueSubmitBundle], fence: Option<&GsFence>, queue_ident: DeviceQueueIdentifier) -> VkResult<()> {
 
         // TODO: Add configuration to select submit queue family
         // TODO: Add Speed test to this function.
@@ -101,16 +101,16 @@ impl GsLogicalDevice {
 
         unsafe {
             self.handle.queue_submit(queue.handle, &submit_infos, fence)
-                .or(Err(SyncError::QueueSubmitError))?;
+                .or(Err(VkError::sync("Failed to submit command to device.")))?
         }
 
         Ok(())
     }
 
-    pub fn wait_idle(&self) -> Result<(), LogicalDeviceError> {
+    pub fn wait_idle(&self) -> VkResult<()> {
         unsafe {
             self.handle.device_wait_idle()
-                .or(Err(LogicalDeviceError::WaitIdleError))
+                .or(Err(VkError::sync("Device failed to wait idle.")))
         }
     }
 
@@ -125,7 +125,7 @@ impl GsLogicalDevice {
         }
     }
 
-    pub fn transfer(device: &GsDevice) -> GsTransfer {
+    pub fn transfer(device: &GsDevice) -> VkResult<GsTransfer> {
 
         device.transfer_queue.transfer(device)
     }

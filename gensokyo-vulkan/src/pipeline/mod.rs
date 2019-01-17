@@ -7,4 +7,3 @@ pub mod pass;
 pub mod state;
 pub mod shader;
 pub mod layout;
-pub mod error;

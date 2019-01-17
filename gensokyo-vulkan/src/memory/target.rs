@@ -6,7 +6,7 @@ use ash::version::DeviceV1_0;
 use crate::core::device::GsDevice;
 use crate::memory::filter::MemoryFilter;
 
-use crate::memory::error::MemoryError;
+use crate::error::{ VkResult, VkError };
 use crate::types::vkbytes;
 
 use std::ptr;
@@ -21,7 +21,7 @@ pub struct GsMemory {
 
 impl GsMemory {
 
-    pub fn allocate(device: &GsDevice, size: vkbytes, filter: &MemoryFilter) -> Result<GsMemory, MemoryError> {
+    pub fn allocate(device: &GsDevice, size: vkbytes, filter: &MemoryFilter) -> VkResult<GsMemory> {
 
         let optimal_memory_index = filter.optimal_memory()?;
         let typ = filter.optimal_mem_type()?;
@@ -36,17 +36,14 @@ impl GsMemory {
 
         let handle = unsafe {
             device.handle.allocate_memory(&allocate_info, None)
-                .or(Err(MemoryError::AllocateMemoryError))?
+                .or(Err(VkError::device("An error occurred when trying to allocate memory for buffer or image object.")))?
         };
 
-        let target = GsMemory {
-            handle, typ, size,
-        };
-
+        let target = GsMemory { handle, typ, size, };
         Ok(target)
     }
 
-    pub fn is_coherent_memroy(&self) -> bool {
+    pub fn is_coherent_memory(&self) -> bool {
         self.typ.property_flags.contains(vk::MemoryPropertyFlags::HOST_COHERENT)
     }
 

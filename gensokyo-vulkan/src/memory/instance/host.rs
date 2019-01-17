@@ -14,8 +14,8 @@ use crate::memory::traits::{ GsMemoryAbstract, MemoryMappable };
 use crate::memory::filter::MemoryFilter;
 use crate::memory::instance::GsBufferMemoryAbs;
 use crate::memory::transfer::MemoryDataDelegate;
-use crate::memory::error::{ MemoryError, AllocatorError };
 
+use crate::error::{ VkResult, VkError };
 use crate::types::vkbytes;
 
 
@@ -46,7 +46,7 @@ impl GsMemoryAbstract for GsHostMemory {
         &self.target
     }
 
-    fn allocate(device: &GsDevice, size: vkbytes, filter: &MemoryFilter) -> Result<GsHostMemory, MemoryError> {
+    fn allocate(device: &GsDevice, size: vkbytes, filter: &MemoryFilter) -> VkResult<GsHostMemory> {
 
         let target = GsMemory::allocate(device, size, filter)?;
         let map_status = MemoryMapStatus::from_unmap();
@@ -57,7 +57,7 @@ impl GsMemoryAbstract for GsHostMemory {
         Ok(memory)
     }
 
-    fn as_mut_mapable(&mut self) -> Option<&mut MemoryMappable> {
+    fn as_mut_mappable(&mut self) -> Option<&mut MemoryMappable> {
         Some(self)
     }
 
@@ -70,13 +70,13 @@ impl GsMemoryAbstract for GsHostMemory {
 
 impl GsBufferMemoryAbs for GsHostMemory {
 
-    fn to_upload_agency(&self, _: &GsDevice, _: &GsPhyDevice, _: &BufferAllocateInfos) -> Result<Box<dyn MemoryDataDelegate>, MemoryError> {
+    fn to_upload_agency(&self, _: &GsDevice, _: &GsPhyDevice, _: &BufferAllocateInfos) -> VkResult<Box<dyn MemoryDataDelegate>> {
 
         let agency = HostDataAgency::new(self);
         Ok(Box::new(agency))
     }
 
-    fn to_update_agency(&self) -> Result<Box<dyn MemoryDataDelegate>, MemoryError> {
+    fn to_update_agency(&self) -> VkResult<Box<dyn MemoryDataDelegate>> {
 
         let agency = HostDataAgency::new(self);
         Ok(Box::new(agency))
@@ -98,7 +98,7 @@ impl HostDataAgency {
             map_alias: MemoryMapAlias {
                 handle: memory.target.handle,
                 status: memory.map_status.clone(),
-                is_coherent: memory.target.is_coherent_memroy(),
+                is_coherent: memory.target.is_coherent_memory(),
             },
             ranges_to_flush: vec![],
         }
@@ -107,23 +107,23 @@ impl HostDataAgency {
 
 impl MemoryDataDelegate for HostDataAgency {
 
-    fn prepare(&mut self, _: &GsDevice) -> Result<(), MemoryError> {
+    fn prepare(&mut self, _: &GsDevice) -> VkResult<()> {
         Ok(())
     }
 
-    fn acquire_write_ptr(&mut self, block: &BufferBlock, _: usize) -> Result<MemoryWritePtr, MemoryError> {
+    fn acquire_write_ptr(&mut self, block: &BufferBlock, _: usize) -> VkResult<MemoryWritePtr> {
 
         self.ranges_to_flush.push(MemoryRange { offset: block.memory_offset, size: block.size });
 
         let data_ptr = unsafe {
             self.map_alias.status.data_ptr(block.memory_offset)
-        }.ok_or(MemoryError::MemoryPtrInvalidError)?;
+        }.ok_or(VkError::device("Failed to get mapped memory pointer."))?;
 
         let writer = MemoryWritePtr::new(data_ptr, block.size);
         Ok(writer)
     }
 
-    fn finish(&mut self, device: &GsDevice) -> Result<(), AllocatorError> {
+    fn finish(&mut self, device: &GsDevice) -> VkResult<()> {
 
         if !self.map_alias.is_coherent {
             // FIXME: the VkPhysicalDeviceLimits::nonCoherentAtomSize is not satified for flushing range.

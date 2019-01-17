@@ -4,14 +4,12 @@ use crate::core::physical::GsPhyDevice;
 
 use crate::buffer::target::{ GsBuffer, BufferDescInfo };
 use crate::buffer::instance::types::BufferInfoAbstract;
-use crate::buffer::error::BufferError;
 use crate::memory::{ MemoryFilter, MemoryDstEntity };
-use crate::memory::AllocatorError;
+use crate::error::{ VkResult, VkError };
 
 use crate::buffer::allocator::types::BufferMemoryTypeAbs;
 use crate::buffer::allocator::memory::{ BufferAllocateInfos, BufMemAllocator };
 use crate::buffer::allocator::distributor::GsBufferDistributor;
-
 use crate::utils::assign::GsAssignIndex;
 use crate::types::vkbytes;
 
@@ -53,12 +51,12 @@ impl<M> GsBufferAllocator<M> where M: BufferMemoryTypeAbs {
         }
     }
 
-    pub fn assign<Info, Index>(&mut self, info: Info) -> Result<GsAssignIndex<Index>, AllocatorError>
+    pub fn assign<Info, Index>(&mut self, info: Info) -> VkResult<GsAssignIndex<Index>>
         where Info: BufferInfoAbstract<Index> {
 
         // check if the usage of buffer valid.
         if Info::check_storage_validity(self.storage_type.memory_type()) == false {
-            return Err(AllocatorError::UnsupportBufferUsage)
+            return Err(VkError::device("The type of buffer is not support on this allocator."))
         }
 
         let mut info = info; // make it mutable.
@@ -73,26 +71,26 @@ impl<M> GsBufferAllocator<M> where M: BufferMemoryTypeAbs {
             assign_index: self.buffers.len(),
         };
 
-        // get buffer aligment.
-        let aligment_space = buffer.aligment_size();
+        // get buffer alignment.
+        let alignment_space = buffer.alignment_size();
 
-        self.spaces.push(aligment_space);
+        self.spaces.push(alignment_space);
         self.buffers.push(buffer);
-        self.allot_infos.push(aligment_space, buffer_description);
+        self.allot_infos.push(alignment_space, buffer_description);
 
         Ok(dst_index)
     }
 
-    pub fn assign_v2<R>(&mut self, info: &impl GsBufferAllocatable<M, R>) -> Result<R, AllocatorError> {
+    pub fn assign_v2<R>(&mut self, info: &impl GsBufferAllocatable<M, R>) -> VkResult<R> {
 
         let allot_func = info.allot_func();
         allot_func(info, self)
     }
 
-    pub fn allocate(self) -> Result<GsBufferDistributor<M>, AllocatorError> {
+    pub fn allocate(self) -> VkResult<GsBufferDistributor<M>> {
 
         if self.buffers.is_empty() {
-            return Err(AllocatorError::Buffer(BufferError::NoBufferAttachError))
+            return Err(VkError::device("Failed to get attachment content to the buffer"))
         }
 
         // allocate memory
@@ -137,5 +135,5 @@ impl<M> GsBufferAllocator<M> where M: BufferMemoryTypeAbs {
 
 pub trait GsBufferAllocatable<M, R> where Self: Sized, M: BufferMemoryTypeAbs {
 
-    fn allot_func(&self) -> Box<dyn Fn(&Self, &mut GsBufferAllocator<M>) -> Result<R, AllocatorError>>;
+    fn allot_func(&self) -> Box<dyn Fn(&Self, &mut GsBufferAllocator<M>) -> VkResult<R>>;
 }
