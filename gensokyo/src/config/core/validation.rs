@@ -3,7 +3,7 @@ use toml;
 use ash::vk;
 
 use crate::config::engine::ConfigMirror;
-use crate::config::error::{ ConfigError, MappingError };
+use crate::error::{ GsResult, GsError };
 
 use gsvk::core::debug::{ ValidationConfig, DebugReportConfig, DebugUtilsConfig, DebugInstanceType };
 
@@ -21,7 +21,7 @@ pub(crate) struct ValidationConfigMirror {
 impl ConfigMirror for ValidationConfigMirror {
     type ConfigType = ValidationConfig;
 
-    fn into_config(self) -> Result<Self::ConfigType, ConfigError> {
+    fn into_config(self) -> GsResult<Self::ConfigType> {
 
         let config = ValidationConfig {
             is_enable: self.enable,
@@ -35,10 +35,11 @@ impl ConfigMirror for ValidationConfigMirror {
         Ok(config)
     }
 
-    fn parse(&mut self, toml: &toml::Value) -> Result<(), ConfigError> {
+    fn parse(&mut self, toml: &toml::Value) -> GsResult<()> {
 
         if let Some(v) = toml.get("enable") {
-            self.enable = v.as_bool().ok_or(ConfigError::ParseError)?;
+            self.enable = v.as_bool()
+                .ok_or(GsError::config("[core.validation.enable]"))?;
         }
 
         if let Some(v) = toml.get("layers") {
@@ -46,18 +47,21 @@ impl ConfigMirror for ValidationConfigMirror {
                 if layers.len() > 0 {
                     self.layers.clear();
 
-                    for layer in layers {
-                        let value = layer.as_str().ok_or(ConfigError::ParseError)?;
+                    for (i, layer) in layers.iter().enumerate() {
+                        let value = layer.as_str()
+                            .ok_or(GsError::config(format!("layers #{}", i)))?;
                         self.layers.push(value.to_owned());
                     }
                 }
             } else {
-                return Err(ConfigError::ParseError);
+                return Err(GsError::config("[core.validation.layers]"))
             }
         }
 
         if let Some(v) = toml.get("types") {
-            self.instance_type = Some(v.as_str().ok_or(ConfigError::ParseError)?.to_owned());
+            let instance_type = v.as_str()
+                .ok_or(GsError::config("[core.validation.types]"))?.to_owned();
+            self.instance_type = Some(instance_type);
         }
 
         if let Some(v) = toml.get("report") {
@@ -76,13 +80,13 @@ impl ConfigMirror for ValidationConfigMirror {
     }
 }
 
-fn vk_raw2debug_instance_type(raw: &Option<String>) -> Result<DebugInstanceType, ConfigError> {
+fn vk_raw2debug_instance_type(raw: &Option<String>) -> GsResult<DebugInstanceType> {
 
     let r#type = if let Some(instance_type) = raw {
         match instance_type.as_str() {
             | "DebugReport" => DebugInstanceType::DebugReport,
             | "DebugUtils"  => DebugInstanceType::DebugUtils,
-            | _ => return Err(ConfigError::Mapping(MappingError::DebugInstanceTypeError))
+            | _ => return Err(GsError::config(instance_type)),
         }
     } else {
         DebugInstanceType::None
@@ -101,34 +105,32 @@ pub(crate) struct DebugReportConfigMirror {
 impl ConfigMirror for DebugReportConfigMirror {
     type ConfigType = DebugReportConfig;
 
-    fn into_config(self) -> Result<Self::ConfigType, ConfigError> {
+    fn into_config(self) -> GsResult<Self::ConfigType> {
 
         let mut flags = vk::DebugReportFlagsEXT::empty();
         for raw_flag in self.flags.iter() {
             flags |= vk_raw2debug_report_flag(raw_flag)?;
         }
 
-        let config = DebugReportConfig {
-            flags,
-        };
-
+        let config = DebugReportConfig { flags };
         Ok(config)
     }
 
-    fn parse(&mut self, toml: &toml::Value) -> Result<(), ConfigError> {
+    fn parse(&mut self, toml: &toml::Value) -> GsResult<()> {
 
         if let Some(v) = toml.get("flags") {
             if let Some(flags) = v.as_array() {
                 if flags.len() > 0 {
                     self.flags.clear();
 
-                    for flag in flags {
-                        let value = flag.as_str().ok_or(ConfigError::ParseError)?;
+                    for (i, flag) in flags.iter().enumerate() {
+                        let value = flag.as_str()
+                            .ok_or(GsError::config(format!("flags #{}", i)))?;
                         self.flags.push(value.to_owned());
                     }
                 }
             } else {
-                return Err(ConfigError::ParseError);
+                return Err(GsError::config("[core.validation.report.flags]"))
             }
         }
 
@@ -136,7 +138,7 @@ impl ConfigMirror for DebugReportConfigMirror {
     }
 }
 
-fn vk_raw2debug_report_flag(raw: &String) -> Result<vk::DebugReportFlagsEXT, ConfigError> {
+fn vk_raw2debug_report_flag(raw: &String) -> GsResult<vk::DebugReportFlagsEXT> {
 
     let flag = match raw.as_str() {
         | "Error"              => vk::DebugReportFlagsEXT::ERROR,
@@ -144,7 +146,7 @@ fn vk_raw2debug_report_flag(raw: &String) -> Result<vk::DebugReportFlagsEXT, Con
         | "PerformanceWarning" => vk::DebugReportFlagsEXT::PERFORMANCE_WARNING,
         | "Debug"              => vk::DebugReportFlagsEXT::DEBUG,
         | "Information"        => vk::DebugReportFlagsEXT::INFORMATION,
-        | _ => return Err(ConfigError::Mapping(MappingError::DebugReportError)),
+        | _ => return Err(GsError::config(raw)),
     };
 
     Ok(flag)
@@ -161,7 +163,7 @@ pub(crate) struct DebugUtilsConfigMirror {
 impl ConfigMirror for DebugUtilsConfigMirror {
     type ConfigType = DebugUtilsConfig;
 
-    fn into_config(self) -> Result<Self::ConfigType, ConfigError> {
+    fn into_config(self) -> GsResult<Self::ConfigType> {
 
         // vk::DebugUtilsMessengerCreateFlagsEXT is reserved for future use in API version 1.1.92.
         let flags = vk::DebugUtilsMessengerCreateFlagsEXT::empty();
@@ -176,27 +178,25 @@ impl ConfigMirror for DebugUtilsConfigMirror {
             types |= vk_raw2debug_utils_types(raw_flag)?;
         }
 
-        let config = DebugUtilsConfig {
-            flags, severity, types,
-        };
-
+        let config = DebugUtilsConfig { flags, severity, types };
         Ok(config)
     }
 
-    fn parse(&mut self, toml: &toml::Value) -> Result<(), ConfigError> {
+    fn parse(&mut self, toml: &toml::Value) -> GsResult<()> {
 
         if let Some(v) = toml.get("flags") {
             if let Some(flags) = v.as_array() {
                 if flags.len() > 0 {
                     self.flags.clear();
 
-                    for flag in flags {
-                        let value = flag.as_str().ok_or(ConfigError::ParseError)?;
+                    for (i, flag) in flags.iter().enumerate() {
+                        let value = flag.as_str()
+                            .ok_or(GsError::config(format!("flags #{}", i)))?;
                         self.flags.push(value.to_owned());
                     }
                 }
             } else {
-                return Err(ConfigError::ParseError);
+                return Err(GsError::config("[core.validation.utils.flags]"))
             }
         }
 
@@ -205,13 +205,14 @@ impl ConfigMirror for DebugUtilsConfigMirror {
                 if severities.len() > 0 {
                     self.severity.clear();
 
-                    for severity in severities {
-                        let value = severity.as_str().ok_or(ConfigError::ParseError)?;
+                    for (i, severity) in severities.iter().enumerate() {
+                        let value = severity.as_str()
+                            .ok_or(GsError::config(format!("severity #{}", i)))?;
                         self.severity.push(value.to_owned());
                     }
                 }
             } else {
-                return Err(ConfigError::ParseError);
+                return Err(GsError::config("[core.validation.utils.severity]"))
             }
         }
 
@@ -220,13 +221,14 @@ impl ConfigMirror for DebugUtilsConfigMirror {
                 if types.len() > 0 {
                     self.types.clear();
 
-                    for r#type in types {
-                        let value =r#type.as_str().ok_or(ConfigError::ParseError)?;
+                    for (i, r#type) in types.iter().enumerate() {
+                        let value =r#type.as_str()
+                            .ok_or(GsError::config(format!("types #{}", i)))?;
                         self.types.push(value.to_owned());
                     }
                 }
             } else {
-                return Err(ConfigError::ParseError);
+                return Err(GsError::config("[core.validation.utils.types]"))
             }
         }
 
@@ -234,26 +236,26 @@ impl ConfigMirror for DebugUtilsConfigMirror {
     }
 }
 
-fn vk_raw2debug_utils_severity(raw: &String) -> Result<vk::DebugUtilsMessageSeverityFlagsEXT, ConfigError> {
+fn vk_raw2debug_utils_severity(raw: &String) -> GsResult<vk::DebugUtilsMessageSeverityFlagsEXT> {
 
     let flag = match raw.as_str() {
         | "Verbose" => vk::DebugUtilsMessageSeverityFlagsEXT::VERBOSE,
         | "Warning" => vk::DebugUtilsMessageSeverityFlagsEXT::WARNING,
         | "Error"   => vk::DebugUtilsMessageSeverityFlagsEXT::ERROR,
         | "Info"    => vk::DebugUtilsMessageSeverityFlagsEXT::INFO,
-        | _ => return Err(ConfigError::Mapping(MappingError::DebugUtilsError)),
+        | _ => return Err(GsError::config(raw)),
     };
 
     Ok(flag)
 }
 
-fn vk_raw2debug_utils_types(raw: &String) -> Result<vk::DebugUtilsMessageTypeFlagsEXT, ConfigError> {
+fn vk_raw2debug_utils_types(raw: &String) -> GsResult<vk::DebugUtilsMessageTypeFlagsEXT> {
 
     let flag = match raw.as_str() {
         | "General"     => vk::DebugUtilsMessageTypeFlagsEXT::GENERAL,
         | "Performance" => vk::DebugUtilsMessageTypeFlagsEXT::PERFORMANCE,
         | "Validation"  => vk::DebugUtilsMessageTypeFlagsEXT::VALIDATION,
-        | _ => return Err(ConfigError::Mapping(MappingError::DebugUtilsError)),
+        | _ => return Err(GsError::config(raw)),
     };
 
     Ok(flag)

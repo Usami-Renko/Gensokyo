@@ -8,8 +8,7 @@ use crate::core::debug::utils::{ GsDebugUtils, DebugUtilsConfig };
 use crate::VERBOSE;
 use crate::utils::cast;
 
-use crate::error::{ VkResult, VkErrorKind };
-use failure::ResultExt;
+use crate::error::{ VkResult, VkError };
 
 /// Wrapper class for the validation tools used in Vulkan.
 ///
@@ -97,7 +96,7 @@ impl GsDebugger {
 pub(in crate::core) fn is_support_validation_layer(entry: &ash::Entry, required_validation_layers: &[String]) -> VkResult<bool> {
 
     let layer_properties = entry.enumerate_instance_layer_properties()
-        .with_context(|_| VkErrorKind::Query(String::from("Layer Properties")))?;
+        .or(Err(VkError::query("Layer Properties")))?;
 
     // Print the layer name to console in verbose mode.
     if VERBOSE {

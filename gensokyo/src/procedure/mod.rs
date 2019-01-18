@@ -5,4 +5,3 @@ pub mod loops;
 pub mod window;
 pub mod workflow;
 pub mod loader;
-pub mod error;

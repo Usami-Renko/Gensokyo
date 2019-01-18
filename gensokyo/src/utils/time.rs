@@ -7,7 +7,7 @@ use gsvk::types::vklint;
 pub enum TimePeriod {
     Immediate,
     Time(Duration),
-    Infinte,
+    Infinite,
 }
 
 impl TimePeriod {
@@ -17,7 +17,7 @@ impl TimePeriod {
             | TimePeriod::Immediate => 0,
             | TimePeriod::Time(time) =>
                 (time.subsec_nanos() as vklint) + time.as_secs() * 1_000_000_000,
-            | TimePeriod::Infinte => vklint::max_value(),
+            | TimePeriod::Infinite => vklint::max_value(),
         }
     }
 }

@@ -47,7 +47,7 @@ impl GsLogicalDevice {
 
         unsafe {
             self.handle.wait_for_fences(&handles, wait_all, timeout)
-                .or(Err(VkError::sync("Failed to reset fence.")))?
+                .or(Err(VkError::device("Failed to reset fence.")))?
         }
         Ok(())
     }
@@ -58,7 +58,7 @@ impl GsLogicalDevice {
 
         unsafe {
             self.handle.reset_fences(&handles)
-                .or(Err(VkError::sync("Failed to reset fence.")))?
+                .or(Err(VkError::device("Failed to reset fence.")))?
         }
 
         Ok(())
@@ -101,7 +101,7 @@ impl GsLogicalDevice {
 
         unsafe {
             self.handle.queue_submit(queue.handle, &submit_infos, fence)
-                .or(Err(VkError::sync("Failed to submit command to device.")))?
+                .or(Err(VkError::device("Failed to submit command to device.")))?
         }
 
         Ok(())
@@ -110,7 +110,7 @@ impl GsLogicalDevice {
     pub fn wait_idle(&self) -> VkResult<()> {
         unsafe {
             self.handle.device_wait_idle()
-                .or(Err(VkError::sync("Device failed to wait idle.")))
+                .or(Err(VkError::device("Device failed to wait idle.")))
         }
     }
 

@@ -3,15 +3,14 @@ use crate::config::resources::ResourceConfig;
 
 use crate::procedure::env::{ ProgramEnv, VulkanEnv };
 use crate::procedure::loader::AssetsLoader;
-use crate::procedure::error::ProcedureError;
 
 use gsvk::core::device::{ GsDevice, DeviceQueueIdentifier };
 use gsvk::core::swapchain::{ GsChain, SwapchainConfig };
-use gsvk::core::swapchain::error::{ SwapchainError, SwapchainRuntimeError };
-use gsvk::sync::{ GsSemaphore, GsFence, SyncError };
+use gsvk::sync::{ GsSemaphore, GsFence };
 use gsvk::types::vkuint;
 
 use crate::utils::time::TimePeriod;
+use crate::error::{ GsResult, GsError };
 
 pub(super) struct ChainResource {
 
@@ -24,13 +23,13 @@ pub(super) struct ChainResource {
     current_frame: usize,
 
     // sync.
-    image_awaits : Vec<GsSemaphore>,
-    sync_fences  : Vec<GsFence>,
+    image_awaits: Vec<GsSemaphore>,
+    sync_fences : Vec<GsFence>,
 }
 
 impl ChainResource {
 
-    pub fn new(env: &ProgramEnv, window: winit::Window) -> Result<ChainResource, ProcedureError> {
+    pub fn new(env: &ProgramEnv, window: winit::Window) -> GsResult<ChainResource> {
 
         let swapchain = env.vulkan_env.new_chain(&env.config.core.swapchain, None, &window)?;
         let frame_in_flights = env.config.core.swapchain.image_count as usize;
@@ -50,25 +49,15 @@ impl ChainResource {
         AssetsLoader::new(&env, config, &self.swapchain)
     }
 
-    pub fn acquire_next_image(&self) -> Result<AcquireImageInfo, ProcedureError> {
+    pub fn acquire_next_image(&self) -> GsResult<AcquireImageInfo> {
 
         let fence_to_wait = &self.sync_fences[self.current_frame];
-        fence_to_wait.wait(TimePeriod::Infinte.vulkan_time())?;
+        fence_to_wait.wait(TimePeriod::Infinite.vulkan_time())?;
 
         let image_to_acquire = &self.image_awaits[self.current_frame];
 
-        let image_result = self.swapchain
-            .next_image(Some(image_to_acquire), None);
-        let acquire_image_index = match image_result {
-            | Ok(result) => result,
-            | Err(e) => match e {
-                | SwapchainRuntimeError::SurfaceOutOfDate
-                | SwapchainRuntimeError::SubOptimal => {
-                    return Err(ProcedureError::SwapchainRecreate)
-                },
-                | _ => return Err(ProcedureError::Swapchain(SwapchainError::Runtime(e))),
-            }
-        };
+        let acquire_image_index = self.swapchain
+            .next_image(Some(image_to_acquire), None)?;
 
         fence_to_wait.reset()?;
 
@@ -81,34 +70,22 @@ impl ChainResource {
         Ok(result)
     }
 
-    pub fn present_image(&self, device: &GsDevice, present_available: &GsSemaphore, image_index: vkuint) -> Result<(), ProcedureError> {
+    pub fn present_image(&self, device: &GsDevice, present_available: &GsSemaphore, image_index: vkuint) -> GsResult<()> {
 
         // FIXME: Use present queue will cause crash. Image ownership transfer is necessary,
         // see https://github.com/KhronosGroup/Vulkan-Docs/wiki/Synchronization-Examples.
         // or see https://software.intel.com/en-us/articles/api-without-secrets-introduction-to-vulkan-part-3#inpage-nav-6-3
-        let present_result = self.swapchain.present(device,
+        self.swapchain.present(device,
             &[present_available], image_index,
             DeviceQueueIdentifier::Graphics
-        );
-
-        if let Err(e) = present_result {
-            match e {
-                | SwapchainRuntimeError::SurfaceOutOfDate
-                | SwapchainRuntimeError::SubOptimal => {
-                    return Err(ProcedureError::SwapchainRecreate)
-                },
-                | _ => return Err(ProcedureError::Swapchain(SwapchainError::Runtime(e))),
-            }
-        }
-
-        Ok(())
+        ).map_err(GsError::from)
     }
 
     pub fn next_frame(&mut self) {
         self.current_frame = (self.current_frame + 1) % self.frame_in_flights;
     }
 
-    pub fn reload(&mut self, env: &VulkanEnv, config: &SwapchainConfig) -> Result<(), ProcedureError> {
+    pub fn reload(&mut self, env: &VulkanEnv, config: &SwapchainConfig) -> GsResult<()> {
 
         let new_chain = env.new_chain(config, Some(&self.swapchain), &self.window)?;
         self.destroy(&env.device);
@@ -128,7 +105,7 @@ impl ChainResource {
             .for_each(|f| f.destroy());
     }
 
-    fn recreate_syncs(&mut self, device: &GsDevice) -> Result<(), ProcedureError> {
+    fn recreate_syncs(&mut self, device: &GsDevice) -> GsResult<()> {
 
         self.sync_fences.clear();
         self.image_awaits.clear();
@@ -141,7 +118,7 @@ impl ChainResource {
     }
 }
 
-fn create_syncs(device: &GsDevice, frame_in_flights: usize) -> Result<(Vec<GsSemaphore>, Vec<GsFence>), SyncError> {
+fn create_syncs(device: &GsDevice, frame_in_flights: usize) -> GsResult<(Vec<GsSemaphore>, Vec<GsFence>)> {
 
     let mut image_awaits = vec![];
     let mut sync_fences = vec![];

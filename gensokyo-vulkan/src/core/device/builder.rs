@@ -57,7 +57,7 @@ impl<'a> LogicalDeviceBuilder<'a> {
         let _ = self.queue_request.request_queue(QueueUsage::Transfer, PrefabQueuePriority::Highest);
 
         self.queue_request.inspect_queue_availability(&self.physical)?;
-        let queue_infos = self.queue_request.to_queue_infos()?;
+        let queue_infos = self.queue_request.to_queue_infos();
 
         let queue_create_infos: Vec<vk::DeviceQueueCreateInfo> = queue_infos.into_iter()
             .map(|queue_info| {
@@ -101,7 +101,7 @@ impl<'a> LogicalDeviceBuilder<'a> {
             self.queue_request.print_message();
         }
 
-        let mut queues = self.queue_request.collect_queues(&handle)?;
+        let mut queues = self.queue_request.collect_queues(&handle);
         let transfer_queue = GsTransferQueue::new(&handle, queues.pop().unwrap(), &self.config)?;
         let present_queue = GsPresentQueue::new(queues.pop().unwrap());
         let graphics_queue = GsGraphicsQueue::new(queues.pop().unwrap());

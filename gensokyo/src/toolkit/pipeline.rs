@@ -1,14 +1,14 @@
 
+use crate::error::{ GsResult, GsError };
+
 use gsvk::core::device::GsDevice;
 use gsvk::core::swapchain::GsChain;
 
 use gsvk::pipeline::graphics::{ GraphicsPipelineBuilder, GraphicsPipelineConfig };
 use gsvk::pipeline::pass::{ GsRenderPass, RenderPassBuilder };
-use gsvk::pipeline::pass::{ RenderAttachement, RenderAttachementPrefab };
+use gsvk::pipeline::pass::{ RenderAttachment, RenderAttachmentPrefab };
 use gsvk::pipeline::pass::{ RenderDependency, SubpassStage };
 use gsvk::pipeline::shader::{ GsShaderInfo, VertexInputDescription };
-
-use gsvk::pipeline::error::PipelineError;
 
 pub struct PipelineKit {
 
@@ -31,17 +31,17 @@ impl PipelineKit {
         RenderPassBuilder::new(&self.device, &self.chain)
     }
 
-    pub fn graphics_pipeline_builder(&self) -> Result<GraphicsPipelineBuilder, PipelineError> {
+    pub fn graphics_pipeline_builder(&self) -> GsResult<GraphicsPipelineBuilder> {
 
-        GraphicsPipelineBuilder::new(&self.device)
+        GraphicsPipelineBuilder::new(&self.device).map_err(GsError::from)
     }
 
     pub fn pipeline_config(&self, shaders: impl Into<Vec<GsShaderInfo>>, input: VertexInputDescription, render_pass: GsRenderPass) -> GraphicsPipelineConfig {
         GraphicsPipelineConfig::new(shaders, input, render_pass, self.chain.extent())
     }
 
-    pub fn present_attachment(&self) -> RenderAttachement {
-        RenderAttachement::setup(RenderAttachementPrefab::PresentAttachment, self.chain.format())
+    pub fn present_attachment(&self) -> RenderAttachment {
+        RenderAttachment::setup(RenderAttachmentPrefab::PresentAttachment, self.chain.format())
     }
 
     pub fn subpass_dependency(&self, src: SubpassStage, dst: SubpassStage) -> RenderDependency {

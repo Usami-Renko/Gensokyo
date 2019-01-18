@@ -4,7 +4,7 @@ use crate::assets::glTF::levels::traits::{ GsglTFLevelEntity, GsglTFArchitecture
 use crate::assets::glTF::material::material::GsglTFMaterialData;
 use crate::assets::glTF::primitive::attributes::GsglTFAttrFlags;
 use crate::assets::glTF::primitive::transforms::GsglTFNodeUniformFlags;
-use crate::assets::glTF::error::GltfError;
+use crate::assets::error::GltfError;
 
 use gsvk::pipeline::target::GsPipelineStage;
 use gsvk::command::{ GsCmdRecorder, GsCmdGraphicsApi };
@@ -31,7 +31,7 @@ impl<'a> GsglTFLevelEntity<'a> for GsglTFPrimitiveEntity {
 
         if level.mode() != gltf::mesh::Mode::Triangles {
             // Currently only support Triangle topology.
-            return Err(GltfError::UnsupportRenderMode)
+            return Err(GltfError::loading("Unsupported glTF primitive render mode."))
         }
 
         let mut attr_flag = GsglTFAttrFlags::NONE;
@@ -45,7 +45,7 @@ impl<'a> GsglTFLevelEntity<'a> for GsglTFPrimitiveEntity {
                 | gltf::Semantic::TexCoords(1) => attr_flag |= GsglTFAttrFlags::TEXCOORD_1,
                 | gltf::Semantic::Joints(0)    => attr_flag |= GsglTFAttrFlags::JOINTS_0,
                 | gltf::Semantic::Weights(0)   => attr_flag |= GsglTFAttrFlags::WEIGHTS_0,
-                | _ => return Err(GltfError::UnsupportAttributes)
+                | _ => return Err(GltfError::loading("Unsupported glTF primitive attributes combination."))
             }
         }
 

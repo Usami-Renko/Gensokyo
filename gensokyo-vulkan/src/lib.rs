@@ -17,3 +17,5 @@ pub mod error;
 
 // TODO: Remove this const variable.
 const VERBOSE: bool = false;
+
+#[macro_use] extern crate failure_derive;

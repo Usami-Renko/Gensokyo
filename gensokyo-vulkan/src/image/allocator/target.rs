@@ -59,8 +59,9 @@ impl<M> GsImageAllocator<M> where M: ImageMemoryTypeAbs {
 
     pub fn append_sample_image(&mut self, info: &mut SampleImageInfo) -> VkResult<()> {
 
-        let storage = info.take_storage()
-            .ok_or(VkError::sync("Duplicate append image to allocator."))?;
+        // TODO: Use GsAssignIndex to optimal allocation and handle unwrap().
+        let storage = info.take_storage().unwrap();
+            //.ok_or(VkError::sync("Duplicate append image to allocator."))?;
         self.append_image(info, storage)
     }
 
@@ -84,7 +85,7 @@ impl<M> GsImageAllocator<M> where M: ImageMemoryTypeAbs {
     pub fn allocate(mut self) -> VkResult<GsImageDistributor<M>> {
 
         if self.image_infos.is_empty() {
-            return Err(VkError::sync("There must be images appended to allocator before allocate memory."))
+            return Err(VkError::other("There must be images appended to allocator before allocate memory."))
         }
 
         // 1.select memory type for image.

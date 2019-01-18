@@ -77,7 +77,7 @@ impl<T: GsVkCommandType> GsCmdRecorder<T> {
 
         unsafe {
             self.device.handle.begin_command_buffer(self.cmd_handle, &begin_info)
-                .or(Err(VkError::sync("Failed to begin Command Buffer recording.")))?
+                .or(Err(VkError::device("Failed to begin Command Buffer recording.")))?
         };
         Ok(self)
     }
@@ -86,7 +86,7 @@ impl<T: GsVkCommandType> GsCmdRecorder<T> {
 
         let _ = unsafe {
             self.device.handle.end_command_buffer(self.cmd_handle)
-                .or(Err(VkError::sync("Failed to end Command Buffer recording.")))?
+                .or(Err(VkError::device("Failed to end Command Buffer recording.")))?
         };
 
         let buffer = GsCommandBuffer::new(self.cmd_handle, self.cmd_usage);

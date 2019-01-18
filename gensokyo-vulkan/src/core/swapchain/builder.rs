@@ -14,7 +14,7 @@ use crate::error::{ VkResult, VkError };
 
 use crate::image::{ GsImage, ImageViewDescInfo };
 
-use crate::types::{ vkuint, vklint, VK_TRUE };
+use crate::types::{ vkuint, vklint, VK_TRUE, vkDim2D };
 
 use std::ptr;
 
@@ -50,10 +50,10 @@ impl<'s> SwapchainBuilder<'s> {
         Ok(builder)
     }
 
-    pub fn build(self, instance: &GsInstance, old_chain: Option<&GsChain>, window: &winit::Window) -> VkResult<GsSwapchain> {
+    pub fn build(self, instance: &GsInstance, old_chain: Option<&GsChain>, window_dimension: &vkDim2D) -> VkResult<GsSwapchain> {
 
         let prefer_format = self.support.optimal_format();
-        let prefer_extent = self.support.optimal_extent(window)?;
+        let prefer_extent = self.support.optimal_extent(window_dimension)?;
 
         let swapchain_create_info = vk::SwapchainCreateInfoKHR {
             s_type                   : vk::StructureType::SWAPCHAIN_CREATE_INFO_KHR,

@@ -1,8 +1,9 @@
 
 use winit;
-use winit::{ DeviceEvent, WindowEvent, ElementState, VirtualKeyCode };
+use winit::{ DeviceEvent, WindowEvent, ElementState };
 
 use crate::input::key::KeyHeap;
+use crate::input::keycode::GsKeycode;
 use crate::input::mouse::{ MouseSensor, CursorMotion };
 
 pub struct ActionNerve {
@@ -72,8 +73,8 @@ impl ActionNerve {
         self.react = SceneReaction::Rendering;
     }
 
-    pub fn is_key_pressed(&self, key_code: VirtualKeyCode) -> bool {
-        self.key.is_key_pressed(key_code)
+    pub fn is_key_pressed(&self, key_code: GsKeycode) -> bool {
+        self.key.is_key_pressed(key_code.0)
     }
 
     pub fn is_mouse_move(&self) -> bool {

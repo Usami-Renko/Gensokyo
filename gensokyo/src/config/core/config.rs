@@ -9,7 +9,8 @@ use crate::config::core::validation::ValidationConfigMirror;
 use crate::config::core::device::DeviceConfigMirror;
 use crate::config::core::physical::PhysicalConfigMirror;
 use crate::config::core::swapchain::SwapchainConfigMirror;
-use crate::config::error::ConfigError;
+
+use crate::error::GsResult;
 
 #[derive(Deserialize, Default)]
 pub(crate) struct CoreConfigMirror {
@@ -25,7 +26,7 @@ pub(crate) struct CoreConfigMirror {
 impl ConfigMirror for CoreConfigMirror {
     type ConfigType = CoreConfig;
 
-    fn into_config(self) -> Result<Self::ConfigType, ConfigError> {
+    fn into_config(self) -> GsResult<Self::ConfigType> {
 
         let config = CoreConfig {
             instance   : self.instance.into_config()?,
@@ -38,7 +39,7 @@ impl ConfigMirror for CoreConfigMirror {
         Ok(config)
     }
 
-    fn parse(&mut self, toml: &toml::Value) -> Result<(), ConfigError> {
+    fn parse(&mut self, toml: &toml::Value) -> GsResult<()> {
 
         self.instance.parse(toml)?;
 

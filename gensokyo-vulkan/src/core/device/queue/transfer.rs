@@ -121,7 +121,7 @@ impl GsTransfer {
 
         unsafe {
             self.device.handle.queue_submit(transfer_queue.queue.handle, &[submit_info], self.fence.handle)
-                .or(Err(VkError::sync("Failed to submit command to device.")))?
+                .or(Err(VkError::device("Failed to submit command to device.")))?
         };
 
         self.fence.wait(self.transfer_wait_time)?;

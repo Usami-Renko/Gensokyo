@@ -2,7 +2,7 @@
 use crate::assets::glTF::data::{ IntermediateglTFData, GsglTFLoadingData };
 use crate::assets::glTF::primitive::transforms::GsglTFNodeUniformFlags;
 use crate::assets::glTF::primitive::attributes::GsglTFAttrFlags;
-use crate::assets::glTF::error::GltfError;
+use crate::assets::error::GltfError;
 
 pub(crate) struct GsglTFArchitecture<T> {
 

@@ -1,12 +1,12 @@
 
 use crate::assets::glTF::levels::GsglTFNodeEntity;
-use crate::assets::glTF::error::GltfError;
+use crate::assets::error::GltfError;
 use crate::utils::types::Matrix4F;
 
 use gsvk::buffer::instance::{ GsUniformBuffer, GsBufUniformInfo };
 use gsvk::memory::transfer::GsBufferDataUploader;
-use gsvk::memory::AllocatorError;
 use gsvk::types::{ vkuint, vkbytes };
+use gsvk::error::VkResult;
 use gsma::data_size;
 
 use std::ops::{ BitAnd, BitOr, BitOrAssign, BitAndAssign };
@@ -27,12 +27,12 @@ impl GsglTFNodesData {
                 let properties = GPN_T::default();
                 Box::new(properties) as Box<dyn GNProperties>
             },
-            | _ => return Err(GltfError::UnsupportNodeProperties)
+            | _ => return Err(GltfError::loading("Unsupported glTF node property combination."))
         };
 
         let nodes_data = GsglTFNodesData {
             element_size: flag.element_size()
-                .ok_or(GltfError::UnsupportNodeProperties)?,
+                .ok_or(GltfError::loading("Unsupported glTF node property combination."))?,
             content,
         };
         Ok(nodes_data)
@@ -107,7 +107,7 @@ impl BitOrAssign for GsglTFNodeUniformFlags {
 /// glTF Node properties.
 pub(crate) trait GNProperties {
 
-    fn upload(&self, to: &GsUniformBuffer, by: &mut GsBufferDataUploader, alignment: vkbytes) -> Result<(), AllocatorError>;
+    fn upload(&self, to: &GsUniformBuffer, by: &mut GsBufferDataUploader, alignment: vkbytes) -> VkResult<()>;
 
     fn extend(&mut self, node: &GsglTFNodeEntity);
 
@@ -179,7 +179,7 @@ macro_rules! define_gnp {
                 self.data.len()
             }
 
-            fn upload(&self, to: &GsUniformBuffer, by: &mut GsBufferDataUploader, alignment: vkbytes) -> Result<(), AllocatorError> {
+            fn upload(&self, to: &GsUniformBuffer, by: &mut GsBufferDataUploader, alignment: vkbytes) -> VkResult<()> {
 
                 let _ = by.upload_align(to, &self.data, alignment)?;
                 Ok(())

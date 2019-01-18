@@ -5,7 +5,7 @@ use crate::config::engine::EngineConfig;
 
 use crate::procedure::window::WindowInfo;
 use crate::procedure::workflow::RoutineBuilder;
-use crate::procedure::error::{ RuntimeError, ProcedureError };
+use crate::error::{ GsResult, GsError };
 
 use gsvk::core::instance::GsInstance;
 use gsvk::core::debug::GsDebugger;
@@ -13,6 +13,7 @@ use gsvk::core::surface::GsSurface;
 use gsvk::core::device::{ GsDevice, LogicalDeviceBuilder };
 use gsvk::core::physical::{ GsPhyDevice, PhysicalInspector };
 use gsvk::core::swapchain::{ GsChain, SwapchainConfig, SwapchainBuilder };
+use gsvk::types::vkDim2D;
 
 use std::rc::Rc;
 use std::path::PathBuf;
@@ -26,7 +27,7 @@ pub struct ProgramEnv {
 
 pub(super) struct WindowEnv {
 
-    event_loop: winit::EventsLoop,
+    pub(super) event_loop: winit::EventsLoop,
 
     window_info: WindowInfo,
     test_window: Option<winit::Window>,
@@ -34,7 +35,7 @@ pub(super) struct WindowEnv {
 
 impl<'env> ProgramEnv {
 
-    pub fn new(manifest: Option<PathBuf>) -> Result<ProgramEnv, RuntimeError> {
+    pub fn new(manifest: Option<PathBuf>) -> GsResult<ProgramEnv> {
 
         let event_loop = winit::EventsLoop::new();
         let config = EngineConfig::init(manifest)?;
@@ -42,7 +43,7 @@ impl<'env> ProgramEnv {
         let window_info = WindowInfo::from(config.window.clone());
 
         let window = window_info.build(&event_loop)
-            .map_err(|e| RuntimeError::Window(e))?;
+            .or(Err(GsError::window("Failed to create Window.")))?;
 
         let vulkan_env = VulkanEnv::build(&config, &window)?;
 
@@ -51,25 +52,22 @@ impl<'env> ProgramEnv {
             test_window: Some(window),
         };
 
-        let env = ProgramEnv {
-            window_env, vulkan_env, config,
-        };
-
+        let env = ProgramEnv { window_env, vulkan_env, config };
         Ok(env)
     }
 
-    pub fn routine(&'env mut self) -> Result<RoutineBuilder<'env>, RuntimeError> {
+    pub fn routine(&'env mut self) -> GsResult<RoutineBuilder<'env>> {
 
         RoutineBuilder::new(self)
     }
 
-    pub(super) fn window(&mut self) -> Result<winit::Window, RuntimeError> {
+    pub(super) fn window(&mut self) -> GsResult<winit::Window> {
 
         let window = if self.window_env.test_window.is_some() {
             self.window_env.test_window.take().unwrap()
         } else {
             self.window_env.window_info.build(&self.window_env.event_loop)
-                .map_err(|e| RuntimeError::Window(e))?
+                .or(Err(GsError::window("Failed to create Window.")))?
         };
 
         Ok(window)
@@ -77,13 +75,6 @@ impl<'env> ProgramEnv {
 
     pub(super) fn split(self) -> (WindowEnv, VulkanEnv, EngineConfig) {
         (self.window_env, self.vulkan_env, self.config)
-    }
-}
-
-impl WindowEnv {
-
-    pub fn borrow_mut_loops(&mut self) -> &mut winit::EventsLoop {
-        &mut self.event_loop
     }
 }
 
@@ -100,9 +91,9 @@ pub(super) struct VulkanEnv {
 
 impl VulkanEnv {
 
-    pub fn build(config: &EngineConfig, win: &winit::Window) -> Result<VulkanEnv, ProcedureError> {
-        let instance = GsInstance::new(&config.core.instance, &config.core.validation)?;
+    pub fn build(config: &EngineConfig, win: &winit::Window) -> GsResult<VulkanEnv> {
 
+        let instance = GsInstance::new(&config.core.instance, &config.core.validation)?;
         let debugger = GsDebugger::new(&instance, &config.core.validation)?;
 
         let surface = GsSurface::new(&instance, win)?;
@@ -118,14 +109,16 @@ impl VulkanEnv {
             physical : Rc::new(physical),
             device   : Rc::new(device),
         };
-
         Ok(env)
     }
 
-    pub fn new_chain(&self, config: &SwapchainConfig, old_chain: Option<&GsChain>, window: &winit::Window) -> Result<GsChain, ProcedureError> {
+    pub fn new_chain(&self, config: &SwapchainConfig, old_chain: Option<&GsChain>, window: &winit::Window) -> GsResult<GsChain> {
 
+        let win_dimension = window.get_inner_size()
+            .ok_or(GsError::window("Failed to get Window size."))?;
+        let window_dimension = vkDim2D { width: win_dimension.width as _, height: win_dimension.height as _ };
         let chain = SwapchainBuilder::init(config, &self.physical, &self.device, &self.surface)?
-            .build(&self.instance, old_chain, window)?;
+            .build(&self.instance, old_chain, &window_dimension)?;
         Ok(Rc::new(chain))
     }
 

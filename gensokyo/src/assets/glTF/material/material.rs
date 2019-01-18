@@ -1,6 +1,6 @@
 
 use crate::assets::glTF::asset::GsglTFPhyLimits;
-use crate::assets::glTF::error::GltfError;
+use crate::assets::error::GltfError;
 
 use gsvk::types::vkfloat;
 
@@ -47,7 +47,7 @@ impl GsglTFMaterialData {
             .map_err(|e| GltfError::Convert(e))?;
 
         if bytes_data.len() > limits.max_push_constant_size as _ {
-            Err(GltfError::MaterialReachMaxSize)
+            Err(GltfError::loading("The size of material data reach its max size."))
         } else {
             Ok(bytes_data)
         }

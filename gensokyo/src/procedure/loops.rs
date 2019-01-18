@@ -1,16 +1,18 @@
 
 use winit;
 
-use crate::procedure::env::ProgramEnv;
+use crate::procedure::env::{ ProgramEnv, VulkanEnv, WindowEnv };
 use crate::procedure::chain::ChainResource;
 use crate::procedure::workflow::GraphicsRoutine;
-use crate::procedure::error::{ RuntimeError, ProcedureError };
 
+use crate::config::engine::EngineConfig;
+use crate::input::{ ActionNerve, SceneReaction };
+use crate::error::{ GsResult, GsError, GsErrorKind };
 use crate::utils::fps::GsFpsTimer;
 
 use gsvk::core::device::GsDevice;
-
-use crate::input::{ ActionNerve, SceneReaction };
+use gsvk::core::swapchain::SwapchainSyncError;
+use gsvk::error::VkErrorKind;
 
 pub struct RoutineFlow<Routine> where Routine: GraphicsRoutine {
 
@@ -27,32 +29,14 @@ impl<Routine> RoutineFlow<Routine> where Routine: GraphicsRoutine {
         }
     }
 
-    pub fn launch(mut self, env: ProgramEnv) -> Result<(), RuntimeError> {
+    pub fn launch(mut self, env: ProgramEnv) -> GsResult<()> {
 
-        let (mut window_env, vulkan_env, config) = env.split();
+        let (window_env, vulkan_env, config) = env.split();
         let device = &vulkan_env.device;
+
         self.routine.ready(device)?;
 
-        'outer_loop: loop {
-
-            match self.main_loop(device, window_env.borrow_mut_loops()) {
-                | Ok(_) => break,
-                | Err(error) => match error {
-                    | ProcedureError::SwapchainRecreate => {
-
-                        self.wait_device_idle(device)?;
-                        self.routine.clean_resources(device)?;
-                        self.chain.reload(&vulkan_env, &config.core.swapchain)?;
-
-                        let asset_loader = self.chain.assets_loader(&vulkan_env, &config.resources);
-                        self.routine.reload_res(asset_loader)?;
-
-                        continue
-                    },
-                    | _ => return Err(RuntimeError::Procedure(error)),
-                },
-            }
-        }
+        self.main_loop(window_env, &vulkan_env, config)?;
 
         self.routine.closure(device)?;
         self.wait_device_idle(device)?;
@@ -67,7 +51,10 @@ impl<Routine> RoutineFlow<Routine> where Routine: GraphicsRoutine {
         Ok(())
     }
 
-    fn main_loop(&mut self, device: &GsDevice, event_loop: &mut winit::EventsLoop) -> Result<(), ProcedureError> {
+    fn main_loop(&mut self, window_env: WindowEnv, vulkan_env: &VulkanEnv, config: EngineConfig) -> GsResult<()> {
+
+        let device = &vulkan_env.device;
+        let mut window = window_env;
 
         let mut actioner = ActionNerve::new();
         let mut fps_timer = GsFpsTimer::new();
@@ -76,7 +63,7 @@ impl<Routine> RoutineFlow<Routine> where Routine: GraphicsRoutine {
 
             let delta_time = fps_timer.delta_time();
 
-            event_loop.poll_events(|event| {
+            window.event_loop.poll_events(|event| {
                 actioner.record_event(event);
             });
 
@@ -85,19 +72,24 @@ impl<Routine> RoutineFlow<Routine> where Routine: GraphicsRoutine {
 
             match self.draw_frame(device, delta_time) {
                 | Ok(_) => (),
-                | Err(error) => match error {
-                    | ProcedureError::SwapchainRecreate => {
-                        actioner.force_reaction(SceneReaction::SwapchainRecreate)
-                    },
-                    | _ => return Err(error)
+                | Err(error) => {
+                    if error.is_swapchain_recreate() {
+                        actioner.force_reaction(SceneReaction::SwapchainRecreate);
+                    } else {
+                        return Err(error)
+                    }
                 }
-            }
+            };
 
-            let reaction = actioner.get_reaction();
-            match reaction {
+            match actioner.get_reaction() {
                 | SceneReaction::Rendering => {},
                 | SceneReaction::SwapchainRecreate => {
-                    return Err(ProcedureError::SwapchainRecreate)
+                    self.wait_device_idle(device)?;
+                    self.routine.clean_resources(device)?;
+                    self.chain.reload(&vulkan_env, &config.core.swapchain)?;
+
+                    let asset_loader = self.chain.assets_loader(&vulkan_env, &config.resources);
+                    self.routine.reload_res(asset_loader)?;
                 },
                 | SceneReaction::Terminate => {
                     break 'innerloop
@@ -113,7 +105,7 @@ impl<Routine> RoutineFlow<Routine> where Routine: GraphicsRoutine {
         Ok(())
     }
 
-    fn draw_frame(&mut self, device: &GsDevice, delta_time: f32) -> Result<(), ProcedureError> {
+    fn draw_frame(&mut self, device: &GsDevice, delta_time: f32) -> GsResult<()> {
 
         let acquire_result = self.chain.acquire_next_image()?;
 
@@ -125,9 +117,28 @@ impl<Routine> RoutineFlow<Routine> where Routine: GraphicsRoutine {
         self.chain.present_image(device, image_ready_to_present, acquire_result.acquire_image_index)
     }
 
-    fn wait_device_idle(&self, device: &GsDevice) -> Result<(), ProcedureError> {
+    fn wait_device_idle(&self, device: &GsDevice) -> GsResult<()> {
+        device.wait_idle().map_err(GsError::from)
+    }
+}
 
-        device.wait_idle()
-            .map_err(|e| ProcedureError::LogicalDevice(e))
+
+impl GsError {
+
+    fn is_swapchain_recreate(&self) -> bool {
+
+        if let GsErrorKind::Vk(error) = self.kind() {
+            if let VkErrorKind::SwapchainSync(swapchain_error) = error.kind() {
+                match swapchain_error {
+                    | SwapchainSyncError::SurfaceOutDate
+                    | SwapchainSyncError::SubOptimal => {
+                        return true
+                    },
+                    | _ => {},
+                }
+            }
+        }
+
+        false
     }
 }

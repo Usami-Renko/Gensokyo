@@ -7,7 +7,7 @@ use num::clamp;
 use crate::core::surface::GsSurface;
 use crate::core::swapchain::SwapchainConfig;
 use crate::types::{ vkDim2D, vkuint };
-use crate::error::{ VkResult, VkError };
+use crate::error::VkResult;
 
 pub struct SwapchainSupport {
 
@@ -31,15 +31,12 @@ impl SwapchainSupport {
         Ok(support)
     }
 
-    pub fn optimal_extent(&self, window: &winit::Window) -> VkResult<vkDim2D> {
+    pub fn optimal_extent(&self, window_size: &vkDim2D) -> VkResult<vkDim2D> {
 
         const SPECIAL_EXTEND: vkuint = 0xFFFF_FFFF;
 
         let optimal_extent = if self.capabilities.current_extent.width == SPECIAL_EXTEND &&
             self.capabilities.current_extent.height == SPECIAL_EXTEND {
-
-            let window_size = window.get_inner_size()
-                .ok_or(VkError::window("get Window dimension"))?;
 
             vkDim2D {
                 width: clamp(

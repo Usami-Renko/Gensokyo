@@ -7,7 +7,8 @@ use image::GenericImageView;
 use gsvk::image::storage::{ ImageStorageInfo, ImageSource, ImageData };
 use gsvk::types::{ vkbytes, vkDim3D };
 
-use crate::assets::error::{ IoError, AssetsError };
+use crate::assets::error::AssetsError;
+use crate::error::{ GsResult, GsError };
 
 use std::path::Path;
 use std::mem;
@@ -21,15 +22,13 @@ impl ImageLoader {
 
     pub(crate) fn new(config: ImageLoadConfig) -> ImageLoader {
 
-        ImageLoader {
-            config,
-        }
+        ImageLoader { config }
     }
 
-    pub fn load_2d(&self, path: &Path) -> Result<ImageStorageInfo, AssetsError> {
+    pub fn load_2d(&self, path: &Path) -> GsResult<ImageStorageInfo> {
 
         let mut image_obj = image::open(path)
-            .or(Err(IoError::ImageSourceLoadingError))?;
+            .map_err(|e| GsError::assets(AssetsError::Image(e)))?;
 
         if self.config.flip_vertical {
             image_obj = image_obj.flipv();

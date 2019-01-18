@@ -17,9 +17,9 @@ pub trait QueueRequester {
     /// Check if device support current requested queues and generate physical queues based on current requested virtual queues.
     fn inspect_queue_availability(&mut self, physical: &GsPhysicalDevice) -> VkResult<()>;
     /// Generate `QueueInitInfo` based on current requested queues information.
-    fn to_queue_infos(&self) -> VkResult<Vec<QueueInitInfo>>;
+    fn to_queue_infos(&self) -> Vec<QueueInitInfo>;
     /// Get the handle of Queue from Vulkan, and collect all virtual queues into `GsQueue`.
-    fn collect_queues(&self, device: &ash::Device) -> VkResult<Vec<GsQueue>>;
+    fn collect_queues(&self, device: &ash::Device) -> Vec<GsQueue>;
     /// Print the information of requested queues.
     fn print_message(&self);
 }
@@ -99,36 +99,31 @@ impl QueueRequester for SFSQ {
         }
     }
 
-    fn to_queue_infos(&self) -> VkResult<Vec<QueueInitInfo>> {
+    // `inspect_queue_available()` method must be call before using `to_queue_infos()` function."
+    fn to_queue_infos(&self) -> Vec<QueueInitInfo> {
 
-        if let Some(ref phy_queue) = self.phy_queue {
-            let result = QueueInitInfo {
-                family_index: phy_queue.family_index,
-                priorities: vec![phy_queue.priority.value()],
-            };
+        // TODO: unwrap() not handle.
+        let phy_queue = self.phy_queue.as_ref().unwrap();
 
-            Ok(vec![result])
-        } else {
-            Err(VkError::sync("`inspect_queue_available()` method must be call before using `to_queue_infos()` function."))
-        }
+        let result = QueueInitInfo {
+            family_index: phy_queue.family_index,
+            priorities: vec![phy_queue.priority.value()],
+        };
+        vec![result]
     }
 
-    fn collect_queues(&self, device: &ash::Device) -> VkResult<Vec<GsQueue>> {
+    // `inspect_queue_available()` method must be call before using `collect_queues()` function.
+    fn collect_queues(&self, device: &ash::Device) -> Vec<GsQueue> {
 
-        if let Some(ref phy_queue) = self.phy_queue {
+        // TODO: unwrap() not handle.
+        let phy_queue = self.phy_queue.as_ref().unwrap();
+        let unique_phy_queue = unsafe {
+            device.get_device_queue(phy_queue.family_index, phy_queue.queue_index)
+        };
 
-            let unique_phy_queue = unsafe {
-                device.get_device_queue(phy_queue.family_index, phy_queue.queue_index)
-            };
-
-            let queues = self.vir_queues.iter().map(|virtual_queue|
-                GsQueue::new(unique_phy_queue, virtual_queue.usage, phy_queue.family_index, phy_queue.queue_index)
-            ).collect();
-
-            Ok(queues)
-        } else {
-            Err(VkError::sync("`inspect_queue_available()` method must be call before using `collect_queues()` function."))
-        }
+        self.vir_queues.iter().map(|virtual_queue|
+            GsQueue::new(unique_phy_queue, virtual_queue.usage, phy_queue.family_index, phy_queue.queue_index)
+        ).collect()
     }
 
     fn print_message(&self) {
@@ -213,46 +208,31 @@ impl QueueRequester for SFMQ {
         }
     }
 
-    fn to_queue_infos(&self) -> VkResult<Vec<QueueInitInfo>> {
+    // `inspect_queue_available()` method must be call before using `to_queue_infos()` function."
+    fn to_queue_infos(&self) -> Vec<QueueInitInfo> {
 
-        if self.phy_queues.is_empty() {
+        let priorities = self.phy_queues.iter()
+            .map(|phy_queue| phy_queue.priority.value()).collect();
 
-            Err(VkError::sync("`inspect_queue_available()` method must be call before using `to_queue_infos()` function."))
-        } else {
-
-            let priorities = self.phy_queues.iter()
-                .map(|phy_queue| phy_queue.priority.value()).collect();
-
-            let result = QueueInitInfo {
-                family_index: self.phy_queues[0].family_index,
-                priorities,
-            };
-
-            Ok(vec![result])
-        }
+        let result = QueueInitInfo {
+            family_index: self.phy_queues[0].family_index,
+            priorities,
+        };
+        vec![result]
     }
 
-    fn collect_queues(&self, device: &ash::Device) -> VkResult<Vec<GsQueue>> {
+    // `inspect_queue_available()` method must be call before using `collect_queues()` function.
+    fn collect_queues(&self, device: &ash::Device) -> Vec<GsQueue> {
 
-        if self.phy_queues.is_empty() {
+        let queue_handles: Vec<vk::Queue> = unsafe {
+            self.phy_queues.iter().map(|phy_queue| {
+                device.get_device_queue(phy_queue.family_index, phy_queue.queue_index)
+            }).collect()
+        };
 
-            Err(VkError::sync("`inspect_queue_available()` method must be call before using `collect_queues()` function."))
-        } else {
-
-            let queue_handles: Vec<vk::Queue> = unsafe {
-                self.phy_queues.iter().map(|phy_queue| {
-                    device.get_device_queue(phy_queue.family_index, phy_queue.queue_index)
-                }).collect()
-            };
-
-            let mut queues = vec![];
-            for (i, handle) in queue_handles.into_iter().enumerate() {
-                let queue = GsQueue::new(handle, self.vir_queues[i].usage, self.phy_queues[i].family_index, self.phy_queues[i].queue_index);
-                queues.push(queue);
-            }
-
-            Ok(queues)
-        }
+        queue_handles.into_iter().enumerate().map(|(i, handle)|
+            GsQueue::new(handle, self.vir_queues[i].usage, self.phy_queues[i].family_index, self.phy_queues[i].queue_index)
+        ).collect()
     }
 
     fn print_message(&self) {

@@ -1,9 +1,11 @@
 
+use crate::error::{ GsResult, GsError };
+
 use gsvk::core::device::GsDevice;
 
 pub use gsvk::sync::GsSemaphore;
 pub use gsvk::sync::GsFence;
-pub use gsvk::sync::SyncError;
+
 
 pub struct SyncKit {
 
@@ -19,11 +21,11 @@ impl SyncKit {
         }
     }
 
-    pub fn fence(&self, is_sign: bool) -> Result<GsFence, SyncError> {
-        GsFence::setup(&self.device, is_sign)
+    pub fn fence(&self, is_sign: bool) -> GsResult<GsFence> {
+        GsFence::setup(&self.device, is_sign).map_err(GsError::from)
     }
 
-    pub fn semaphore(&self) -> Result<GsSemaphore, SyncError> {
-        GsSemaphore::setup(&self.device)
+    pub fn semaphore(&self) -> GsResult<GsSemaphore> {
+        GsSemaphore::setup(&self.device).map_err(GsError::from)
     }
 }

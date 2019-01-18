@@ -2,7 +2,7 @@
 use crate::assets::glTF::importer::GsglTFEntity;
 use crate::assets::glTF::levels::GsglTFNodeEntity;
 use crate::assets::glTF::asset::{ GsglTFAssetLib, GsglTFPhyLimits };
-use crate::assets::glTF::error::GltfError;
+use crate::assets::error::GltfError;
 
 use crate::assets::glTF::material::material::MaterialConstants;
 use crate::assets::glTF::material::sampler::GsglTFSamplerData;
@@ -18,19 +18,18 @@ use gsvk::buffer::instance::{ GsVertexBuffer, IVertex };
 use gsvk::buffer::instance::{ GsIndexBuffer, IIndices };
 use gsvk::buffer::instance::{ GsUniformBuffer, IUniform };
 
-use gsvk::memory::transfer::{ GsBufferDataUploader, GsBufferUploadable };
-use gsvk::memory::AllocatorError;
-
 use gsvk::pipeline::target::GsPipelineStage;
 use gsvk::pipeline::layout::GsPushConstantRange;
 
 use gsvk::command::{ GsCmdRecorder, GsCmdGraphicsApi, CmdDescriptorSetBindInfo };
 use gsvk::descriptor::{ DescriptorSet, DescriptorBufferBindableTarget, DescriptorBufferBindingInfo };
+use gsvk::memory::transfer::{ GsBufferDataUploader, GsBufferUploadable };
 
 use gsvk::utils::assign::GsAssignIndex;
 use gsvk::utils::phantom::{ Graphics, Host };
 
 use gsvk::types::{ vkuint, vkbytes };
+use gsvk::error::VkResult;
 
 use std::mem;
 
@@ -175,7 +174,7 @@ impl<'d, 's: 'd> GsglTFDataStorage {
 
 impl<'d, M> GsBufferAllocatable<M, GsglTFVertexAllotIndex> for GVDADelegate<'d> where M: BufferMemoryTypeAbs {
 
-    fn allot_func(&self) -> Box<dyn Fn(&Self, &mut GsBufferAllocator<M>) -> Result<GsglTFVertexAllotIndex, AllocatorError>> {
+    fn allot_func(&self) -> Box<dyn Fn(&Self, &mut GsBufferAllocator<M>) -> VkResult<GsglTFVertexAllotIndex>> {
 
         let func = |data_storage: &GVDADelegate, allocator: &mut GsBufferAllocator<M>| {
 
@@ -201,7 +200,7 @@ impl<'d, M> GsBufferAllocatable<M, GsglTFVertexAllotIndex> for GVDADelegate<'d> 
 
 impl<'d> GsBufferAllocatable<Host, GsglTFUniformAllotIndex> for GUDADelegate<'d> {
 
-    fn allot_func(&self) -> Box<dyn Fn(&Self, &mut GsBufferAllocator<Host>) -> Result<GsglTFUniformAllotIndex, AllocatorError>> {
+    fn allot_func(&self) -> Box<dyn Fn(&Self, &mut GsBufferAllocator<Host>) -> VkResult<GsglTFUniformAllotIndex>> {
 
         let func = |data_storage: &GUDADelegate, allocator: &mut GsBufferAllocator<Host>| {
 
@@ -337,7 +336,7 @@ pub struct GUDUDelegate<'d> {
 
 impl<'d> GsBufferUploadable<GsglTFDataStorage> for GVDUDelegate<'d> {
 
-    fn upload_func(&self) -> Box<dyn Fn(&Self, &mut GsBufferDataUploader, &GsglTFDataStorage) -> Result<(), AllocatorError>> {
+    fn upload_func(&self) -> Box<dyn Fn(&Self, &mut GsBufferDataUploader, &GsglTFDataStorage) -> VkResult<()>> {
 
         let upload_func = |model: &GVDUDelegate, by: &mut GsBufferDataUploader, data: &GsglTFDataStorage| {
 
@@ -354,7 +353,7 @@ impl<'d> GsBufferUploadable<GsglTFDataStorage> for GVDUDelegate<'d> {
 
 impl<'d> GsBufferUploadable<GsglTFDataStorage> for GUDUDelegate<'d> {
 
-    fn upload_func(&self) -> Box<dyn Fn(&Self, &mut GsBufferDataUploader, &GsglTFDataStorage) -> Result<(), AllocatorError>> {
+    fn upload_func(&self) -> Box<dyn Fn(&Self, &mut GsBufferDataUploader, &GsglTFDataStorage) -> VkResult<()>> {
 
         let upload_func = |model: &GUDUDelegate, by: &mut GsBufferDataUploader, data: &GsglTFDataStorage| {
 

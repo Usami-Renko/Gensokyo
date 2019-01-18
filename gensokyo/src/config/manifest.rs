@@ -29,7 +29,7 @@ pub(super) fn manifest_toml() -> ::toml::Value {
 
         [core.device]
         queue_request_strategy = "SingleFamilySingleQueue"
-        transfer_time_out = "Infinte"
+        transfer_time_out = "Infinite"
         transfer_duration = 1000
 
         [core.physical]
@@ -45,7 +45,7 @@ pub(super) fn manifest_toml() -> ::toml::Value {
         prefer_surface_color_space = "SrgbNonlinear"
         present_mode_primary   = "Mailbox"
         present_mode_secondary = "Fifo"
-        acquire_image_time_out = "Infinte"
+        acquire_image_time_out = "Infinite"
         acquire_image_duration = 1000
 
         [window]
@@ -70,7 +70,6 @@ pub(super) fn manifest_toml() -> ::toml::Value {
 
         [pipeline.depth_stencil]
         prefer_depth_stencil_formats = ["D32_SFLOAT", "D32_SFLOAT_S8_UINT", "D24_UNORM_S8_UINT"]
-        prefer_image_tiling = "Optimal"
 
         [resources]
 

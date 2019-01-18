@@ -1,6 +1,8 @@
 
 use failure::{ Backtrace, Context, Fail };
 
+use crate::core::swapchain::SwapchainSyncError;
+
 use std::result;
 use std::path::{ Path, PathBuf };
 use std::fmt;
@@ -20,44 +22,42 @@ impl VkError {
         self.ctx.get_context()
     }
 
-    pub(crate) fn unlink(dst_obj: impl AsRef<str>) -> VkError {
-        VkError::from(VkErrorKind::Unlink(dst_obj.as_ref().to_string()))
+    pub(crate) fn unlink(target_name: &'static str) -> VkError {
+        VkError::from(VkErrorKind::Unlink { target_name })
     }
 
-    pub(crate) fn query(property: impl AsRef<str>) -> VkError {
-        VkError::from(VkErrorKind::Query(property.as_ref().to_string()))
+    pub(crate) fn query(query_target: &'static str) -> VkError {
+        VkError::from(VkErrorKind::Query { query_target })
     }
 
-    pub(crate) fn create(obj: impl AsRef<str>) -> VkError {
-        VkError::from(VkErrorKind::Create(obj.as_ref().to_string()))
+    pub(crate) fn create(create_target: &'static str) -> VkError {
+        VkError::from(VkErrorKind::Create { create_target })
     }
 
-    pub(crate) fn unsupported(feature: impl AsRef<str>) -> VkError {
-        VkError::from(VkErrorKind::UnSupport(feature.as_ref().to_string()))
+    pub(crate) fn unsupported(feature: &'static str) -> VkError {
+        VkError::from(VkErrorKind::UnSupport { feature })
     }
 
-    pub(crate) fn sync(desc: impl AsRef<str>) -> VkError {
-        VkError::from(VkErrorKind::Sync(desc.as_ref().to_string()))
+    pub(crate) fn swapchain_sync(error: SwapchainSyncError) -> VkError {
+        VkError::from(VkErrorKind::SwapchainSync(error))
     }
 
-    pub(crate) fn device(desc: impl AsRef<str>) -> VkError {
-        VkError::from(VkErrorKind::Device(desc.as_ref().to_string()))
+    pub(crate) fn device(ops_description: &'static str) -> VkError {
+        VkError::from(VkErrorKind::Device { ops_description })
     }
 
-    pub(crate) fn shaderc(desc: impl AsRef<str>) -> VkError {
-        VkError::from(VkErrorKind::Shaderc(desc.as_ref().to_string()))
+    pub(crate) fn shaderc(compile_message: impl AsRef<str>) -> VkError {
+        VkError::from(VkErrorKind::Shaderc {
+            compile_message: compile_message.as_ref().to_string()
+        })
     }
 
-    pub(crate) fn str_convert(convert_name: impl AsRef<str>) -> VkError {
-        VkError::from(VkErrorKind::StrConvert(convert_name.as_ref().to_string()))
+    pub(crate) fn str_convert(target: &'static str) -> VkError {
+        VkError::from(VkErrorKind::StrConvert { target })
     }
 
-    pub(crate) fn window(desc: impl AsRef<str>) -> VkError {
-        VkError::from(VkErrorKind::Window(desc.as_ref().to_string()))
-    }
-
-    pub(crate) fn other(desc: impl AsRef<str>) -> VkError {
-        VkError::from(VkErrorKind::Other(desc.as_ref().to_string()))
+    pub(crate) fn other(description: &'static str) -> VkError {
+        VkError::from(VkErrorKind::Other { description })
     }
 }
 
@@ -82,58 +82,46 @@ impl fmt::Display for VkError {
 
 // -------------------------------------------------------------------------------------------
 /// The specific kind of error that can occur.
-#[derive(Clone, Debug, Eq, PartialEq)]
+#[derive(Debug, Fail)]
 pub enum VkErrorKind {
 
-    /// An error occurred while building connection between application and vulkan.
-    Unlink(String),
+    /// An error occurred while building connection between application and Vulkan.
+    #[fail(display = "Failed to bridge connection between {} and Vulkan.", target_name)]
+    Unlink { target_name: &'static str },
     /// An error occurred while querying some properties from Vulkan.
-    Query(String),
+    #[fail(display = "Failed to query {} property from Vulkan or Device.", query_target)]
+    Query { query_target: &'static str },
     /// An error occurred while creating Vulkan Object.
-    Create(String),
+    #[fail(display = "Failed to create {}.", create_target)]
+    Create { create_target: &'static str },
     /// An error indicated requiring some unsupported feature.
-    UnSupport(String),
-    /// An error about synchronous or asynchronous operations.
-    Sync(String),
+    #[fail(display = "Feature {} is not supported in current Vulkan Device.", feature)]
+    UnSupport { feature: &'static str },
+    /// An error about Swapchain synchronous operations.
+    #[fail(display = "{}", _0)]
+    SwapchainSync(#[cause] SwapchainSyncError),
     /// An error triggered by Invalid Device operations.
-    Device(String),
+    #[fail(display = "Invalid Operation: {}", ops_description)]
+    Device { ops_description: &'static str },
     /// An error that occurred while trying to compile shader code in runtime.
-    Shaderc(String),
+    #[fail(display = "Error occurred during runtime shader compiling: {}.", compile_message)]
+    Shaderc { compile_message: String },
     /// An error happened when trying to convert between CStr and String.
-    StrConvert(String),
-    /// An error occurred while communicate with Window.
-    Window(String),
+    #[fail(display = "Failed to convert string {} between c-style string and Rust string.", target)]
+    StrConvert { target: &'static str },
     /// An error that occurred while working with a file path.
-    Path(PathBuf),
-    /// Other errors
-    Other(String),
-}
-
-impl fmt::Display for VkErrorKind {
-
-    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
-
-        match self {
-            | VkErrorKind::Unlink(e)    => write!(f, "Failed to bridge connection between {} and Vulkan.", e),
-            | VkErrorKind::Query(e)     => write!(f, "Failed to query {} property from Vulkan or Device.", e),
-            | VkErrorKind::Create(e)    => write!(f, "Failed to create {}.", e),
-            | VkErrorKind::UnSupport(e) => write!(f, "Feature {} is not supported in current Vulkan Device.", e),
-            | VkErrorKind::Sync(e)      => write!(f, "{}.", e),
-            | VkErrorKind::Device(e)    => write!(f, "Invalid Operation: {}", e),
-            | VkErrorKind::Shaderc(e)   => write!(f, "Error occurred during runtime shader compiling: {}.", e),
-            | VkErrorKind::StrConvert(e)=> write!(f, "Failed to convert string {} between c-style string and Rust string.", e),
-            | VkErrorKind::Window(e)    => writeln!(f, "Failed to interact with Window: {}.", e),
-            | VkErrorKind::Path(path)   => write!(f, "Failed to locate file at: {:?}", path),
-            | VkErrorKind::Other(e)     => write!(f, "{}", e),
-        }
-    }
+    #[fail(display = "Failed to locate file at: {:?}", path)]
+    Path { path: PathBuf },
+    /// Other errors.
+    #[fail(display = "{}", description)]
+    Other { description: &'static str },
 }
 
 impl VkErrorKind {
 
     /// A convenience routine for creating an error associated with a path.
     pub(crate) fn path(path: impl AsRef<Path>)-> VkErrorKind {
-        VkErrorKind::Path(path.as_ref().to_path_buf())
+        VkErrorKind::Path { path: path.as_ref().to_path_buf() }
     }
 }
 

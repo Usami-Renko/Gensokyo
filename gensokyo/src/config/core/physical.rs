@@ -3,7 +3,7 @@ use toml;
 use ash::vk;
 
 use crate::config::engine::ConfigMirror;
-use crate::config::error::{ ConfigError, MappingError };
+use crate::error::{ GsResult, GsError };
 
 use gsvk::core::physical::PhysicalConfig;
 use gsvk::core::physical::DeviceExtensionType;
@@ -21,7 +21,7 @@ pub(crate) struct PhysicalConfigMirror {
 impl ConfigMirror for PhysicalConfigMirror {
     type ConfigType = PhysicalConfig;
 
-    fn into_config(self) -> Result<Self::ConfigType, ConfigError> {
+    fn into_config(self) -> GsResult<Self::ConfigType> {
 
         let mut require_extensions = vec![];
         for raw_extension in self.extensions.iter() {
@@ -54,35 +54,37 @@ impl ConfigMirror for PhysicalConfigMirror {
         Ok(config)
     }
 
-    fn parse(&mut self, toml: &toml::Value) -> Result<(), ConfigError> {
+    fn parse(&mut self, toml: &toml::Value) -> GsResult<()> {
 
         if let Some(v) = toml.get("extensions") {
             if let Some(extensions) = v.as_array() {
                 if extensions.len() > 0 {
                     self.extensions.clear();
 
-                    for extension in extensions {
-                        let value = extension.as_str().ok_or(ConfigError::ParseError)?;
+                    for (i, extension) in extensions.iter().enumerate() {
+                        let value = extension.as_str()
+                            .ok_or(GsError::config(format!("extension #{}", i)))?;
                         self.extensions.push(value.to_owned());
                     }
                 }
             } else {
-                return Err(ConfigError::ParseError);
+                return Err(GsError::config("[core.physical.extensions]"))
             }
         }
 
         if let Some(v) = toml.get("queue_capabilities") {
-            if let Some(queue_capalities) = v.as_array() {
-                if queue_capalities.len() > 0 {
+            if let Some(queue_capabilities) = v.as_array() {
+                if queue_capabilities.len() > 0 {
                     self.capabilities.clear();
 
-                    for capalitity in queue_capalities {
-                        let value = capalitity.as_str().ok_or(ConfigError::ParseError)?;
+                    for (i, capability) in queue_capabilities.iter().enumerate() {
+                        let value = capability.as_str()
+                            .ok_or(GsError::config(format!("capability #{}", i)))?;
                         self.capabilities.push(value.to_owned());
                     }
                 }
             } else {
-                return Err(ConfigError::ParseError);
+                return Err(GsError::config("[core.physical.queue_capabilities]"))
             }
         }
 
@@ -91,13 +93,14 @@ impl ConfigMirror for PhysicalConfigMirror {
                 if features.len() > 0 {
                     self.features.clear();
 
-                    for feature in features {
-                        let value = feature.as_str().ok_or(ConfigError::ParseError)?;
+                    for (i, feature) in features.iter().enumerate() {
+                        let value = feature.as_str()
+                            .ok_or(GsError::config(format!("features #{}", i)))?;
                         self.features.push(value.to_owned());
                     }
                 }
             } else {
-                return Err(ConfigError::ParseError);
+                return Err(GsError::config("[core.physical.features]"))
             }
         }
 
@@ -106,13 +109,14 @@ impl ConfigMirror for PhysicalConfigMirror {
                 if types.len() > 0 {
                     self.devices.clear();
 
-                    for device_type in types {
-                        let value = device_type.as_str().ok_or(ConfigError::ParseError)?;
+                    for (i, device_type) in types.iter().enumerate() {
+                        let value = device_type.as_str()
+                            .ok_or(GsError::config(format!("device_types #{}", i)))?;
                         self.devices.push(value.to_owned());
                     }
                 }
             } else {
-                return Err(ConfigError::ParseError);
+                return Err(GsError::config("[core.physical.device_types]"))
             }
         }
 
@@ -120,17 +124,17 @@ impl ConfigMirror for PhysicalConfigMirror {
     }
 }
 
-fn vk_raw2device_extension(raw: &String) -> Result<DeviceExtensionType, ConfigError> {
+fn vk_raw2device_extension(raw: &String) -> GsResult<DeviceExtensionType> {
 
     let extension_type = match raw.as_str() {
-        | "VK_KHR_swapchain"   => DeviceExtensionType::Swapchain,
-        | _ => return Err(ConfigError::Mapping(MappingError::PhysicalExtensionError)),
+        | "VK_KHR_swapchain" => DeviceExtensionType::Swapchain,
+        | _ => return Err(GsError::config(raw)),
     };
 
     Ok(extension_type)
 }
 
-fn vk_raw2queue_capability(raw: &String) -> Result<vk::QueueFlags, ConfigError> {
+fn vk_raw2queue_capability(raw: &String) -> GsResult<vk::QueueFlags> {
 
     let operation = match raw.as_str() {
         | "Graphics"      => vk::QueueFlags::GRAPHICS,
@@ -138,20 +142,20 @@ fn vk_raw2queue_capability(raw: &String) -> Result<vk::QueueFlags, ConfigError> 
         | "Transfer"      => vk::QueueFlags::TRANSFER,
         | "SparseBinding" => vk::QueueFlags::SPARSE_BINDING,
         | "Protected"     => vk::QueueFlags::PROTECTED,
-        | _ => return Err(ConfigError::Mapping(MappingError::DeviceQueueOperationError)),
+        | _ => return Err(GsError::config(raw)),
     };
 
     Ok(operation)
 }
 
-fn vk_raw2device_type(raw: &String) -> Result<vk::PhysicalDeviceType, ConfigError> {
+fn vk_raw2device_type(raw: &String) -> GsResult<vk::PhysicalDeviceType> {
 
     let device_type = match raw.as_str() {
         | "DiscreteGPU"   => vk::PhysicalDeviceType::DISCRETE_GPU,
         | "IntegratedGPU" => vk::PhysicalDeviceType::INTEGRATED_GPU,
         | "CPU"           => vk::PhysicalDeviceType::CPU,
         | "VirtualGPU"    => vk::PhysicalDeviceType::VIRTUAL_GPU,
-        | _ => return Err(ConfigError::Mapping(MappingError::DeviceTypeError)),
+        | _ => return Err(GsError::config(raw)),
     };
 
     Ok(device_type)

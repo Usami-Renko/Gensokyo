@@ -1,50 +1,34 @@
 
-use std::fmt;
-use std::error::Error;
+use crate::error::GsError;
 
-use gsma::impl_from_err;
-
-use crate::assets::glTF::error::GltfError;
-
-#[derive(Debug)]
+#[derive(Debug, Fail)]
 pub enum AssetsError {
-
-    Io(IoError),
-    Gltf(GltfError),
+    #[fail(display = "{}", _0)]
+    Image(#[cause] image::ImageError),
+    #[fail(display = "{}", _0)]
+    Gltf(#[cause] GltfError),
 }
 
-impl Error for AssetsError {}
-impl fmt::Display for AssetsError {
+#[derive(Debug, Fail)]
+pub enum GltfError {
+    #[fail(display = "glTF: {}", _0)]
+    Reading(#[cause] gltf::Error),
+    #[fail(display = "{}", description)]
+    Loading { description: &'static str },
+    #[fail(display = "Failed to convert glTF content to bytes: {}", _0)]
+    Convert(#[cause] bincode::Error),
+}
 
-    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+impl GltfError {
 
-        let description = match self {
-            | AssetsError::Io(ref e)   => e.to_string(),
-            | AssetsError::Gltf(ref e) => e.to_string(),
-        };
-
-        write!(f, "{}", description)
+    pub fn loading(description: &'static str) -> GltfError {
+        GltfError::Loading { description }
     }
 }
 
-impl_from_err!(Io(IoError) -> AssetsError);
-impl_from_err!(Gltf(GltfError) -> AssetsError);
+impl From<AssetsError> for GsError {
 
-#[derive(Debug)]
-pub enum IoError {
-
-    ImageSourceLoadingError,
-}
-
-impl Error for IoError {}
-impl fmt::Display for IoError {
-
-    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
-
-        let description = match self {
-            | IoError::ImageSourceLoadingError => "Failed to load image from source.",
-        };
-
-        write!(f, "{}", description)
+    fn from(error: AssetsError) -> GsError {
+        GsError::assets(error)
     }
 }

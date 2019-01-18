@@ -1,12 +1,12 @@
 
 use crate::assets::glTF::data::IntermediateglTFData;
-use crate::assets::glTF::error::GltfError;
 use crate::utils::types::{ Point3F, Point2F, Vector3F, Vector4F };
+use crate::assets::error::GltfError;
 
 use gsvk::buffer::instance::{ GsVertexBuffer, GsBufVertexInfo };
 use gsvk::memory::transfer::GsBufferDataUploader;
-use gsvk::memory::AllocatorError;
 use gsvk::types::vkbytes;
+use gsvk::error::VkResult;
 use gsma::data_size;
 
 use std::ops::{ BitAnd, BitOr, BitOrAssign, BitAndAssign };
@@ -28,12 +28,12 @@ impl GsglTFAttributesData {
             | GsglTFAttrFlags::GPA_PN       => Box::new(GPA_PN::default())       as Box<dyn GPAttributes>,
             | GsglTFAttrFlags::GPA_PNTE0    => Box::new(GPA_PNTe0::default())    as Box<dyn GPAttributes>,
             | GsglTFAttrFlags::GPA_ULTIMATE => Box::new(GPA_Ultimate::default()) as Box<dyn GPAttributes>,
-            | _ => return Err(GltfError::UnsupportAttributes)
+            | _ => return Err(GltfError::loading("Unsupported glTF primitive attributes combination."))
         };
 
         let attributes = GsglTFAttributesData {
             vertex_size: flag.vertex_size()
-                .ok_or(GltfError::UnsupportAttributes)?,
+                .ok_or(GltfError::loading("Unsupported glTF primitive attributes combination."))?,
             content,
         };
         Ok(attributes)
@@ -133,153 +133,145 @@ pub(crate) trait GPAttributes {
 
     fn data_length(&self) -> usize;
 
-    fn upload(&self, to: &GsVertexBuffer, by: &mut GsBufferDataUploader) -> Result<(), AllocatorError>;
+    fn upload(&self, to: &GsVertexBuffer, by: &mut GsBufferDataUploader) -> VkResult<()>;
 }
 
 macro_rules! read_attribute {
     ($target:ident, $reader:ident, $origin_length:ident, $VertexType:ident, position) => {
-        if $target.data.len() == $origin_length {
-            let new_vertexs = $reader.read_positions()
-                .ok_or(GltfError::ModelContentMissing)?
-                .map(|pos| {
+
+        if let Some(pos_iter) = $reader.read_positions() {
+
+            if $target.data.len() == $origin_length {
+                let new_vertexs = pos_iter.map(|pos| {
                     let position = Point3F::from(pos);
                     $VertexType { position, ..Default::default() }
                 }).collect::<Vec<_>>();
-            $target.data.extend(new_vertexs);
-        } else {
-            let pos_iter = $reader.read_positions()
-                .ok_or(GltfError::ModelContentMissing)?;
-            for (i, pos) in pos_iter.enumerate() {
-                $target.data[i + $origin_length].position = Point3F::from(pos);
+                $target.data.extend(new_vertexs);
+            } else {
+                for (i, pos) in pos_iter.enumerate() {
+                    $target.data[i + $origin_length].position = Point3F::from(pos);
+                }
             }
         }
+
     };
     ($target:ident, $reader:ident, $origin_length:ident, $VertexType:ident, normal) => {
-        if $target.data.len() == $origin_length {
-            let new_vertexs = $reader.read_normals()
-                .ok_or(GltfError::ModelContentMissing)?
-                .map(|nor| {
+
+        if let Some(normal_iter) = $reader.read_normals() {
+
+            if $target.data.len() == $origin_length {
+                let new_vertexs = normal_iter.map(|nor| {
                     let normal = Vector3F::from(nor);
                     $VertexType { normal, ..Default::default() }
                 }).collect::<Vec<_>>();
-            $target.data.extend(new_vertexs);
-        } else {
-            let normal_iter = $reader.read_normals()
-                .ok_or(GltfError::ModelContentMissing)?;
-            for (i, normal) in normal_iter.enumerate() {
-                $target.data[i + $origin_length].normal = Vector3F::from(normal);
+                $target.data.extend(new_vertexs);
+            } else {
+                for (i, normal) in normal_iter.enumerate() {
+                    $target.data[i + $origin_length].normal = Vector3F::from(normal);
+                }
             }
         }
+
     };
     ($target:ident, $reader:ident, $origin_length:ident, $VertexType:ident, tangents) => {
-        if $target.data.len() == $origin_length {
-            let new_vertexs = $reader.read_tangents()
-                .ok_or(GltfError::ModelContentMissing)?
-                .map(|tan| {
+
+        if let Some(tangents_iter) = $reader.read_tangents() {
+
+            if $target.data.len() == $origin_length {
+                let new_vertexs = tangents_iter.map(|tan| {
                     let tangents = Vector4F::from(tan);
                     $VertexType { tangents, ..Default::default() }
                 }).collect::<Vec<_>>();
-            $target.data.extend(new_vertexs);
-        } else {
-            let tangents_iter = $reader.read_tangents()
-                .ok_or(GltfError::ModelContentMissing)?;
-            for (i, tangent) in tangents_iter.enumerate() {
-                $target.data[i + $origin_length].tangents = Vector4F::from(tangent);
+                $target.data.extend(new_vertexs);
+            } else {
+                for (i, tangent) in tangents_iter.enumerate() {
+                    $target.data[i + $origin_length].tangents = Vector4F::from(tangent);
+                }
             }
         }
     };
     ($target:ident, $reader:ident, $origin_length:ident, $VertexType:ident, texcoord_0) => {
-        if $target.data.len() == $origin_length {
-            let new_vertexs = $reader.read_tex_coords(0)
-                .ok_or(GltfError::ModelContentMissing)?
-                .into_f32()
-                .map(|texcoord| {
+
+        if let Some(texcoord_0_iter) = $reader.read_tex_coords(0) {
+
+            if $target.data.len() == $origin_length {
+                let new_vertexs = texcoord_0_iter.into_f32().map(|texcoord| {
                     let texcoord_0 = Point2F::from(texcoord);
                     $VertexType { texcoord_0, ..Default::default() }
                 }).collect::<Vec<_>>();
-            $target.data.extend(new_vertexs);
-        } else {
-            let texcoord_0_iter = $reader.read_tex_coords(0)
-                .ok_or(GltfError::ModelContentMissing)?
-                .into_f32();
-            for (i, texcoord_0) in texcoord_0_iter.enumerate() {
-                $target.data[i + $origin_length].texcoord_0 = Point2F::from(texcoord_0);
+                $target.data.extend(new_vertexs);
+            } else {
+                for (i, texcoord_0) in texcoord_0_iter.into_f32().enumerate() {
+                    $target.data[i + $origin_length].texcoord_0 = Point2F::from(texcoord_0);
+                }
             }
         }
     };
     ($target:ident, $reader:ident, $origin_length:ident, $VertexType:ident, texcoord_1) => {
-        if $target.data.len() == $origin_length {
-            let new_vertexs = $reader.read_tex_coords(1)
-                .ok_or(GltfError::ModelContentMissing)?
-                .into_f32()
-                .map(|texcoord| {
+
+        if let Some(texcoord_1_iter) = $reader.read_tex_coords(1) {
+
+            if $target.data.len() == $origin_length {
+                let new_vertexs = texcoord_1_iter.into_f32().map(|texcoord| {
                     let texcoord_1 = Point2F::from(texcoord);
                     $VertexType { texcoord_1, ..Default::default() }
                 }).collect::<Vec<_>>();
-            $target.data.extend(new_vertexs);
-        } else {
-            let texcoord_1_iter = $reader.read_tex_coords(1)
-                .ok_or(GltfError::ModelContentMissing)?
-                .into_f32();
-            for (i, texcoord_1) in texcoord_1_iter.enumerate() {
-                $target.data[i + $origin_length].texcoord_1 = Point2F::from(texcoord_1);
+                $target.data.extend(new_vertexs);
+            } else {
+                for (i, texcoord_1) in texcoord_1_iter.into_f32().enumerate() {
+                    $target.data[i + $origin_length].texcoord_1 = Point2F::from(texcoord_1);
+                }
             }
         }
     };
     ($target:ident, $reader:ident, $origin_length:ident, $VertexType:ident, color_0) => {
-        if $target.data.len() == $origin_length {
-            let new_vertexs = $reader.read_colors(0)
-                .ok_or(GltfError::ModelContentMissing)?
-                .into_rgba_f32()
-                .map(|color| {
+
+        if let Some(color_0_iter) = $reader.read_colors(0) {
+
+            if $target.data.len() == $origin_length {
+                let new_vertexs = color_0_iter.into_rgba_f32().map(|color| {
                     let color_0 = Vector4F::from(color);
                     $VertexType { color_0, ..Default::default() }
                 }).collect::<Vec<_>>();
-            $target.data.extend(new_vertexs);
-        } else {
-            let color_0_iter = $reader.read_colors(0)
-                .ok_or(GltfError::ModelContentMissing)?
-                .into_rgba_f32();
-            for (i, color_0) in color_0_iter.enumerate() {
-                $target.data[i + $origin_length].color_0 = Vector4F::from(color_0);
+                $target.data.extend(new_vertexs);
+            } else {
+                for (i, color_0) in color_0_iter.into_rgba_f32().enumerate() {
+                    $target.data[i + $origin_length].color_0 = Vector4F::from(color_0);
+                }
             }
         }
     };
     ($target:ident, $reader:ident, $origin_length:ident, $VertexType:ident, joints_0) => {
-        if $target.data.len() == $origin_length {
-            let new_vertexs = $reader.read_joints(0)
-                .ok_or(GltfError::ModelContentMissing)?
-                .into_u16()
-                .map(|joint| {
+
+        if let Some(joints_0_iter) = $reader.read_joints(0) {
+
+            if $target.data.len() == $origin_length {
+                let new_vertexs = joints_0_iter.into_u16().map(|joint| {
                     let joints_0 = Vector4U::from(joint);
                     $VertexType { joints_0, ..Default::default() }
                 }).collect::<Vec<_>>();
-            $target.data.extend(new_vertexs);
-        } else {
-            let joints_0_iter = $reader.read_joints(0)
-                .ok_or(GltfError::ModelContentMissing)?
-                .into_u16();
-            for (i, joints_0) in joints_0_iter.enumerate() {
-                $target.data[i + $origin_length].joints_0 = Vector4U::from(joints_0);
+                $target.data.extend(new_vertexs);
+            } else {
+                for (i, joints_0) in joints_0_iter.into_u16().enumerate() {
+                    $target.data[i + $origin_length].joints_0 = Vector4U::from(joints_0);
+                }
             }
         }
     };
     ($target:ident, $reader:ident, $origin_length:ident, $VertexType:ident, weights_0) => {
-        if $target.data.len() == $origin_length {
-            let new_vertexs = $reader.read_weights(0)
-                .ok_or(GltfError::ModelContentMissing)?
-                .into_f32()
-                .map(|weight| {
+
+        if let Some(weights_0_iter) = $reader.read_weights(0) {
+
+            if $target.data.len() == $origin_length {
+                let new_vertexs = weights_0_iter.into_f32().map(|weight| {
                     let weights_0 = Vector4F::from(weight);
                     $VertexType { weights_0, ..Default::default() }
                 }).collect::<Vec<_>>();
-            $target.data.extend(new_vertexs);
-        } else {
-            let weights_0_iter = $reader.read_weights(0)
-                .ok_or(GltfError::ModelContentMissing)?
-                .into_f32();
-            for (i, weights_0) in weights_0_iter.enumerate() {
-                $target.data[i + $origin_length].weights_0 = Vector4F::from(weights_0);
+                $target.data.extend(new_vertexs);
+            } else {
+                for (i, weights_0) in weights_0_iter.into_f32().enumerate() {
+                    $target.data[i + $origin_length].weights_0 = Vector4F::from(weights_0);
+                }
             }
         }
     };
@@ -357,7 +349,7 @@ macro_rules! define_gpa {
                 self.data.len()
             }
 
-            fn upload(&self, to: &GsVertexBuffer, by: &mut GsBufferDataUploader) -> Result<(), AllocatorError> {
+            fn upload(&self, to: &GsVertexBuffer, by: &mut GsBufferDataUploader) -> VkResult<()> {
 
                 let _  = by.upload(to, &self.data)?;
                 Ok(())

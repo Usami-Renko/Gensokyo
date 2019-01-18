@@ -6,29 +6,29 @@ use crate::procedure::env::ProgramEnv;
 use crate::procedure::chain::ChainResource;
 use crate::procedure::loader::AssetsLoader;
 use crate::procedure::loops::RoutineFlow;
-use crate::procedure::error::{ RuntimeError, ProcedureError };
 
 use crate::input::{ ActionNerve, SceneAction };
+use crate::error::GsResult;
 
 
 pub trait GraphicsRoutine {
 
     // lifetime
     #[allow(unused_variables)]
-    fn ready(&mut self, device: &GsDevice) -> Result<(), ProcedureError> {
+    fn ready(&mut self, device: &GsDevice) -> GsResult<()> {
         Ok(())
     }
 
-    fn draw(&mut self, device: &GsDevice, device_available: &GsFence, image_available: &GsSemaphore, image_index: usize, delta_time: f32) -> Result<&GsSemaphore, ProcedureError>;
+    fn draw(&mut self, device: &GsDevice, device_available: &GsFence, image_available: &GsSemaphore, image_index: usize, delta_time: f32) -> GsResult<&GsSemaphore>;
 
     #[allow(unused_variables)]
-    fn closure(&mut self, device: &GsDevice) -> Result<(), ProcedureError> {
+    fn closure(&mut self, device: &GsDevice) -> GsResult<()> {
         Ok(())
     }
 
-    fn clean_resources(&mut self, device: &GsDevice) -> Result<(), ProcedureError>;
+    fn clean_resources(&mut self, device: &GsDevice) -> GsResult<()>;
 
-    fn reload_res(&mut self, loader: AssetsLoader) -> Result<(), ProcedureError>;
+    fn reload_res(&mut self, loader: AssetsLoader) -> GsResult<()>;
 
     fn clean_routine(&mut self, device: &GsDevice);
 
@@ -44,7 +44,7 @@ pub struct RoutineBuilder<'env> {
 
 impl<'env> RoutineBuilder<'env> {
 
-    pub(super) fn new(env: &'env mut ProgramEnv) -> Result<RoutineBuilder<'env>, RuntimeError> {
+    pub(super) fn new(env: &'env mut ProgramEnv) -> GsResult<RoutineBuilder<'env>> {
 
         let window = env.window()?;
         let chain = ChainResource::new(env, window)?;

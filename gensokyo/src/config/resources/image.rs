@@ -3,9 +3,8 @@ use toml;
 use ash::vk;
 
 use crate::assets::io::ImageLoadConfig;
-
 use crate::config::engine::ConfigMirror;
-use crate::config::error::ConfigError;
+use crate::error::{ GsResult, GsError };
 
 #[derive(Deserialize, Default)]
 pub(crate) struct ImageLoadConfigMirror {
@@ -19,7 +18,7 @@ pub(crate) struct ImageLoadConfigMirror {
 impl ConfigMirror for ImageLoadConfigMirror {
     type ConfigType = ImageLoadConfig;
 
-    fn into_config(self) -> Result<Self::ConfigType, ConfigError> {
+    fn into_config(self) -> GsResult<Self::ConfigType> {
 
         let config = ImageLoadConfig {
             flip_vertical  : self.flip_vertical,
@@ -33,22 +32,26 @@ impl ConfigMirror for ImageLoadConfigMirror {
         Ok(config)
     }
 
-    fn parse(&mut self, toml: &toml::Value) -> Result<(), ConfigError> {
+    fn parse(&mut self, toml: &toml::Value) -> GsResult<()> {
 
         if let Some(v) = toml.get("flip_vertical") {
-            self.flip_vertical = v.as_bool().ok_or(ConfigError::ParseError)?
+            self.flip_vertical = v.as_bool()
+                .ok_or(GsError::config("flip_vertical"))?;
         }
 
         if let Some(v) = toml.get("flip_horizontal") {
-            self.flip_horizontal = v.as_bool().ok_or(ConfigError::ParseError)?
+            self.flip_horizontal = v.as_bool()
+                .ok_or(GsError::config("flip_horizontal"))?;
         }
 
         if let Some(v) = toml.get("byte_per_pixel") {
-            self.byte_per_pixel = v.as_integer().ok_or(ConfigError::ParseError)? as u32;
+            self.byte_per_pixel = v.as_integer()
+                .ok_or(GsError::config("byte_per_pixel"))? as _;
         }
 
         if let Some(v) = toml.get("force_rgba") {
-            self.force_rgba = v.as_bool().ok_or(ConfigError::ParseError)?;
+            self.force_rgba = v.as_bool()
+                .ok_or(GsError::config("force_rgba"))?;
         }
 
         Ok(())

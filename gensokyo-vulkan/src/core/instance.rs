@@ -10,7 +10,7 @@ use crate::core::platforms;
 use crate::utils::cast;
 use crate::types::vkuint;
 
-use crate::error::{ VkResult, VkErrorKind, VkError };
+use crate::error::{ VkResult, VkError };
 
 use std::ptr;
 use std::ffi::CString;
@@ -40,7 +40,7 @@ impl GsInstance {
     pub fn new(config: &InstanceConfig, validation: &ValidationConfig) -> VkResult<GsInstance> {
 
         let entry = ash::Entry::new()
-            .or(Err(VkErrorKind::Unlink(String::from("Entry"))))?;
+            .or(Err(VkError::unlink("Entry")))?;
 
         let app_name = cast::string2cstring((&config.application_name).into())
             .ok_or(VkError::str_convert("Vulkan Application Name"))?;
@@ -79,7 +79,7 @@ impl GsInstance {
         // create vk::Instance object.
         let handle = unsafe {
             entry.create_instance(&instance_create_info, None)
-                .map_err(|e| VkError::unlink(format!("Instance({})", e)))?
+                .or(Err(VkError::unlink("Instance")))?
         };
 
         let instance = GsInstance {

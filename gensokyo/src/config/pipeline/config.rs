@@ -5,7 +5,7 @@ use gsvk::pipeline::config::PipelineConfig;
 
 use crate::config::engine::ConfigMirror;
 use crate::config::pipeline::DepthStencilConfigMirror;
-use crate::config::error::ConfigError;
+use crate::error::GsResult;
 
 #[derive(Deserialize, Default)]
 pub(crate) struct PipelineConfigMirror {
@@ -16,7 +16,7 @@ pub(crate) struct PipelineConfigMirror {
 impl ConfigMirror for PipelineConfigMirror {
     type ConfigType = PipelineConfig;
 
-    fn into_config(self) -> Result<Self::ConfigType, ConfigError> {
+    fn into_config(self) -> GsResult<Self::ConfigType> {
 
         let config = PipelineConfig {
             depth_stencil: self.depth_stencil.into_config()?,
@@ -25,7 +25,7 @@ impl ConfigMirror for PipelineConfigMirror {
         Ok(config)
     }
 
-    fn parse(&mut self, toml: &toml::Value) -> Result<(), ConfigError> {
+    fn parse(&mut self, toml: &toml::Value) -> GsResult<()> {
 
         if let Some(v) = toml.get("depth_stencil") {
             self.depth_stencil.parse(v)?;

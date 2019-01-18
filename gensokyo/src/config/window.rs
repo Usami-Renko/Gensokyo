@@ -2,7 +2,7 @@
 use toml;
 
 use crate::config::engine::ConfigMirror;
-use crate::config::error::ConfigError;
+use crate::error::{ GsResult, GsError };
 
 use gsvk::types::{ vkuint, vkDim2D };
 
@@ -53,7 +53,7 @@ struct Cursor {
 impl ConfigMirror for WindowConfigMirror {
     type ConfigType = WindowConfig;
 
-    fn into_config(self) -> Result<Self::ConfigType, ConfigError> {
+    fn into_config(self) -> GsResult<Self::ConfigType> {
 
         let config = WindowConfig {
             title: self.title,
@@ -73,50 +73,62 @@ impl ConfigMirror for WindowConfigMirror {
         Ok(config)
     }
 
-    fn parse(&mut self, toml: &toml::Value) -> Result<(), ConfigError> {
+    fn parse(&mut self, toml: &toml::Value) -> GsResult<()> {
 
         if let Some(v) = toml.get("title") {
-            self.title = v.as_str().ok_or(ConfigError::ParseError)?.to_owned();
+            self.title = v.as_str()
+                .ok_or(GsError::config("[window.title]"))?.to_owned();
         }
         if let Some(v) = toml.get("mode") {
-            self.mode = v.as_str().ok_or(ConfigError::ParseError)?.to_owned();
+            self.mode = v.as_str()
+                .ok_or(GsError::config("[window.mode]"))?.to_owned();
         }
         if let Some(v) = toml.get("always_on_top") {
-            self.always_on_top = v.as_bool().ok_or(ConfigError::ParseError)?;
+            self.always_on_top = v.as_bool()
+                .ok_or(GsError::config("[window.always_on_top]"))?.to_owned();
         }
         if let Some(v) = toml.get("is_resizable") {
-            self.is_resizable = v.as_bool().ok_or(ConfigError::ParseError)?;
+            self.is_resizable = v.as_bool()
+                .ok_or(GsError::config("[window.is_resizable]"))?.to_owned();
         }
 
         if let Some(v) = toml.get("dimension") {
 
             if let Some(v) = v.get("width") {
-                self.dimension.width = v.as_integer().ok_or(ConfigError::ParseError)? as _;
+                self.dimension.width = v.as_integer()
+                    .ok_or(GsError::config("[window.dimension.width]"))?.to_owned() as _;
             }
             if let Some(v) = v.get("height") {
-                self.dimension.height = v.as_integer().ok_or(ConfigError::ParseError)? as _;
+                self.dimension.height = v.as_integer()
+                    .ok_or(GsError::config("[window.dimension.height]"))?.to_owned() as _;
             }
             if let Some(v) = v.get("min_width") {
-                self.dimension.min_width = v.as_integer().ok_or(ConfigError::ParseError)? as _;
+                self.dimension.min_width = v.as_integer()
+                    .ok_or(GsError::config("[window.dimension.min_width]"))?.to_owned() as _;
             }
             if let Some(v) = v.get("min_height") {
-                self.dimension.min_height = v.as_integer().ok_or(ConfigError::ParseError)? as _;
+                self.dimension.min_height = v.as_integer()
+                    .ok_or(GsError::config("[window.dimension.min_height]"))?.to_owned() as _;
             }
             if let Some(v) = v.get("max_width") {
-                self.dimension.max_width = v.as_integer().ok_or(ConfigError::ParseError)? as _;
+                self.dimension.max_width = v.as_integer()
+                    .ok_or(GsError::config("[window.dimension.max_width]"))?.to_owned() as _;
             }
             if let Some(v) = v.get("max_height") {
-                self.dimension.max_height = v.as_integer().ok_or(ConfigError::ParseError)? as _;
+                self.dimension.max_height = v.as_integer()
+                    .ok_or(GsError::config("[window.dimension.max_height]"))?.to_owned() as _;
             }
         }
 
         if let Some(v) = toml.get("cursor") {
 
             if let Some(v) = v.get("is_grab") {
-                self.cursor.is_grab = v.as_bool().ok_or(ConfigError::ParseError)?;
+                self.cursor.is_grab = v.as_bool()
+                    .ok_or(GsError::config("[window.cursor.is_grab]"))?.to_owned();
             }
             if let Some(v) = v.get("is_hide") {
-                self.cursor.is_hide = v.as_bool().ok_or(ConfigError::ParseError)?;
+                self.cursor.is_hide = v.as_bool()
+                    .ok_or(GsError::config("[window.cursor.is_hide]"))?.to_owned();
             }
         }
 

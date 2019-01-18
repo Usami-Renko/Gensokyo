@@ -1,10 +1,10 @@
 
-use crate::assets::glTF::error::GltfError;
+use crate::assets::error::GltfError;
 
 use gsvk::buffer::instance::{ GsBufIndicesInfo, GsIndexBuffer };
 use gsvk::memory::transfer::GsBufferDataUploader;
-use gsvk::memory::AllocatorError;
 use gsvk::types::vkuint;
+use gsvk::error::VkResult;
 
 #[derive(Default)]
 pub struct GsglTFIndicesData {
@@ -18,10 +18,10 @@ impl GsglTFIndicesData {
         where F: Clone + Fn(gltf::Buffer<'a>) -> Option<&'s [u8]> {
 
         // TODO: Support other integer type.
-        let new_indices: Vec<vkuint> = reader.read_indices()
+        let new_indices = reader.read_indices()
             .and_then(|index_iter| {
                 Some(index_iter.into_u32().collect())
-            }).ok_or(GltfError::ModelContentMissing)?;
+            }).unwrap_or(Vec::new());
 
         let extend_count = new_indices.len();
 
@@ -47,7 +47,7 @@ impl GsglTFIndicesData {
         self.data.len()
     }
 
-    pub fn upload(&self, to: &Option<GsIndexBuffer>, by: &mut GsBufferDataUploader) -> Result<(), AllocatorError> {
+    pub fn upload(&self, to: &Option<GsIndexBuffer>, by: &mut GsBufferDataUploader) -> VkResult<()> {
 
         if self.is_contain_indices() {
             if let Some(ref index_block) = to {

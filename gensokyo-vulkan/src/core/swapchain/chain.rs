@@ -53,7 +53,7 @@ impl GsSwapchain {
     /// `sign_fence` is the fence to signal during this function, or None for no fence to signal.
     pub fn next_image(&self, sign_semaphore: Option<&GsSemaphore>, sign_fence: Option<&GsFence>) -> VkResult<vkuint> {
 
-        // the the handle of semaphore and fence
+        // the the handle of semaphore and fence.
         let semaphore = sign_semaphore.and_then(|s| Some(s.handle))
             .unwrap_or(vk::Semaphore::null());
         let fence = sign_fence.and_then(|f| Some(f.handle))
@@ -63,18 +63,14 @@ impl GsSwapchain {
         let (image_index, is_sub_optimal) = unsafe {
             self.loader.acquire_next_image(self.handle, self.image_acquire_time, semaphore, fence)
                 .map_err(|error| match error {
-                    | vk::Result::TIMEOUT => {
-                        VkError::sync("No image became available within the time allowed.")
-                    },
-                    | vk::Result::ERROR_OUT_OF_DATE_KHR => {
-                        VkError::sync("Surface has changed and is not compatible with the swapchain.")
-                    },
-                    | _ => VkError::sync("Get unknown error when acquiring image."),
+                    | vk::Result::TIMEOUT               => VkError::swapchain_sync(SwapchainSyncError::TimeOut),
+                    | vk::Result::ERROR_OUT_OF_DATE_KHR => VkError::swapchain_sync(SwapchainSyncError::SurfaceOutDate),
+                    | _ => VkError::swapchain_sync(SwapchainSyncError::Unknown),
                 })?
         };
 
         if is_sub_optimal {
-            Err(VkError::sync("Swapchain does not match the surface properties exactly."))
+            Err(VkError::swapchain_sync(SwapchainSyncError::SubOptimal))
         } else {
             Ok(image_index)
         }
@@ -102,17 +98,17 @@ impl GsSwapchain {
             swapchain_count     : 1,
             p_swapchains        : &self.handle,
             p_image_indices     : &image_index,
-            // VKResult of each swapchain
+            // VKResult of each swapchain.
             p_results           : ptr::null_mut(),
         };
 
         let is_sub_optimal = unsafe {
             self.loader.queue_present(device.queue_handle_by_identifier(queue).handle, &present_info)
-                .or(Err(VkError::sync("Get unknown error when acquiring image.")))?
+                .or(Err(VkError::device("Get unknown error when acquiring image.")))?
         };
 
         if is_sub_optimal {
-            Err(VkError::sync("Swapchain does not match the surface properties exactly."))
+            Err(VkError::swapchain_sync(SwapchainSyncError::SubOptimal))
         } else {
             Ok(())
         }
@@ -160,4 +156,17 @@ pub struct SwapchainConfig {
     pub prefer_secondary_present_mode : vk::PresentModeKHR,
 
     pub acquire_image_time_out: vklint,
+}
+
+
+#[derive(Debug, Fail)]
+pub enum SwapchainSyncError {
+    #[fail(display = "No image became available within the time allowed.")]
+    TimeOut,
+    #[fail(display = "Swapchain does not match the surface properties exactly.")]
+    SubOptimal,
+    #[fail(display = "Surface has changed and is not compatible with the swapchain.")]
+    SurfaceOutDate,
+    #[fail(display = "Get unknown error when acquiring image.")]
+    Unknown,
 }

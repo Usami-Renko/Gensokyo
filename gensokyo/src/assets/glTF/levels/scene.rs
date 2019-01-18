@@ -4,7 +4,7 @@ use crate::assets::glTF::levels::traits::{ GsglTFLevelEntity, GsglTFArchitecture
 use crate::assets::glTF::levels::node::GsglTFNodeEntity;
 use crate::assets::glTF::primitive::attributes::GsglTFAttrFlags;
 use crate::assets::glTF::primitive::transforms::GsglTFNodeUniformFlags;
-use crate::assets::glTF::error::GltfError;
+use crate::assets::error::GltfError;
 use crate::utils::types::Matrix4F;
 
 use gsvk::command::GsCmdRecorder;
