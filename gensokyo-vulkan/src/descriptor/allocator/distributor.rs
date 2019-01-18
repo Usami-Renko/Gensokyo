@@ -3,11 +3,12 @@ use crate::core::device::GsDevice;
 
 use crate::descriptor::{ GsDescriptorPool, GsDescriptorSet, DescriptorSetConfig };
 use crate::descriptor::set::DescriptorSet;
-use crate::descriptor::binding::DescriptorWriteInfo;
 use crate::descriptor::repository::GsDescriptorRepository;
 use crate::descriptor::allocator::index::IDescriptorSet;
 
 use crate::utils::assign::GsAssignIndex;
+
+use crate::utils::wrapper::VKWrapperInfo;
 
 pub struct GsDescriptorDistributor {
 
@@ -49,19 +50,19 @@ impl GsDescriptorDistributor {
 
     fn update_descriptors(&self) {
 
-        let mut write_infos = Vec::with_capacity(self.update_sets.len());
+        let mut write_infos = VKWrapperInfo::new();
 
         for set in self.update_sets.iter() {
 
             let config = &self.configs[set.set_index];
             let update_set = &self.sets[set.set_index];
 
-            let set_write_infos: Vec<DescriptorWriteInfo> = config.iter_binding()
-                .map(|binding| binding.write_set(update_set))
-                .collect();
-            write_infos.extend(set_write_infos);
+            for binding in config.iter_binding() {
+                let write_pair = binding.write_set(update_set);
+                write_infos.push(write_pair);
+            }
         }
 
-        self.device.update_descriptor_sets(write_infos);
+        self.device.update_descriptor_sets(write_infos.borrow_info());
     }
 }

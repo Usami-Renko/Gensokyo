@@ -9,7 +9,6 @@ use crate::core::device::enums::{ DeviceQueueIdentifier, QueueRequestStrategy };
 use crate::core::device::queue::{ GsGraphicsQueue, GsPresentQueue, GsTransferQueue, GsTransfer };
 use crate::core::device::queue::{ GsQueue, QueueSubmitBundle };
 
-use crate::descriptor::DescriptorWriteInfo;
 use crate::sync::GsFence;
 
 use crate::error::{ VkResult, VkError };
@@ -133,14 +132,10 @@ impl GsLogicalDevice {
         }
     }
 
-    pub fn update_descriptor_sets(&self, write_infos: Vec<DescriptorWriteInfo>) {
-
-        let write_sets: Vec<vk::WriteDescriptorSet> = write_infos.into_iter()
-            .map(|info| info.info)
-            .collect();
+    pub fn update_descriptor_sets(&self, write_contents: &Vec<vk::WriteDescriptorSet>) {
 
         unsafe {
-            self.handle.update_descriptor_sets(&write_sets, &[]);
+            self.handle.update_descriptor_sets(&write_contents, &[]);
         }
     }
 

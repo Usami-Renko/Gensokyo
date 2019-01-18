@@ -108,9 +108,10 @@ impl GraphicsPipelineBuilder {
             config.shader_modules = shader_modules;
         }
 
-        let mut layouts = vec![];
-        let mut _shader_infos = vec![];
-        let mut infos = vec![];
+        let pipeline_count = self.configs.len();
+        let mut layouts = Vec::with_capacity(pipeline_count);
+        let mut _shader_infos = Vec::with_capacity(pipeline_count);
+        let mut infos = Vec::with_capacity(pipeline_count);
 
         for config in self.configs.iter() {
 
@@ -162,7 +163,8 @@ impl GraphicsPipelineBuilder {
 
         self.destroy_shader_modules();
 
-        let mut pipelines = vec![];
+
+        let mut pipelines = Vec::with_capacity(pipeline_count);
         for (i, config) in self.configs.into_iter().enumerate() {
             let pipeline = GsPipeline::new(&self.device, handles[i], layouts[i], config.render_pass);
             pipelines.push(pipeline);

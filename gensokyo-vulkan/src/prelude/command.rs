@@ -7,4 +7,6 @@ pub use crate::command::GsCmdRecorder;
 pub use crate::command::GsCmdGraphicsApi;
 pub use crate::command::GsCmdComputeApi;
 
+pub use crate::command::CmdDescriptorSetBindInfo;
+
 pub use crate::utils::phantom::Copy;

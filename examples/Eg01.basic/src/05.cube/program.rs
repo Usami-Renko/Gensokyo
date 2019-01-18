@@ -7,8 +7,8 @@ use gsvk::prelude::common::*;
 use gsvk::prelude::buffer::*;
 use gsvk::prelude::descriptor::*;
 use gsvk::prelude::pipeline::*;
-use gsvk::command::*;
-use gsvk::sync::*;
+use gsvk::prelude::command::*;
+use gsvk::prelude::sync::*;
 
 use gsma::data_size;
 
@@ -47,7 +47,7 @@ pub struct CubeProcedure {
 
 impl CubeProcedure {
 
-    pub fn new(loader: AssetsLoader) -> Result<CubeProcedure, ProcedureError> {
+    pub fn new(loader: AssetsLoader) -> GsResult<CubeProcedure> {
 
         let screen_dimension = loader.screen_dimension();
 
@@ -99,7 +99,7 @@ impl CubeProcedure {
         Ok(procecure)
     }
 
-    fn update_uniforms(&mut self) -> Result<(), ProcedureError> {
+    fn update_uniforms(&mut self) -> GsResult<()> {
 
         self.ubo_data[0].model = self.camera.object_model_transformation();
         self.ubo_data[0].view  = self.camera.view_matrix();
@@ -111,7 +111,7 @@ impl CubeProcedure {
         Ok(())
     }
 
-    fn buffers(kit: AllocatorKit, vertex_data: &Vec<Vertex>, index_data: &Vec<vkuint>, ubo_data: &Vec<UboObject>) -> Result<(GsVertexBuffer, GsIndexBuffer, GsUniformBuffer, GsBufferRepository<Host>), ProcedureError> {
+    fn buffers(kit: AllocatorKit, vertex_data: &Vec<Vertex>, index_data: &Vec<vkuint>, ubo_data: &Vec<UboObject>) -> GsResult<(GsVertexBuffer, GsIndexBuffer, GsUniformBuffer, GsBufferRepository<Host>)> {
 
         // vertex, index and uniform buffers.
         let mut buffer_allocator = kit.buffer(BufferStorageType::HOST);
@@ -142,7 +142,7 @@ impl CubeProcedure {
         Ok((vertex_buffer, index_buffer, ubo_buffer, buffer_storage))
     }
     
-    fn ubo(kit: AllocatorKit, ubo_buffer: &GsUniformBuffer) -> Result<(DescriptorSet, GsDescriptorRepository), ProcedureError> {
+    fn ubo(kit: AllocatorKit, ubo_buffer: &GsUniformBuffer) -> GsResult<(DescriptorSet, GsDescriptorRepository)> {
 
         // descriptor
         let mut descriptor_set_config = DescriptorSetConfig::init(vk::DescriptorSetLayoutCreateFlags::empty());
@@ -159,7 +159,7 @@ impl CubeProcedure {
         Ok((ubo_set, desc_storage))
     }
 
-    fn pipelines(kit: PipelineKit, ubo_set: &DescriptorSet) -> Result<GsPipeline<Graphics>, ProcedureError> {
+    fn pipelines(kit: PipelineKit, ubo_set: &DescriptorSet) -> GsResult<GsPipeline<Graphics>> {
 
         // shaders
         let vertex_shader = GsShaderInfo::from_source(
@@ -183,12 +183,12 @@ impl CubeProcedure {
         let first_subpass = render_pass_builder.new_subpass();
 
         let color_attachment = kit.present_attachment();
-        let _attachment_index = render_pass_builder.add_attachemnt(color_attachment, first_subpass);
+        let _attachment_index = render_pass_builder.add_attachment(color_attachment, first_subpass);
 
         let dependency = kit.subpass_dependency(SubpassStage::External, SubpassStage::AtIndex(first_subpass))
             .stage(vk::PipelineStageFlags::COLOR_ATTACHMENT_OUTPUT, vk::PipelineStageFlags::COLOR_ATTACHMENT_OUTPUT)
             .access(vk::AccessFlags::empty(), vk::AccessFlags::COLOR_ATTACHMENT_READ | vk::AccessFlags::COLOR_ATTACHMENT_WRITE);
-        render_pass_builder.add_dependenty(dependency);
+        render_pass_builder.add_dependency(dependency);
 
         let render_pass = render_pass_builder.build()?;
 
@@ -205,7 +205,7 @@ impl CubeProcedure {
         Ok(graphics_pipeline)
     }
 
-    fn sync_resources(kit: SyncKit, graphics_pipeline: &GsPipeline<Graphics>) -> Result<Vec<GsSemaphore>, ProcedureError> {
+    fn sync_resources(kit: SyncKit, graphics_pipeline: &GsPipeline<Graphics>) -> GsResult<Vec<GsSemaphore>> {
 
         // sync
         let mut present_availables = vec![];
@@ -217,7 +217,7 @@ impl CubeProcedure {
         Ok(present_availables)
     }
 
-    fn commands(kit: CommandKit, graphics_pipeline: &GsPipeline<Graphics>, vertex_buffer: &GsVertexBuffer, index_buffer: &GsIndexBuffer, ubo_set: &DescriptorSet, index_count: usize) -> Result<(GsCommandPool, Vec<GsCommandBuffer>), ProcedureError> {
+    fn commands(kit: CommandKit, graphics_pipeline: &GsPipeline<Graphics>, vertex_buffer: &GsVertexBuffer, index_buffer: &GsIndexBuffer, ubo_set: &DescriptorSet, index_count: usize) -> GsResult<(GsCommandPool, Vec<GsCommandBuffer>)> {
 
         let command_pool = kit.pool(DeviceQueueIdentifier::Graphics)?;
         let mut command_buffers = vec![];
@@ -248,25 +248,23 @@ impl CubeProcedure {
 
 impl GraphicsRoutine for CubeProcedure {
 
-    fn draw(&mut self, device: &GsDevice, device_available: &GsFence, image_available: &GsSemaphore, image_index: usize, _: f32) -> Result<&GsSemaphore, ProcedureError> {
+    fn draw(&mut self, device: &GsDevice, device_available: &GsFence, image_available: &GsSemaphore, image_index: usize, _: f32) -> GsResult<&GsSemaphore> {
 
         self.update_uniforms()?;
 
-        let submit_infos = [
-            QueueSubmitBundle {
-                wait_semaphores: &[image_available],
-                sign_semaphores: &[&self.present_availables[image_index]],
-                wait_stages    : &[vk::PipelineStageFlags::COLOR_ATTACHMENT_OUTPUT],
-                commands       : &[&self.command_buffers[image_index]],
-            },
-        ];
+        let submit_info = QueueSubmitBundle {
+            wait_semaphores: &[image_available],
+            sign_semaphores: &[&self.present_availables[image_index]],
+            wait_stages    : &[vk::PipelineStageFlags::COLOR_ATTACHMENT_OUTPUT],
+            commands       : &[&self.command_buffers[image_index]],
+        };
 
-        device.submit(&submit_infos, Some(device_available), DeviceQueueIdentifier::Graphics)?;
+        device.submit_single(&submit_info, Some(device_available), DeviceQueueIdentifier::Graphics)?;
 
         return Ok(&self.present_availables[image_index])
     }
 
-    fn clean_resources(&mut self, _: &GsDevice) -> Result<(), ProcedureError> {
+    fn clean_resources(&mut self, _: &GsDevice) -> GsResult<()> {
 
         self.present_availables.iter()
             .for_each(|semaphore| semaphore.destroy());
@@ -278,7 +276,7 @@ impl GraphicsRoutine for CubeProcedure {
         Ok(())
     }
 
-    fn reload_res(&mut self, loader: AssetsLoader) -> Result<(), ProcedureError> {
+    fn reload_res(&mut self, loader: AssetsLoader) -> GsResult<()> {
 
         self.pipeline = loader.pipelines(|kit| {
             CubeProcedure::pipelines(kit, &self.ubo_set)

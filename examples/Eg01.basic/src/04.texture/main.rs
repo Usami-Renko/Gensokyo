@@ -8,8 +8,8 @@ use gsvk::prelude::buffer::*;
 use gsvk::prelude::image::*;
 use gsvk::prelude::descriptor::*;
 use gsvk::prelude::pipeline::*;
-use gsvk::command::*;
-use gsvk::sync::*;
+use gsvk::prelude::command::*;
+use gsvk::prelude::sync::*;
 
 use gsma::{ define_input, offset_of, vk_format, vertex_rate, data_size };
 
@@ -63,7 +63,7 @@ struct TextureMappingProcedure {
 
 impl TextureMappingProcedure {
 
-    fn new(loader: AssetsLoader) -> Result<TextureMappingProcedure, ProcedureError> {
+    fn new(loader: AssetsLoader) -> GsResult<TextureMappingProcedure> {
 
         let vertex_data = VERTEX_DATA.to_vec();
 
@@ -102,7 +102,7 @@ impl TextureMappingProcedure {
         Ok(procecure)
     }
 
-    fn vertex_buffer(kit: AllocatorKit, vertex_data: &Vec<Vertex>) -> Result<(GsVertexBuffer, GsBufferRepository<Cached>), ProcedureError> {
+    fn vertex_buffer(kit: AllocatorKit, vertex_data: &Vec<Vertex>) -> GsResult<(GsVertexBuffer, GsBufferRepository<Cached>)> {
 
         let mut buffer_allocator = kit.buffer(BufferStorageType::CACHED);
 
@@ -121,7 +121,7 @@ impl TextureMappingProcedure {
         Ok((vertex_buffer, vertex_storage))
     }
 
-    fn image_sampler(kit: AllocatorKit) -> Result<(GsSampleImage, GsImageRepository<Device>), ProcedureError> {
+    fn image_sampler(kit: AllocatorKit) -> GsResult<(GsSampleImage, GsImageRepository<Device>)> {
 
         let image_loader = kit.image_loader();
         let image_storage_info = image_loader.load_2d(Path::new(TEXTURE_PATH))?;
@@ -139,7 +139,7 @@ impl TextureMappingProcedure {
         Ok((sample_image, image_storage))
     }
 
-    fn descriptor(kit: AllocatorKit, sample_image: &GsSampleImage) -> Result<(DescriptorSet, GsDescriptorRepository), ProcedureError> {
+    fn descriptor(kit: AllocatorKit, sample_image: &GsSampleImage) -> GsResult<(DescriptorSet, GsDescriptorRepository)> {
 
         let mut descriptor_set_config = DescriptorSetConfig::init(vk::DescriptorSetLayoutCreateFlags::empty());
         descriptor_set_config.add_image_binding(sample_image, GsPipelineStage::FRAGMENT);
@@ -155,7 +155,7 @@ impl TextureMappingProcedure {
         Ok((sampler_set, descriptor_storage))
     }
 
-    fn pipelines(kit: PipelineKit, sampler_set: &DescriptorSet) -> Result<GsPipeline<Graphics>, ProcedureError> {
+    fn pipelines(kit: PipelineKit, sampler_set: &DescriptorSet) -> GsResult<GsPipeline<Graphics>> {
 
         // shaders
         let vertex_shader = GsShaderInfo::from_source(
@@ -179,12 +179,12 @@ impl TextureMappingProcedure {
         let first_subpass = render_pass_builder.new_subpass();
 
         let color_attachment = kit.present_attachment();
-        let _attachment_index = render_pass_builder.add_attachemnt(color_attachment, first_subpass);
+        let _attachment_index = render_pass_builder.add_attachment(color_attachment, first_subpass);
 
         let dependency = kit.subpass_dependency(SubpassStage::External, SubpassStage::AtIndex(first_subpass))
             .stage(vk::PipelineStageFlags::COLOR_ATTACHMENT_OUTPUT, vk::PipelineStageFlags::COLOR_ATTACHMENT_OUTPUT)
             .access(vk::AccessFlags::empty(), vk::AccessFlags::COLOR_ATTACHMENT_READ | vk::AccessFlags::COLOR_ATTACHMENT_WRITE);
-        render_pass_builder.add_dependenty(dependency);
+        render_pass_builder.add_dependency(dependency);
 
         let render_pass = render_pass_builder.build()?;
 
@@ -201,7 +201,7 @@ impl TextureMappingProcedure {
         Ok(graphics_pipeline)
     }
 
-    fn sync_resources(kit: SyncKit, graphics_pipeline: &GsPipeline<Graphics>) -> Result<Vec<GsSemaphore>, ProcedureError> {
+    fn sync_resources(kit: SyncKit, graphics_pipeline: &GsPipeline<Graphics>) -> GsResult<Vec<GsSemaphore>> {
 
         // sync
         let mut present_availables = vec![];
@@ -213,7 +213,7 @@ impl TextureMappingProcedure {
         Ok(present_availables)
     }
 
-    fn commands(kit: CommandKit, graphics_pipeline: &GsPipeline<Graphics>, vertex_buffer: &GsVertexBuffer, sampler_set: &DescriptorSet, vertex_data: &Vec<Vertex>) -> Result<(GsCommandPool, Vec<GsCommandBuffer>), ProcedureError> {
+    fn commands(kit: CommandKit, graphics_pipeline: &GsPipeline<Graphics>, vertex_buffer: &GsVertexBuffer, sampler_set: &DescriptorSet, vertex_data: &Vec<Vertex>) -> GsResult<(GsCommandPool, Vec<GsCommandBuffer>)> {
 
         let command_pool = kit.pool(DeviceQueueIdentifier::Graphics)?;
         let mut command_buffers = vec![];
@@ -243,23 +243,21 @@ impl TextureMappingProcedure {
 
 impl GraphicsRoutine for TextureMappingProcedure {
 
-    fn draw(&mut self, device: &GsDevice, device_available: &GsFence, image_available: &GsSemaphore, image_index: usize, _: f32) -> Result<&GsSemaphore, ProcedureError> {
+    fn draw(&mut self, device: &GsDevice, device_available: &GsFence, image_available: &GsSemaphore, image_index: usize, _: f32) -> GsResult<&GsSemaphore> {
 
-        let submit_infos = [
-            QueueSubmitBundle {
-                wait_semaphores: &[image_available],
-                sign_semaphores: &[&self.present_availables[image_index]],
-                wait_stages    : &[vk::PipelineStageFlags::COLOR_ATTACHMENT_OUTPUT],
-                commands       : &[&self.command_buffers[image_index]],
-            },
-        ];
+        let submit_info = QueueSubmitBundle {
+            wait_semaphores: &[image_available],
+            sign_semaphores: &[&self.present_availables[image_index]],
+            wait_stages    : &[vk::PipelineStageFlags::COLOR_ATTACHMENT_OUTPUT],
+            commands       : &[&self.command_buffers[image_index]],
+        };
 
-        device.submit(&submit_infos, Some(device_available), DeviceQueueIdentifier::Graphics)?;
+        device.submit_single(&submit_info, Some(device_available), DeviceQueueIdentifier::Graphics)?;
 
         return Ok(&self.present_availables[image_index])
     }
 
-    fn clean_resources(&mut self, _: &GsDevice) -> Result<(), ProcedureError> {
+    fn clean_resources(&mut self, _: &GsDevice) -> GsResult<()> {
 
         self.present_availables.iter()
             .for_each(|semaphore| semaphore.destroy());
@@ -271,7 +269,7 @@ impl GraphicsRoutine for TextureMappingProcedure {
         Ok(())
     }
 
-    fn reload_res(&mut self, loader: AssetsLoader) -> Result<(), ProcedureError> {
+    fn reload_res(&mut self, loader: AssetsLoader) -> GsResult<()> {
 
         self.graphics_pipeline = loader.pipelines(|kit| {
             TextureMappingProcedure::pipelines(kit, &self.sampler_set)

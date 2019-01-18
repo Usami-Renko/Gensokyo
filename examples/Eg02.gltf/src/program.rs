@@ -6,17 +6,17 @@ use gsvk::prelude::buffer::*;
 use gsvk::prelude::image::*;
 use gsvk::prelude::descriptor::*;
 use gsvk::prelude::pipeline::*;
-use gsvk::command::*;
-use gsvk::sync::*;
+use gsvk::prelude::command::*;
+use gsvk::prelude::sync::*;
 use gsma::data_size;
 
 use nalgebra::{ Matrix4, Point3 };
 
 use std::path::Path;
 use std::marker::PhantomData;
-use crate::{ UboObject, FilePathConstants, ShaderInputDefination };
+use crate::{ UboObject, FilePathConstants, ShaderInputDefinition };
 
-pub struct GltfModelViewer<T: ShaderInputDefination> {
+pub struct GltfModelViewer<T: ShaderInputDefinition> {
 
     phantom_type: PhantomData<T>,
 
@@ -47,9 +47,9 @@ pub struct GltfModelViewer<T: ShaderInputDefination> {
     present_availables: Vec<GsSemaphore>,
 }
 
-impl<T: ShaderInputDefination> GltfModelViewer<T> {
+impl<T: ShaderInputDefinition> GltfModelViewer<T> {
 
-    pub fn new(loader: AssetsLoader, paths: FilePathConstants) -> Result<GltfModelViewer<T>, ProcedureError> {
+    pub fn new(loader: AssetsLoader, paths: FilePathConstants) -> GsResult<GltfModelViewer<T>> {
 
         let screen_dimension = loader.screen_dimension();
         let camera = GsCameraFactory::config()
@@ -102,7 +102,7 @@ impl<T: ShaderInputDefination> GltfModelViewer<T> {
         Ok(procedure)
     }
 
-    fn update_uniforms(&mut self) -> Result<(), ProcedureError> {
+    fn update_uniforms(&mut self) -> GsResult<()> {
 
         //self.ubo_data[0].model = self.camera.object_model_transformation();
         self.ubo_data[0].view  = self.camera.view_matrix();
@@ -114,7 +114,7 @@ impl<T: ShaderInputDefination> GltfModelViewer<T> {
         Ok(())
     }
 
-    fn load_model(kit: AllocatorKit, paths: &FilePathConstants) -> Result<(GsUniformBuffer, GsBufferRepository<Host>, GsglTFModel, GsBufferRepository<Device>), ProcedureError> {
+    fn load_model(kit: AllocatorKit, paths: &FilePathConstants) -> GsResult<(GsUniformBuffer, GsBufferRepository<Host>, GsglTFModel, GsBufferRepository<Device>)> {
 
         // allocate uniform data buffer.
         let mut ubo_allocator = kit.buffer(BufferStorageType::HOST);
@@ -149,7 +149,7 @@ impl<T: ShaderInputDefination> GltfModelViewer<T> {
         Ok((ubo_buffer, ubo_repository, dst_model, model_repository))
     }
 
-    fn ubo(kit: AllocatorKit, ubo_buffer: &GsUniformBuffer, model: &GsglTFModel) -> Result<(DescriptorSet, GsDescriptorRepository), ProcedureError> {
+    fn ubo(kit: AllocatorKit, ubo_buffer: &GsUniformBuffer, model: &GsglTFModel) -> GsResult<(DescriptorSet, GsDescriptorRepository)> {
 
         // allocate uniform descriptor.
         let mut descriptor_set_config = DescriptorSetConfig::init(vk::DescriptorSetLayoutCreateFlags::empty());
@@ -167,7 +167,7 @@ impl<T: ShaderInputDefination> GltfModelViewer<T> {
         Ok((ubo_set, desc_storage))
     }
 
-    fn image(kit: AllocatorKit) -> Result<(GsDepthStencilAttachment, GsImageRepository<Device>), ProcedureError> {
+    fn image(kit: AllocatorKit) -> GsResult<(GsDepthStencilAttachment, GsImageRepository<Device>)> {
 
         // depth attachment image
         let mut image_allocator = kit.image(ImageStorageType::DEVICE);
@@ -182,7 +182,7 @@ impl<T: ShaderInputDefination> GltfModelViewer<T> {
         Ok((depth_attachment, image_storage))
     }
 
-    fn pipelines(kit: PipelineKit, paths: &FilePathConstants, ubo_set: &DescriptorSet, model: &GsglTFModel, depth_image: &GsDepthStencilAttachment) -> Result<GsPipeline<Graphics>, ProcedureError> {
+    fn pipelines(kit: PipelineKit, paths: &FilePathConstants, ubo_set: &DescriptorSet, model: &GsglTFModel, depth_image: &GsDepthStencilAttachment) -> GsResult<GsPipeline<Graphics>> {
 
         // shaders
         let vertex_shader = GsShaderInfo::from_source(
@@ -192,7 +192,7 @@ impl<T: ShaderInputDefination> GltfModelViewer<T> {
             "[Vertex Shader]");
         let fragment_shader = GsShaderInfo::from_source(
             GsPipelineStage::FRAGMENT,
-            Path::new(paths.framment_shader),
+            Path::new(paths.fragment_shader),
             None,
             "[Fragment Shader]");
         let shader_infos = vec![
@@ -208,15 +208,15 @@ impl<T: ShaderInputDefination> GltfModelViewer<T> {
         let color_attachment = kit.present_attachment();
         let depth_attachment = depth_image.to_subpass_attachment();
 
-        let _ = render_pass_builder.add_attachemnt(color_attachment, first_subpass);
-        let _ = render_pass_builder.add_attachemnt(depth_attachment, first_subpass);
+        let _ = render_pass_builder.add_attachment(color_attachment, first_subpass);
+        let _ = render_pass_builder.add_attachment(depth_attachment, first_subpass);
 
         render_pass_builder.set_depth_attachment(depth_image);
 
         let dependency = kit.subpass_dependency(SubpassStage::External, SubpassStage::AtIndex(first_subpass))
             .stage(vk::PipelineStageFlags::COLOR_ATTACHMENT_OUTPUT, vk::PipelineStageFlags::COLOR_ATTACHMENT_OUTPUT)
             .access(vk::AccessFlags::empty(), vk::AccessFlags::COLOR_ATTACHMENT_READ | vk::AccessFlags::COLOR_ATTACHMENT_WRITE);
-        render_pass_builder.add_dependenty(dependency);
+        render_pass_builder.add_dependency(dependency);
 
         let render_pass = render_pass_builder.build()?;
         let depth_stencil = GsDepthStencilState::setup(GsDepthStencilPrefab::EnableDepth);
@@ -236,7 +236,7 @@ impl<T: ShaderInputDefination> GltfModelViewer<T> {
         Ok(graphics_pipeline)
     }
 
-    fn sync_resources(kit: SyncKit, graphics_pipeline: &GsPipeline<Graphics>) -> Result<Vec<GsSemaphore>, ProcedureError> {
+    fn sync_resources(kit: SyncKit, graphics_pipeline: &GsPipeline<Graphics>) -> GsResult<Vec<GsSemaphore>> {
 
         // sync
         let mut present_availables = vec![];
@@ -248,7 +248,7 @@ impl<T: ShaderInputDefination> GltfModelViewer<T> {
         Ok(present_availables)
     }
 
-    fn commands(kit: CommandKit, graphics_pipeline: &GsPipeline<Graphics>, ubo_set: &DescriptorSet, model: &GsglTFModel) -> Result<(GsCommandPool, Vec<GsCommandBuffer>), ProcedureError> {
+    fn commands(kit: CommandKit, graphics_pipeline: &GsPipeline<Graphics>, ubo_set: &DescriptorSet, model: &GsglTFModel) -> GsResult<(GsCommandPool, Vec<GsCommandBuffer>)> {
 
         let command_pool = kit.pool(DeviceQueueIdentifier::Graphics)?;
         let mut command_buffers = vec![];
@@ -276,27 +276,25 @@ impl<T: ShaderInputDefination> GltfModelViewer<T> {
     }
 }
 
-impl<T: ShaderInputDefination> GraphicsRoutine for GltfModelViewer<T> {
+impl<T: ShaderInputDefinition> GraphicsRoutine for GltfModelViewer<T> {
 
-    fn draw(&mut self, device: &GsDevice, device_available: &GsFence, image_available: &GsSemaphore, image_index: usize, _: f32) -> Result<&GsSemaphore, ProcedureError> {
+    fn draw(&mut self, device: &GsDevice, device_available: &GsFence, image_available: &GsSemaphore, image_index: usize, _: f32) -> GsResult<&GsSemaphore> {
 
         self.update_uniforms()?;
 
-        let submit_infos = [
-            QueueSubmitBundle {
-                wait_semaphores: &[image_available],
-                sign_semaphores: &[&self.present_availables[image_index]],
-                wait_stages    : &[vk::PipelineStageFlags::COLOR_ATTACHMENT_OUTPUT],
-                commands       : &[&self.command_buffers[image_index]],
-            },
-        ];
+        let submit_info = QueueSubmitBundle {
+            wait_semaphores: &[image_available],
+            sign_semaphores: &[&self.present_availables[image_index]],
+            wait_stages    : &[vk::PipelineStageFlags::COLOR_ATTACHMENT_OUTPUT],
+            commands       : &[&self.command_buffers[image_index]],
+        };
 
-        device.submit(&submit_infos, Some(device_available), DeviceQueueIdentifier::Graphics)?;
+        device.submit_single(&submit_info, Some(device_available), DeviceQueueIdentifier::Graphics)?;
 
         return Ok(&self.present_availables[image_index])
     }
 
-    fn clean_resources(&mut self, _: &GsDevice) -> Result<(), ProcedureError> {
+    fn clean_resources(&mut self, _: &GsDevice) -> GsResult<()> {
 
         self.present_availables.iter()
             .for_each(|semaphore| semaphore.destroy());
@@ -308,7 +306,7 @@ impl<T: ShaderInputDefination> GraphicsRoutine for GltfModelViewer<T> {
         Ok(())
     }
 
-    fn reload_res(&mut self, loader: AssetsLoader) -> Result<(), ProcedureError> {
+    fn reload_res(&mut self, loader: AssetsLoader) -> GsResult<()> {
 
         self.pipeline = loader.pipelines(|kit| {
             Self::pipelines(kit, &self.paths, &self.ubo_set, &self.dst_model, &self.depth_attachment)

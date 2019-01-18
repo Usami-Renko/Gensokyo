@@ -5,11 +5,11 @@ use crate::descriptor::set::GsDescriptorSet;
 use crate::descriptor::types::GsDescriptorType;
 
 use crate::types::{ vkuint, vkbytes };
-use crate::utils::wrapper::VKWrapperInfo;
+use crate::utils::wrapper::VKWrapperPair;
 
 use std::ptr;
 
-pub type DescriptorWriteInfo = VKWrapperInfo<DescriptorWriteContent, vk::WriteDescriptorSet>;
+pub type DescriptorWriteInfo = VKWrapperPair<Box<DescriptorWriteContent>, vk::WriteDescriptorSet>;
 
 #[derive(Debug, Clone)]
 pub struct DescriptorBindingContent {
@@ -120,7 +120,7 @@ impl DescriptorBindingInfo for DescriptorImageBindingInfo {
     fn write_set(&self, set: &GsDescriptorSet) -> DescriptorWriteInfo {
 
         let mut image_infos = vec![];
-        for _ in 0..(self.content.count as vkbytes) {
+        for _ in 0..self.content.count {
 
             let info = vk::DescriptorImageInfo {
                 sampler      : self.sampler_handle,
