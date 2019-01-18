@@ -73,7 +73,7 @@ impl<'env> ProgramEnv {
         Ok(window)
     }
 
-    pub(super) fn split(self) -> (WindowEnv, VulkanEnv, EngineConfig) {
+    pub(super) fn take(self) -> (WindowEnv, VulkanEnv, EngineConfig) {
         (self.window_env, self.vulkan_env, self.config)
     }
 }

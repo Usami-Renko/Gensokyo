@@ -15,9 +15,7 @@ impl GsVertexInputState {
     pub fn setup(bindings: Vec<vk::VertexInputBindingDescription>, attributes: Vec<vk::VertexInputAttributeDescription>)
         -> GsVertexInputState {
 
-        GsVertexInputState {
-            bindings, attributes,
-        }
+        GsVertexInputState { bindings, attributes }
     }
 
     pub(crate) fn info(&self) -> vk::PipelineVertexInputStateCreateInfo {
@@ -37,7 +35,7 @@ impl GsVertexInputState {
     pub fn add_binding(&mut self, binding: vk::VertexInputBindingDescription) {
         self.bindings.push(binding);
     }
-    pub fn add_attribute(&mut self, attrubute: vk::VertexInputAttributeDescription) {
-        self.attributes.push(attrubute);
+    pub fn add_attribute(&mut self, attribute: vk::VertexInputAttributeDescription) {
+        self.attributes.push(attribute);
     }
 }

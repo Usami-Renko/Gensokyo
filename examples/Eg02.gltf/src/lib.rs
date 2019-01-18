@@ -6,7 +6,7 @@ use gsvk::pipeline::shader::*;
 pub struct FilePathConstants {
     // shader.
     pub vertex_shader  : &'static str,
-    pub framment_shader: &'static str,
+    pub fragment_shader: &'static str,
     // gltf model.
     pub model_path     : &'static str,
 }
@@ -18,6 +18,6 @@ pub struct UboObject {
     pub model     : nalgebra::Matrix4<f32>,
 }
 
-pub trait ShaderInputDefination {
+pub trait ShaderInputDefinition {
     fn desc() -> VertexInputDescription;
 }

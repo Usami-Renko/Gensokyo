@@ -64,35 +64,30 @@ impl GsLogicalDevice {
         Ok(())
     }
 
-    pub fn submit(&self, bundles: &[QueueSubmitBundle], fence: Option<&GsFence>, queue_ident: DeviceQueueIdentifier) -> VkResult<()> {
+    /// Submit a singe command bundle to Device.
+    pub fn submit_single(&self, bundle: &QueueSubmitBundle, fence: Option<&GsFence>, queue_ident: DeviceQueueIdentifier) -> VkResult<()> {
 
         // TODO: Add configuration to select submit queue family
         // TODO: Add Speed test to this function.
-        let mut submit_infos = vec![];
-        for bundle in bundles.iter() {
+        let wait_semaphores: Vec<vk::Semaphore> = collect_handle!(bundle.wait_semaphores);
+        let sign_semaphores: Vec<vk::Semaphore> = collect_handle!(bundle.sign_semaphores);
+        let commands: Vec<vk::CommandBuffer> = collect_handle!(bundle.commands);
 
-            let wait_semaphores: Vec<vk::Semaphore> = collect_handle!(bundle.wait_semaphores);
-            let sign_semaphores: Vec<vk::Semaphore> = collect_handle!(bundle.sign_semaphores);
-            let commands: Vec<vk::CommandBuffer> = collect_handle!(bundle.commands);
-
-            let submit_info = vk::SubmitInfo {
-                s_type: vk::StructureType::SUBMIT_INFO,
-                p_next: ptr::null(),
-                // an array of semaphores upon which to wait before the command buffers for this batch begin execution.
-                wait_semaphore_count   : wait_semaphores.len() as _,
-                p_wait_semaphores      : wait_semaphores.as_ptr(),
-                // an array of pipeline stages at which each corresponding semaphore wait will occur.
-                p_wait_dst_stage_mask  : bundle.wait_stages.as_ptr(),
-                // an array of command buffers to execute in the batch.
-                command_buffer_count   : commands.len() as _,
-                p_command_buffers      : commands.as_ptr(),
-                // an array of semaphores which will be signaled when the command buffers for this batch have completed execution.
-                signal_semaphore_count : sign_semaphores.len() as _,
-                p_signal_semaphores    : sign_semaphores.as_ptr(),
-            };
-
-            submit_infos.push(submit_info);
-        }
+        let submit_info = vk::SubmitInfo {
+            s_type: vk::StructureType::SUBMIT_INFO,
+            p_next: ptr::null(),
+            // an array of semaphores upon which to wait before the command buffers for this batch begin execution.
+            wait_semaphore_count   : wait_semaphores.len() as _,
+            p_wait_semaphores      : wait_semaphores.as_ptr(),
+            // an array of pipeline stages at which each corresponding semaphore wait will occur.
+            p_wait_dst_stage_mask  : bundle.wait_stages.as_ptr(),
+            // an array of command buffers to execute in the batch.
+            command_buffer_count   : commands.len() as _,
+            p_command_buffers      : commands.as_ptr(),
+            // an array of semaphores which will be signaled when the command buffers for this batch have completed execution.
+            signal_semaphore_count : sign_semaphores.len() as _,
+            p_signal_semaphores    : sign_semaphores.as_ptr(),
+        };
 
         let queue = self.queue_handle_by_identifier(queue_ident);
         let fence = fence
@@ -100,7 +95,7 @@ impl GsLogicalDevice {
             .unwrap_or(vk::Fence::null());
 
         unsafe {
-            self.handle.queue_submit(queue.handle, &submit_infos, fence)
+            self.handle.queue_submit(queue.handle, &[submit_info], fence)
                 .or(Err(VkError::device("Failed to submit command to device.")))?
         }
 

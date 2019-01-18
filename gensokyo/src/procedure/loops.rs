@@ -1,6 +1,4 @@
 
-use winit;
-
 use crate::procedure::env::{ ProgramEnv, VulkanEnv, WindowEnv };
 use crate::procedure::chain::ChainResource;
 use crate::procedure::workflow::GraphicsRoutine;
@@ -31,7 +29,7 @@ impl<Routine> RoutineFlow<Routine> where Routine: GraphicsRoutine {
 
     pub fn launch(mut self, env: ProgramEnv) -> GsResult<()> {
 
-        let (window_env, vulkan_env, config) = env.split();
+        let (window_env, vulkan_env, config) = env.take();
         let device = &vulkan_env.device;
 
         self.routine.ready(device)?;
@@ -118,7 +116,8 @@ impl<Routine> RoutineFlow<Routine> where Routine: GraphicsRoutine {
     }
 
     fn wait_device_idle(&self, device: &GsDevice) -> GsResult<()> {
-        device.wait_idle().map_err(GsError::from)
+
+        device.wait_idle()?; Ok(())
     }
 }
 

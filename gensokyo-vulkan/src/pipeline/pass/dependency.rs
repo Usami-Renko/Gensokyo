@@ -52,7 +52,7 @@ impl RenderDependency {
         self
     }
 
-    pub(crate) fn build(self) -> vk::SubpassDependency {
+    pub(crate) fn take(self) -> vk::SubpassDependency {
         self.0
     }
 }

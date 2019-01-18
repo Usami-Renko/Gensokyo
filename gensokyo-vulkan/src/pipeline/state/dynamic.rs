@@ -53,6 +53,7 @@ impl<T> DynamicableValue<T>{
 }
 
 impl Clone for DynamicableValue<vkuint> {
+
     fn clone(&self) -> Self {
         self.to_owned()
     }

@@ -19,7 +19,7 @@ fn main() {
 
     let paths = FilePathConstants {
         vertex_shader  : VERTEX_SHADER_SOURCE_PATH,
-        framment_shader: FRAGMENT_SHADER_SOURCE_PATH,
+        fragment_shader: FRAGMENT_SHADER_SOURCE_PATH,
         model_path     : MODEL_GLTF_PATH,
     };
 

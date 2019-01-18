@@ -1,7 +1,7 @@
 
 use ash::vk;
 
-use crate::types::{ vkbool, VK_TRUE, VK_FALSE };
+use crate::types::{ VK_TRUE, VK_FALSE };
 
 #[derive(Debug, Clone, Copy, Eq, PartialEq)]
 pub enum BlendAttachmentPrefab {
@@ -11,94 +11,69 @@ pub enum BlendAttachmentPrefab {
 
 impl BlendAttachmentPrefab {
 
-    fn generate(&self) -> BlendAttachemnt {
+    fn generate(&self) -> BlendAttachment {
         match self {
-            | BlendAttachmentPrefab::Disable => BlendAttachemnt {
-                enable: VK_FALSE,
-                ..Default::default()
-            }
+            | BlendAttachmentPrefab::Disable => BlendAttachment::init(false),
         }
     }
 }
 
-pub struct BlendAttachemnt {
+pub struct BlendAttachment(vk::PipelineColorBlendAttachmentState);
 
-    // TODO: Add explaination for each field
-    enable: vkbool,
-    src_color_factor : vk::BlendFactor,
-    dst_color_factor : vk::BlendFactor,
-    color_op         : vk::BlendOp,
-    src_alpha_factor : vk::BlendFactor,
-    dst_alpha_factor : vk::BlendFactor,
-    alpha_op         : vk::BlendOp,
-    /// Color write mask determine whether the final color values R, G, B and A are written to the framebuffer attachment.
-    color_write_mask : vk::ColorComponentFlags,
-}
+impl BlendAttachment {
 
-impl BlendAttachemnt {
+    pub fn init(enable: bool) -> BlendAttachment {
 
-    pub fn init(enable: bool) -> BlendAttachemnt {
+        let mut attachment = BlendAttachment::default();
+        attachment.0.blend_enable = if enable { VK_TRUE } else { VK_FALSE };
 
-        BlendAttachemnt {
-            enable: if enable { VK_TRUE } else { VK_FALSE },
-            ..Default::default()
-        }
+        attachment
     }
 
-    pub fn setup(prefab: BlendAttachmentPrefab) -> BlendAttachemnt {
+    pub fn setup(prefab: BlendAttachmentPrefab) -> BlendAttachment {
         prefab.generate()
     }
 
-    pub(crate) fn state(&self) -> vk::PipelineColorBlendAttachmentState {
-
-        vk::PipelineColorBlendAttachmentState {
-            blend_enable: self.enable,
-            src_color_blend_factor : self.src_color_factor,
-            dst_color_blend_factor : self.dst_color_factor,
-            color_blend_op         : self.color_op,
-            src_alpha_blend_factor : self.src_alpha_factor,
-            dst_alpha_blend_factor : self.dst_alpha_factor,
-            alpha_blend_op         : self.alpha_op,
-            color_write_mask       : self.color_write_mask,
-        }
+    pub(crate) fn take(self) -> vk::PipelineColorBlendAttachmentState {
+        self.0
     }
 
     pub fn set_enable(&mut self, enable: bool) {
-        self.enable = if enable { VK_TRUE } else { VK_FALSE };
+        self.0.blend_enable = if enable { VK_TRUE } else { VK_FALSE };
     }
-    pub fn set_color_blend(&mut self, op: vk::BlendOp, src_factor: vk::BlendFactor, dst_factor: vk::BlendFactor) {
-        self.color_op = op;
-        self.src_color_factor = src_factor;
-        self.dst_color_factor = dst_factor;
+    pub fn with_color_blend(&mut self, op: vk::BlendOp, src_factor: vk::BlendFactor, dst_factor: vk::BlendFactor) {
+        self.0.color_blend_op = op;
+        self.0.src_color_blend_factor = src_factor;
+        self.0.dst_color_blend_factor = dst_factor;
     }
-    pub fn set_alpha_blend(&mut self, op: vk::BlendOp, src_factor: vk::BlendFactor, dst_factor: vk::BlendFactor) {
-        self.alpha_op = op;
-        self.src_alpha_factor = src_factor;
-        self.dst_alpha_factor = dst_factor;
+    pub fn with_alpha_blend(&mut self, op: vk::BlendOp, src_factor: vk::BlendFactor, dst_factor: vk::BlendFactor) {
+        self.0.alpha_blend_op = op;
+        self.0.src_alpha_blend_factor = src_factor;
+        self.0.dst_alpha_blend_factor = dst_factor;
     }
-    // TODO: Add configuration for vk::ColorComponentFlag.
-    pub fn set_color_masks(&mut self, masks: vk::ColorComponentFlags) {
-        self.color_write_mask = masks;
+    /// Color write mask determine whether the final color values R, G, B and A are written to the framebuffer attachment.
+    pub fn with_color_masks(&mut self, masks: vk::ColorComponentFlags) {
+        self.0.color_write_mask = masks;
     }
 }
 
-impl Default for BlendAttachemnt {
+impl Default for BlendAttachment {
 
-    fn default() -> BlendAttachemnt {
+    fn default() -> BlendAttachment {
 
-        BlendAttachemnt {
-            enable: VK_FALSE,
-            src_color_factor : vk::BlendFactor::ONE,
-            dst_color_factor : vk::BlendFactor::ZERO,
-            color_op         : vk::BlendOp::ADD,
-            src_alpha_factor : vk::BlendFactor::ONE,
-            dst_alpha_factor : vk::BlendFactor::ZERO,
-            alpha_op         : vk::BlendOp::ADD,
-            color_write_mask :
-                vk::ColorComponentFlags::R |
-                vk::ColorComponentFlags::G |
-                vk::ColorComponentFlags::B |
-                vk::ColorComponentFlags::A,
-        }
+        let attachment = vk::PipelineColorBlendAttachmentState {
+            blend_enable: VK_FALSE,
+            src_color_blend_factor : vk::BlendFactor::ONE,
+            dst_color_blend_factor : vk::BlendFactor::ZERO,
+            color_blend_op         : vk::BlendOp::ADD,
+            src_alpha_blend_factor : vk::BlendFactor::ONE,
+            dst_alpha_blend_factor : vk::BlendFactor::ZERO,
+            alpha_blend_op         : vk::BlendOp::ADD,
+            color_write_mask       : vk::ColorComponentFlags::R
+                                   | vk::ColorComponentFlags::G
+                                   | vk::ColorComponentFlags::B
+                                   | vk::ColorComponentFlags::A
+        };
+        BlendAttachment(attachment)
     }
 }

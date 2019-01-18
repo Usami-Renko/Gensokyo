@@ -22,10 +22,13 @@ impl SyncKit {
     }
 
     pub fn fence(&self, is_sign: bool) -> GsResult<GsFence> {
-        GsFence::setup(&self.device, is_sign).map_err(GsError::from)
+        let fence = GsFence::setup(&self.device, is_sign)?;
+        Ok(fence)
     }
 
     pub fn semaphore(&self) -> GsResult<GsSemaphore> {
-        GsSemaphore::setup(&self.device).map_err(GsError::from)
+
+        let semaphore = GsSemaphore::setup(&self.device).map_err(GsError::from)?;
+        Ok(semaphore)
     }
 }

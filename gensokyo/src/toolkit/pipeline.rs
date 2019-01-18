@@ -1,5 +1,5 @@
 
-use crate::error::{ GsResult, GsError };
+use crate::error::GsResult;
 
 use gsvk::core::device::GsDevice;
 use gsvk::core::swapchain::GsChain;
@@ -33,7 +33,8 @@ impl PipelineKit {
 
     pub fn graphics_pipeline_builder(&self) -> GsResult<GraphicsPipelineBuilder> {
 
-        GraphicsPipelineBuilder::new(&self.device).map_err(GsError::from)
+        let builder = GraphicsPipelineBuilder::new(&self.device)?;
+        Ok(builder)
     }
 
     pub fn pipeline_config(&self, shaders: impl Into<Vec<GsShaderInfo>>, input: VertexInputDescription, render_pass: GsRenderPass) -> GraphicsPipelineConfig {

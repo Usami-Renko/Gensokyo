@@ -59,7 +59,7 @@ impl<'a> LogicalDeviceBuilder<'a> {
         self.queue_request.inspect_queue_availability(&self.physical)?;
         let queue_infos = self.queue_request.to_queue_infos();
 
-        let queue_create_infos: Vec<vk::DeviceQueueCreateInfo> = queue_infos.into_iter()
+        let queue_create_infos: Vec<vk::DeviceQueueCreateInfo> = queue_infos.iter()
             .map(|queue_info| {
                 vk::DeviceQueueCreateInfo {
                     s_type: vk::StructureType::DEVICE_QUEUE_CREATE_INFO,

@@ -6,8 +6,8 @@ use gs::prelude::*;
 use gsvk::prelude::common::*;
 use gsvk::prelude::buffer::*;
 use gsvk::prelude::pipeline::*;
-use gsvk::command::*;
-use gsvk::sync::*;
+use gsvk::prelude::command::*;
+use gsvk::prelude::sync::*;
 
 use gsma::{ define_input, offset_of, vk_format, vertex_rate, data_size };
 
@@ -56,7 +56,7 @@ struct DrawIndexProcedure {
 
 impl DrawIndexProcedure {
 
-    fn new(loader: AssetsLoader) -> Result<DrawIndexProcedure, ProcedureError> {
+    fn new(loader: AssetsLoader) -> GsResult<DrawIndexProcedure> {
 
         let vertex_data = VERTEX_DATA.to_vec();
         let index_data    = INDEX_DATA.to_vec();
@@ -88,7 +88,7 @@ impl DrawIndexProcedure {
         Ok(procecure)
     }
 
-    fn assets(kit: AllocatorKit, vertex_data: &Vec<Vertex>, index_data: &Vec<vkuint>) -> Result<(GsVertexBuffer, GsIndexBuffer, GsBufferRepository<Cached>), ProcedureError> {
+    fn assets(kit: AllocatorKit, vertex_data: &Vec<Vertex>, index_data: &Vec<vkuint>) -> GsResult<(GsVertexBuffer, GsIndexBuffer, GsBufferRepository<Cached>)> {
 
         // vertex & index buffer
         let mut buffer_allocator = kit.buffer(BufferStorageType::CACHED);
@@ -113,7 +113,7 @@ impl DrawIndexProcedure {
         Ok((vertex_buffer, index_buffer, buffer_storage))
     }
 
-    fn pipelines(kit: PipelineKit) -> Result<GsPipeline<Graphics>, ProcedureError> {
+    fn pipelines(kit: PipelineKit) -> GsResult<GsPipeline<Graphics>> {
 
         // shaders
         let vertex_shader = GsShaderInfo::from_source(
@@ -137,12 +137,12 @@ impl DrawIndexProcedure {
         let first_subpass = render_pass_builder.new_subpass();
 
         let color_attachment = kit.present_attachment();
-        let _attachment_index = render_pass_builder.add_attachemnt(color_attachment, first_subpass);
+        let _attachment_index = render_pass_builder.add_attachment(color_attachment, first_subpass);
 
         let dependency = kit.subpass_dependency(SubpassStage::External, SubpassStage::AtIndex(first_subpass))
             .stage(vk::PipelineStageFlags::COLOR_ATTACHMENT_OUTPUT, vk::PipelineStageFlags::COLOR_ATTACHMENT_OUTPUT)
             .access(vk::AccessFlags::empty(), vk::AccessFlags::COLOR_ATTACHMENT_READ | vk::AccessFlags::COLOR_ATTACHMENT_WRITE);
-        render_pass_builder.add_dependenty(dependency);
+        render_pass_builder.add_dependency(dependency);
 
         let render_pass = render_pass_builder.build()?;
 
@@ -158,7 +158,7 @@ impl DrawIndexProcedure {
         Ok(graphics_pipeline)
     }
 
-    fn sync_resources(kit: SyncKit, graphics_pipeline: &GsPipeline<Graphics>) -> Result<Vec<GsSemaphore>, ProcedureError> {
+    fn sync_resources(kit: SyncKit, graphics_pipeline: &GsPipeline<Graphics>) -> GsResult<Vec<GsSemaphore>> {
 
         // sync
         let mut present_availables = vec![];
@@ -170,7 +170,7 @@ impl DrawIndexProcedure {
         Ok(present_availables)
     }
 
-    fn commands(kit: CommandKit, graphics_pipeline: &GsPipeline<Graphics>, vertex_buffer: &GsVertexBuffer, index_buffer: &GsIndexBuffer, index_count: usize) -> Result<(GsCommandPool, Vec<GsCommandBuffer>), ProcedureError> {
+    fn commands(kit: CommandKit, graphics_pipeline: &GsPipeline<Graphics>, vertex_buffer: &GsVertexBuffer, index_buffer: &GsIndexBuffer, index_count: usize) -> GsResult<(GsCommandPool, Vec<GsCommandBuffer>)> {
 
         let command_pool = kit.pool(DeviceQueueIdentifier::Graphics)?;
         let mut command_buffers = vec![];
@@ -201,23 +201,21 @@ impl DrawIndexProcedure {
 
 impl GraphicsRoutine for DrawIndexProcedure {
 
-    fn draw(&mut self, device: &GsDevice, device_available: &GsFence, image_available: &GsSemaphore, image_index: usize, _: f32) -> Result<&GsSemaphore, ProcedureError> {
+    fn draw(&mut self, device: &GsDevice, device_available: &GsFence, image_available: &GsSemaphore, image_index: usize, _: f32) -> GsResult<&GsSemaphore> {
 
-        let submit_infos = [
-            QueueSubmitBundle {
-                wait_semaphores: &[image_available],
-                sign_semaphores: &[&self.present_availables[image_index]],
-                wait_stages    : &[vk::PipelineStageFlags::COLOR_ATTACHMENT_OUTPUT],
-                commands       : &[&self.command_buffers[image_index]],
-            },
-        ];
+        let submit_info = QueueSubmitBundle {
+            wait_semaphores: &[image_available],
+            sign_semaphores: &[&self.present_availables[image_index]],
+            wait_stages    : &[vk::PipelineStageFlags::COLOR_ATTACHMENT_OUTPUT],
+            commands       : &[&self.command_buffers[image_index]],
+        };
 
-        device.submit(&submit_infos, Some(device_available), DeviceQueueIdentifier::Graphics)?;
+        device.submit_single(&submit_info, Some(device_available), DeviceQueueIdentifier::Graphics)?;
 
         return Ok(&self.present_availables[image_index])
     }
 
-    fn clean_resources(&mut self, _: &GsDevice) -> Result<(), ProcedureError> {
+    fn clean_resources(&mut self, _: &GsDevice) -> GsResult<()> {
 
         self.present_availables.iter()
             .for_each(|semaphore| semaphore.destroy());
@@ -229,7 +227,7 @@ impl GraphicsRoutine for DrawIndexProcedure {
         Ok(())
     }
 
-    fn reload_res(&mut self, loader: AssetsLoader) -> Result<(), ProcedureError> {
+    fn reload_res(&mut self, loader: AssetsLoader) -> GsResult<()> {
 
         self.graphics_pipeline = loader.pipelines(|kit| {
             DrawIndexProcedure::pipelines(kit)

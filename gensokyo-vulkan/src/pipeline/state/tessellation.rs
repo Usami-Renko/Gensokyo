@@ -16,12 +16,12 @@ pub struct GsTessellationState {
 impl GsTessellationState {
 
     pub fn setup(points_count: vkuint) -> GsTessellationState {
-        GsTessellationState {
-            points_count,
-        }
+
+        GsTessellationState { points_count }
     }
 
     pub(crate) fn info(&self) -> vk::PipelineTessellationStateCreateInfo {
+
         vk::PipelineTessellationStateCreateInfo {
             s_type : vk::StructureType::PIPELINE_TESSELLATION_STATE_CREATE_INFO,
             p_next : ptr::null(),

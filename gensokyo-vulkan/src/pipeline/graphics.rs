@@ -109,6 +109,7 @@ impl GraphicsPipelineBuilder {
         }
 
         let mut layouts = vec![];
+        let mut _shader_infos = vec![];
         let mut infos = vec![];
 
         for config in self.configs.iter() {
@@ -150,6 +151,8 @@ impl GraphicsPipelineBuilder {
             };
 
             infos.push(graphics_pipeline_create_info);
+            // Notice: keep `shader_create_infos` outlive for loop, or the pointer will be invalid.
+            _shader_infos.push(shader_create_infos);
         }
 
         let handles = unsafe {
@@ -170,11 +173,11 @@ impl GraphicsPipelineBuilder {
 
     fn destroy_shader_modules(&self) {
 
-        self.configs.iter().for_each(|config| {
-            config.shader_modules.iter().for_each(|module| {
+        for config in self.configs.iter() {
+            for module in config.shader_modules.iter() {
                 module.destroy(&self.device);
-            });
-        });
+            }
+        }
     }
 }
 

@@ -1,7 +1,7 @@
 
 use ash::vk;
 
-use crate::error::{ GsResult, GsError };
+use crate::error::GsResult;
 
 use gsvk::core::device::GsDevice;
 use gsvk::core::device::DeviceQueueIdentifier;
@@ -30,8 +30,8 @@ impl CommandKit {
     // FIXME: Currently not support any command pool flag.
     pub fn pool(&self, queue: DeviceQueueIdentifier) -> GsResult<GsCommandPool> {
 
-        GsCommandPool::setup(&self.device, queue, vk::CommandPoolCreateFlags::empty())
-            .map_err(GsError::from)
+        let pool = GsCommandPool::setup(&self.device, queue, vk::CommandPoolCreateFlags::empty())?;
+        Ok(pool)
     }
 
     pub fn copy_recorder(&self, command: GsCommandBuffer) -> GsCmdRecorder<r#Copy> {

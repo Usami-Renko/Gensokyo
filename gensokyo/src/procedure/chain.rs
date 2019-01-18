@@ -10,7 +10,7 @@ use gsvk::sync::{ GsSemaphore, GsFence };
 use gsvk::types::vkuint;
 
 use crate::utils::time::TimePeriod;
-use crate::error::{ GsResult, GsError };
+use crate::error::GsResult;
 
 pub(super) struct ChainResource {
 
@@ -78,7 +78,9 @@ impl ChainResource {
         self.swapchain.present(device,
             &[present_available], image_index,
             DeviceQueueIdentifier::Graphics
-        ).map_err(GsError::from)
+        )?;
+
+        Ok(())
     }
 
     pub fn next_frame(&mut self) {

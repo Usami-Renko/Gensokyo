@@ -1,5 +1,4 @@
 
-use winit;
 use ash::vk;
 
 use crate::core::instance::GsInstance;

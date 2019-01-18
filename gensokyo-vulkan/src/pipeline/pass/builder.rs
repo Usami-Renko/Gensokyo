@@ -104,11 +104,11 @@ impl RenderPassBuilder {
         let clear_values = self.attachments.iter()
             .map(|a| a.clear_value).collect();
         let attachments: Vec<vk::AttachmentDescription> = self.attachments.into_iter()
-            .map(|a| a.build()).collect();
-        let subpasses: Vec<vk::SubpassDescription> = self.subpasses.into_iter()
+            .map(|a| a.take()).collect();
+        let subpasses: Vec<vk::SubpassDescription> = self.subpasses.iter()
             .map(|r| r.build()).collect();
         let dependencies: Vec<vk::SubpassDependency> = self.dependencies.into_iter()
-            .map(|d| d.build()).collect();
+            .map(|d| d.take()).collect();
 
         let create_info = vk::RenderPassCreateInfo {
             s_type: vk::StructureType::RENDER_PASS_CREATE_INFO,

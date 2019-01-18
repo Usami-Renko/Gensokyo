@@ -123,7 +123,7 @@ impl RenderAttachment {
         self
     }
 
-    pub(crate) fn build(self) -> vk::AttachmentDescription {
+    pub(crate) fn take(self) -> vk::AttachmentDescription {
         self.attachment
     }
 }

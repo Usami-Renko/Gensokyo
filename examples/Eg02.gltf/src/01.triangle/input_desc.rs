@@ -3,7 +3,7 @@ use ash::vk;
 use gsvk::pipeline::shader::*;
 use gsma::{ offset_of, vertex_rate, vk_format };
 
-use example02::ShaderInputDefination;
+use example02::ShaderInputDefinition;
 use nalgebra::{ Point3, Vector3 };
 
 //define_input! {
@@ -20,7 +20,7 @@ pub struct Vertex {
     normal: Vector3<f32>,
 }
 
-impl ShaderInputDefination for Vertex {
+impl ShaderInputDefinition for Vertex {
 
     fn desc() -> VertexInputDescription {
         use std::mem;
