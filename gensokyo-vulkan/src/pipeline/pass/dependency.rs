@@ -58,7 +58,8 @@ impl RenderDependency {
 }
 
 pub enum SubpassStage {
-    External,
+    BeginExternal,
+    EndExternal,
     AtIndex(vkuint),
 }
 
@@ -66,8 +67,9 @@ impl SubpassStage {
 
     fn into_index(self) -> vkuint {
         match self {
-            | SubpassStage::External => vk::SUBPASS_EXTERNAL,
+            | SubpassStage::BeginExternal  => vk::SUBPASS_EXTERNAL,
             | SubpassStage::AtIndex(index) => index,
+            | SubpassStage::EndExternal    => vk::SUBPASS_EXTERNAL,
         }
     }
 }

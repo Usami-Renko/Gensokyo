@@ -1,5 +1,5 @@
 
-use crate::error::{ GsResult, GsError };
+use crate::error::GsResult;
 
 use gsvk::core::device::GsDevice;
 
@@ -28,7 +28,29 @@ impl SyncKit {
 
     pub fn semaphore(&self) -> GsResult<GsSemaphore> {
 
-        let semaphore = GsSemaphore::setup(&self.device).map_err(GsError::from)?;
+        let semaphore = GsSemaphore::setup(&self.device)?;
         Ok(semaphore)
+    }
+
+    pub fn multi_fences(&self, is_sign: bool, count: usize) -> GsResult<Vec<GsFence>> {
+
+        let mut fences = Vec::with_capacity(count);
+        for _ in 0..count {
+            let fence = GsFence::setup(&self.device, is_sign)?;
+            fences.push(fence);
+        }
+
+        Ok(fences)
+    }
+
+    pub fn multi_semaphores(&self, count: usize) -> GsResult<Vec<GsSemaphore>> {
+
+        let mut semaphores = Vec::with_capacity(count);
+        for _ in 0..count {
+            let semaphore = GsSemaphore::setup(&self.device)?;
+            semaphores.push(semaphore);
+        }
+
+        Ok(semaphores)
     }
 }

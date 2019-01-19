@@ -83,7 +83,7 @@ impl DescriptorBindingInfo for DescriptorBufferBindingInfo {
             // TODO: Currently dst_array_element filed is not configurable
             dst_array_element  : 0,
             descriptor_count   : buffer_infos.len() as _,
-            descriptor_type    : self.content.descriptor_type.to_raw(),
+            descriptor_type    : self.content.descriptor_type.into(),
             p_image_info       : ptr::null(),
             p_buffer_info      : buffer_infos.as_ptr(),
             p_texel_buffer_view: ptr::null(),
@@ -138,7 +138,7 @@ impl DescriptorBindingInfo for DescriptorImageBindingInfo {
             // TODO: Currently dst_array_element filed is not configurable
             dst_array_element  : 0,
             descriptor_count   : self.content.count,
-            descriptor_type    : self.content.descriptor_type.to_raw(),
+            descriptor_type    : self.content.descriptor_type.into(),
             p_image_info       : image_infos.as_ptr(),
             p_buffer_info      : ptr::null(),
             p_texel_buffer_view: ptr::null(),

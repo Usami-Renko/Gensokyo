@@ -214,10 +214,17 @@ impl<T: ShaderInputDefinition> GltfModelViewer<T> {
 
         render_pass_builder.set_depth_attachment(depth_image);
 
-        let dependency = kit.subpass_dependency(SubpassStage::External, SubpassStage::AtIndex(first_subpass))
-            .stage(vk::PipelineStageFlags::COLOR_ATTACHMENT_OUTPUT, vk::PipelineStageFlags::COLOR_ATTACHMENT_OUTPUT)
-            .access(vk::AccessFlags::empty(), vk::AccessFlags::COLOR_ATTACHMENT_READ | vk::AccessFlags::COLOR_ATTACHMENT_WRITE);
-        render_pass_builder.add_dependency(dependency);
+        let dependency0 = kit.subpass_dependency(SubpassStage::BeginExternal, SubpassStage::AtIndex(first_subpass))
+            .stage(vk::PipelineStageFlags::BOTTOM_OF_PIPE, vk::PipelineStageFlags::COLOR_ATTACHMENT_OUTPUT)
+            .access(vk::AccessFlags::MEMORY_READ, vk::AccessFlags::COLOR_ATTACHMENT_READ | vk::AccessFlags::COLOR_ATTACHMENT_WRITE)
+            .with_flags(vk::DependencyFlags::BY_REGION);
+        render_pass_builder.add_dependency(dependency0);
+
+        let dependency1 = kit.subpass_dependency(SubpassStage::AtIndex(first_subpass), SubpassStage::EndExternal)
+            .stage(vk::PipelineStageFlags::COLOR_ATTACHMENT_OUTPUT, vk::PipelineStageFlags::BOTTOM_OF_PIPE)
+            .access(vk::AccessFlags::COLOR_ATTACHMENT_READ | vk::AccessFlags::COLOR_ATTACHMENT_WRITE, vk::AccessFlags::MEMORY_READ)
+            .with_flags(vk::DependencyFlags::BY_REGION);
+        render_pass_builder.add_dependency(dependency1);
 
         let render_pass = render_pass_builder.build()?;
         let depth_stencil = GsDepthStencilState::setup(GsDepthStencilPrefab::EnableDepth);
@@ -240,13 +247,7 @@ impl<T: ShaderInputDefinition> GltfModelViewer<T> {
     fn sync_resources(kit: SyncKit, graphics_pipeline: &GsPipeline<Graphics>) -> GsResult<Vec<GsSemaphore>> {
 
         // sync
-        let mut present_availables = vec![];
-        for _ in 0..graphics_pipeline.frame_count() {
-            let present_available = kit.semaphore()?;
-            present_availables.push(present_available);
-        }
-
-        Ok(present_availables)
+        kit.multi_semaphores(graphics_pipeline.frame_count())
     }
 
     fn commands(kit: CommandKit, graphics_pipeline: &GsPipeline<Graphics>, ubo_set: &DescriptorSet, model: &GsglTFModel) -> GsResult<(GsCommandPool, Vec<GsCommandBuffer>)> {

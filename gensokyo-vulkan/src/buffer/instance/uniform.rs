@@ -61,7 +61,7 @@ impl GsBufUniformInfo {
             binding: DescriptorBindingContent {
                 binding,
                 count: descriptor_count,
-                descriptor_type: GsDescriptorType::Buffer(BufferDescriptorType::UniformBufferDynamic),
+                descriptor_type: GsDescriptorType::Buffer(BufferDescriptorType::DynamicUniformBuffer),
             },
             element_size: slice_size * (slice_count as vkbytes),
             alignment: 0,

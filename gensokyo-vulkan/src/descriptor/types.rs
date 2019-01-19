@@ -8,17 +8,17 @@ pub enum GsDescriptorType {
     Buffer(BufferDescriptorType),
 }
 
-impl GsDescriptorType {
+impl From<GsDescriptorType> for vk::DescriptorType {
 
-    pub(crate) fn to_raw(&self) -> vk::DescriptorType {
-        match self {
-            | GsDescriptorType::Image(i)  => i.to_raw(),
-            | GsDescriptorType::Buffer(b) => b.to_raw(),
+    fn from(descriptor: GsDescriptorType) -> vk::DescriptorType {
+
+        match descriptor {
+            | GsDescriptorType::Image(i)  => i.into(),
+            | GsDescriptorType::Buffer(b) => b.into(),
         }
     }
 }
 
-// TODO: Map to raw value
 #[derive(Debug, Clone, Copy, Eq, PartialEq, Hash)]
 pub enum ImageDescriptorType {
 
@@ -32,10 +32,11 @@ pub enum ImageDescriptorType {
     StorageImage,
 }
 
-impl ImageDescriptorType {
+impl From<ImageDescriptorType> for vk::DescriptorType {
 
-    fn to_raw(&self) -> vk::DescriptorType {
-        match self {
+    fn from(descriptor: ImageDescriptorType) -> vk::DescriptorType {
+
+        match descriptor {
             | ImageDescriptorType::Sampler              => vk::DescriptorType::SAMPLER,
             | ImageDescriptorType::CombinedImageSampler => vk::DescriptorType::COMBINED_IMAGE_SAMPLER,
             | ImageDescriptorType::SampledImage         => vk::DescriptorType::SAMPLED_IMAGE,
@@ -44,36 +45,36 @@ impl ImageDescriptorType {
     }
 }
 
-// TODO: Map to raw value
 #[derive(Debug, Clone, Copy, Eq, PartialEq, Hash)]
 pub enum BufferDescriptorType {
 
-    /// UniformTexelBuffer specifies a uniform texel buffer descriptor.
-    UniformTexelBuffer,
-    /// StorageTexelBuffer specifies a storage texel buffer descriptor.
-    StorageTexelBuffer,
-    /// UniformBuffer specifies a uniform buffer descriptor.
+    /// `TexelUniformBuffer` specifies a uniform texel buffer descriptor.
+    TexelUniformBuffer,
+    /// `TexelStorageBuffer` specifies a storage texel buffer descriptor.
+    TexelStorageBuffer,
+    /// `UniformBuffer` specifies a uniform buffer descriptor.
     UniformBuffer,
-    /// StorageBuffer specifies a storage buffer descriptor.
+    /// `StorageBuffer` specifies a storage buffer descriptor.
     StorageBuffer,
-    /// UniformBufferDynamic specifies a dynamic uniform buffer descriptor.
-    UniformBufferDynamic,
-    /// StorageBufferDynamic specifies a dynamic storage buffer descriptor.
-    StorageBufferDynamic,
-    /// InputAttachment specifies a input attachment descriptor.
+    /// `DynamicUniformBuffer` specifies a dynamic uniform buffer descriptor.
+    DynamicUniformBuffer,
+    /// `DynamicStorageBuffer` specifies a dynamic storage buffer descriptor.
+    DynamicStorageBuffer,
+    /// `InputAttachment` specifies a input attachment descriptor.
     InputAttachment,
 }
 
-impl BufferDescriptorType {
+impl From<BufferDescriptorType> for vk::DescriptorType {
 
-    fn to_raw(&self) -> vk::DescriptorType {
-        match self {
-            | BufferDescriptorType::UniformTexelBuffer   => vk::DescriptorType::UNIFORM_TEXEL_BUFFER,
-            | BufferDescriptorType::StorageTexelBuffer   => vk::DescriptorType::STORAGE_TEXEL_BUFFER,
+    fn from(descriptor: BufferDescriptorType) -> vk::DescriptorType {
+
+        match descriptor {
+            | BufferDescriptorType::TexelUniformBuffer => vk::DescriptorType::UNIFORM_TEXEL_BUFFER,
+            | BufferDescriptorType::TexelStorageBuffer => vk::DescriptorType::STORAGE_TEXEL_BUFFER,
             | BufferDescriptorType::UniformBuffer        => vk::DescriptorType::UNIFORM_BUFFER,
             | BufferDescriptorType::StorageBuffer        => vk::DescriptorType::STORAGE_BUFFER,
-            | BufferDescriptorType::UniformBufferDynamic => vk::DescriptorType::UNIFORM_BUFFER_DYNAMIC,
-            | BufferDescriptorType::StorageBufferDynamic => vk::DescriptorType::STORAGE_BUFFER_DYNAMIC,
+            | BufferDescriptorType::DynamicUniformBuffer => vk::DescriptorType::UNIFORM_BUFFER_DYNAMIC,
+            | BufferDescriptorType::DynamicStorageBuffer => vk::DescriptorType::STORAGE_BUFFER_DYNAMIC,
             | BufferDescriptorType::InputAttachment      => vk::DescriptorType::INPUT_ATTACHMENT,
         }
     }

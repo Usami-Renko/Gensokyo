@@ -9,3 +9,5 @@ script:
 - cargo build --manifest-path ./gensokyo-macros/Cargo.toml
 
 - cargo build --manifest-path ./examples/Eg01.basic/Cargo.toml
+- cargo build --manifest-path ./examples/Eg02.gltf/Cargo.toml
+- cargo build --manifest-path ./examples/vk-examples/Cargo.toml

@@ -42,7 +42,7 @@ impl DescriptorPoolInfo {
     pub fn add_pool_size(&mut self, desc_type: GsDescriptorType, count: vkuint) {
 
         self.pool_sizes.push(vk::DescriptorPoolSize {
-            ty: desc_type.to_raw(),
+            ty: desc_type.into(),
             descriptor_count: count,
         });
     }

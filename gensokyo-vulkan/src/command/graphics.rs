@@ -88,6 +88,7 @@ pub trait GsCmdGraphicsApi {
 
     fn bind_pipeline(&self) -> &Self;
 
+    /// `first_binding` is correspond to `vk::VertexInputBindingDescription.binding` value.
     fn bind_vertex_buffers(&self, first_binding: vkuint, buffers: &[&GsVertexBuffer]) -> &Self;
 
     fn bind_index_buffer(&self, buffer: &GsIndexBuffer, offset: vkbytes) -> &Self;
