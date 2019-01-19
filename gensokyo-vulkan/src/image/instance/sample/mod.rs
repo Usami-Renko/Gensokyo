@@ -1,6 +1,6 @@
 
-pub use self::image::GsSampleImage;
-pub use self::info::SampleImageInfo;
+pub use self::image::{ GsSampleImage, ISampleImg };
+pub use self::info::GsSampleImgInfo;
 pub use self::barrier::SampleImageBarrierBundle;
 
 mod image;

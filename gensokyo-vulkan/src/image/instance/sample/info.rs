@@ -5,34 +5,33 @@ use crate::core::device::GsDevice;
 
 use crate::image::target::{ GsImage, ImageDescInfo, ImagePropertyInfo, ImageSpecificInfo };
 use crate::image::view::ImageViewDescInfo;
-use crate::image::sampler::{ GsSampler, SamplerDescInfo };
+use crate::image::sampler::SamplerDescInfo;
 use crate::image::enums::{ ImageInstanceType, ImagePipelineStage };
 use crate::image::storage::ImageStorageInfo;
-use crate::image::instance::traits::{ ImageInstanceInfoAbs, GsImageDescAbs ,GsImageViewDescAbs };
-use crate::image::allocator::ImageAllocateInfo;
+use crate::image::instance::traits::{ GsImageDescAbs, GsImageViewDescAbs, ImageInfoAbstract };
+use crate::image::instance::sample::ISampleImg;
+use crate::image::allocator::ImageAllotInfo;
 
 use crate::descriptor::{ DescriptorBindingContent, GsDescriptorType, ImageDescriptorType };
 
 use crate::error::VkResult;
 use crate::types::vkuint;
 
-pub struct SampleImageInfo {
+pub struct GsSampleImgInfo {
 
     pipeline_stage: ImagePipelineStage,
-
     image_desc  : ImageDescInfo,
     view_desc   : ImageViewDescInfo,
+
     sampler_desc: SamplerDescInfo,
-
-    allocate_index: Option<usize>,
-    storage: Option<ImageStorageInfo>,
-
     binding: DescriptorBindingContent,
+
+    storage: ImageStorageInfo,
 }
 
-impl SampleImageInfo {
+impl GsSampleImgInfo {
 
-    pub fn new(binding: vkuint, count: vkuint, storage: ImageStorageInfo, pipeline_stage: ImagePipelineStage) -> SampleImageInfo {
+    pub fn new(binding: vkuint, count: vkuint, storage: ImageStorageInfo, pipeline_stage: ImagePipelineStage) -> GsSampleImgInfo {
 
         let mut property = ImagePropertyInfo::default();
         property.image_type = vk::ImageType::TYPE_2D;
@@ -43,56 +42,37 @@ impl SampleImageInfo {
         specific.format    = storage.format;
         specific.dimension = storage.dimension;
 
-        let binding = DescriptorBindingContent {
-            binding, count,
-            descriptor_type: GsDescriptorType::Image(ImageDescriptorType::CombinedImageSampler)
-        };
-
-        SampleImageInfo {
+        GsSampleImgInfo {
+            pipeline_stage, storage,
             image_desc: ImageDescInfo { property, specific },
-            view_desc: ImageViewDescInfo::new(vk::ImageViewType::TYPE_2D, vk::ImageAspectFlags::COLOR),
+            view_desc : ImageViewDescInfo::new(vk::ImageViewType::TYPE_2D, vk::ImageAspectFlags::COLOR),
             sampler_desc: SamplerDescInfo::default(),
-            storage: Some(storage),
-            pipeline_stage, allocate_index: None, binding,
+            binding: DescriptorBindingContent {
+                binding, count,
+                descriptor_type: GsDescriptorType::Image(ImageDescriptorType::CombinedImageSampler)
+            },
         }
-    }
-
-    pub(crate) fn gen_sample(&self, device: &GsDevice) -> VkResult<GsSampler> {
-        self.sampler_desc.build(device)
-    }
-
-    pub(crate) fn take_storage(&mut self) -> Option<ImageStorageInfo> {
-        self.storage.take()
-    }
-
-    pub fn binding(&self) -> DescriptorBindingContent {
-        self.binding.clone()
     }
 }
 
-impl ImageInstanceInfoAbs for SampleImageInfo {
+impl ImageInfoAbstract<ISampleImg> for GsSampleImgInfo {
 
-    fn build_image(&self, device: &GsDevice) -> VkResult<GsImage> {
+    fn build(&self, device: &GsDevice) -> VkResult<GsImage> {
         self.image_desc.build(device)
     }
 
-    fn allocate_index(&self) -> Option<usize> {
-        self.allocate_index
-    }
+    fn refactor(self, device: &GsDevice, image: GsImage) -> VkResult<(ImageAllotInfo, ISampleImg)> {
 
-    fn set_allocate_index(&mut self, value: usize) {
-        self.allocate_index = Some(value);
-    }
+        let sampler = self.sampler_desc.build(device)?;
+        let isi = ISampleImg::new(sampler, self.binding);
 
-    fn allocate_info(&self, image: GsImage, storage: ImageStorageInfo) -> ImageAllocateInfo {
-
-        ImageAllocateInfo::new(
+        let allot = ImageAllotInfo::new(
             ImageInstanceType::SampleImage { stage: self.pipeline_stage },
-            storage, image,
-            self.image_desc.clone(),
-            self.view_desc.clone()
-        )
+            self.storage, image, self.image_desc, self.view_desc
+        );
+
+        Ok((allot, isi))
     }
 }
 
-impl_image_desc_info_abs!(SampleImageInfo);
+impl_image_desc_info_abs!(GsSampleImgInfo);

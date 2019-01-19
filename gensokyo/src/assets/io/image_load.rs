@@ -1,11 +1,10 @@
 
-use ash::vk;
-
 use image;
 use image::GenericImageView;
 
 use gsvk::image::storage::{ ImageStorageInfo, ImageSource, ImageData };
 use gsvk::types::{ vkbytes, vkDim3D };
+use gsvk::types::format::GsFormat;
 
 use crate::assets::error::AssetsError;
 use crate::error::{ GsResult, GsError };
@@ -79,5 +78,5 @@ pub struct ImageLoadConfig {
     /// force_rgba define whether to load the image from file with rgba channel.
     pub force_rgba: bool,
     // TODO: Currently only support R8g8b8a8Unorm format.
-    pub img_format: vk::Format,
+    pub img_format: GsFormat,
 }

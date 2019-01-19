@@ -10,6 +10,7 @@ use gsvk::prelude::descriptor::*;
 use gsvk::prelude::pipeline::*;
 use gsvk::prelude::command::*;
 use gsvk::prelude::sync::*;
+use gsvk::prelude::api::*;
 
 use gsma::data_size;
 
@@ -38,7 +39,7 @@ pub struct DepthProcedure {
     desc_storage: GsDescriptorRepository,
     ubo_set     : DescriptorSet,
 
-    depth_attachment: GsDepthStencilAttachment,
+    depth_attachment: GsDSAttachment,
     #[allow(dead_code)]
     image_storage   : GsImageRepository<Device>,
 
@@ -137,9 +138,9 @@ impl DepthProcedure {
 
         let buffer_distributor = buffer_allocator.allocate()?;
 
-        let vertex_buffer = buffer_distributor.acquire_vertex(vertex_index);
-        let index_buffer = buffer_distributor.acquire_index(index_index);
-        let ubo_buffer = buffer_distributor.acquire_uniform(ubo_index);
+        let vertex_buffer = buffer_distributor.acquire(vertex_index);
+        let index_buffer = buffer_distributor.acquire(index_index);
+        let ubo_buffer = buffer_distributor.acquire(ubo_index);
 
         let mut buffer_storage = buffer_distributor.into_repository();
         buffer_storage.data_uploader()?
@@ -151,16 +152,16 @@ impl DepthProcedure {
         Ok((vertex_buffer, index_buffer, ubo_buffer, buffer_storage))
     }
 
-    fn image(kit: AllocatorKit) -> GsResult<(GsDepthStencilAttachment, GsImageRepository<Device>)> {
+    fn image(kit: AllocatorKit) -> GsResult<(GsDSAttachment, GsImageRepository<Device>)> {
 
         // depth attachment image
         let mut image_allocator = kit.image(ImageStorageType::DEVICE);
 
-        let mut depth_attachment_info = DepthStencilAttachmentInfo::new(kit.swapchain_dimension(), DepthStencilImageFormat::Depth32Bit);
-        image_allocator.append_depth_stencil_image(&mut depth_attachment_info)?;
+        let depth_attachment_info = GsDSAttachmentInfo::new(kit.swapchain_dimension(), DepthStencilImageFormat::Depth32Bit);
+        let image_index = image_allocator.assign(depth_attachment_info)?;
 
         let image_distributor = image_allocator.allocate()?;
-        let depth_attachment = image_distributor.acquire_depth_stencil_image(depth_attachment_info)?;
+        let depth_attachment = image_distributor.acquire(image_index);
         let image_storage = image_distributor.into_repository();
 
         Ok((depth_attachment, image_storage))
@@ -173,17 +174,17 @@ impl DepthProcedure {
         descriptor_set_config.add_buffer_binding(ubo_buffer, GsPipelineStage::VERTEX);
 
         let mut descriptor_allocator = kit.descriptor(vk::DescriptorPoolCreateFlags::empty());
-        let desc_index = descriptor_allocator.append_set(descriptor_set_config);
+        let desc_index = descriptor_allocator.assign(descriptor_set_config);
 
-        let mut descriptor_distributor = descriptor_allocator.allocate()?;
-        let ubo_set = descriptor_distributor.acquire_set(desc_index);
+        let descriptor_distributor = descriptor_allocator.allocate()?;
+        let ubo_set = descriptor_distributor.acquire(desc_index);
 
         let desc_storage = descriptor_distributor.into_repository();
 
         Ok((ubo_set, desc_storage))
     }
 
-    fn pipelines(kit: PipelineKit, ubo_set: &DescriptorSet, depth_image: &GsDepthStencilAttachment) -> GsResult<GsPipeline<Graphics>> {
+    fn pipelines(kit: PipelineKit, ubo_set: &DescriptorSet, depth_image: &GsDSAttachment) -> GsResult<GsPipeline<Graphics>> {
 
         // shaders
         let vertex_shader = GsShaderInfo::from_source(

@@ -5,19 +5,16 @@ use crate::core::device::GsDevice;
 use crate::core::physical::GsPhyDevice;
 
 use crate::image::target::GsImage;
-use crate::image::storage::ImageStorageInfo;
-use crate::image::allocator::ImageAllocateInfo;
+use crate::image::allocator::ImageAllotInfo;
 use crate::memory::transfer::DataCopyer;
 
 use crate::error::VkResult;
 use crate::types::vkuint;
 
-pub trait ImageInstanceInfoAbs: Sized {
+pub trait ImageInfoAbstract<R>: Sized {
 
-    fn build_image(&self, device: &GsDevice) -> VkResult<GsImage>;
-    fn allocate_index(&self) -> Option<usize>;
-    fn set_allocate_index(&mut self, value: usize);
-    fn allocate_info(&self, image: GsImage, storage: ImageStorageInfo) -> ImageAllocateInfo;
+    fn build(&self, device: &GsDevice) -> VkResult<GsImage>;
+    fn refactor(self, device: &GsDevice, image: GsImage) -> VkResult<(ImageAllotInfo, R)>;
 }
 
 pub trait GsImageDescAbs: Sized {
@@ -49,5 +46,5 @@ pub trait GsImageViewDescAbs: Sized {
 /// Image Barrier Bundle Abstract.
 pub trait ImageBarrierBundleAbs {
 
-    fn make_barrier_transform(&mut self, physical: &GsPhyDevice, device: &GsDevice, copyer: &DataCopyer, infos: &mut Vec<ImageAllocateInfo>) -> VkResult<()>;
+    fn make_barrier_transform(&mut self, physical: &GsPhyDevice, device: &GsDevice, copyer: &DataCopyer, infos: &mut Vec<ImageAllotInfo>) -> VkResult<()>;
 }

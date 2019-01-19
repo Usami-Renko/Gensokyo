@@ -11,7 +11,7 @@ use crate::pipeline::pass::subpass::{ RenderSubpass, AttachmentType };
 use crate::pipeline::pass::dependency::RenderDependency;
 use crate::pipeline::pass::framebuffer::FramebufferBuilder;
 
-use crate::image::instance::depth::GsDepthStencilAttachment;
+use crate::image::instance::depth::GsDSAttachment;
 
 use crate::error::{ VkResult, VkError };
 use crate::types::vkuint;
@@ -91,8 +91,8 @@ impl RenderPassBuilder {
         self.subpasses[subpass_index].add_preserve(attachment_index as vkuint);
     }
 
-    pub fn set_depth_attachment(&mut self, image: &GsDepthStencilAttachment) {
-        self.depth = Some(image.entity.view)
+    pub fn set_depth_attachment(&mut self, image: &GsDSAttachment) {
+        self.depth = Some(image.view())
     }
 
     pub fn add_dependency(&mut self, dependency: RenderDependency) {

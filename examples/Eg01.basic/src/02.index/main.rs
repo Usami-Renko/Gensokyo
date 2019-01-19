@@ -8,6 +8,7 @@ use gsvk::prelude::buffer::*;
 use gsvk::prelude::pipeline::*;
 use gsvk::prelude::command::*;
 use gsvk::prelude::sync::*;
+use gsvk::prelude::api::*;
 
 use gsma::{ define_input, offset_of, vk_format, vertex_rate, data_size };
 
@@ -100,8 +101,8 @@ impl DrawIndexProcedure {
         let index_index = buffer_allocator.assign(index_info)?;
 
         let buffer_distributor = buffer_allocator.allocate()?;
-        let vertex_buffer = buffer_distributor.acquire_vertex(vertex_index);
-        let index_buffer = buffer_distributor.acquire_index(index_index);
+        let vertex_buffer = buffer_distributor.acquire(vertex_index);
+        let index_buffer = buffer_distributor.acquire(index_index);
 
         let mut buffer_storage = buffer_distributor.into_repository();
 

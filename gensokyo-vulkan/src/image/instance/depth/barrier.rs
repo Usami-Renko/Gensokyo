@@ -5,7 +5,7 @@ use crate::core::physical::GsPhyDevice;
 use crate::core::device::GsDevice;
 
 use crate::image::barrier::GsImageBarrier;
-use crate::image::allocator::ImageAllocateInfo;
+use crate::image::allocator::ImageAllotInfo;
 use crate::image::instance::traits::ImageBarrierBundleAbs;
 
 use crate::memory::transfer::DataCopyer;
@@ -13,14 +13,14 @@ use crate::command::GsCmdCopyApi;
 use crate::error::VkResult;
 
 //  Depth Stencil Image Barrier Bundle
-pub struct DepSteImageBarrierBundle {
+pub struct DSImageBarrierBundle {
 
     info_indices: Vec<usize>,
 }
 
-impl ImageBarrierBundleAbs for DepSteImageBarrierBundle {
+impl ImageBarrierBundleAbs for DSImageBarrierBundle {
 
-    fn make_barrier_transform(&mut self, _physical: &GsPhyDevice, _device: &GsDevice, copyer: &DataCopyer, infos: &mut Vec<ImageAllocateInfo>) -> VkResult<()> {
+    fn make_barrier_transform(&mut self, _physical: &GsPhyDevice, _device: &GsDevice, copyer: &DataCopyer, infos: &mut Vec<ImageAllotInfo>) -> VkResult<()> {
 
         let final_barriers = self.info_indices.iter()
             .map(|&index| self.final_barrier(&mut infos[index])).collect();
@@ -36,15 +36,15 @@ impl ImageBarrierBundleAbs for DepSteImageBarrierBundle {
     }
 }
 
-impl DepSteImageBarrierBundle {
+impl DSImageBarrierBundle {
 
-    pub fn new(indices: Vec<usize>) -> DepSteImageBarrierBundle {
-        DepSteImageBarrierBundle {
+    pub fn new(indices: Vec<usize>) -> DSImageBarrierBundle {
+        DSImageBarrierBundle {
             info_indices: indices,
         }
     }
 
-    fn final_barrier(&self, info: &mut ImageAllocateInfo) -> GsImageBarrier {
+    fn final_barrier(&self, info: &mut ImageAllotInfo) -> GsImageBarrier {
 
         info.final_layout = vk::ImageLayout::DEPTH_STENCIL_ATTACHMENT_OPTIMAL;
 

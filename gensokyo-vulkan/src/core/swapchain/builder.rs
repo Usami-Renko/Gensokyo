@@ -61,8 +61,8 @@ impl<'s> SwapchainBuilder<'s> {
             flags                    : vk::SwapchainCreateFlagsKHR::empty(),
             surface                  : self.surface.handle,
             min_image_count          : self.image_count,
-            image_format             : prefer_format.format,
-            image_color_space        : prefer_format.color_space,
+            image_format             : prefer_format.surface.format,
+            image_color_space        : prefer_format.surface.color_space,
             image_extent             : prefer_extent,
             // the number of views in a multiview/stereo surface.
             // this value must be greater than 0.
@@ -108,11 +108,11 @@ impl<'s> SwapchainBuilder<'s> {
 
         let mut views = vec![];
         for image in images.iter() {
-            let view = view_desc.build_for_swapchain(&self.device, image, prefer_format.format)?;
+            let view = view_desc.build_for_swapchain(&self.device, image, prefer_format.image_format)?;
             views.push(view);
         }
 
-        let swapchain = GsSwapchain::new(handle, loader, images, views, prefer_format.format, prefer_extent, self.acquire_image_time);
+        let swapchain = GsSwapchain::new(handle, loader, images, views, prefer_format.image_format, prefer_extent, self.acquire_image_time);
         Ok(swapchain)
     }
 }

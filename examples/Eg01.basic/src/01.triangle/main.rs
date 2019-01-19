@@ -8,6 +8,7 @@ use gsvk::prelude::buffer::*;
 use gsvk::prelude::pipeline::*;
 use gsvk::prelude::command::*;
 use gsvk::prelude::sync::*;
+use gsvk::prelude::api::*;
 
 use gsma::{ define_input, offset_of, vk_format, vertex_rate, data_size };
 
@@ -89,7 +90,7 @@ impl TriangleProcedure {
         let vertex_index = vertex_allocator.assign(vertex_info)?;
 
         let buffer_distributor = vertex_allocator.allocate()?;
-        let vertex_buffer = buffer_distributor.acquire_vertex(vertex_index);
+        let vertex_buffer = buffer_distributor.acquire(vertex_index);
 
         let mut vertex_storage = buffer_distributor.into_repository();
 

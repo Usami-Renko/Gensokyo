@@ -9,6 +9,7 @@ use gsvk::prelude::descriptor::*;
 use gsvk::prelude::pipeline::*;
 use gsvk::prelude::command::*;
 use gsvk::prelude::sync::*;
+use gsvk::prelude::api::*;
 
 use gsma::data_size;
 
@@ -127,9 +128,9 @@ impl CubeProcedure {
 
         let buffer_distributor = buffer_allocator.allocate()?;
 
-        let vertex_buffer = buffer_distributor.acquire_vertex(vertex_index);
-        let index_buffer = buffer_distributor.acquire_index(index_index);
-        let ubo_buffer = buffer_distributor.acquire_uniform(ubo_index);
+        let vertex_buffer = buffer_distributor.acquire(vertex_index);
+        let index_buffer = buffer_distributor.acquire(index_index);
+        let ubo_buffer = buffer_distributor.acquire(ubo_index);
         
         let mut buffer_storage = buffer_distributor.into_repository();
         
@@ -149,10 +150,10 @@ impl CubeProcedure {
         descriptor_set_config.add_buffer_binding(ubo_buffer, GsPipelineStage::VERTEX);
 
         let mut descriptor_allocator = kit.descriptor(vk::DescriptorPoolCreateFlags::empty());
-        let desc_index = descriptor_allocator.append_set(descriptor_set_config);
+        let desc_index = descriptor_allocator.assign(descriptor_set_config);
 
-        let mut descriptor_distributor = descriptor_allocator.allocate()?;
-        let ubo_set = descriptor_distributor.acquire_set(desc_index);
+        let descriptor_distributor = descriptor_allocator.allocate()?;
+        let ubo_set = descriptor_distributor.acquire(desc_index);
         
         let desc_storage = descriptor_distributor.into_repository();
 

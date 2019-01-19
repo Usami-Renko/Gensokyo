@@ -1,12 +1,13 @@
 
 use ash::vk;
+use crate::types::format::GsFormat;
 
 #[derive(Debug, Clone, Eq, PartialEq, Hash)]
 pub enum ImageInstanceType {
 
     SampleImage { stage: ImagePipelineStage },
     DepthStencilAttachment,
-    DepthStencilImage { format: vk::Format, stage: ImagePipelineStage },
+    DepthStencilImage { format: GsFormat, stage: ImagePipelineStage },
 }
 
 /// ImagePipelineStage indicate in which pipeline stage this image is used.
@@ -37,12 +38,12 @@ pub enum DepthStencilImageFormat {
 
 impl DepthStencilImageFormat {
 
-    pub(super) fn to_raw_format(&self) -> vk::Format {
+    pub(super) fn to_raw_format(&self) -> GsFormat {
 
         match self {
-            | DepthStencilImageFormat::Depth32Bit => vk::Format::D32_SFLOAT,
-            | DepthStencilImageFormat::Depth24BitStencil8Bit => vk::Format::D24_UNORM_S8_UINT,
-            | DepthStencilImageFormat::Depth32BitStencil8Bit => vk::Format::D32_SFLOAT_S8_UINT,
+            | DepthStencilImageFormat::Depth32Bit => GsFormat::D32_SFLOAT,
+            | DepthStencilImageFormat::Depth24BitStencil8Bit => GsFormat::D24_UNORM_S8_UINT,
+            | DepthStencilImageFormat::Depth32BitStencil8Bit => GsFormat::D32_SFLOAT_S8_UINT,
         }
     }
 

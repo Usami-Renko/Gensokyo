@@ -1,7 +1,7 @@
 
-pub use self::image::GsDepthStencilAttachment;
-pub use self::info::DepthStencilAttachmentInfo;
-pub use self::barrier::DepSteImageBarrierBundle;
+pub use self::image::{ GsDSAttachment, IDepthStencilImg };
+pub use self::info::GsDSAttachmentInfo;
+pub use self::barrier::DSImageBarrierBundle;
 
 mod image;
 mod info;

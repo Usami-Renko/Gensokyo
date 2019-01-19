@@ -6,6 +6,7 @@ use num::clamp;
 use crate::core::surface::GsSurface;
 use crate::core::swapchain::SwapchainConfig;
 use crate::types::{ vkDim2D, vkuint };
+use crate::types::format::GsFormat;
 use crate::error::VkResult;
 
 pub struct SwapchainSupport {
@@ -57,24 +58,33 @@ impl SwapchainSupport {
         Ok(optimal_extent)
     }
 
-    pub fn optimal_format(&self) -> vk::SurfaceFormatKHR {
+    pub fn optimal_format(&self) -> GsSwapchainFormat {
 
         if self.formats.len() == 1 && self.formats[0].format == vk::Format::UNDEFINED {
-            return vk::SurfaceFormatKHR {
-                format      : self.config.prefer_surface_format,
-                color_space : self.config.prefer_surface_color_space,
+            return GsSwapchainFormat{
+                surface: vk::SurfaceFormatKHR {
+                    format      : self.config.prefer_surface_format.0,
+                    color_space : self.config.prefer_surface_color_space,
+                },
+                image_format: self.config.prefer_surface_format,
             }
         }
 
         for available_format in self.formats.iter() {
-            if available_format.format == self.config.prefer_surface_format &&
+            if available_format.format == self.config.prefer_surface_format.0 &&
                 available_format.color_space == self.config.prefer_surface_color_space {
 
-                return available_format.clone()
+                return GsSwapchainFormat {
+                    surface: available_format.clone(),
+                    image_format: self.config.prefer_surface_format,
+                }
             }
         }
 
-        self.formats[0]
+        GsSwapchainFormat {
+            surface: self.formats[0],
+            image_format: GsFormat::any(self.formats[0].format.clone()),
+        }
     }
 
     pub fn optimal_present_mode(&self) -> vk::PresentModeKHR {
@@ -92,4 +102,10 @@ impl SwapchainSupport {
 
         self.capabilities.current_transform
     }
+}
+
+pub struct GsSwapchainFormat {
+
+    pub surface: vk::SurfaceFormatKHR,
+    pub image_format: GsFormat,
 }

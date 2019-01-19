@@ -6,11 +6,11 @@ use crate::core::device::GsDevice;
 use crate::descriptor::DescriptorSetConfig;
 use crate::descriptor::DescriptorPoolInfo;
 use crate::descriptor::GsDescriptorType;
-use crate::descriptor::allocator::index::IDescriptorSet;
 use crate::descriptor::allocator::distributor::GsDescriptorDistributor;
+use crate::descriptor::allocator::index::IDescriptorSet;
 
 use crate::error::VkResult;
-use crate::utils::assign::GsAssignIndex;
+use crate::utils::api::{ GsAssignIndex, GsAllocatorApi, GsAllotIntoDistributor };
 use crate::types::vkuint;
 
 use std::collections::HashMap;
@@ -21,36 +21,36 @@ pub struct GsDescriptorAllocator {
     pool_flag: vk::DescriptorPoolCreateFlags,
 
     set_configs: Vec<DescriptorSetConfig>,
+    update_sets: Vec<usize>,
 }
 
-impl GsDescriptorAllocator {
+impl GsAllocatorApi<DescriptorSetConfig, IDescriptorSet, GsDescriptorDistributor> for GsDescriptorAllocator {
+    type AssignResult = GsAssignIndex<IDescriptorSet>;
 
-    pub fn new(device: &GsDevice, flags: vk::DescriptorPoolCreateFlags) -> GsDescriptorAllocator {
-
-        GsDescriptorAllocator {
-            device   : device.clone(),
-            pool_flag: flags,
-
-            set_configs: vec![],
-        }
-    }
-
-    pub fn append_set(&mut self, config: DescriptorSetConfig) -> GsAssignIndex<IDescriptorSet> {
+    fn assign(&mut self, config: DescriptorSetConfig) -> Self::AssignResult {
 
         let set_index = self.set_configs.len();
         let dst_index = GsAssignIndex {
-            allot_info: IDescriptorSet {
+            convey_info: IDescriptorSet {
                 set_index,
             },
             assign_index: set_index,
         };
 
         self.set_configs.push(config);
+        self.update_sets.push(set_index);
 
         dst_index
     }
 
-    pub fn allocate(self) -> VkResult<GsDescriptorDistributor> {
+    fn reset(&mut self) {
+        self.set_configs.clear();
+    }
+}
+
+impl GsAllotIntoDistributor<GsDescriptorDistributor> for GsDescriptorAllocator {
+
+    fn allocate(self) -> VkResult<GsDescriptorDistributor> {
 
         // descriptor pool
         let pool_sizes = self.pool_sizes();
@@ -62,7 +62,7 @@ impl GsDescriptorAllocator {
         let pool = pool_info.build(&self.device)?;
 
         // descriptor layout
-        let mut layouts = vec![];
+        let mut layouts = Vec::with_capacity(self.set_configs.len());
         for config in self.set_configs.iter() {
             let layout_info = config.to_layout_info();
             let layout = layout_info.build(&self.device)?;
@@ -72,8 +72,22 @@ impl GsDescriptorAllocator {
         // descriptor sets
         let sets = pool.allocate(&self.device, layouts)?;
 
-        let repository = GsDescriptorDistributor::new(self.device, pool, sets, self.set_configs);
+        let repository = GsDescriptorDistributor::new(self.device, pool, sets, self.set_configs, self.update_sets);
         Ok(repository)
+    }
+}
+
+impl GsDescriptorAllocator {
+
+    pub fn new(device: &GsDevice, flags: vk::DescriptorPoolCreateFlags) -> GsDescriptorAllocator {
+
+        GsDescriptorAllocator {
+            device   : device.clone(),
+            pool_flag: flags,
+
+            set_configs: vec![],
+            update_sets: vec![],
+        }
     }
 
     fn pool_sizes(&self) -> Vec<(GsDescriptorType, vkuint)> {
@@ -90,11 +104,5 @@ impl GsDescriptorAllocator {
 
         let result = map.into_iter().collect();
         result
-    }
-
-    pub fn reset(&mut self, flags: vk::DescriptorPoolCreateFlags) {
-
-        self.pool_flag = flags;
-        self.set_configs.clear();
     }
 }

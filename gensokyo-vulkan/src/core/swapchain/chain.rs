@@ -10,6 +10,7 @@ use crate::image::{ GsImage, GsImageView };
 use crate::sync::{ GsFence, GsSemaphore };
 
 use crate::types::{ vkuint, vklint, vkDim2D };
+use crate::types::format::GsFormat;
 
 use std::ptr;
 
@@ -29,7 +30,7 @@ pub struct GsSwapchain {
     /// the corresponding image views associated with the presentable images created by swapchain.
     views: Vec<GsImageView>,
     /// the format of presentable images.
-    format: vk::Format,
+    format: GsFormat,
     /// the dimension of presentable images.
     extent: vkDim2D,
 
@@ -39,7 +40,7 @@ pub struct GsSwapchain {
 
 impl GsSwapchain {
 
-    pub(crate) fn new(handle: vk::SwapchainKHR, loader: ash::extensions::khr::Swapchain, images: Vec<GsImage>, views: Vec<GsImageView>, format: vk::Format, extent: vkDim2D, image_acquire_time: vklint) -> GsSwapchain {
+    pub(crate) fn new(handle: vk::SwapchainKHR, loader: ash::extensions::khr::Swapchain, images: Vec<GsImage>, views: Vec<GsImageView>, format: GsFormat, extent: vkDim2D, image_acquire_time: vklint) -> GsSwapchain {
 
         GsSwapchain {
             handle, loader, images, views, format, extent, image_acquire_time
@@ -133,7 +134,7 @@ impl GsSwapchain {
     pub fn extent(&self) -> vkDim2D {
         self.extent
     }
-    pub fn format(&self) -> vk::Format {
+    pub fn format(&self) -> GsFormat {
         self.format
     }
     // TODO: Remove the following function.
@@ -149,7 +150,7 @@ pub struct SwapchainConfig {
     /// the value of layers property in vk::Framebuffer.
     pub framebuffer_layers: vkuint,
 
-    pub prefer_surface_format      : vk::Format,
+    pub prefer_surface_format      : GsFormat,
     pub prefer_surface_color_space : vk::ColorSpaceKHR,
 
     pub prefer_primary_present_mode   : vk::PresentModeKHR,

@@ -10,7 +10,7 @@ use crate::error::{ VkResult, VkError };
 use crate::buffer::allocator::types::BufferMemoryTypeAbs;
 use crate::buffer::allocator::memory::{ BufferAllocateInfos, BufMemAllocator };
 use crate::buffer::allocator::distributor::GsBufferDistributor;
-use crate::utils::assign::GsAssignIndex;
+use crate::utils::api::{ GsAssignIndex, GsAllocatorApi, GsAllotIntoDistributor };
 use crate::types::vkbytes;
 
 use std::marker::PhantomData;
@@ -32,42 +32,28 @@ pub struct GsBufferAllocator<M> where M: BufferMemoryTypeAbs {
     memory_filter: MemoryFilter,
 }
 
-impl<M> GsBufferAllocator<M> where M: BufferMemoryTypeAbs {
+impl<M, I, R> GsAllocatorApi<I, R, GsBufferDistributor<M>> for GsBufferAllocator<M>
+    where I: BufferInfoAbstract<R>,
+          M: BufferMemoryTypeAbs {
 
-    pub fn new(physical: &GsPhyDevice, device: &GsDevice, storage_type: M) -> GsBufferAllocator<M> {
+    type AssignResult = VkResult<GsAssignIndex<R>>;
 
-        GsBufferAllocator {
-            phantom_type: PhantomData,
-            storage_type,
-
-            physical: physical.clone(),
-            device  : device.clone(),
-
-            buffers: vec![],
-            spaces : vec![],
-
-            allot_infos: BufferAllocateInfos::new(),
-            memory_filter: MemoryFilter::new(physical, storage_type.memory_type()),
-        }
-    }
-
-    pub fn assign<Info, Index>(&mut self, info: Info) -> VkResult<GsAssignIndex<Index>>
-        where Info: BufferInfoAbstract<Index> {
+    fn assign(&mut self, info: I) -> Self::AssignResult {
 
         // check if the usage of buffer valid.
-        if Info::check_storage_validity(self.storage_type.memory_type()) == false {
+        if I::check_storage_validity(self.storage_type.memory_type()) == false {
             return Err(VkError::device("The type of buffer is not support on this allocator."))
         }
 
         let mut info = info; // make it mutable.
         info.check_limits(&self.physical);
 
-        let buffer_description = BufferDescInfo::new(info.estimate_size(), Info::VK_FLAG);
+        let buffer_description = BufferDescInfo::new(info.estimate_size(), I::VK_FLAG);
         let buffer = buffer_description.build(&self.device, self.storage_type, None)?;
         self.memory_filter.filter(&buffer)?;
 
         let dst_index = GsAssignIndex {
-            allot_info: info.into_index(),
+            convey_info: info.into_index(),
             assign_index: self.buffers.len(),
         };
 
@@ -81,13 +67,21 @@ impl<M> GsBufferAllocator<M> where M: BufferMemoryTypeAbs {
         Ok(dst_index)
     }
 
-    pub fn assign_v2<R>(&mut self, info: &impl GsBufferAllocatable<M, R>) -> VkResult<R> {
+    fn reset(&mut self) {
 
-        let allot_func = info.allot_func();
-        allot_func(info, self)
+        for buffer in self.buffers.iter() {
+            buffer.destroy(&self.device);
+        }
+        self.buffers.clear();
+        self.spaces.clear();
+        self.memory_filter.reset();
     }
+}
 
-    pub fn allocate(self) -> VkResult<GsBufferDistributor<M>> {
+impl<M> GsAllotIntoDistributor<GsBufferDistributor<M>> for GsBufferAllocator<M>
+    where M: BufferMemoryTypeAbs {
+
+    fn allocate(self) -> VkResult<GsBufferDistributor<M>> {
 
         if self.buffers.is_empty() {
             return Err(VkError::device("Failed to get attachment content to the buffer"))
@@ -120,16 +114,31 @@ impl<M> GsBufferAllocator<M> where M: BufferMemoryTypeAbs {
 
         Ok(distributor)
     }
+}
 
-    pub fn reset(&mut self) {
+impl<M> GsBufferAllocator<M> where M: BufferMemoryTypeAbs {
 
-        for buffer in self.buffers.iter() {
-            buffer.destroy(&self.device);
+    pub fn new(physical: &GsPhyDevice, device: &GsDevice, storage_type: M) -> GsBufferAllocator<M> {
+
+        GsBufferAllocator {
+            phantom_type: PhantomData,
+            storage_type,
+
+            physical: physical.clone(),
+            device  : device.clone(),
+
+            buffers: vec![],
+            spaces : vec![],
+
+            allot_infos: BufferAllocateInfos::new(),
+            memory_filter: MemoryFilter::new(physical, storage_type.memory_type()),
         }
+    }
 
-        self.buffers.clear();
-        self.spaces.clear();
-        self.memory_filter.reset();
+    pub fn assign_v2<R>(&mut self, info: &impl GsBufferAllocatable<M, R>) -> VkResult<R> {
+
+        let allot_func = info.allot_func();
+        allot_func(info, self)
     }
 }
 

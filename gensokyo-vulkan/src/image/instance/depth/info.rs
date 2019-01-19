@@ -7,23 +7,22 @@ use crate::image::target::{ GsImage, ImageDescInfo, ImagePropertyInfo, ImageSpec
 use crate::image::view::ImageViewDescInfo;
 use crate::image::storage::{ ImageStorageInfo, ImageSource };
 use crate::image::enums::{ ImageInstanceType, DepthStencilImageFormat };
-use crate::image::instance::traits::{ GsImageDescAbs, GsImageViewDescAbs, ImageInstanceInfoAbs };
-use crate::image::allocator::ImageAllocateInfo;
+use crate::image::instance::depth::IDepthStencilImg;
+use crate::image::instance::traits::{ GsImageDescAbs, GsImageViewDescAbs, ImageInfoAbstract };
+use crate::image::allocator::ImageAllotInfo;
 
 use crate::error::VkResult;
 use crate::types::{ vkuint, vkDim2D, vkDim3D };
 
-pub struct DepthStencilAttachmentInfo {
+pub struct GsDSAttachmentInfo {
 
     image_desc: ImageDescInfo,
     view_desc : ImageViewDescInfo,
-
-    allocate_index: Option<usize>,
 }
 
-impl DepthStencilAttachmentInfo {
+impl GsDSAttachmentInfo {
 
-    pub fn new(dimension: vkDim2D, format: DepthStencilImageFormat) -> DepthStencilAttachmentInfo {
+    pub fn new(dimension: vkDim2D, format: DepthStencilImageFormat) -> GsDSAttachmentInfo {
 
         let mut property = ImagePropertyInfo::default();
         property.image_type = vk::ImageType::TYPE_2D;
@@ -38,50 +37,36 @@ impl DepthStencilAttachmentInfo {
             depth  : 1,
         };
 
-        DepthStencilAttachmentInfo {
+        GsDSAttachmentInfo {
             image_desc: ImageDescInfo { property, specific },
             view_desc: ImageViewDescInfo::new(vk::ImageViewType::TYPE_2D, format.aspect_mask()),
-            allocate_index: None,
-        }
-    }
-
-    pub(super) fn format(&self) -> vk::Format {
-        self.image_desc.specific.format
-    }
-
-    pub(crate) fn gen_storage_info(&self) -> ImageStorageInfo {
-
-        ImageStorageInfo {
-            source    : ImageSource::NoSource,
-            format    : self.image_desc.specific.format,
-            dimension : self.image_desc.specific.dimension,
         }
     }
 }
 
-impl ImageInstanceInfoAbs for DepthStencilAttachmentInfo {
+impl ImageInfoAbstract<IDepthStencilImg> for GsDSAttachmentInfo {
 
-    fn build_image(&self, device: &GsDevice) -> VkResult<GsImage> {
+    fn build(&self, device: &GsDevice) -> VkResult<GsImage> {
         self.image_desc.build(device)
     }
 
-    fn allocate_index(&self) -> Option<usize> {
-        self.allocate_index
-    }
+    fn refactor(self, _: &GsDevice, image: GsImage) -> VkResult<(ImageAllotInfo, IDepthStencilImg)> {
 
-    fn set_allocate_index(&mut self, value: usize) {
-        self.allocate_index = Some(value);
-    }
+        let storage = ImageStorageInfo {
+            source: ImageSource::NoSource,
+            format   : self.image_desc.specific.format,
+            dimension: self.image_desc.specific.dimension,
+        };
 
-    fn allocate_info(&self, image: GsImage, storage: ImageStorageInfo) -> ImageAllocateInfo {
+        let idsi = IDepthStencilImg::new(self.image_desc.specific.format);
 
-        ImageAllocateInfo::new(
+        let allot = ImageAllotInfo::new(
             ImageInstanceType::DepthStencilAttachment,
-            storage, image,
-            self.image_desc.clone(),
-            self.view_desc.clone(),
-        )
+            storage, image, self.image_desc, self.view_desc
+        );
+
+        Ok((allot, idsi))
     }
 }
 
-impl_image_desc_info_abs!(DepthStencilAttachmentInfo);
+impl_image_desc_info_abs!(GsDSAttachmentInfo);

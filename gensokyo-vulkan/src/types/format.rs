@@ -1,20 +1,17 @@
 
 use ash::vk;
 
-pub enum VKFormat {
+#[derive(Debug, Clone, Copy, Eq, PartialEq, Hash)]
+pub struct GsFormat(pub(crate) vk::Format);
 
-    Undefine,
-    Rgba8Unorm,
-    D32Sfloat,
-}
+impl GsFormat {
+    pub const UNDEFINED  : GsFormat = GsFormat(vk::Format::UNDEFINED);
+    pub const RGBA8_UNORM: GsFormat = GsFormat(vk::Format::R8G8B8A8_UNORM);
+    pub const D32_SFLOAT : GsFormat = GsFormat(vk::Format::D32_SFLOAT);
+    pub const D24_UNORM_S8_UINT: GsFormat = GsFormat(vk::Format::D24_UNORM_S8_UINT);
+    pub const D32_SFLOAT_S8_UINT: GsFormat = GsFormat(vk::Format::D32_SFLOAT_S8_UINT);
 
-impl VKFormat {
-
-    pub fn value(&self) -> vk::Format {
-        match self {
-            | VKFormat::Undefine => vk::Format::UNDEFINED,
-            | VKFormat::Rgba8Unorm => vk::Format::R8G8B8A8_UNORM,
-            | VKFormat::D32Sfloat => vk::Format::D32_SFLOAT,
-        }
+    pub fn any(f: vk::Format) -> GsFormat {
+        GsFormat(f)
     }
 }

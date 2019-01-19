@@ -13,12 +13,13 @@ use crate::image::barrier::GsImageBarrier;
 use crate::image::storage::ImageSource;
 use crate::image::enums::ImagePipelineStage;
 use crate::image::instance::traits::ImageBarrierBundleAbs;
-use crate::image::allocator::ImageAllocateInfo;
-
+use crate::image::allocator::ImageAllotInfo;
 use crate::memory::transfer::DataCopyer;
 
 use crate::error::VkResult;
 use crate::command::GsCmdCopyApi;
+use crate::utils::api::{ GsAllocatorApi, GsAllotIntoDistributor };
+use crate::utils::api::{ GsDistributeApi, GsDistIntoRepository };
 use crate::utils::phantom::Staging;
 
 pub struct SampleImageBarrierBundle {
@@ -31,7 +32,7 @@ pub struct SampleImageBarrierBundle {
 
 impl ImageBarrierBundleAbs for SampleImageBarrierBundle {
 
-    fn make_barrier_transform(&mut self, physical: &GsPhyDevice, device: &GsDevice, copyer: &DataCopyer, infos: &mut Vec<ImageAllocateInfo>) -> VkResult<()> {
+    fn make_barrier_transform(&mut self, physical: &GsPhyDevice, device: &GsDevice, copyer: &DataCopyer, infos: &mut Vec<ImageAllotInfo>) -> VkResult<()> {
 
         // create staging buffer and memories
         let (mut staging_repository, buffer_blocks) = self.create_staging_repository(physical, device, infos)?;
@@ -79,7 +80,7 @@ impl SampleImageBarrierBundle {
         }
     }
 
-    fn create_staging_repository(&mut self, physical: &GsPhyDevice, device: &GsDevice, infos: &Vec<ImageAllocateInfo>) -> VkResult<(GsBufferRepository<Staging>, Vec<GsImgsrcBuffer>)> {
+    fn create_staging_repository(&mut self, physical: &GsPhyDevice, device: &GsDevice, infos: &Vec<ImageAllotInfo>) -> VkResult<(GsBufferRepository<Staging>, Vec<GsImgsrcBuffer>)> {
 
         let mut staging_indices = vec![];
 
@@ -95,14 +96,14 @@ impl SampleImageBarrierBundle {
 
         let mut staging_buffers = vec![];
         for index in staging_indices.into_iter() {
-            let staging_buffer = distributor.acquire_imgsrc(index);
+            let staging_buffer = distributor.acquire(index);
             staging_buffers.push(staging_buffer);
         }
 
         Ok((distributor.into_repository(), staging_buffers))
     }
 
-    fn upload_staging_data(&self, staging_repository: &mut GsBufferRepository<Staging>, img_data_blocks: &[GsImgsrcBuffer], infos: &Vec<ImageAllocateInfo>) -> VkResult<()> {
+    fn upload_staging_data(&self, staging_repository: &mut GsBufferRepository<Staging>, img_data_blocks: &[GsImgsrcBuffer], infos: &Vec<ImageAllotInfo>) -> VkResult<()> {
 
         let mut uploader = staging_repository.data_uploader()?;
 
@@ -121,7 +122,7 @@ impl SampleImageBarrierBundle {
         Ok(())
     }
 
-    fn transfer_barrier(&self, info: &mut ImageAllocateInfo) -> GsImageBarrier {
+    fn transfer_barrier(&self, info: &mut ImageAllotInfo) -> GsImageBarrier {
 
         info.final_layout = vk::ImageLayout::TRANSFER_DST_OPTIMAL;
 
@@ -133,7 +134,7 @@ impl SampleImageBarrierBundle {
             .build()
     }
 
-    fn final_barrier(&self, info: &mut ImageAllocateInfo) -> GsImageBarrier {
+    fn final_barrier(&self, info: &mut ImageAllotInfo) -> GsImageBarrier {
 
         let previous_layout = info.final_layout;
         info.final_layout = vk::ImageLayout::SHADER_READ_ONLY_OPTIMAL;

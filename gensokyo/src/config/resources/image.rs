@@ -1,10 +1,11 @@
 
 use toml;
-use ash::vk;
 
 use crate::assets::io::ImageLoadConfig;
 use crate::config::engine::ConfigMirror;
 use crate::error::{ GsResult, GsError };
+
+use gsvk::types::format::GsFormat;
 
 #[derive(Deserialize, Default)]
 pub(crate) struct ImageLoadConfigMirror {
@@ -25,8 +26,8 @@ impl ConfigMirror for ImageLoadConfigMirror {
             flip_horizontal: self.flip_horizontal,
             byte_per_pixel : self.byte_per_pixel,
             force_rgba     : self.force_rgba,
-            // TODO: Reset this member from tom setting.
-            img_format     : vk::Format::R8G8B8A8_UNORM,
+            // TODO: Reset this member from toml setting.
+            img_format     : GsFormat::RGBA8_UNORM,
         };
 
         Ok(config)

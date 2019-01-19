@@ -1,14 +1,19 @@
 
 use ash::vk;
 
+use crate::image::entity::ImageEntity;
 use crate::image::utils::ImageCopyInfo;
+use crate::image::instance::desc::ImageInstanceInfoDesc;
 
 pub trait ImageHandleEntity: Sized {
 
     fn handle(&self) -> vk::Image;
 }
 
-pub trait ImageInstance: ImageCopiable {}
+pub trait ImageInstance<I>: ImageCopiable {
+
+    fn new(img: I, entity: ImageEntity, desc: ImageInstanceInfoDesc) -> Self where Self: Sized;
+}
 
 pub trait ImageCopiable: Sized {
 

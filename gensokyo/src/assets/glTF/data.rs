@@ -25,7 +25,7 @@ use gsvk::command::{ GsCmdRecorder, GsCmdGraphicsApi, CmdDescriptorSetBindInfo }
 use gsvk::descriptor::{ DescriptorSet, DescriptorBufferBindableTarget, DescriptorBufferBindingInfo };
 use gsvk::memory::transfer::{ GsBufferDataUploader, GsBufferUploadable };
 
-use gsvk::utils::assign::GsAssignIndex;
+use gsvk::utils::api::{ GsAssignIndex, GsAllocatorApi, GsDistributeApi };
 use gsvk::utils::phantom::{ Graphics, Host };
 
 use gsvk::types::{ vkuint, vkbytes };
@@ -256,11 +256,11 @@ impl GsglTFEntity {
 
         GsglTFModel {
             entity: self,
-            vertex: vertex_distributor.acquire_vertex(vertex_index.vertex),
+            vertex: vertex_distributor.acquire(vertex_index.vertex),
             indices: vertex_index.indices.and_then(|indices_index| {
-                Some(vertex_distributor.acquire_index(indices_index))
+                Some(vertex_distributor.acquire(indices_index))
             }),
-            uniform: uniform_distributor.acquire_uniform(uniform_index.uniform),
+            uniform: uniform_distributor.acquire(uniform_index.uniform),
         }
     }
 }

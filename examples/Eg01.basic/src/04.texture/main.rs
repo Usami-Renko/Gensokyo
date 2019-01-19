@@ -10,6 +10,7 @@ use gsvk::prelude::descriptor::*;
 use gsvk::prelude::pipeline::*;
 use gsvk::prelude::command::*;
 use gsvk::prelude::sync::*;
+use gsvk::prelude::api::*;
 
 use gsma::{ define_input, offset_of, vk_format, vertex_rate, data_size };
 
@@ -91,7 +92,7 @@ impl TextureMappingProcedure {
             TextureMappingProcedure::commands(kit, &graphics_pipeline, &vertex_buffer, &sampler_set, &vertex_data)
         })?;
 
-        let procecure = TextureMappingProcedure {
+        let procedure = TextureMappingProcedure {
             vertex_data, buffer_storage, vertex_buffer,
             desc_storage, sampler_set, image_storage, sample_image,
             graphics_pipeline,
@@ -99,7 +100,7 @@ impl TextureMappingProcedure {
             present_availables,
         };
 
-        Ok(procecure)
+        Ok(procedure)
     }
 
     fn vertex_buffer(kit: AllocatorKit, vertex_data: &Vec<Vertex>) -> GsResult<(GsVertexBuffer, GsBufferRepository<Cached>)> {
@@ -111,7 +112,7 @@ impl TextureMappingProcedure {
 
         let vertex_distributor = buffer_allocator.allocate()?;
 
-        let vertex_buffer = vertex_distributor.acquire_vertex(vertex_index);
+        let vertex_buffer = vertex_distributor.acquire(vertex_index);
         let mut vertex_storage = vertex_distributor.into_repository();
 
         vertex_storage.data_uploader()?
@@ -126,14 +127,14 @@ impl TextureMappingProcedure {
         let image_loader = kit.image_loader();
         let image_storage_info = image_loader.load_2d(Path::new(TEXTURE_PATH))?;
 
-        let mut image_info = SampleImageInfo::new(0, 1, image_storage_info, ImagePipelineStage::FragmentStage);
+        let image_info = GsSampleImgInfo::new(0, 1, image_storage_info, ImagePipelineStage::FragmentStage);
 
         let mut image_allocator = kit.image(ImageStorageType::DEVICE);
-        image_allocator.append_sample_image(&mut image_info)?;
+        let image_index = image_allocator.assign(image_info)?;
 
         let image_distributor = image_allocator.allocate()?;
 
-        let sample_image = image_distributor.acquire_sample_image(image_info)?;
+        let sample_image = image_distributor.acquire(image_index);
         let image_storage = image_distributor.into_repository();
 
         Ok((sample_image, image_storage))
@@ -145,10 +146,10 @@ impl TextureMappingProcedure {
         descriptor_set_config.add_image_binding(sample_image, GsPipelineStage::FRAGMENT);
 
         let mut descriptor_allocator = kit.descriptor(vk::DescriptorPoolCreateFlags::empty());
-        let descriptor_index = descriptor_allocator.append_set(descriptor_set_config);
+        let descriptor_index = descriptor_allocator.assign(descriptor_set_config);
 
-        let mut descriptor_distributor = descriptor_allocator.allocate()?;
-        let sampler_set = descriptor_distributor.acquire_set(descriptor_index);
+        let descriptor_distributor = descriptor_allocator.allocate()?;
+        let sampler_set = descriptor_distributor.acquire(descriptor_index);
 
         let descriptor_storage = descriptor_distributor.into_repository();
 

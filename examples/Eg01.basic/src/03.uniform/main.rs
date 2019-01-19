@@ -9,6 +9,7 @@ use gsvk::prelude::descriptor::*;
 use gsvk::prelude::pipeline::*;
 use gsvk::prelude::command::*;
 use gsvk::prelude::sync::*;
+use gsvk::prelude::api::*;
 
 use gsma::{ define_input, offset_of, vk_format, vertex_rate, data_size };
 
@@ -115,8 +116,8 @@ impl UniformBufferProcedure {
 
         let buffer_distributor = buffer_allocator.allocate()?;
 
-        let vertex_buffer = buffer_distributor.acquire_vertex(vertex_index);
-        let uniform_buffer = buffer_distributor.acquire_uniform(uniform_index);
+        let vertex_buffer = buffer_distributor.acquire(vertex_index);
+        let uniform_buffer = buffer_distributor.acquire(uniform_index);
 
         let mut buffer_storage = buffer_distributor.into_repository();
 
@@ -135,10 +136,10 @@ impl UniformBufferProcedure {
         descriptor_set_config.add_buffer_binding(ubo_buffer, GsPipelineStage::VERTEX);
 
         let mut descriptor_allocator = kit.descriptor(vk::DescriptorPoolCreateFlags::empty());
-        let descriptor_index = descriptor_allocator.append_set(descriptor_set_config);
+        let descriptor_index = descriptor_allocator.assign(descriptor_set_config);
 
-        let mut descriptor_distributor = descriptor_allocator.allocate()?;
-        let uniform_descriptor_set = descriptor_distributor.acquire_set(descriptor_index);
+        let descriptor_distributor = descriptor_allocator.allocate()?;
+        let uniform_descriptor_set = descriptor_distributor.acquire(descriptor_index);
         let descriptor_repository = descriptor_distributor.into_repository();
 
         Ok((uniform_descriptor_set, descriptor_repository))

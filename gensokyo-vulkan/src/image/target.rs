@@ -9,6 +9,7 @@ use crate::memory::MemoryDstEntity;
 
 use crate::error::{ VkResult, VkError };
 use crate::types::{ vkuint, vkbytes, vkDim3D };
+use crate::types::format::GsFormat;
 
 use std::ptr;
 
@@ -92,7 +93,7 @@ impl ImageDescInfo {
             s_type : vk::StructureType::IMAGE_CREATE_INFO,
             p_next : ptr::null(),
             flags  : self.property.flags,
-            format : self.specific.format,
+            format : self.specific.format.0,
             extent : self.specific.dimension,
             tiling : self.property.tiling,
             usage  : self.property.usages,
@@ -145,7 +146,7 @@ pub struct ImageSpecificInfo {
     /// `dimension` describes the number of data elements in each dimension of the base level.
     pub dimension: vkDim3D,
     /// `format` describes the format and type of the data elements that will be contained in the image.
-    pub format: vk::Format,
+    pub format: GsFormat,
     /// `sharing` specifies the sharing mode of the image when it will be accessed by multiple queue families.
     ///
     /// Default is vk::SharingMode::Exclusive.
@@ -192,7 +193,7 @@ impl Default for ImageSpecificInfo {
     fn default() -> ImageSpecificInfo {
 
         ImageSpecificInfo {
-            format: vk::Format::UNDEFINED,
+            format: GsFormat::UNDEFINED,
             dimension: vkDim3D {
                 width : 0,
                 height: 0,

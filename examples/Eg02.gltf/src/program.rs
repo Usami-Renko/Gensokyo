@@ -8,6 +8,7 @@ use gsvk::prelude::descriptor::*;
 use gsvk::prelude::pipeline::*;
 use gsvk::prelude::command::*;
 use gsvk::prelude::sync::*;
+use gsvk::prelude::api::*;
 use gsma::data_size;
 
 use nalgebra::{ Matrix4, Point3 };
@@ -32,7 +33,7 @@ pub struct GltfModelViewer<T: ShaderInputDefinition> {
     desc_storage: GsDescriptorRepository,
     ubo_set: DescriptorSet,
 
-    depth_attachment: GsDepthStencilAttachment,
+    depth_attachment: GsDSAttachment,
     #[allow(dead_code)]
     image_storage: GsImageRepository<Device>,
 
@@ -135,7 +136,7 @@ impl<T: ShaderInputDefinition> GltfModelViewer<T> {
 
         let dst_model = model_entity.assign(model_vertex_index, &model_distributor, model_uniform_index, &ubo_distributor);
 
-        let ubo_buffer = ubo_distributor.acquire_uniform(ubo_index);
+        let ubo_buffer = ubo_distributor.acquire(ubo_index);
         let mut ubo_repository = ubo_distributor.into_repository();
         let mut model_repository = model_distributor.into_repository();
 
@@ -157,32 +158,32 @@ impl<T: ShaderInputDefinition> GltfModelViewer<T> {
         descriptor_set_config.add_buffer_binding(model, GsPipelineStage::VERTEX);
 
         let mut descriptor_allocator = kit.descriptor(vk::DescriptorPoolCreateFlags::empty());
-        let desc_index = descriptor_allocator.append_set(descriptor_set_config);
+        let desc_index = descriptor_allocator.assign(descriptor_set_config);
 
-        let mut descriptor_distributor = descriptor_allocator.allocate()?;
-        let ubo_set = descriptor_distributor.acquire_set(desc_index);
+        let descriptor_distributor = descriptor_allocator.allocate()?;
+        let ubo_set = descriptor_distributor.acquire(desc_index);
 
         let desc_storage = descriptor_distributor.into_repository();
 
         Ok((ubo_set, desc_storage))
     }
 
-    fn image(kit: AllocatorKit) -> GsResult<(GsDepthStencilAttachment, GsImageRepository<Device>)> {
+    fn image(kit: AllocatorKit) -> GsResult<(GsDSAttachment, GsImageRepository<Device>)> {
 
         // depth attachment image
         let mut image_allocator = kit.image(ImageStorageType::DEVICE);
 
-        let mut depth_attachment_info = DepthStencilAttachmentInfo::new(kit.swapchain_dimension(), DepthStencilImageFormat::Depth32Bit);
-        image_allocator.append_depth_stencil_image(&mut depth_attachment_info)?;
+        let depth_attachment_info = GsDSAttachmentInfo::new(kit.swapchain_dimension(), DepthStencilImageFormat::Depth32Bit);
+        let image_index = image_allocator.assign(depth_attachment_info)?;
 
         let image_distributor = image_allocator.allocate()?;
-        let depth_attachment = image_distributor.acquire_depth_stencil_image(depth_attachment_info)?;
+        let depth_attachment = image_distributor.acquire(image_index);
         let image_storage = image_distributor.into_repository();
 
         Ok((depth_attachment, image_storage))
     }
 
-    fn pipelines(kit: PipelineKit, paths: &FilePathConstants, ubo_set: &DescriptorSet, model: &GsglTFModel, depth_image: &GsDepthStencilAttachment) -> GsResult<GsPipeline<Graphics>> {
+    fn pipelines(kit: PipelineKit, paths: &FilePathConstants, ubo_set: &DescriptorSet, model: &GsglTFModel, depth_image: &GsDSAttachment) -> GsResult<GsPipeline<Graphics>> {
 
         // shaders
         let vertex_shader = GsShaderInfo::from_source(

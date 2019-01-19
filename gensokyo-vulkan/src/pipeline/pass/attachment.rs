@@ -2,6 +2,7 @@
 use ash::vk;
 
 use crate::pipeline::pass::subpass::AttachmentType;
+use crate::types::format::GsFormat;
 
 #[derive(Debug, Clone, Copy, Eq, PartialEq)]
 pub enum RenderAttachmentPrefab {
@@ -22,11 +23,11 @@ pub struct RenderAttachment {
 impl RenderAttachment {
 
     /// `format` is a vk::Format value specifying the format of the image view that will be used for the attachment.
-    pub fn setup(prefab: RenderAttachmentPrefab, attachment_format: vk::Format) -> RenderAttachment {
+    pub fn setup(prefab: RenderAttachmentPrefab, attachment_format: GsFormat) -> RenderAttachment {
 
         let mut attachment = vk::AttachmentDescription {
             flags            : vk::AttachmentDescriptionFlags::empty(),
-            format           : attachment_format,
+            format           : attachment_format.0,
             samples          : vk::SampleCountFlags::TYPE_1,
             load_op          : vk::AttachmentLoadOp::CLEAR,
             store_op         : vk::AttachmentStoreOp::STORE,

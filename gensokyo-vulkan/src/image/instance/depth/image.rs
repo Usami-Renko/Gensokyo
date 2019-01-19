@@ -1,44 +1,54 @@
 
 use ash::vk;
 
-use crate::image::view::GsImageView;
 use crate::image::entity::ImageEntity;
 use crate::image::traits::{ ImageInstance, ImageCopiable };
 use crate::image::utils::ImageCopyInfo;
-use crate::image::instance::ImageInstanceInfoDesc;
-use crate::image::instance::depth::DepthStencilAttachmentInfo;
-use crate::image::allocator::ImageAllocateInfo;
+use crate::image::instance::desc::ImageInstanceInfoDesc;
 
 use crate::pipeline::pass::{ RenderAttachment, RenderAttachmentPrefab };
+use crate::types::format::GsFormat;
 
-#[derive(Debug, Default)]
-pub struct GsDepthStencilAttachment {
+pub struct GsDSAttachment {
 
-    pub(crate) entity: ImageEntity,
-    pub(crate) format: vk::Format,
+    idsi: IDepthStencilImg,
 
+    entity: ImageEntity,
     desc: ImageInstanceInfoDesc,
 }
 
-impl GsDepthStencilAttachment {
+pub struct IDepthStencilImg {
 
-    pub(crate) fn setup(info: DepthStencilAttachmentInfo, allocate_info: &ImageAllocateInfo, view: &GsImageView) -> GsDepthStencilAttachment {
+    format: GsFormat,
+}
 
-        GsDepthStencilAttachment {
-            entity: ImageEntity::new(&allocate_info.image, view),
-            format: info.format(),
-            desc: allocate_info.gen_desc(),
-        }
-    }
+impl ImageInstance<IDepthStencilImg> for GsDSAttachment {
 
-    pub fn to_subpass_attachment(&self) -> RenderAttachment {
-        RenderAttachment::setup(RenderAttachmentPrefab::DepthAttachment, self.format)
+    fn new(idsi: IDepthStencilImg, entity: ImageEntity, desc: ImageInstanceInfoDesc) -> GsDSAttachment {
+        GsDSAttachment { idsi, entity, desc }
     }
 }
 
-impl ImageInstance for GsDepthStencilAttachment {}
+impl GsDSAttachment {
 
-impl ImageCopiable for GsDepthStencilAttachment {
+    pub fn to_subpass_attachment(&self) -> RenderAttachment {
+        RenderAttachment::setup(RenderAttachmentPrefab::DepthAttachment, self.idsi.format)
+    }
+
+    // TODO: Remove this function.
+    pub(crate) fn view(&self) -> vk::ImageView {
+        self.entity.view.clone()
+    }
+}
+
+impl IDepthStencilImg {
+
+    pub(super) fn new(format: GsFormat) -> IDepthStencilImg {
+        IDepthStencilImg { format }
+    }
+}
+
+impl ImageCopiable for GsDSAttachment {
 
     fn copy_info(&self) -> ImageCopyInfo {
 
