@@ -24,12 +24,13 @@ pub struct GsBufUniformInfo {
     usage: UniformUsage,
     binding: DescriptorBindingContent,
     element_size: vkbytes,
+    alignment: vkbytes,
 }
 
 #[derive(Debug, Clone)]
 enum UniformUsage {
     Common,
-    Dynamic { slice_count: vkuint, slice_size: vkbytes, alignment: vkbytes },
+    Dynamic { slice_count: vkuint, slice_size: vkbytes },
 }
 
 impl GsBufUniformInfo {
@@ -45,6 +46,7 @@ impl GsBufUniformInfo {
                 descriptor_type: GsDescriptorType::Buffer(BufferDescriptorType::UniformBuffer),
             },
             element_size,
+            alignment: 0, // alignment will be set when add it to allocator.
         }
     }
 
@@ -55,7 +57,6 @@ impl GsBufUniformInfo {
             usage: UniformUsage::Dynamic {
                 slice_count: slice_count as vkuint,
                 slice_size,
-                alignment: 0, // alignment will be set when add it to allocator.
             },
             binding: DescriptorBindingContent {
                 binding,
@@ -63,7 +64,13 @@ impl GsBufUniformInfo {
                 descriptor_type: GsDescriptorType::Buffer(BufferDescriptorType::UniformBufferDynamic),
             },
             element_size: slice_size * (slice_count as vkbytes),
+            alignment: 0,
         }
+    }
+
+    fn set_alignment(&mut self, physical: &GsPhysicalDevice) {
+
+        self.alignment = physical.limits().min_uniform_buffer_offset_alignment;
     }
 }
 
@@ -76,8 +83,8 @@ impl BufferInfoAbstract<IUniform> for GsBufUniformInfo {
             | UniformUsage::Common => {
                 (self.binding.count as vkbytes) * self.element_size
             },
-            | UniformUsage::Dynamic { slice_count, slice_size, alignment } => {
-                bound_to_alignment(slice_size, alignment) * (slice_count as vkbytes) * (self.binding.count as vkbytes)
+            | UniformUsage::Dynamic { slice_count, slice_size } => {
+                bound_to_alignment(slice_size, self.alignment) * (slice_count as vkbytes) * (self.binding.count as vkbytes)
             },
         }
     }
@@ -88,12 +95,13 @@ impl BufferInfoAbstract<IUniform> for GsBufUniformInfo {
             usage: self.usage,
             binding: self.binding,
             element_size: self.element_size,
+            alignment: self.alignment,
         }
     }
 
     // Handle uniform buffer particularly.
     fn check_limits(&mut self, physical: &GsPhysicalDevice) {
-        self.usage.set_alignment(physical);
+        self.set_alignment(physical);
     }
 }
 
@@ -101,15 +109,14 @@ pub struct IUniform {
 
     usage: UniformUsage,
     binding: DescriptorBindingContent,
+    alignment: vkbytes,
     element_size: vkbytes,
 }
 
 
 pub struct GsUniformBuffer {
 
-    usage: UniformUsage,
-    binding: DescriptorBindingContent,
-    element_size: vkbytes,
+    iuniform: IUniform,
 
     block: BufferBlock,
     repository_index: usize,
@@ -122,9 +129,7 @@ impl BufferInstance for GsUniformBuffer {
     fn new(block: BufferBlock, info: Self::InfoType, repository_index: usize) -> Self {
 
         GsUniformBuffer {
-            usage: info.usage,
-            binding: info.binding,
-            element_size: info.element_size,
+            iuniform: info,
             block, repository_index,
         }
     }
@@ -139,7 +144,7 @@ impl DescriptorBufferBindableTarget for GsUniformBuffer {
     fn binding_info(&self, sub_block_indices: Option<Vec<vkuint>>) -> DescriptorBufferBindingInfo {
 
         DescriptorBufferBindingInfo {
-            content: self.binding.clone(),
+            content: self.iuniform.binding.clone(),
             element_indices: sub_block_indices.unwrap_or(vec![0]),
             buffer_handle: self.block.handle,
             element_size: self.alignment_size(),
@@ -156,32 +161,17 @@ impl BufferCopiable for GsUniformBuffer {
 
 impl GsUniformBuffer {
 
-    pub fn dyn_alignment(&self) -> Option<vkbytes> {
-        match self.usage {
-            | UniformUsage::Common => None,
-            | UniformUsage::Dynamic { alignment, .. } => Some(alignment)
-        }
+    pub fn alignment(&self) -> vkbytes {
+        self.iuniform.alignment
     }
 
     pub fn alignment_size(&self) -> vkbytes {
-        match self.usage {
-            | UniformUsage::Common => self.element_size,
-            | UniformUsage::Dynamic { alignment, slice_size, ..} => {
-                bound_to_alignment(slice_size, alignment)
+
+        match self.iuniform.usage {
+            | UniformUsage::Common => self.iuniform.element_size,
+            | UniformUsage::Dynamic { slice_size, .. } => {
+                bound_to_alignment(slice_size, self.iuniform.alignment)
             }
-        }
-    }
-}
-
-
-impl UniformUsage {
-
-    pub(crate) fn set_alignment(&mut self, physical: &GsPhysicalDevice) {
-        match self {
-            | UniformUsage::Common => {},
-            | UniformUsage::Dynamic { slice_count: _, slice_size: _, ref mut alignment } => {
-                *alignment = physical.limits().min_uniform_buffer_offset_alignment;
-            },
         }
     }
 }

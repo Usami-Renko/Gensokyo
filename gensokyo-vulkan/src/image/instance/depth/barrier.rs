@@ -25,7 +25,7 @@ impl ImageBarrierBundleAbs for DSImageBarrierBundle {
         let final_barriers = self.info_indices.iter()
             .map(|&index| self.final_barrier(&mut infos[index])).collect();
 
-        let _ = copyer.recorder().image_pipeline_barrrier(
+        let _ = copyer.recorder().image_pipeline_barrier(
             vk::PipelineStageFlags::TOP_OF_PIPE,
             vk::PipelineStageFlags::EARLY_FRAGMENT_TESTS,
             vk::DependencyFlags::empty(),

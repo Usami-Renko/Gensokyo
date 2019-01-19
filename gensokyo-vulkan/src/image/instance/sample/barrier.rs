@@ -42,7 +42,7 @@ impl ImageBarrierBundleAbs for SampleImageBarrierBundle {
         // make image barrier transition for data transfer.
         let transfer_barriers = self.info_indices.iter()
             .map(|&index| self.transfer_barrier(&mut infos[index])).collect();
-        copyer.recorder().image_pipeline_barrrier(
+        copyer.recorder().image_pipeline_barrier(
             vk::PipelineStageFlags::TOP_OF_PIPE,
             vk::PipelineStageFlags::TRANSFER,
             vk::DependencyFlags::empty(), // dependencies specifying how execution and memory dependencies are formed.
@@ -57,9 +57,9 @@ impl ImageBarrierBundleAbs for SampleImageBarrierBundle {
         // make image barrier transition for final layout.
         let final_barriers = self.info_indices.iter()
             .map(|&index| self.final_barrier(&mut infos[index])).collect();
-        let _ = copyer.recorder().image_pipeline_barrrier(
+        let _ = copyer.recorder().image_pipeline_barrier(
             vk::PipelineStageFlags::TRANSFER,
-            self.dst_stage.to_raw_flag(),
+            self.dst_stage.into(),
             vk::DependencyFlags::empty(),
             final_barriers
         );

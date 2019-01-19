@@ -70,8 +70,9 @@ impl<M> Drop for GsBufferRepository<M> where M: BufferMemoryTypeAbs {
 
     fn drop(&mut self) {
 
-        self.buffers.iter().for_each(|buffer|
-            buffer.destroy(&self.device));
+        for buffer in self.buffers.iter() {
+            buffer.destroy(&self.device)
+        }
 
         self.memory.destroy(&self.device);
 

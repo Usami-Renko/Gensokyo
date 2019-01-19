@@ -11,7 +11,7 @@ impl GsFormat {
     pub const D24_UNORM_S8_UINT: GsFormat = GsFormat(vk::Format::D24_UNORM_S8_UINT);
     pub const D32_SFLOAT_S8_UINT: GsFormat = GsFormat(vk::Format::D32_SFLOAT_S8_UINT);
 
-    pub fn any(f: vk::Format) -> GsFormat {
+    pub(crate) fn any(f: vk::Format) -> GsFormat {
         GsFormat(f)
     }
 }

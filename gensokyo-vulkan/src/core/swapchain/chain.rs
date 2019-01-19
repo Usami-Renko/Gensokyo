@@ -105,7 +105,7 @@ impl GsSwapchain {
 
         let is_sub_optimal = unsafe {
             self.loader.queue_present(device.queue_handle_by_identifier(queue).handle, &present_info)
-                .or(Err(VkError::device("Get unknown error when acquiring image.")))?
+                .or(Err(VkError::swapchain_sync(SwapchainSyncError::Unknown)))?
         };
 
         if is_sub_optimal {

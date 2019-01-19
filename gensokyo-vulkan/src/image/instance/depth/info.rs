@@ -30,7 +30,7 @@ impl GsDSAttachmentInfo {
         property.usages = vk::ImageUsageFlags::DEPTH_STENCIL_ATTACHMENT;
 
         let mut specific = ImageSpecificInfo::default();
-        specific.format = format.to_raw_format();
+        specific.format = format.into();
         specific.dimension = vkDim3D {
             width  : dimension.width,
             height : dimension.height,

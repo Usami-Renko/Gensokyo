@@ -4,8 +4,6 @@ use ash::vk;
 use crate::memory::traits::MemoryMappable;
 use crate::types::{ vkptr, vkbytes };
 
-use std::mem;
-
 #[derive(Debug, Clone, Copy)]
 pub struct MemoryRange {
 
@@ -82,21 +80,30 @@ impl MemoryWritePtr {
         MemoryWritePtr { ptr, size }
     }
 
-    // FIXME: This function haven't been tested.
+    // FIXME: This function haven't been well tested.
     pub fn write_data<D: Copy>(&self, data: &[D]) {
 
-        let mut vert_align = unsafe {
-            ash::util::Align::new(
-                self.ptr,
-                mem::align_of::<D>() as vkbytes,
-                self.size,
-            )
+        use std::slice::from_raw_parts_mut;
+
+        let mapped_copy_target = unsafe {
+            from_raw_parts_mut(self.ptr as *mut D, data.len())
         };
 
-        vert_align.copy_from_slice(data);
+        mapped_copy_target.copy_from_slice(data);
+
+        // Deprecated method.
+        // let mut vert_align = unsafe {
+        //     ash::util::Align::new(
+        //         self.ptr,
+        //         mem::align_of::<D>() as vkbytes,
+        //         self.size,
+        //     )
+        // };
+        //
+        // vert_align.copy_from_slice(data);
     }
 
-    // FIXME: This function haven't been tested.
+    // FIXME: This function haven't been well tested.
     pub fn write_data_with_alignment<D: Copy>(&self, data: &[D], alignment: vkbytes) {
 
         let mut vert_align = unsafe {

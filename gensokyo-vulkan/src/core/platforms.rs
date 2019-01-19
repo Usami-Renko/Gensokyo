@@ -33,7 +33,7 @@ pub fn platform_surface_names() -> &'static CStr {
 }
 
 /// get the names of required extension used in Windows.
-#[cfg(all(windows))]
+#[cfg(target_os = "windows")]
 pub fn platform_surface_names() -> &'static CStr {
     Win32Surface::name()
 }

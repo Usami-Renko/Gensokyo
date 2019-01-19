@@ -45,7 +45,7 @@ impl RenderDependency {
 
     /// `src` specifies the source access mask.
     ///
-    /// `dst` spacifies the destination access mask.
+    /// `dst` specifies the destination access mask.
     pub fn access(mut self, src: vk::AccessFlags, dst: vk::AccessFlags) -> RenderDependency {
         self.0.src_access_mask = src;
         self.0.dst_access_mask = dst;

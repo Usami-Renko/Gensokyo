@@ -87,14 +87,14 @@ impl<M> GsAllotIntoDistributor<GsBufferDistributor<M>> for GsBufferAllocator<M>
             return Err(VkError::device("Failed to get attachment content to the buffer"))
         }
 
-        // allocate memory
+        // allocate memory.
         let mut memory_allocator = BufMemAllocator::allot_memory(
             self.storage_type, &self.device, self.allot_infos, self.spaces.iter().sum(), &self.memory_filter
         )?;
 
-        let mut buffers_to_distribute = vec![];
+        let mut buffers_to_distribute = Vec::with_capacity(self.buffers.len());
 
-        // bind buffers to memory
+        // bind buffers to memory.
         let mut offset = 0;
         for (i, buffer) in self.buffers.into_iter().enumerate() {
 

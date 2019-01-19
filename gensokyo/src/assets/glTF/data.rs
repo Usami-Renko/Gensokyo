@@ -358,7 +358,7 @@ impl<'d> GsBufferUploadable<GsglTFDataStorage> for GUDUDelegate<'d> {
         let upload_func = |model: &GUDUDelegate, by: &mut GsBufferDataUploader, data: &GsglTFDataStorage| {
 
             // upload uniform data.
-            let element_alignment = model.uniform.dyn_alignment().unwrap(); // unwrap() should always succeed here.
+            let element_alignment = model.uniform.alignment();
             data.node_transforms.data_content().upload(model.uniform, by, element_alignment)
         };
         Box::new(upload_func)

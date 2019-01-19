@@ -18,10 +18,10 @@ pub enum ImagePipelineStage {
     FragmentStage,
 }
 
-impl ImagePipelineStage {
+impl From<ImagePipelineStage> for vk::PipelineStageFlags {
 
-    pub(super) fn to_raw_flag(&self) -> vk::PipelineStageFlags {
-        match self {
+    fn from(flag: ImagePipelineStage) -> vk::PipelineStageFlags {
+        match flag {
             | ImagePipelineStage::VertexStage   => vk::PipelineStageFlags::VERTEX_SHADER,
             | ImagePipelineStage::FragmentStage => vk::PipelineStageFlags::FRAGMENT_SHADER,
         }
@@ -36,16 +36,19 @@ pub enum DepthStencilImageFormat {
     Depth24BitStencil8Bit,
 }
 
-impl DepthStencilImageFormat {
+impl From<DepthStencilImageFormat> for GsFormat {
 
-    pub(super) fn to_raw_format(&self) -> GsFormat {
+    fn from(image_format: DepthStencilImageFormat) -> GsFormat {
 
-        match self {
+        match image_format {
             | DepthStencilImageFormat::Depth32Bit => GsFormat::D32_SFLOAT,
             | DepthStencilImageFormat::Depth24BitStencil8Bit => GsFormat::D24_UNORM_S8_UINT,
             | DepthStencilImageFormat::Depth32BitStencil8Bit => GsFormat::D32_SFLOAT_S8_UINT,
         }
     }
+}
+
+impl DepthStencilImageFormat {
 
     pub(super) fn aspect_mask(&self) -> vk::ImageAspectFlags {
 
