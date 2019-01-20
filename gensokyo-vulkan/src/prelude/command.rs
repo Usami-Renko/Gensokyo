@@ -8,5 +8,6 @@ pub use crate::command::GsCmdGraphicsApi;
 pub use crate::command::GsCmdComputeApi;
 
 pub use crate::command::CmdDescriptorSetBindInfo;
+pub use crate::command::{ CmdViewportInfo, CmdScissorInfo, CmdDepthBiasInfo, CmdDepthBoundInfo };
 
 pub use crate::utils::phantom::Copy;

@@ -58,7 +58,7 @@ impl RenderPassBuilder {
         subpass_index as _
     }
 
-    /// create a attachment and set its reference to subpass, return the index of this attachment.
+    /// create a attachment and set its reference to subpass, return the index of this attachment in this specific subpass.
     pub fn add_attachment(&mut self, attachment: RenderAttachment, subpass_index: vkuint) -> usize {
 
         let attachment_ref = vk::AttachmentReference {

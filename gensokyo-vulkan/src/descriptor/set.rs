@@ -40,6 +40,7 @@ impl GsDescriptorSet {
 #[derive(Default)]
 pub struct DescriptorSetConfig {
 
+    // flags is reserved for future use in API version 1.1.92.
     layout_flags: vk::DescriptorSetLayoutCreateFlags,
 
     bindings    : Vec<Box<dyn DescriptorBindingInfo>>,
@@ -48,11 +49,8 @@ pub struct DescriptorSetConfig {
 
 impl DescriptorSetConfig {
 
-    pub fn init(layout_flags: vk::DescriptorSetLayoutCreateFlags) -> DescriptorSetConfig {
-        DescriptorSetConfig {
-            layout_flags,
-            ..Default::default()
-        }
+    pub fn init() -> DescriptorSetConfig {
+        DescriptorSetConfig::default()
     }
 
     pub fn add_buffer_binding(&mut self, bind_target: &impl DescriptorBufferBindableTarget, stage: GsPipelineStage) {
@@ -85,6 +83,10 @@ impl DescriptorSetConfig {
 
     pub fn iter_binding(&self) -> Iter<Box<dyn DescriptorBindingInfo>> {
         self.bindings.iter()
+    }
+
+    pub fn with_flags(&mut self, flags: vk::DescriptorSetLayoutCreateFlags) {
+        self.layout_flags = flags;
     }
 }
 

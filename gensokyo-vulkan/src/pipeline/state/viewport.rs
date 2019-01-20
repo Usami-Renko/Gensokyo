@@ -121,6 +121,7 @@ impl ViewportStateType {
     }
 }
 
+#[derive(Debug, Clone)]
 pub struct ViewportInfo {
 
     pub(crate) content: vk::Viewport,
@@ -162,6 +163,7 @@ impl ViewportInfo {
     }
 }
 
+#[derive(Debug, Clone)]
 pub struct ScissorInfo {
 
     pub(crate) content: vk::Rect2D,

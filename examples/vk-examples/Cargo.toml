@@ -10,3 +10,11 @@ description = "A Rust implementation of Vulkan Examples(https://github.com/Sasch
 gsma = { package = "gensokyo-macros", path = "../../gensokyo-macros" }
 gsvk = { package = "gensokyo-vulkan", path = "../../gensokyo-vulkan" }
 gs   = { package = "gensokyo", path = "../../gensokyo" }
+
+ash         = "0.27.1"
+nalgebra    = "0.16"
+lazy_static = "1.2.0"
+
+[[bin]]
+name = "triangle"
+path = "src/triangle/main.rs"

@@ -132,7 +132,7 @@ impl UniformBufferProcedure {
     fn descriptor(kit: AllocatorKit, ubo_buffer: &GsUniformBuffer) -> GsResult<(DescriptorSet, GsDescriptorRepository)> {
 
         // descriptor
-        let mut descriptor_set_config = DescriptorSetConfig::init(vk::DescriptorSetLayoutCreateFlags::empty());
+        let mut descriptor_set_config = DescriptorSetConfig::init();
         descriptor_set_config.add_buffer_binding(ubo_buffer, GsPipelineStage::VERTEX);
 
         let mut descriptor_allocator = kit.descriptor(vk::DescriptorPoolCreateFlags::empty());
@@ -216,8 +216,7 @@ impl UniformBufferProcedure {
         let mut command_buffers = vec![];
 
         let command_buffer_count = graphics_pipeline.frame_count();
-        let raw_commands = command_pool
-            .allocate(CmdBufferUsage::UnitaryCommand, command_buffer_count)?;
+        let raw_commands = command_pool.allocate(CmdBufferUsage::UnitaryCommand, command_buffer_count)?;
 
         for (frame_index, command) in raw_commands.into_iter().enumerate() {
             let mut recorder = kit.pipeline_recorder(graphics_pipeline, command);

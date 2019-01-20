@@ -29,6 +29,10 @@ impl GsBufIndicesInfo {
             indices_type: vk::IndexType::UINT32,
         }
     }
+
+    pub fn set_indices_type(&mut self, typ: vk::IndexType) {
+        self.indices_type = typ;
+    }
 }
 
 impl BufferInfoAbstract<IIndices> for GsBufIndicesInfo {
@@ -49,6 +53,7 @@ impl BufferInfoAbstract<IIndices> for GsBufIndicesInfo {
 
         IIndices {
             indices_type: self.indices_type,
+            indices_count: self.indices_count,
         }
     }
 }
@@ -56,10 +61,12 @@ impl BufferInfoAbstract<IIndices> for GsBufIndicesInfo {
 pub struct IIndices {
 
     indices_type: vk::IndexType,
+    indices_count: vkuint,
 }
 
 pub struct GsIndexBuffer {
 
+    indices_count: vkuint,
     indices_type: vk::IndexType,
 
     block: BufferBlock,
@@ -72,6 +79,7 @@ impl BufferInstance for GsIndexBuffer {
     fn new(block: BufferBlock, info: Self::InfoType, repository_index: usize) -> Self {
 
         GsIndexBuffer {
+            indices_count: info.indices_count,
             indices_type: info.indices_type,
             block, repository_index,
         }
@@ -91,11 +99,11 @@ impl BufferCopiable for GsIndexBuffer {
 
 impl GsIndexBuffer {
 
-    pub fn set_indices_type(&mut self, typ: vk::IndexType) {
-        self.indices_type = typ;
-    }
-
     pub(crate) fn render_info(&self) -> (vk::Buffer, vk::IndexType) {
         (self.block.handle, self.indices_type)
+    }
+
+    pub fn total_count(&self) -> vkuint {
+        self.indices_count
     }
 }

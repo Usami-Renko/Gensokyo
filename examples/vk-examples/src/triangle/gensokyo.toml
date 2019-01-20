@@ -1,0 +1,7 @@
+
+[window]
+title = "Vulkan Example - Basic indexed triangle"
+
+[window.dimension]
+width  = 1280
+height = 720

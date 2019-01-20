@@ -74,7 +74,7 @@ impl<T: ShaderInputDefinition> GltfModelViewer<T> {
         })?;
 
         let (depth_attachment, image_storage) = loader.assets(|kit| {
-            Self::image(kit)
+            Self::image(kit, screen_dimension)
         })?;
 
         let pipeline = loader.pipelines(|kit| {
@@ -153,7 +153,7 @@ impl<T: ShaderInputDefinition> GltfModelViewer<T> {
     fn ubo(kit: AllocatorKit, ubo_buffer: &GsUniformBuffer, model: &GsglTFModel) -> GsResult<(DescriptorSet, GsDescriptorRepository)> {
 
         // allocate uniform descriptor.
-        let mut descriptor_set_config = DescriptorSetConfig::init(vk::DescriptorSetLayoutCreateFlags::empty());
+        let mut descriptor_set_config = DescriptorSetConfig::init();
         descriptor_set_config.add_buffer_binding(ubo_buffer, GsPipelineStage::VERTEX);
         descriptor_set_config.add_buffer_binding(model, GsPipelineStage::VERTEX);
 
@@ -168,12 +168,12 @@ impl<T: ShaderInputDefinition> GltfModelViewer<T> {
         Ok((ubo_set, desc_storage))
     }
 
-    fn image(kit: AllocatorKit) -> GsResult<(GsDSAttachment, GsImageRepository<Device>)> {
+    fn image(kit: AllocatorKit, dimension: vkDim2D) -> GsResult<(GsDSAttachment, GsImageRepository<Device>)> {
 
         // depth attachment image
         let mut image_allocator = kit.image(ImageStorageType::DEVICE);
 
-        let depth_attachment_info = GsDSAttachmentInfo::new(kit.swapchain_dimension(), DepthStencilImageFormat::Depth32Bit);
+        let depth_attachment_info = GsDSAttachmentInfo::new(dimension, DepthStencilImageFormat::Depth32Bit);
         let image_index = image_allocator.assign(depth_attachment_info)?;
 
         let image_distributor = image_allocator.allocate()?;
@@ -256,8 +256,7 @@ impl<T: ShaderInputDefinition> GltfModelViewer<T> {
         let mut command_buffers = vec![];
 
         let command_buffer_count = graphics_pipeline.frame_count();
-        let raw_commands = command_pool
-            .allocate(CmdBufferUsage::UnitaryCommand, command_buffer_count)?;
+        let raw_commands = command_pool.allocate(CmdBufferUsage::UnitaryCommand, command_buffer_count)?;
 
         for (frame_index, command) in raw_commands.into_iter().enumerate() {
             let mut recorder = kit.pipeline_recorder(graphics_pipeline, command);

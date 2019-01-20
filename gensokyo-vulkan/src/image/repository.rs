@@ -33,10 +33,8 @@ impl<M> Drop for GsImageRepository<M> {
 
     fn drop(&mut self) {
 
-        self.images.iter()
-            .for_each(|image| image.destroy(&self.device));
-        self.views.iter()
-            .for_each(|view| view.destroy(&self.device));
+        self.images.iter().for_each(|image| image.destroy(&self.device));
+        self.views.iter().for_each(|view| view.destroy(&self.device));
 
         self.memory.destroy(&self.device);
     }

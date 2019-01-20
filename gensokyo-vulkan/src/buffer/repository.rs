@@ -11,7 +11,6 @@ use crate::memory::instance::GsBufferMemory;
 use crate::memory::transfer::{ GsBufferDataUploader, GsBufferDataUpdater };
 
 use crate::error::{ VkResult, VkError };
-use crate::types::vkbytes;
 
 use std::marker::PhantomData;
 
@@ -24,9 +23,6 @@ pub struct GsBufferRepository<M> where M: BufferMemoryTypeAbs {
     buffers : Vec<GsBuffer>,
     memory  : GsBufferMemory,
 
-    /// The offset of each buffer in memory.
-    offsets: Vec<vkbytes>,
-
     allocate_infos: BufferAllocateInfos,
 }
 
@@ -34,14 +30,11 @@ impl<M> GsBufferRepository<M> where M: BufferMemoryTypeAbs {
 
     pub(crate) fn store(phantom_type: PhantomData<M>, device: GsDevice, physical: GsPhyDevice, buffers: Vec<GsBuffer>, memory: GsBufferMemory, allocate_infos: BufferAllocateInfos) -> GsBufferRepository<M> {
 
-        use crate::utils::memory::spaces_to_offsets;
-        let offsets = spaces_to_offsets(&allocate_infos.spaces);
-
         GsBufferRepository {
             phantom_type,
             device, physical, memory,
 
-            buffers, offsets,
+            buffers,
             allocate_infos,
         }
     }
@@ -70,13 +63,8 @@ impl<M> Drop for GsBufferRepository<M> where M: BufferMemoryTypeAbs {
 
     fn drop(&mut self) {
 
-        for buffer in self.buffers.iter() {
-            buffer.destroy(&self.device)
-        }
+        self.buffers.iter().for_each(|buffer| buffer.destroy(&self.device));
 
         self.memory.destroy(&self.device);
-
-        self.buffers.clear();
-        self.offsets.clear();
     }
 }

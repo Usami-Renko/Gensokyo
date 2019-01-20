@@ -29,7 +29,6 @@ impl Drop for GsDescriptorRepository {
 
         self.pool.destroy(&self.device);
 
-        self.sets.iter()
-            .for_each(|set| set.destroy(&self.device));
+        self.sets.iter().for_each(|set| set.destroy(&self.device));
     }
 }

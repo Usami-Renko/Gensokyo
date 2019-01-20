@@ -33,7 +33,7 @@ impl AssetsLoader {
     pub fn assets<R, F>(&self, func: F) -> R
         where F: FnOnce(AllocatorKit) -> R {
 
-        let kit = AllocatorKit::init(&self.physical, &self.device, &self.swapchain, self.config.clone());
+        let kit = AllocatorKit::init(&self.physical, &self.device, self.config.clone());
 
         func(kit)
     }

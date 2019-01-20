@@ -142,7 +142,7 @@ impl TextureMappingProcedure {
 
     fn descriptor(kit: AllocatorKit, sample_image: &GsSampleImage) -> GsResult<(DescriptorSet, GsDescriptorRepository)> {
 
-        let mut descriptor_set_config = DescriptorSetConfig::init(vk::DescriptorSetLayoutCreateFlags::empty());
+        let mut descriptor_set_config = DescriptorSetConfig::init();
         descriptor_set_config.add_image_binding(sample_image, GsPipelineStage::FRAGMENT);
 
         let mut descriptor_allocator = kit.descriptor(vk::DescriptorPoolCreateFlags::empty());
@@ -227,8 +227,7 @@ impl TextureMappingProcedure {
         let mut command_buffers = vec![];
 
         let command_buffer_count = graphics_pipeline.frame_count();
-        let raw_commands = command_pool
-            .allocate(CmdBufferUsage::UnitaryCommand, command_buffer_count)?;
+        let raw_commands = command_pool.allocate(CmdBufferUsage::UnitaryCommand, command_buffer_count)?;
 
         for (frame_index, command) in raw_commands.into_iter().enumerate() {
             let mut recorder = kit.pipeline_recorder(graphics_pipeline, command);
