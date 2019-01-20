@@ -63,6 +63,6 @@ impl AssetsLoader {
     }
 
     pub fn screen_dimension(&self) -> vkDim2D {
-        self.swapchain.extent()
+        self.swapchain.dimension()
     }
 }

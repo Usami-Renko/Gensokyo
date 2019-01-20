@@ -6,12 +6,10 @@ use crate::core::device::GsDevice;
 use crate::core::swapchain::GsChain;
 
 use crate::pipeline::pass::render::GsRenderPass;
-use crate::pipeline::pass::attachment::RenderAttachment;
-use crate::pipeline::pass::subpass::{ RenderSubpass, AttachmentType };
+use crate::pipeline::pass::attachment::{ RenderAttachment, RenderAttType, AttachmentView };
+use crate::pipeline::pass::subpass::{ RenderSubpass, AttachmentRawType };
 use crate::pipeline::pass::dependency::RenderDependency;
 use crate::pipeline::pass::framebuffer::FramebufferBuilder;
-
-use crate::image::instance::depth::GsDSAttachment;
 
 use crate::error::{ VkResult, VkError };
 use crate::types::vkuint;
@@ -23,11 +21,12 @@ pub struct RenderPassBuilder {
     device: GsDevice,
     chain : GsChain,
 
-    attachments : Vec<RenderAttachment>,
+    attachments : Vec<vk::AttachmentDescription>,
+    frame_views : Vec<AttachmentView>,
+    clear_values: Vec<vk::ClearValue>,
+
     subpasses   : Vec<RenderSubpass>,
     dependencies: Vec<RenderDependency>,
-
-    depth: Option<vk::ImageView>,
 }
 
 impl RenderPassBuilder {
@@ -39,10 +38,10 @@ impl RenderPassBuilder {
             chain : chain.clone(),
 
             attachments : vec!(),
+            frame_views : vec![],
+            clear_values: vec![],
             subpasses   : vec!(),
             dependencies: vec!(),
-
-            depth: None,
         }
     }
 
@@ -58,41 +57,33 @@ impl RenderPassBuilder {
         subpass_index as _
     }
 
-    /// create a attachment and set its reference to subpass, return the index of this attachment in this specific subpass.
-    pub fn add_attachment(&mut self, attachment: RenderAttachment, subpass_index: vkuint) -> usize {
+    /// create a attachment and set its reference to subpass.
+    pub fn add_attachment<A>(&mut self, attachment: RenderAttachment<A>, subpass_index: vkuint)
+        where A: RenderAttType {
 
-        let attachment_ref = vk::AttachmentReference {
-            attachment: self.attachments.len() as _,
-            layout: attachment.layout,
-        };
+        // `attachment_index` is the index of attachments used in a specific render pass.
+        let attachment_index = self.attachments.len();
+        let attachment_ref = attachment.reference(attachment_index);
 
-        match attachment.attach_type {
-            | AttachmentType::Input => {
-                self.subpasses[subpass_index as usize].add_input(attachment_ref)
+        match A::RAW_TYPE {
+            | AttachmentRawType::Input => {
+                self.subpasses[subpass_index as usize].inputs.push(attachment_ref)
             },
-            | AttachmentType::Color => {
-                self.subpasses[subpass_index as usize].add_color(attachment_ref)
+            | AttachmentRawType::Color => {
+                self.subpasses[subpass_index as usize].colors.push(attachment_ref)
             },
-            | AttachmentType::Resolve => {
-                self.subpasses[subpass_index as usize].add_resolve(attachment_ref)
+            | AttachmentRawType::Resolve => {
+                self.subpasses[subpass_index as usize].resolves.push(attachment_ref)
             },
-            | AttachmentType::DepthStencil => {
-                self.subpasses[subpass_index as usize].add_depth_stencil(attachment_ref)
+            | AttachmentRawType::DepthStencil => {
+                self.subpasses[subpass_index as usize].depth_stencils.push(attachment_ref)
             },
         }
 
-        let attachment_index = self.attachments.len();
+        let (attachment, frame_view, clear_value) = attachment.take();
         self.attachments.push(attachment);
-
-        attachment_index
-    }
-
-    pub fn set_attachment_preserve(&mut self, subpass_index: usize, attachment_index: usize) {
-        self.subpasses[subpass_index].add_preserve(attachment_index as vkuint);
-    }
-
-    pub fn set_depth_attachment(&mut self, image: &GsDSAttachment) {
-        self.depth = Some(image.view())
+        self.frame_views.push(frame_view);
+        self.clear_values.push(clear_value);
     }
 
     pub fn add_dependency(&mut self, dependency: RenderDependency) {
@@ -101,10 +92,6 @@ impl RenderPassBuilder {
 
     pub fn build(self) -> VkResult<GsRenderPass> {
 
-        let clear_values = self.attachments.iter()
-            .map(|a| a.clear_value).collect();
-        let attachments: Vec<vk::AttachmentDescription> = self.attachments.into_iter()
-            .map(|a| a.take()).collect();
         let subpasses: Vec<vk::SubpassDescription> = self.subpasses.iter()
             .map(|r| r.build()).collect();
         let dependencies: Vec<vk::SubpassDependency> = self.dependencies.into_iter()
@@ -115,8 +102,8 @@ impl RenderPassBuilder {
             p_next: ptr::null(),
             // flags is reserved for future use in API version 1.1.82.
             flags: vk::RenderPassCreateFlags::empty(),
-            attachment_count: attachments.len() as _,
-            p_attachments   : attachments.as_ptr(),
+            attachment_count: self.attachments.len() as _,
+            p_attachments   : self.attachments.as_ptr(),
             subpass_count   : subpasses.len() as _,
             p_subpasses     : subpasses.as_ptr(),
             dependency_count: dependencies.len() as _,
@@ -129,14 +116,18 @@ impl RenderPassBuilder {
         };
 
         // generate framebuffers ---------------------------------------
-        let mut framebuffers = vec![];
 
-        for view in self.chain.views().iter() {
-            let mut builder = FramebufferBuilder::new(self.chain.extent(), 1);
-            builder.add_attachment(&view.handle);
+        let framebuffer_count = self.chain.image_count();
+        let mut framebuffers = Vec::with_capacity(framebuffer_count);
 
-            if let Some(depth) = self.depth {
-                builder.add_attachment(&depth);
+        for i in 0..framebuffer_count {
+            let mut builder = FramebufferBuilder::new(self.chain.dimension(), 1);
+
+            for frame_view in self.frame_views.iter() {
+                match frame_view {
+                    | AttachmentView::Present => builder.add_attachment(self.chain.view_at(i)),
+                    | AttachmentView::DepthStencil(view) => builder.add_attachment(view.clone()),
+                }
             }
 
             let framebuffer = builder.build(&self.device, handle)?;
@@ -144,7 +135,7 @@ impl RenderPassBuilder {
         }
         // ------------------------------------------------------------
 
-        let render_pass = GsRenderPass::new(handle, framebuffers, self.chain.extent(), clear_values);
+        let render_pass = GsRenderPass::new(handle, framebuffers, self.chain.dimension(), self.clear_values);
         Ok(render_pass)
     }
 }

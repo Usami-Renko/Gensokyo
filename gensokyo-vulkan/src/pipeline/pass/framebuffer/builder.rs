@@ -53,9 +53,7 @@ impl FramebufferBuilder {
         Ok(framebuffer)
     }
 
-    pub(crate) fn add_attachment(&mut self, attachment: &vk::ImageView) -> &mut FramebufferBuilder {
-
-        self.attachments.push(attachment.clone());
-        self
+    pub(crate) fn add_attachment(&mut self, attachment: vk::ImageView) {
+        self.attachments.push(attachment);
     }
 }

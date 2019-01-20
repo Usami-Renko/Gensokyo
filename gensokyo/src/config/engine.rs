@@ -18,7 +18,7 @@ use std::io::Read;
 
 use failure::ResultExt;
 
-const MANIFEST_CONFIG_NAME: &str = "gensokyo.toml";
+const MANIFEST_CONFIG_NAME: &str = "Gensokyo.toml";
 
 pub(crate) trait ConfigMirror {
     type ConfigType;

@@ -217,13 +217,11 @@ impl VulkanExample {
         let color_attachment = kit.present_attachment()
             .op(vk::AttachmentLoadOp::CLEAR, vk::AttachmentStoreOp::STORE)
             .clear_value(vk::ClearValue { color: vk::ClearColorValue { float32: [0.0, 0.0, 0.2, 1.0] } });
-        let depth_attachment = depth_image.to_subpass_attachment()
+        let depth_attachment = depth_image.attachment()
             .op(vk::AttachmentLoadOp::CLEAR, vk::AttachmentStoreOp::DONT_CARE);
 
-        let _ = render_pass_builder.add_attachment(color_attachment, first_subpass);
-        let _ = render_pass_builder.add_attachment(depth_attachment, first_subpass);
-
-        render_pass_builder.set_depth_attachment(depth_image);
+        render_pass_builder.add_attachment(color_attachment, first_subpass);
+        render_pass_builder.add_attachment(depth_attachment, first_subpass);
 
         let dependency0 = kit.subpass_dependency(SubpassStage::BeginExternal, SubpassStage::AtIndex(first_subpass))
             .stage(vk::PipelineStageFlags::BOTTOM_OF_PIPE, vk::PipelineStageFlags::COLOR_ATTACHMENT_OUTPUT)

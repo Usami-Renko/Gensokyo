@@ -1,12 +1,10 @@
 
-use ash::vk;
-
 use crate::image::entity::ImageEntity;
 use crate::image::traits::{ ImageInstance, ImageCopiable };
 use crate::image::utils::ImageCopyInfo;
 use crate::image::instance::desc::ImageInstanceInfoDesc;
 
-use crate::pipeline::pass::{ RenderAttachment, RenderAttachmentPrefab };
+use crate::pipeline::pass::{ RenderAttachment, DepthStencil };
 use crate::types::format::GsFormat;
 
 pub struct GsDSAttachment {
@@ -31,13 +29,10 @@ impl ImageInstance<IDepthStencilImg> for GsDSAttachment {
 
 impl GsDSAttachment {
 
-    pub fn to_subpass_attachment(&self) -> RenderAttachment {
-        RenderAttachment::setup(RenderAttachmentPrefab::DepthAttachment, self.idsi.format)
-    }
+    pub fn attachment(&self) -> RenderAttachment<DepthStencil> {
 
-    // TODO: Remove this function.
-    pub(crate) fn view(&self) -> vk::ImageView {
-        self.entity.view.clone()
+        let frame_view = DepthStencil(self.entity.view.clone());
+        RenderAttachment::setup(frame_view, self.idsi.format)
     }
 }
 

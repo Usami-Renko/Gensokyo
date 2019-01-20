@@ -33,6 +33,8 @@ pub struct GsSwapchain {
     format: GsFormat,
     /// the dimension of presentable images.
     extent: vkDim2D,
+    /// the count of presentable image in swapchain.
+    image_count: usize,
 
     /// the maximum duration to wait in `device.acquire_next_image_khr(..)` call, in nanoseconds.
     image_acquire_time: vklint,
@@ -42,9 +44,8 @@ impl GsSwapchain {
 
     pub(crate) fn new(handle: vk::SwapchainKHR, loader: ash::extensions::khr::Swapchain, images: Vec<GsImage>, views: Vec<GsImageView>, format: GsFormat, extent: vkDim2D, image_acquire_time: vklint) -> GsSwapchain {
 
-        GsSwapchain {
-            handle, loader, images, views, format, extent, image_acquire_time
-        }
+        let image_count = views.len();
+        GsSwapchain { handle, loader, images, views, format, extent, image_count, image_acquire_time }
     }
 
     /// Acquire an available presentable image to use, and retrieve the index of that image.
@@ -131,15 +132,21 @@ impl GsSwapchain {
     }
 
     // TODO: Remove the following function.
-    pub fn extent(&self) -> vkDim2D {
-        self.extent
-    }
     pub fn format(&self) -> GsFormat {
         self.format
     }
-    // TODO: Remove the following function.
-    pub(crate) fn views(&self) -> &Vec<GsImageView> {
-        &self.views
+
+    /// Get the dimension of swapchain images.
+    pub fn dimension(&self) -> vkDim2D {
+        self.extent
+    }
+    /// Get the number of swapchain images.
+    pub fn image_count(&self) -> usize {
+        self.image_count
+    }
+    /// Get the handle of specific image view of swapchain.
+    pub fn view_at(&self, index: usize) -> vk::ImageView {
+        self.views[index].handle
     }
 }
 
