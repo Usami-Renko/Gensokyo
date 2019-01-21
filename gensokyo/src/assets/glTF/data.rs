@@ -1,10 +1,8 @@
 
-use crate::assets::glTF::importer::GsglTFEntity;
 use crate::assets::glTF::levels::GsglTFNodeEntity;
 use crate::assets::glTF::asset::{ GsglTFAssetLib, GsglTFPhyLimits };
 use crate::assets::error::GltfError;
 
-use crate::assets::glTF::material::material::MaterialConstants;
 use crate::assets::glTF::material::sampler::GsglTFSamplerData;
 use crate::assets::glTF::material::texture::GsglTFTextureData;
 
@@ -13,25 +11,14 @@ use crate::assets::glTF::primitive::transforms::{ GsglTFNodesData, GsglTFNodeUni
 use crate::assets::glTF::primitive::indices::GsglTFIndicesData;
 
 use gsvk::buffer::allocator::types::BufferMemoryTypeAbs;
-use gsvk::buffer::allocator::{ GsBufferAllocator, GsBufferAllocatable, GsBufferDistributor };
-use gsvk::buffer::instance::{ GsVertexBuffer, IVertex };
-use gsvk::buffer::instance::{ GsIndexBuffer, IIndices };
-use gsvk::buffer::instance::{ GsUniformBuffer, IUniform };
-
-use gsvk::pipeline::target::GsPipelineStage;
-use gsvk::pipeline::layout::GsPushConstantRange;
-
-use gsvk::command::{ GsCmdRecorder, GsCmdGraphicsApi, CmdDescriptorSetBindInfo };
-use gsvk::descriptor::{ DescriptorSet, DescriptorBufferBindableTarget, DescriptorBufferBindingInfo };
-use gsvk::memory::transfer::{ GsBufferDataUploader, GsBufferUploadable };
-
-use gsvk::utils::api::{ GsAssignIndex, GsAllocatorApi, GsDistributeApi };
-use gsvk::utils::phantom::{ Graphics, Host };
+use gsvk::buffer::allocator::{ GsBufferAllocator, GsBufferAllocatable };
+use gsvk::buffer::instance::{ IVertex, IIndices, IUniform };
 
 use gsvk::types::{ vkuint, vkbytes };
-use gsvk::error::VkResult;
+use gsvk::utils::api::{ GsAssignIndex, GsAllocatorApi };
+use gsvk::utils::phantom::Host;
 
-use std::mem;
+use gsvk::error::VkResult;
 
 // ------------------------------------------------------------------------------------
 pub(crate) struct IntermediateglTFData {
@@ -133,9 +120,9 @@ impl GsglTFLoadingData {
 // -----------------------------------------------------------------------------------
 pub struct GsglTFDataStorage {
 
-    attributes: GsglTFAttributesData,
-    indices: GsglTFIndicesData,
-    node_transforms: GsglTFNodesData,
+    pub(super) attributes: GsglTFAttributesData,
+    pub(super) indices: GsglTFIndicesData,
+    pub(super) node_transforms: GsglTFNodesData,
 
     #[allow(dead_code)]
     textures : Vec<GsglTFTextureData>,
@@ -219,149 +206,12 @@ impl<'d> GsBufferAllocatable<Host, GsglTFUniformAllotIndex> for GUDADelegate<'d>
 
 // ------------------------------------------------------------------------------------
 pub struct GsglTFVertexAllotIndex {
-    vertex : GsAssignIndex<IVertex>,
-    indices: Option<GsAssignIndex<IIndices>>,
+    pub(super) vertex : GsAssignIndex<IVertex>,
+    pub(super) indices: Option<GsAssignIndex<IIndices>>,
 }
 
 pub struct GsglTFUniformAllotIndex {
-    uniform: GsAssignIndex<IUniform>,
+    pub(super) uniform: GsAssignIndex<IUniform>,
 }
 // ------------------------------------------------------------------------------------
 
-
-// ------------------------------------------------------------------------------------
-pub struct GsglTFModel {
-
-    entity: GsglTFEntity,
-
-    vertex : GsVertexBuffer,
-    indices: Option<GsIndexBuffer>,
-    uniform: GsUniformBuffer,
-}
-
-pub(crate) struct GsglTFCmdRecordInfo<'i> {
-    pub binding_sets: Vec<CmdDescriptorSetBindInfo<'i>>,
-    pub uniform_aligned_size: vkbytes,
-    pub gltf_uniform_index: usize,
-}
-
-impl GsglTFEntity {
-
-    pub fn assign<M>(self,
-
-         vertex_index : GsglTFVertexAllotIndex,  vertex_distributor: &GsBufferDistributor<M>,
-         uniform_index: GsglTFUniformAllotIndex, uniform_distributor: &GsBufferDistributor<Host>)
-
-        -> GsglTFModel where M: BufferMemoryTypeAbs {
-
-        GsglTFModel {
-            entity: self,
-            vertex: vertex_distributor.acquire(vertex_index.vertex),
-            indices: vertex_index.indices.and_then(|indices_index| {
-                Some(vertex_distributor.acquire(indices_index))
-            }),
-            uniform: uniform_distributor.acquire(uniform_index.uniform),
-        }
-    }
-}
-
-impl<'d, 's: 'd> GsglTFModel {
-
-    pub fn vertex_upload_delegate(&'s self) -> GVDUDelegate<'d> {
-        GVDUDelegate {
-            vertex : &self.vertex,
-            indices: &self.indices,
-        }
-    }
-
-    pub fn uniform_upload_delegate(&'s self) -> GUDUDelegate<'d> {
-        GUDUDelegate {
-            uniform: &self.uniform,
-        }
-    }
-
-    pub fn record_command<'i>(&self, recorder: &GsCmdRecorder<Graphics>, gltf_set: &DescriptorSet, binding_sets: Vec<CmdDescriptorSetBindInfo<'i>>) {
-
-        // bind the whole vertex buffer.
-        recorder.bind_vertex_buffers(0, &[&self.vertex]);
-
-        // bind the whole index buffer.
-        if let Some(ref indices_block) = self.indices {
-            recorder.bind_index_buffer(indices_block, 0);
-        }
-
-        // Prepare binding DescriptorSets.
-        let uniform_index = binding_sets.len(); // get the location of glTF descriptorSet.
-        let mut binding_sets = binding_sets; // make it mutable.
-
-        binding_sets.push(CmdDescriptorSetBindInfo {
-            set: gltf_set,
-            dynamic_offset: None,
-        });
-
-        let mut record_info = GsglTFCmdRecordInfo {
-            binding_sets,
-            uniform_aligned_size: self.uniform.alignment_size(),
-            gltf_uniform_index: uniform_index,
-        };
-
-        // call the draw command.
-        self.entity.scene.record_command(recorder, &mut record_info);
-    }
-
-    pub fn pushconst_description(&self) -> GsPushConstantRange {
-        GsPushConstantRange::new(GsPipelineStage::FRAGMENT, 0, mem::size_of::<MaterialConstants>() as vkuint)
-    }
-}
-
-impl DescriptorBufferBindableTarget for GsglTFModel {
-
-    fn binding_info(&self, sub_block_indices: Option<Vec<vkuint>>) -> DescriptorBufferBindingInfo {
-        self.uniform.binding_info(sub_block_indices)
-    }
-}
-// ------------------------------------------------------------------------------------
-
-// ------------------------------------------------------------------------------------
-/// glTF Vertex Data Upload Delegate.
-pub struct GVDUDelegate<'d> {
-    vertex : &'d GsVertexBuffer,
-    indices: &'d Option<GsIndexBuffer>,
-}
-
-// glTF Uniform Data Upload Delegate.
-pub struct GUDUDelegate<'d> {
-    uniform: &'d GsUniformBuffer,
-}
-
-impl<'d> GsBufferUploadable<GsglTFDataStorage> for GVDUDelegate<'d> {
-
-    fn upload_func(&self) -> Box<dyn Fn(&Self, &mut GsBufferDataUploader, &GsglTFDataStorage) -> VkResult<()>> {
-
-        let upload_func = |model: &GVDUDelegate, by: &mut GsBufferDataUploader, data: &GsglTFDataStorage| {
-
-            // upload vertex data.
-            data.attributes.data_content().upload(model.vertex, by)?;
-            // upload index data.
-            data.indices.upload(model.indices, by)?;
-
-            Ok(())
-        };
-        Box::new(upload_func)
-    }
-}
-
-impl<'d> GsBufferUploadable<GsglTFDataStorage> for GUDUDelegate<'d> {
-
-    fn upload_func(&self) -> Box<dyn Fn(&Self, &mut GsBufferDataUploader, &GsglTFDataStorage) -> VkResult<()>> {
-
-        let upload_func = |model: &GUDUDelegate, by: &mut GsBufferDataUploader, data: &GsglTFDataStorage| {
-
-            // upload uniform data.
-            let element_alignment = model.uniform.alignment();
-            data.node_transforms.data_content().upload(model.uniform, by, element_alignment)
-        };
-        Box::new(upload_func)
-    }
-}
-// ------------------------------------------------------------------------------------

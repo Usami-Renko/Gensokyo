@@ -21,7 +21,7 @@ pub struct GltfModelViewer<T: ShaderInputDefinition> {
 
     phantom_type: PhantomData<T>,
 
-    dst_model: GsglTFModel,
+    dst_model: GsglTFEntity,
     #[allow(dead_code)]
     model_repository: GsBufferRepository<Device>,
 
@@ -54,7 +54,7 @@ impl<T: ShaderInputDefinition> GltfModelViewer<T> {
 
         let screen_dimension = loader.screen_dimension();
         let camera = GsCameraFactory::config()
-            .place_at(Point3::new(0.0, 0.0, 25.0))
+            .place_at(Point3::new(0.0, 0.0, 2.5))
             .screen_aspect_ratio(screen_dimension.width as f32 / screen_dimension.height as f32)
             .into_flight_camera();
 
@@ -115,7 +115,7 @@ impl<T: ShaderInputDefinition> GltfModelViewer<T> {
         Ok(())
     }
 
-    fn load_model(kit: AllocatorKit, paths: &FilePathConstants) -> GsResult<(GsUniformBuffer, GsBufferRepository<Host>, GsglTFModel, GsBufferRepository<Device>)> {
+    fn load_model(kit: AllocatorKit, paths: &FilePathConstants) -> GsResult<(GsUniformBuffer, GsBufferRepository<Host>, GsglTFEntity, GsBufferRepository<Device>)> {
 
         // allocate uniform data buffer.
         let mut ubo_allocator = kit.buffer(BufferStorageType::HOST);
@@ -126,31 +126,35 @@ impl<T: ShaderInputDefinition> GltfModelViewer<T> {
 
         // load and allocate model data.
         let gltf_importer = kit.gltf_loader();
-        let (model_entity, model_data) = gltf_importer.load(Path::new(paths.model_path))?;
+        let (mut model_entity, model_data) = gltf_importer.load(Path::new(paths.model_path))?;
 
         let model_vertex_index = model_allocator.assign_v2(&model_data.vertex_allot_delegate())?;
         let model_uniform_index = ubo_allocator.assign_v2(&model_data.uniform_allot_delegate(1))?;
 
+        // allocate memory.
         let ubo_distributor = ubo_allocator.allocate()?;
         let model_distributor = model_allocator.allocate()?;
 
-        let dst_model = model_entity.assign(model_vertex_index, &model_distributor, model_uniform_index, &ubo_distributor);
+        // get vertex and uniform buffer.
+        model_entity.acquire_vertex(model_vertex_index, &model_distributor);
+        model_entity.acquire_uniform(model_uniform_index, &ubo_distributor);
 
         let ubo_buffer = ubo_distributor.acquire(ubo_index);
         let mut ubo_repository = ubo_distributor.into_repository();
         let mut model_repository = model_distributor.into_repository();
 
+        // upload actual model data to memory.
         model_repository.data_uploader()?
-            .upload_v2(&dst_model.vertex_upload_delegate(), &model_data)?
+            .upload_v2(&model_entity.vertex_upload_delegate().unwrap(), &model_data)?
             .finish()?;
         ubo_repository.data_uploader()?
-            .upload_v2(&dst_model.uniform_upload_delegate(), &model_data)?
+            .upload_v2(&model_entity.uniform_upload_delegate().unwrap(), &model_data)?
             .finish()?;
 
-        Ok((ubo_buffer, ubo_repository, dst_model, model_repository))
+        Ok((ubo_buffer, ubo_repository, model_entity, model_repository))
     }
 
-    fn ubo(kit: AllocatorKit, ubo_buffer: &GsUniformBuffer, model: &GsglTFModel) -> GsResult<(DescriptorSet, GsDescriptorRepository)> {
+    fn ubo(kit: AllocatorKit, ubo_buffer: &GsUniformBuffer, model: &GsglTFEntity) -> GsResult<(DescriptorSet, GsDescriptorRepository)> {
 
         // allocate uniform descriptor.
         let mut descriptor_set_config = DescriptorSetConfig::init();
@@ -183,7 +187,7 @@ impl<T: ShaderInputDefinition> GltfModelViewer<T> {
         Ok((depth_attachment, image_storage))
     }
 
-    fn pipelines(kit: PipelineKit, paths: &FilePathConstants, ubo_set: &DescriptorSet, model: &GsglTFModel, depth_image: &GsDSAttachment) -> GsResult<GsPipeline<Graphics>> {
+    fn pipelines(kit: PipelineKit, paths: &FilePathConstants, ubo_set: &DescriptorSet, model: &GsglTFEntity, depth_image: &GsDSAttachment) -> GsResult<GsPipeline<Graphics>> {
 
         // shaders
         let vertex_shader = GsShaderInfo::from_source(
@@ -248,7 +252,7 @@ impl<T: ShaderInputDefinition> GltfModelViewer<T> {
         kit.multi_semaphores(graphics_pipeline.frame_count())
     }
 
-    fn commands(kit: CommandKit, graphics_pipeline: &GsPipeline<Graphics>, ubo_set: &DescriptorSet, model: &GsglTFModel) -> GsResult<(GsCommandPool, Vec<GsCommandBuffer>)> {
+    fn commands(kit: CommandKit, graphics_pipeline: &GsPipeline<Graphics>, ubo_set: &DescriptorSet, model: &GsglTFEntity) -> GsResult<(GsCommandPool, Vec<GsCommandBuffer>)> {
 
         let command_pool = kit.pool(DeviceQueueIdentifier::Graphics)?;
         let mut command_buffers = vec![];
@@ -263,7 +267,10 @@ impl<T: ShaderInputDefinition> GltfModelViewer<T> {
                 .begin_render_pass(graphics_pipeline, frame_index)
                 .bind_pipeline();
 
-            model.record_command(&recorder, ubo_set, vec![]);
+            let descriptors = vec![
+                CmdDescriptorSetBindInfo { set: ubo_set, dynamic_offset: None }
+            ];
+            model.record_command(&recorder, 0, descriptors, None)?;
 
             recorder.end_render_pass();
 

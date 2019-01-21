@@ -1,5 +1,6 @@
 
-use crate::assets::glTF::data::{ IntermediateglTFData, GsglTFLoadingData, GsglTFCmdRecordInfo };
+use crate::assets::glTF::data::{ IntermediateglTFData, GsglTFLoadingData };
+use crate::assets::glTF::model::{ GsglTFCmdRecordInfo, GsglTFRenderParams };
 use crate::assets::glTF::levels::traits::{ GsglTFLevelEntity, GsglTFArchitecture };
 use crate::assets::glTF::levels::node::GsglTFNodeEntity;
 use crate::assets::glTF::primitive::attributes::GsglTFAttrFlags;
@@ -61,10 +62,10 @@ impl<'a> GsglTFLevelEntity<'a> for GsglTFSceneEntity {
 
 impl GsglTFSceneEntity {
 
-    pub(crate) fn record_command(&self, recorder: &GsCmdRecorder<Graphics>, mess: &mut GsglTFCmdRecordInfo) {
+    pub(crate) fn record_command(&self, recorder: &GsCmdRecorder<Graphics>, mess: &mut GsglTFCmdRecordInfo, params: &GsglTFRenderParams) {
 
         for node in self.nodes.iter() {
-            node.record_command(recorder, mess);
+            node.record_command(recorder, mess, params);
         }
     }
 }

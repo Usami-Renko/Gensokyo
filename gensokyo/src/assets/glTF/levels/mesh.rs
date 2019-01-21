@@ -1,5 +1,6 @@
 
 use crate::assets::glTF::data::{ IntermediateglTFData, GsglTFLoadingData };
+use crate::assets::glTF::model::GsglTFRenderParams;
 use crate::assets::glTF::levels::traits::{ GsglTFLevelEntity, GsglTFArchitecture };
 use crate::assets::glTF::levels::primitive::GsglTFPrimitiveEntity;
 use crate::assets::glTF::primitive::attributes::GsglTFAttrFlags;
@@ -53,10 +54,10 @@ impl<'a> GsglTFLevelEntity<'a> for GsglTFMeshEntity {
 
 impl GsglTFMeshEntity {
 
-    pub(super) fn record_command(&self, recorder: &GsCmdRecorder<Graphics>) {
+    pub(super) fn record_command(&self, recorder: &GsCmdRecorder<Graphics>, params: &GsglTFRenderParams) {
 
         for primitive in self.primitives.iter() {
-            primitive.record_command(recorder);
+            primitive.record_command(recorder, params);
         }
     }
 }

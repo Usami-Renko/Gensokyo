@@ -12,6 +12,6 @@ pub use crate::assets::camera::{ GsStageCamera, GsFlightCamera };
 
 pub use crate::assets::camera_expt::{ GsCamera, GsCameraApi, Flight };
 
-pub use crate::assets::glTF::data::{ GsglTFModel, GsglTFDataStorage };
+pub use crate::assets::glTF::model::{ GsglTFEntity, GsglTFRenderParams };
 
 pub use crate::error::GsResult;

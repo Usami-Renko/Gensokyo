@@ -1,5 +1,6 @@
 
-use crate::assets::glTF::data::{ IntermediateglTFData, GsglTFLoadingData, GsglTFCmdRecordInfo };
+use crate::assets::glTF::data::{ IntermediateglTFData, GsglTFLoadingData };
+use crate::assets::glTF::model::{ GsglTFCmdRecordInfo, GsglTFRenderParams };
 use crate::assets::glTF::levels::traits::{ GsglTFLevelEntity, GsglTFArchitecture };
 use crate::assets::glTF::levels::mesh::GsglTFMeshEntity;
 use crate::assets::glTF::primitive::attributes::GsglTFAttrFlags;
@@ -109,21 +110,24 @@ impl<'a> GsglTFLevelEntity<'a> for GsglTFNodeEntity {
 
 impl GsglTFNodeEntity {
 
-    pub(super) fn record_command(&self, recorder: &GsCmdRecorder<Graphics>, mess: &mut GsglTFCmdRecordInfo) {
+    pub(super) fn record_command(&self, recorder: &GsCmdRecorder<Graphics>, mess: &mut GsglTFCmdRecordInfo, params: &GsglTFRenderParams) {
 
         if let Some(ref mesh) = self.local_mesh {
 
             // recalculate the dynamic offset.
-            let dyn_offset = (mess.uniform_aligned_size as vkuint) * (self.draw_order as vkuint);
-            mess.binding_sets[mess.gltf_uniform_index].dynamic_offset = Some(dyn_offset);
+            if params.is_use_node_transform {
+                // unwrap() is safe here.
+                let dyn_offset = (mess.uniform_aligned_size.unwrap() as vkuint) * (self.draw_order as vkuint);
+                mess.binding_sets[mess.gltf_uniform_index].dynamic_offset = Some(dyn_offset);
+            }
             // rebind the DescriptorSets.
             recorder.bind_descriptor_sets(0, &mess.binding_sets);
 
-            mesh.record_command(recorder);
+            mesh.record_command(recorder, params);
         }
 
         for child_node in self.children.iter() {
-            child_node.record_command(recorder, mess);
+            child_node.record_command(recorder, mess, params);
         }
     }
 }

@@ -135,10 +135,10 @@ impl<M> GsBufferAllocator<M> where M: BufferMemoryTypeAbs {
         }
     }
 
-    pub fn assign_v2<R>(&mut self, info: &impl GsBufferAllocatable<M, R>) -> VkResult<R> {
+    pub fn assign_v2<R>(&mut self, delegate: &impl GsBufferAllocatable<M, R>) -> VkResult<R> {
 
-        let allot_func = info.allot_func();
-        allot_func(info, self)
+        let allot_func = delegate.allot_func();
+        allot_func(delegate, self)
     }
 }
 

@@ -1,5 +1,6 @@
 
 use crate::assets::glTF::data::{ IntermediateglTFData, GsglTFLoadingData };
+use crate::assets::glTF::model::GsglTFRenderParams;
 use crate::assets::glTF::levels::traits::{ GsglTFLevelEntity, GsglTFArchitecture };
 use crate::assets::glTF::material::material::GsglTFMaterialData;
 use crate::assets::glTF::primitive::attributes::GsglTFAttrFlags;
@@ -104,9 +105,11 @@ impl<'a> GsglTFLevelEntity<'a> for GsglTFPrimitiveEntity {
 
 impl GsglTFPrimitiveEntity {
 
-    pub(super) fn record_command(&self, recorder: &GsCmdRecorder<Graphics>) {
+    pub(super) fn record_command(&self, recorder: &GsCmdRecorder<Graphics>, params: &GsglTFRenderParams) {
 
-        recorder.push_constants(GsPipelineStage::FRAGMENT, 0, &self.material);
+        if params.is_push_materials {
+            recorder.push_constants(GsPipelineStage::FRAGMENT, 0, &self.material);
+        }
 
         match self.method {
             | DrawMethod::DrawArray { vertex_count, first_vertex } => {

@@ -1,6 +1,7 @@
 
 use crate::assets::glTF::levels::{ GsglTFSceneEntity, GsglTFLevelEntity };
 use crate::assets::glTF::data::{ GsglTFDataStorage, IntermediateglTFData, GsglTFLoadingData };
+use crate::assets::glTF::model::GsglTFEntity;
 use crate::assets::glTF::asset::GsglTFPhyLimits;
 use crate::assets::error::{ GltfError, AssetsError };
 use crate::error::GsResult;
@@ -36,18 +37,11 @@ impl<'a> GsglTFImporter<'a> {
         let mut loading_data = GsglTFLoadingData::new(arch.attr_flags, arch.node_flags)
             .map_err(|e| AssetsError::Gltf(e))?;
 
-        let mut dst_entity = GsglTFEntity { scene: arch.arch };
+        let mut dst_entity = GsglTFEntity::new(arch.arch);
         dst_entity.scene.read_data(dst_scene, &intermediate_data, &mut loading_data)
             .map_err(|e| AssetsError::Gltf(e))?;
 
         Ok((dst_entity, loading_data.into_storage()))
     }
-}
-// ------------------------------------------------------------------------------------
-
-// ------------------------------------------------------------------------------------
-pub struct GsglTFEntity {
-
-    pub(crate) scene: GsglTFSceneEntity,
 }
 // ------------------------------------------------------------------------------------
