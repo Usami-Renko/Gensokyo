@@ -24,7 +24,7 @@ impl DepthTest {
     pub fn enable(wirte_enable: bool, compare_op: vk::CompareOp, bounds_enable: bool) -> DepthTest {
         DepthTest {
             test_enable: VK_TRUE,
-            write_enable: if wirte_enable { 1 } else { 0 },
+            write_enable: if wirte_enable { VK_TRUE } else { VK_FALSE },
             compare_op,
             depth_bound: if bounds_enable {
                 DynamicableValue::Fixed { value: DepthBoundInfo::enable() }

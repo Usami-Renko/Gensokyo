@@ -15,3 +15,10 @@ impl GsFormat {
         GsFormat(f)
     }
 }
+
+impl From<vk::Format> for GsFormat {
+
+    fn from(f: vk::Format) -> GsFormat {
+        GsFormat(f)
+    }
+}

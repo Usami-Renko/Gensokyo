@@ -19,7 +19,7 @@ pub(crate) struct GsglTFNodeEntity {
     children: Vec<Box<GsglTFNodeEntity>>,
 
     // the drawing order of node hierarchy.
-    // only node with `local_mesh` contains draw_order property.
+    // only node with `local_mesh` contains an valid draw_order property.
     draw_order: usize,
     /// the transform property of current node.
     pub local_transform: Matrix4F,

@@ -10,6 +10,8 @@ pub use crate::input::{ ActionNerve, SceneAction, GsKeycode };
 pub use crate::assets::camera::{ GsCameraFactory, GsCameraAbstract };
 pub use crate::assets::camera::{ GsStageCamera, GsFlightCamera };
 
+pub use crate::assets::camera_expt::{ GsCamera, GsCameraApi, Flight };
+
 pub use crate::assets::glTF::data::{ GsglTFModel, GsglTFDataStorage };
 
 pub use crate::error::GsResult;

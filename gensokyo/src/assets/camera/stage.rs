@@ -105,7 +105,7 @@ impl GsStageCamera {
 
         self.front = Vector3::new(front_x, front_y, front_z).normalize();
 
-        // also calculte the right and up vector.
+        // also calculate the right and up vector.
         // Normalize the vectors, because their length gets closer to 0 the move you look up or down which results in slower movement.
         self.right = self.front.cross(&world_up);
         self.up    = self.right.cross(&self.front);
