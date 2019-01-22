@@ -14,4 +14,6 @@ pub use crate::assets::camera_expt::{ GsCamera, GsCameraApi, Flight };
 
 pub use crate::assets::glTF::model::{ GsglTFEntity, GsglTFRenderParams };
 
-pub use crate::error::GsResult;
+
+pub use crate::assets::error::{ AssetsError, GltfError };
+pub use crate::error::{ GsResult, GsError };

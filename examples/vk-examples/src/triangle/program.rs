@@ -138,6 +138,7 @@ impl VulkanExample {
         let index_info = GsBufIndicesInfo::new(INDEX_DATA.len());
         let index_index = vertex_allocator.assign(index_info)?;
 
+        // refer to `layout (binding = 0) uniform UBO` in triangle.vert.
         let ubo_info = GsBufUniformInfo::new(0, 1, data_size!(UboObject));
         let ubo_index = ubo_allocator.assign(ubo_info)?;
 
@@ -204,10 +205,7 @@ impl VulkanExample {
             Path::new(FRAGMENT_SHADER_SOURCE_PATH),
             None,
             "[Fragment Shader]");
-        let shader_infos = vec![
-            vertex_shader,
-            fragment_shader,
-        ];
+        let shader_infos = vec![vertex_shader, fragment_shader];
         let vertex_input_desc = Vertex::input_description();
 
         // pipeline
@@ -241,7 +239,7 @@ impl VulkanExample {
         let pipeline_config = kit.pipeline_config(shader_infos, vertex_input_desc, render_pass)
             .with_depth_stencil(depth_stencil)
             .with_viewport(ViewportStateType::Dynamic { count: 1 })
-            .add_descriptor_set(ubo_set)
+            .add_descriptor_sets(&[ubo_set])
             .finish();
 
         let mut pipeline_builder = kit.graphics_pipeline_builder()?;
@@ -274,7 +272,7 @@ impl VulkanExample {
                 .begin_render_pass(graphics_pipeline, frame_index)
                 .set_viewport(0, &[view_port.clone()])
                 .set_scissor(0, &[scissor.clone()])
-                .bind_descriptor_sets(0, &[CmdDescriptorSetBindInfo { set: ubo_set, dynamic_offset: None }])
+                .bind_descriptor_sets(0, &[ubo_set])
                 .bind_pipeline()
                 .bind_vertex_buffers(0, &[vertex_buffer])
                 .bind_index_buffer(index_buffer, 0)

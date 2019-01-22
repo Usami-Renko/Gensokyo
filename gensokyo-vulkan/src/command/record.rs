@@ -17,7 +17,7 @@ pub trait GsVkCommandType {
     // Empty...
 }
 
-pub struct GsCmdRecorder<T: GsVkCommandType> {
+pub struct GsCmdRecorder<T> where T: GsVkCommandType {
 
     phantom_type: PhantomData<T>,
 
@@ -30,7 +30,7 @@ pub struct GsCmdRecorder<T: GsVkCommandType> {
     pub(super) pipeline_layout: vk::PipelineLayout,
 }
 
-impl<T: GsVkCommandType + GsVkPipelineType> GsCmdRecorder<T> {
+impl<T> GsCmdRecorder<T> where T: GsVkCommandType + GsVkPipelineType {
 
     pub fn new(device: &GsDevice, command: GsCommandBuffer, pipeline: &GsPipeline<T>) -> GsCmdRecorder<T> {
 
@@ -60,7 +60,7 @@ impl GsCmdRecorder<Copy> {
     }
 }
 
-impl<T: GsVkCommandType> GsCmdRecorder<T> {
+impl<T> GsCmdRecorder<T> where T: GsVkCommandType {
 
     // TODO: Add configuration for vk::CommandBufferUsageFlags.
     pub fn begin_record(&self, flags: vk::CommandBufferUsageFlags) -> VkResult<&GsCmdRecorder<T>> {

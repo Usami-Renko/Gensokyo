@@ -1,0 +1,7 @@
+
+[window]
+title = "Vulkan Example - Physical based shading basics"
+
+[window.dimension]
+width  = 1280
+height = 720

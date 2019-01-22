@@ -4,13 +4,14 @@ use ash::version::DeviceV1_0;
 
 use crate::command::record::{ GsCmdRecorder, GsVkCommandType };
 use crate::command::infos::{ CmdViewportInfo, CmdScissorInfo, CmdDepthBiasInfo, CmdDepthBoundInfo };
-use crate::command::infos::CmdDescriptorSetBindInfo;
 
 use crate::pipeline::target::{ GsPipeline, GsPipelineStage, GsVkPipelineType };
+use crate::descriptor::DescriptorSet;
 use crate::buffer::instance::{ GsVertexBuffer, GsIndexBuffer };
 use crate::utils::phantom::Graphics;
 use crate::types::{ vkuint, vksint, vkfloat, vkbytes };
 
+use gsma::collect_handle;
 
 impl GsVkCommandType for Graphics {
     // Empty...
@@ -93,7 +94,9 @@ pub trait GsCmdGraphicsApi {
 
     fn bind_index_buffer(&self, buffer: &GsIndexBuffer, offset: vkbytes) -> &Self;
 
-    fn bind_descriptor_sets(&self, first_set: vkuint, infos: &[CmdDescriptorSetBindInfo]) -> &Self;
+    fn bind_descriptor_sets(&self, first_set: vkuint, sets: &[&DescriptorSet]) -> &Self;
+
+    fn bind_descriptor_sets_dynamic(&self, first_set: vkuint, sets: &[&DescriptorSet], dynamics: &[vkuint]) -> &Self;
 
     fn draw(&self, vertex_count: vkuint, instance_count: vkuint, first_vertex: vkuint, first_instance: vkuint) -> &Self;
 
@@ -209,21 +212,19 @@ impl GsCmdGraphicsApi for GsCmdRecorder<Graphics> {
         } self
     }
 
-    fn bind_descriptor_sets(&self, first_set: vkuint, infos: &[CmdDescriptorSetBindInfo]) -> &Self {
+    fn bind_descriptor_sets(&self, first_set: vkuint, sets: &[&DescriptorSet]) -> &Self {
 
-        let mut handles = vec![];
-        let mut dynamic_offsets = vec![];
-
-        for set_info in infos.iter() {
-            handles.push(set_info.set.entity.handle);
-
-            if let Some(dyn_offset) = set_info.dynamic_offset {
-                dynamic_offsets.push(dyn_offset);
-            }
-        }
-
+        let handles = collect_handle!(sets, entity);
         unsafe {
-            self.device.handle.cmd_bind_descriptor_sets(self.cmd_handle, Graphics::BIND_POINT, self.pipeline_layout, first_set, &handles, &dynamic_offsets);
+            self.device.handle.cmd_bind_descriptor_sets(self.cmd_handle, Graphics::BIND_POINT, self.pipeline_layout, first_set, &handles, &[]);
+        } self
+    }
+
+    fn bind_descriptor_sets_dynamic(&self, first_set: vkuint, sets: &[&DescriptorSet], dynamics: &[vkuint]) -> &Self {
+
+        let handles = collect_handle!(sets, entity);
+        unsafe {
+            self.device.handle.cmd_bind_descriptor_sets(self.cmd_handle, Graphics::BIND_POINT, self.pipeline_layout, first_set, &handles, dynamics);
         } self
     }
 

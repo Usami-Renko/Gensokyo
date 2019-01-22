@@ -23,11 +23,11 @@ impl GsError {
         self.ctx.get_context()
     }
 
-    pub(crate) fn config(config_name: impl AsRef<str>) -> GsError {
+    pub fn config(config_name: impl AsRef<str>) -> GsError {
         GsError::from(GsErrorKind::Config { config_name: config_name.as_ref().to_string() })
     }
 
-    pub(crate) fn assets(error: AssetsError) -> GsError {
+    pub fn assets(error: AssetsError) -> GsError {
         GsError::from(GsErrorKind::Assets(error))
     }
 
@@ -35,8 +35,12 @@ impl GsError {
         GsError::from(GsErrorKind::Window { description })
     }
 
-    pub(crate) fn other(description: &'static str) -> GsError {
-        GsError::from(GsErrorKind::Other { description })
+    pub fn other(description: impl AsRef<str>) -> GsError {
+        GsError::from(GsErrorKind::Other { description: description.as_ref().to_string() })
+    }
+
+    pub fn serialize(err: bincode::Error) -> GsError {
+        GsError::from(GsErrorKind::Serialize(err))
     }
 }
 
@@ -87,9 +91,11 @@ pub enum GsErrorKind {
     /// An unexpected I/O error occurred.
     #[fail(display = "I/O Error")]
     Io,
+    #[fail(display = "Error occurred when trying to serialize data: {}", _0)]
+    Serialize(#[cause] bincode::Error),
     /// Other errors
     #[fail(display = "{}", description)]
-    Other { description: &'static str },
+    Other { description: String },
 }
 
 impl GsErrorKind {

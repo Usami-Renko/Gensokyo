@@ -14,7 +14,7 @@ use gsvk::pipeline::target::GsPipelineStage;
 use gsvk::pipeline::layout::GsPushConstantRange;
 
 use gsvk::command::{ GsCmdRecorder, GsCmdGraphicsApi, CmdDescriptorSetBindInfo };
-use gsvk::descriptor::{ DescriptorBufferBindableTarget, DescriptorBufferBindingInfo };
+use gsvk::descriptor::{ DescriptorSet, DescriptorBufferBindableTarget, DescriptorBufferBindingInfo };
 use gsvk::memory::transfer::{ GsBufferDataUploader, GsBufferUploadable };
 
 use gsvk::utils::api::GsDistributeApi;
@@ -71,7 +71,7 @@ impl<'d, 's: 'd> GsglTFEntity {
         })
     }
 
-    pub fn record_command<'i>(&self, recorder: &GsCmdRecorder<Graphics>, gltf_set_index: usize, binding_sets: Vec<CmdDescriptorSetBindInfo<'i>>, params: Option<GsglTFRenderParams>) -> GsResult<()> {
+    pub fn record_command<'i>(&self, recorder: &GsCmdRecorder<Graphics>, gltf_set: &DescriptorSet, other_sets: &[CmdDescriptorSetBindInfo<'i>], params: Option<GsglTFRenderParams>) -> GsResult<()> {
 
         let render_params = params.unwrap_or(
             GsglTFRenderParams {
@@ -81,6 +81,7 @@ impl<'d, 's: 'd> GsglTFEntity {
             }
         );
 
+        // 1.bind vertex data ---------------------------------------------------------
         if render_params.is_use_vertex {
             if let Some(ref vertex_buffer) = self.vertex {
                 // bind the whole vertex buffer.
@@ -94,22 +95,50 @@ impl<'d, 's: 'd> GsglTFEntity {
         } else {
             return Err(GsError::assets(AssetsError::Gltf(GltfError::loading("Vertex Buffer must be set(by calling `GsglTFEntity::acquire_vertex()` func) before recording command."))))
         }
+        // ----------------------------------------------------------------------------
 
-        // Prepare binding DescriptorSets.
-        let mut record_info = GsglTFCmdRecordInfo {
-            binding_sets,
-            uniform_aligned_size: self.uniform.as_ref().and_then(|b| Some(b.alignment_size())),
-            gltf_uniform_index: gltf_set_index,
+        // 2.prepare binding DescriptorSets. ------------------------------------------
+        let mut binding_sets = Vec::with_capacity(other_sets.len() + 1);
+        let mut dynamic_offsets = vec![];
+
+        for set in other_sets.into_iter() {
+            binding_sets.push(set.set);
+
+            if let Some(dynamic) = set.dynamic_offset {
+                dynamic_offsets.push(dynamic);
+            }
+        }
+        binding_sets.push(gltf_set);
+
+        let gltf_dynamics_index = if render_params.is_use_node_transform {
+            let index = dynamic_offsets.len();
+            dynamic_offsets.push(0);
+            index
+        } else {
+            0
         };
 
-        // call the draw command.
+        let uniform_aligned_size = if let Some(ref b) = self.uniform {
+            b.alignment_size()
+        } else {
+            0
+        };
+
+        let mut record_info = GsglTFCmdRecordInfo {
+            binding_sets, dynamic_offsets, uniform_aligned_size, gltf_dynamics_index,
+        };
+        // ----------------------------------------------------------------------------
+
+        // 3.call the draw command. ---------------------------------------------------
         self.scene.record_command(recorder, &mut record_info, &render_params);
+        // ----------------------------------------------------------------------------
 
         Ok(())
     }
 
     pub fn pushconst_description(&self) -> GsPushConstantRange {
         use std::mem;
+        // TODO: Fix stage.
         GsPushConstantRange::new(GsPipelineStage::FRAGMENT, 0, mem::size_of::<MaterialConstants>() as vkuint)
     }
 }
@@ -129,13 +158,16 @@ impl DescriptorBufferBindableTarget for GsglTFEntity {
 // ------------------------------------------------------------------------------------
 pub(crate) struct GsglTFCmdRecordInfo<'i> {
     /// The descriptor sets used during the glTF model rendering.
-    pub binding_sets: Vec<CmdDescriptorSetBindInfo<'i>>,
+    pub binding_sets: Vec<&'i DescriptorSet>,
+    /// The dynamic offsets used in Descriptor set binding.
+    pub dynamic_offsets: Vec<vkuint>,
     /// Specify `uniform_aligned_size` to None to disable binding descriptor to shader for this model.
-    pub uniform_aligned_size: Option<vkbytes>,
-    /// The index value of this model uniform descriptor set in `binding_sets`.
-    pub gltf_uniform_index: usize,
+    pub uniform_aligned_size: vkbytes,
+    /// The index value of dynamic offset of this model in `dynamic_offsets`.
+    pub gltf_dynamics_index: usize,
 }
 
+#[derive(Debug, Clone)]
 pub struct GsglTFRenderParams {
     pub is_use_vertex: bool,
     pub is_use_node_transform: bool,

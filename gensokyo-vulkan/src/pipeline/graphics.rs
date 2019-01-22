@@ -273,13 +273,19 @@ impl GraphicsPipelineConfig {
         self
     }
 
-    pub fn add_descriptor_set(mut self, set: &DescriptorSet) -> GraphicsPipelineConfig {
-        self.layout_builder.add_descriptor_layout(&set.layout);
+    pub fn add_descriptor_sets(mut self, sets: &[&DescriptorSet]) -> GraphicsPipelineConfig {
+
+        for set in sets.into_iter() {
+            self.layout_builder.add_descriptor_layout(&set.layout);
+        }
         self
     }
 
-    pub fn add_push_constants(mut self, range: GsPushConstantRange) -> GraphicsPipelineConfig {
-        self.layout_builder.add_push_constant(range);
+    pub fn add_push_constants(mut self, ranges: Vec<GsPushConstantRange>) -> GraphicsPipelineConfig {
+
+        for range in ranges.into_iter() {
+            self.layout_builder.add_push_constant(range);
+        }
         self
     }
 }

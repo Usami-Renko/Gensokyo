@@ -201,7 +201,7 @@ impl CubeProcedure {
         let render_pass = render_pass_builder.build()?;
 
         let pipeline_config = kit.pipeline_config(shader_infos, vertex_input_desc, render_pass)
-            .add_descriptor_set(ubo_set)
+            .add_descriptor_sets(&[ubo_set])
             .finish();
 
         let mut pipeline_builder = kit.graphics_pipeline_builder()?;
@@ -241,7 +241,7 @@ impl CubeProcedure {
                 .bind_pipeline()
                 .bind_vertex_buffers(0, &[vertex_buffer])
                 .bind_index_buffer(index_buffer, 0)
-                .bind_descriptor_sets(0, &[CmdDescriptorSetBindInfo { set: ubo_set, dynamic_offset: None }])
+                .bind_descriptor_sets(0, &[ubo_set])
                 .draw_indexed(index_count as vkuint, 1, 0, 0, 0)
                 .end_render_pass();
 

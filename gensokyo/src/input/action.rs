@@ -45,8 +45,13 @@ impl ActionNerve {
                     | WindowEvent::KeyboardInput { input, .. } => {
                         if let Some(code) = input.virtual_keycode {
                             match input.state {
-                                | ElementState::Pressed  => self.key.key_press(code),
-                                | ElementState::Released => self.key.key_release(code),
+                                | ElementState::Pressed  => {
+                                    self.key.key_press(code);
+                                    self.state.toggle_key_event();
+                                },
+                                | ElementState::Released => {
+                                    self.key.key_release(code);
+                                },
                             }
                         }
                     },
@@ -54,8 +59,6 @@ impl ActionNerve {
 
                         if self.is_active {
                             self.react = SceneReaction::SwapchainRecreate;
-                        } else {
-                            self.is_active = true;
                         }
 
                         return
@@ -77,8 +80,11 @@ impl ActionNerve {
         self.key.is_key_pressed(key_code.0)
     }
 
-    pub fn is_mouse_move(&self) -> bool {
-        self.state.is_cursor_move
+    pub fn is_mouse_active(&self) -> bool {
+        self.state.is_cursor_active
+    }
+    pub fn is_key_active(&self) -> bool {
+        self.state.is_key_active
     }
 
     pub fn mouse_motion(&self) -> CursorMotion {
@@ -131,22 +137,27 @@ pub enum SceneAction {
 
 struct SceneState {
 
-    is_cursor_move: bool,
+    is_cursor_active: bool,
+    is_key_active: bool,
 }
 
 impl SceneState {
 
     fn new() -> SceneState {
         SceneState {
-            is_cursor_move: false,
+            is_cursor_active: false,
+            is_key_active: false,
         }
     }
 
     fn toggle_mouse_motion(&mut self) {
-        self.is_cursor_move = true;
+        self.is_cursor_active = true;
     }
 
+    fn toggle_key_event(&mut self) { self.is_key_active = true; }
+
     fn reset(&mut self) {
-        self.is_cursor_move = false;
+        self.is_cursor_active = false;
+        self.is_key_active = false;
     }
 }

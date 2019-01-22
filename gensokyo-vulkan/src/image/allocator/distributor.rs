@@ -56,7 +56,7 @@ impl<M> GsImageDistributor<M> where M: ImageMemoryTypeAbs {
 
     pub(super) fn new(phantom_type: PhantomData<M>, device: GsDevice, image_infos: Vec<ImageAllotInfo>, memory: GsImageMemory) -> VkResult<GsImageDistributor<M>> {
 
-        let mut views = vec![];
+        let mut views = Vec::with_capacity(image_infos.len());
         for info in image_infos.iter() {
 
             let view = info.view_desc.build(&device, &info.image, &info.image_desc.specific)?;

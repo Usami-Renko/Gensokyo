@@ -5,6 +5,8 @@ use crate::input::ActionNerve;
 
 pub trait GsCameraAbstract {
 
+    /// Return the current position of camera.
+    fn current_position(&self) -> Point3<f32>;
     /// Return the view matrix base on the properties of camera.
     fn view_matrix(&self) -> Matrix4<f32>;
     /// Return the projection matrix base on the properties of camera.

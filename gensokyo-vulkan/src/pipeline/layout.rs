@@ -63,6 +63,7 @@ impl GsPipelineLayout {
     }
 }
 
+#[derive(Debug, Clone)]
 pub struct GsPushConstantRange(vk::PushConstantRange);
 
 impl GsPushConstantRange {

@@ -54,7 +54,7 @@ impl<T: ShaderInputDefinition> GltfModelViewer<T> {
 
         let screen_dimension = loader.screen_dimension();
         let camera = GsCameraFactory::config()
-            .place_at(Point3::new(0.0, 0.0, 2.5))
+            .place_at(Point3::new(0.0, 0.0, -2.5))
             .screen_aspect_ratio(screen_dimension.width as f32 / screen_dimension.height as f32)
             .into_flight_camera();
 
@@ -117,10 +117,11 @@ impl<T: ShaderInputDefinition> GltfModelViewer<T> {
 
     fn load_model(kit: AllocatorKit, paths: &FilePathConstants) -> GsResult<(GsUniformBuffer, GsBufferRepository<Host>, GsglTFEntity, GsBufferRepository<Device>)> {
 
-        // allocate uniform data buffer.
+        // generate buffer allocator.
         let mut ubo_allocator = kit.buffer(BufferStorageType::HOST);
         let mut model_allocator = kit.buffer(BufferStorageType::DEVICE);
 
+        // allocate uniform data buffer.
         let ubo_info = GsBufUniformInfo::new(0, 1, data_size!(UboObject));
         let ubo_index = ubo_allocator.assign(ubo_info)?;
 
@@ -233,8 +234,8 @@ impl<T: ShaderInputDefinition> GltfModelViewer<T> {
 
         let pipeline_config = kit.pipeline_config(shader_infos, vertex_input_desc, render_pass)
             .with_depth_stencil(depth_stencil)
-            .add_descriptor_set(ubo_set)
-            .add_push_constants(model.pushconst_description())
+            .add_descriptor_sets(&[ubo_set])
+            .add_push_constants(vec![model.pushconst_description()])
             .finish();
 
         let mut pipeline_builder = kit.graphics_pipeline_builder()?;
@@ -267,10 +268,7 @@ impl<T: ShaderInputDefinition> GltfModelViewer<T> {
                 .begin_render_pass(graphics_pipeline, frame_index)
                 .bind_pipeline();
 
-            let descriptors = vec![
-                CmdDescriptorSetBindInfo { set: ubo_set, dynamic_offset: None }
-            ];
-            model.record_command(&recorder, 0, descriptors, None)?;
+            model.record_command(&recorder, ubo_set, &[], None)?;
 
             recorder.end_render_pass();
 

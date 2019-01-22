@@ -116,9 +116,8 @@ impl GsglTFNodeEntity {
 
             // recalculate the dynamic offset.
             if params.is_use_node_transform {
-                // unwrap() is safe here.
-                let dyn_offset = (mess.uniform_aligned_size.unwrap() as vkuint) * (self.draw_order as vkuint);
-                mess.binding_sets[mess.gltf_uniform_index].dynamic_offset = Some(dyn_offset);
+                let dyn_offset = (mess.uniform_aligned_size as vkuint) * (self.draw_order as vkuint);
+                mess.dynamic_offsets[mess.gltf_dynamics_index] = dyn_offset;
             }
             // rebind the DescriptorSets.
             recorder.bind_descriptor_sets(0, &mess.binding_sets);

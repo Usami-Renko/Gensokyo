@@ -132,7 +132,7 @@ impl Default for GsRasterizerState {
 
 #[derive(Debug, Clone)]
 pub struct DepthBiasInfo {
-    // TODO: Add explaination for each field
+    // TODO: Add explanation for each field
     enable              : vkbool,
     pub constant_factor : vkfloat,
     pub clamp           : vkfloat,

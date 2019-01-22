@@ -37,6 +37,10 @@ pub struct GsFlightCamera {
 
 impl GsCameraAbstract for GsFlightCamera {
 
+    fn current_position(&self) -> Point3<f32> {
+        self.pos.clone()
+    }
+
     fn view_matrix(&self) -> Matrix4<f32> {
 
         Matrix4::look_at_rh(&self.pos, &(self.pos + self.front), &self.up)
@@ -69,7 +73,7 @@ impl GsCameraAbstract for GsFlightCamera {
         }
 
         // mouse motion
-        if actioner.is_mouse_move() {
+        if actioner.is_mouse_active() {
             let mut mouse_motion = actioner.mouse_motion();
             mouse_motion = mouse_motion.scale(0.5);
             self.yaw += mouse_motion.delta_x;

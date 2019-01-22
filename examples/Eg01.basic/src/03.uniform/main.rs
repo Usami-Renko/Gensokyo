@@ -186,7 +186,7 @@ impl UniformBufferProcedure {
         let render_pass = render_pass_builder.build()?;
 
         let pipeline_config = kit.pipeline_config(shader_infos, vertex_input_desc, render_pass)
-            .add_descriptor_set(descriptor_set)
+            .add_descriptor_sets(&[descriptor_set])
             .finish();
 
         let mut pipeline_builder = kit.graphics_pipeline_builder()?;
@@ -225,7 +225,7 @@ impl UniformBufferProcedure {
                 .begin_render_pass(graphics_pipeline, frame_index)
                 .bind_pipeline()
                 .bind_vertex_buffers(0, &[vertex_buffer])
-                .bind_descriptor_sets(0, &[CmdDescriptorSetBindInfo { set: desc_set, dynamic_offset: None }])
+                .bind_descriptor_sets(0, &[desc_set])
                 .draw(vertex_data.len() as vkuint, 1, 0, 0)
                 .end_render_pass();
 

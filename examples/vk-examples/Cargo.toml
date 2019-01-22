@@ -11,10 +11,18 @@ gsma = { package = "gensokyo-macros", path = "../../gensokyo-macros" }
 gsvk = { package = "gensokyo-vulkan", path = "../../gensokyo-vulkan" }
 gs   = { package = "gensokyo", path = "../../gensokyo" }
 
-ash         = "0.27.1"
-nalgebra    = "0.16"
-lazy_static = "1.2.0"
+ash          = "0.27.1"
+nalgebra     = "0.16"
+lazy_static  = "1.2.0"
+serde        = "1.0.80"
+serde_derive = "1.0.80"
+bincode      = "1.0.1"
 
 [[bin]]
 name = "triangle"
 path = "src/triangle/main.rs"
+
+[[bin]]
+name = "pbrbasic"
+path = "src/pbrbasic/main.rs"
+
