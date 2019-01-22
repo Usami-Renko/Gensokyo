@@ -65,11 +65,18 @@ impl DepthProcedure {
         let vertex_data = VERTEX_DATA.to_vec();
         let index_data = INDEX_DATA.to_vec();
 
+        let y_correction: Matrix4<f32> = Matrix4::new(
+            1.0,  0.0, 0.0, 0.0,
+            0.0, -1.0, 0.0, 0.0,
+            0.0,  0.0, 0.5, 0.5,
+            0.0,  0.0, 0.0, 1.0,
+        );
         let ubo_data = vec![
             UboObject {
                 projection: camera.proj_matrix(),
                 view      : camera.view_matrix(),
                 model     : Matrix4::identity(),
+                y_correction,
             },
         ];
 
@@ -197,10 +204,7 @@ impl DepthProcedure {
             Path::new(FRAGMENT_SHADER_SOURCE_PATH),
             None,
             "[Fragment Shader]");
-        let shader_infos = vec![
-            vertex_shader,
-            fragment_shader,
-        ];
+        let shader_infos = vec![vertex_shader, fragment_shader];
         let vertex_input_desc = Vertex::desc();
 
         // pipeline

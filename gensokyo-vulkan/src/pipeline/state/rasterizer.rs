@@ -21,7 +21,7 @@ pub struct GsRasterizerState {
     ///
     /// Possible values: Clockwise, Counter-Clockwise.
     front_face  : vk::FrontFace,
-    /// The width of rasterized line segments
+    /// The width of rasterized line segments.
     line_width  : DynamicableValue<vkfloat>,
 
     depth_bias  : DynamicableValue<DepthBiasInfo>,
@@ -118,7 +118,7 @@ impl Default for GsRasterizerState {
     fn default() -> GsRasterizerState {
         GsRasterizerState {
             cull_mode   : vk::CullModeFlags::BACK,
-            front_face  : vk::FrontFace::CLOCKWISE,
+            front_face  : vk::FrontFace::COUNTER_CLOCKWISE,
             polygon_mode: vk::PolygonMode::FILL,
             line_width  : DynamicableValue::Fixed { value: 1.0 },
 

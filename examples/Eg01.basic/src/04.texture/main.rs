@@ -32,12 +32,12 @@ define_input! {
 }
 
 const VERTEX_DATA: [Vertex; 6] = [
-    Vertex { pos: [-0.75, -0.75], tex_coord: [1.0, 0.0], },
-    Vertex { pos: [ 0.75, -0.75], tex_coord: [0.0, 0.0], },
-    Vertex { pos: [ 0.75,  0.75], tex_coord: [0.0, 1.0], },
-    Vertex { pos: [ 0.75,  0.75], tex_coord: [0.0, 1.0], },
-    Vertex { pos: [-0.75,  0.75], tex_coord: [1.0, 1.0], },
-    Vertex { pos: [-0.75, -0.75], tex_coord: [1.0, 0.0], },
+    Vertex { pos: [-0.75, -0.75], tex_coord: [1.0, 1.0], },
+    Vertex { pos: [ 0.75, -0.75], tex_coord: [0.0, 1.0], },
+    Vertex { pos: [ 0.75,  0.75], tex_coord: [0.0, 0.0], },
+    Vertex { pos: [ 0.75,  0.75], tex_coord: [0.0, 0.0], },
+    Vertex { pos: [-0.75,  0.75], tex_coord: [1.0, 0.0], },
+    Vertex { pos: [-0.75, -0.75], tex_coord: [1.0, 1.0], },
 ];
 
 struct TextureMappingProcedure {
@@ -169,10 +169,7 @@ impl TextureMappingProcedure {
             Path::new(FRAGMENT_SHADER_SOURCE_PATH),
             None,
             "[Fragment Shader]");
-        let shader_infos = vec![
-            vertex_shader,
-            fragment_shader,
-        ];
+        let shader_infos = vec![vertex_shader, fragment_shader];
         let vertex_input_desc = Vertex::desc();
 
         // pipeline

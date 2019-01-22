@@ -70,6 +70,12 @@ impl VulkanExample {
                 projection: camera.proj_matrix(),
                 view      : camera.view_matrix(),
                 model     : Matrix4::identity(),
+                y_correction: Matrix4::new(
+                    1.0,  0.0, 0.0, 0.0,
+                    0.0, -1.0, 0.0, 0.0,
+                    0.0,  0.0, 0.5, 0.5,
+                    0.0,  0.0, 0.0, 1.0,
+                ),
             },
         ];
 

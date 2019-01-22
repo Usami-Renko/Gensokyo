@@ -14,9 +14,9 @@ use gsma::{ define_input, offset_of, vk_format, vertex_rate, data_size };
 
 use std::path::{ Path, PathBuf };
 
-const MANIFEST_PATH: &str = "src/02.index/gensokyo.toml";
-const VERTEX_SHADER_SOURCE_PATH  : &str = "src/02.index/index.vert";
-const FRAGMENT_SHADER_SOURCE_PATH: &str = "src/02.index/index.frag";
+const MANIFEST_PATH: &'static str = "src/02.index/gensokyo.toml";
+const VERTEX_SHADER_SOURCE_PATH  : &'static str = "src/02.index/index.vert";
+const FRAGMENT_SHADER_SOURCE_PATH: &'static str = "src/02.index/index.frag";
 
 define_input! {
     #[binding = 0, rate = vertex]
@@ -31,11 +31,11 @@ define_input! {
 const VERTEX_DATA: [Vertex; 4] = [
     Vertex { pos: [-0.5, -0.5], color: [1.0, 0.0, 0.0, 1.0], },
     Vertex { pos: [ 0.5, -0.5], color: [0.0, 1.0, 0.0, 1.0], },
-    Vertex { pos: [ 0.5,  0.5], color: [0.0, 0.0, 1.0, 1.0], },
-    Vertex { pos: [-0.5,  0.5], color: [1.0, 1.0, 1.0, 1.0], },
+    Vertex { pos: [-0.5,  0.5], color: [0.0, 0.0, 1.0, 1.0], },
+    Vertex { pos: [ 0.5,  0.5], color: [1.0, 1.0, 1.0, 1.0], },
 ];
 const INDEX_DATA: [vkuint; 6] = [
-    0, 1, 2, 2, 3, 0,
+    0, 1, 2, 2, 1, 3,
 ];
 
 struct DrawIndexProcedure {
@@ -127,10 +127,7 @@ impl DrawIndexProcedure {
             Path::new(FRAGMENT_SHADER_SOURCE_PATH),
             None,
             "[Fragment Shader]");
-        let shader_infos = vec![
-            vertex_shader,
-            fragment_shader,
-        ];
+        let shader_infos = vec![vertex_shader, fragment_shader];
         let vertex_input_desc = Vertex::desc();
 
         // pipeline

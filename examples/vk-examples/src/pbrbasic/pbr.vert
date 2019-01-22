@@ -8,6 +8,7 @@ layout (binding = 0) uniform UBO {
 	mat4 projection;
 	mat4 model;
 	mat4 view;
+    mat4 y_correction; // `y_correction` is used to fix y-coordinate upside-down.
 	vec3 camPos;
 } ubo;
 
@@ -27,5 +28,5 @@ void main() {
 	vec3 locPos = vec3(ubo.model * vec4(inPos, 1.0));
 	outWorldPos = locPos + pushConsts.objPos;
 	outNormal = mat3(ubo.model) * inNormal;
-	gl_Position =  ubo.projection * ubo.view * vec4(outWorldPos, 1.0);
+	gl_Position =  ubo.y_correction * ubo.projection * ubo.view * vec4(outWorldPos, 1.0);
 }

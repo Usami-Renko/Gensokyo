@@ -14,9 +14,9 @@ use gsma::{ define_input, offset_of, vk_format, vertex_rate, data_size };
 
 use std::path::{ Path, PathBuf };
 
-const MANIFEST_PATH: &str = "src/01.triangle/gensokyo.toml";
-const VERTEX_SHADER_SPIRV_PATH  : &str = "src/01.triangle/triangle.vert.spv";
-const FRAGMENT_SHADER_SPIRV_PATH: &str = "src/01.triangle/triangle.frag.spv";
+const MANIFEST_PATH: &'static str = "src/01.triangle/gensokyo.toml";
+const VERTEX_SHADER_SPIRV_PATH  : &'static str = "src/01.triangle/triangle.vert.spv";
+const FRAGMENT_SHADER_SPIRV_PATH: &'static str = "src/01.triangle/triangle.frag.spv";
 
 define_input! {
     #[binding = 0, rate = vertex]
@@ -112,10 +112,7 @@ impl TriangleProcedure {
             GsPipelineStage::FRAGMENT,
             Path::new(FRAGMENT_SHADER_SPIRV_PATH),
             None);
-        let shader_infos = vec![
-            vertex_shader,
-            fragment_shader,
-        ];
+        let shader_infos = vec![vertex_shader, fragment_shader];
         let vertex_input_desc = Vertex::desc();
 
         // pipeline

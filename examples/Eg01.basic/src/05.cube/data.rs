@@ -69,4 +69,5 @@ pub struct UboObject {
     pub projection: Matrix4<f32>,
     pub view      : Matrix4<f32>,
     pub model     : Matrix4<f32>,
+    pub y_correction: Matrix4<f32>,
 }

@@ -41,14 +41,14 @@ define_input! {
 
 pub const VERTEX_DATA: [Vertex; 16] = [
     // cube 1
-    Vertex { pos: [ 0.0,  0.0,  0.0, 1.0], color: [0.0, 1.0, 1.0, 1.0], }, // v0
-    Vertex { pos: [-0.8,  0.0,  0.0, 1.0], color: [0.0, 1.0, 1.0, 1.0], }, // v1
-    Vertex { pos: [-0.8, -0.8,  0.0, 1.0], color: [0.0, 1.0, 1.0, 1.0], }, // v2
-    Vertex { pos: [ 0.0, -0.8,  0.0, 1.0], color: [0.0, 1.0, 1.0, 1.0], }, // v3
-    Vertex { pos: [ 0.0, -0.8, -0.8, 1.0], color: [0.0, 1.0, 1.0, 1.0], }, // v4
-    Vertex { pos: [ 0.0,  0.0, -0.8, 1.0], color: [0.0, 1.0, 1.0, 1.0], }, // v5
-    Vertex { pos: [-0.8,  0.0, -0.8, 1.0], color: [0.0, 1.0, 1.0, 1.0], }, // v6
-    Vertex { pos: [-0.8, -0.8, -0.8, 1.0], color: [0.0, 1.0, 1.0, 1.0], }, // v7
+    Vertex { pos: [ 0.0,  0.0,  0.0, 1.0], color: [0.0, 0.0, 1.0, 1.0], }, // v0
+    Vertex { pos: [-0.8,  0.0,  0.0, 1.0], color: [0.0, 0.0, 1.0, 1.0], }, // v1
+    Vertex { pos: [-0.8, -0.8,  0.0, 1.0], color: [0.0, 0.0, 1.0, 1.0], }, // v2
+    Vertex { pos: [ 0.0, -0.8,  0.0, 1.0], color: [0.0, 0.0, 1.0, 1.0], }, // v3
+    Vertex { pos: [ 0.0, -0.8, -0.8, 1.0], color: [0.0, 0.0, 1.0, 1.0], }, // v4
+    Vertex { pos: [ 0.0,  0.0, -0.8, 1.0], color: [0.0, 0.0, 1.0, 1.0], }, // v5
+    Vertex { pos: [-0.8,  0.0, -0.8, 1.0], color: [0.0, 0.0, 1.0, 1.0], }, // v6
+    Vertex { pos: [-0.8, -0.8, -0.8, 1.0], color: [0.0, 0.0, 1.0, 1.0], }, // v7
 
     // cube 2
     Vertex { pos: [ 0.6,  0.6,  0.6, 1.0], color: [1.0, 1.0, 0.0, 1.0], }, // v0
@@ -95,4 +95,5 @@ pub struct UboObject {
     pub projection: Matrix4<f32>,
     pub view      : Matrix4<f32>,
     pub model     : Matrix4<f32>,
+    pub y_correction: Matrix4<f32>,
 }

@@ -7,6 +7,7 @@ layout (set = 0, binding = 0) uniform UboOjbect {
     mat4 projection;
     mat4 view;
     mat4 model;
+    mat4 y_correction; // `y_correction` is used to fix y-coordinate upside-down.
 } ubo;
 
 layout (set = 0, binding = 1) uniform DynNode {
@@ -23,5 +24,5 @@ out gl_PerVertex {
 void main() {
 
     vec4 model = ubo.model * dyn_node.transform * vec4(inPosition, 1.0);
-    gl_Position = ubo.projection * ubo.view * model;
+    gl_Position = ubo.y_correction * ubo.projection * ubo.view * model;
 }

@@ -18,5 +18,7 @@ out gl_PerVertex {
 void main() {
 
     gl_Position = vec4(inPosition, 0.0, 1.0);
+    gl_Position.y = -gl_Position.y; // fix upside-down.
+
     fragTexCoord = inTexCoord;
 }

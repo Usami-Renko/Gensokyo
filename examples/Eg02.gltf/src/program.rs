@@ -54,7 +54,7 @@ impl<T: ShaderInputDefinition> GltfModelViewer<T> {
 
         let screen_dimension = loader.screen_dimension();
         let camera = GsCameraFactory::config()
-            .place_at(Point3::new(0.0, 0.0, -2.5))
+            .place_at(Point3::new(0.0, 0.0, 2.5))
             .screen_aspect_ratio(screen_dimension.width as f32 / screen_dimension.height as f32)
             .into_flight_camera();
 
@@ -62,12 +62,19 @@ impl<T: ShaderInputDefinition> GltfModelViewer<T> {
             Self::load_model(kit, &paths)
         })?;
 
+        let y_correction: Matrix4<f32> = Matrix4::new(
+            1.0,  0.0, 0.0, 0.0,
+            0.0, -1.0, 0.0, 0.0,
+            0.0,  0.0, 0.5, 0.5,
+            0.0,  0.0, 0.0, 1.0,
+        );
         let ubo_data = vec![
             UboObject {
                 projection: camera.proj_matrix(),
                 view      : camera.view_matrix(),
                 model     : Matrix4::identity(),
-            }
+                y_correction,
+            },
         ];
         let (ubo_set, desc_storage) = loader.assets(|kit| {
             Self::ubo(kit, &ubo_buffer, &dst_model)
@@ -201,10 +208,7 @@ impl<T: ShaderInputDefinition> GltfModelViewer<T> {
             Path::new(paths.fragment_shader),
             None,
             "[Fragment Shader]");
-        let shader_infos = vec![
-            vertex_shader,
-            fragment_shader,
-        ];
+        let shader_infos = vec![vertex_shader, fragment_shader];
         let vertex_input_desc = T::desc();
 
         // pipeline

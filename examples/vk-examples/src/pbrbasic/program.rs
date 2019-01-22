@@ -74,7 +74,7 @@ impl VulkanExample {
             .place_at(Point3::new(0.0, 0.0, 2.5))
             .screen_aspect_ratio(screen_dimension.width as f32 / screen_dimension.height as f32)
             .into_flight_camera();
-        camera.set_move_speed(10.0);
+        camera.set_move_speed(20.0);
 
         let view_port = CmdViewportInfo::new(screen_dimension);
         let scissor = CmdScissorInfo::new(screen_dimension);
@@ -85,6 +85,12 @@ impl VulkanExample {
                 view      : camera.view_matrix(),
                 model     : Matrix4::identity(),
                 camera_pos: camera.current_position(),
+                y_correction: Matrix4::new(
+                    1.0,  0.0, 0.0, 0.0,
+                    0.0, -1.0, 0.0, 0.0,
+                    0.0,  0.0, 0.5, 0.5,
+                    0.0,  0.0, 0.0, 1.0,
+                ),
             },
         ];
         const P: f32 = 15.0;
@@ -384,8 +390,6 @@ impl VulkanExample {
 
                 // draw the model.
                 model.record_command(recorder, ubo_set, &[], Some(model_render_params.clone()))?;
-
-                return Ok(())
             }
         }
 

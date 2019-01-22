@@ -7,6 +7,7 @@ layout (binding = 0, set = 0) uniform UboOjbect {
     mat4 projection;
     mat4 view;
     mat4 model;
+    mat4 y_correction; // `y_correction` is used to fix y-coordinate upside-down.
 } ubo;
 
 layout (location = 0) in vec4 inPosition;
@@ -21,6 +22,7 @@ out gl_PerVertex {
 void main() {
 
     vec4 model = ubo.model * inPosition;
-    gl_Position = ubo.projection * ubo.view * model;
+    gl_Position = ubo.y_correction * ubo.projection * ubo.view * model;
+
     fragColor = inColor;
 }

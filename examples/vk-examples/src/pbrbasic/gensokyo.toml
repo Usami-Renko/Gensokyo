@@ -5,3 +5,7 @@ title = "Vulkan Example - Physical based shading basics"
 [window.dimension]
 width  = 1280
 height = 720
+
+[window.cursor]
+is_grab = true
+is_hide = true

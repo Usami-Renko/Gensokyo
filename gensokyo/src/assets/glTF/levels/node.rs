@@ -120,7 +120,7 @@ impl GsglTFNodeEntity {
                 mess.dynamic_offsets[mess.gltf_dynamics_index] = dyn_offset;
             }
             // rebind the DescriptorSets.
-            recorder.bind_descriptor_sets(0, &mess.binding_sets);
+            recorder.bind_descriptor_sets_dynamic(0, &mess.binding_sets, &mess.dynamic_offsets);
 
             mesh.record_command(recorder, params);
         }
