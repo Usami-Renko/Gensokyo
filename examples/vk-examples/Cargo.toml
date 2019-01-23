@@ -23,6 +23,9 @@ name = "triangle"
 path = "src/triangle/main.rs"
 
 [[bin]]
+name = "pushconstants"
+path = "src/pushconstants/main.rs"
+
+[[bin]]
 name = "pbrbasic"
 path = "src/pbrbasic/main.rs"
-

@@ -130,9 +130,9 @@ impl GsglTFNodeEntity {
             // rebind the DescriptorSets.
             recorder.bind_descriptor_sets_dynamic(0, &mess.binding_sets, &mess.dynamic_offsets);
 
-            if let Some(ref name) = self.name {
-                dbg!(name);
-            }
+            // if let Some(ref name) = self.name {
+            //     dbg!(name);
+            // }
             mesh.record_command(recorder, params);
         }
 

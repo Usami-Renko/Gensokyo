@@ -14,32 +14,27 @@ use gsvk::prelude::api::*;
 
 use gsma::data_size;
 
-use super::data::{ Vertex, UBOMatrices, UboParams, ObjPosPushBlock, MaterialPushBlock };
-use super::data::MATERIAL_DATA;
+use super::data::{ Vertex, UBOVS, PushConstants };
 
-use nalgebra::{ Matrix4, Point3, Vector3, Vector4 };
+use nalgebra::{ Matrix4, Point3 };
 use std::path::Path;
-type Vector3F = Vector3<f32>;
 
-const VERTEX_SHADER_SOURCE_PATH  : &'static str = "src/pbrbasic/pbr.vert";
-const FRAGMENT_SHADER_SOURCE_PATH: &'static str = "src/pbrbasic/pbr.frag";
-const MODEL_PATH: &'static str = "src/pbrbasic/geosphere.gltf";
-const GRID_DIM: usize = 7;
-const MATERIAL_INDEX: usize = 0;
+const VERTEX_SHADER_SOURCE_PATH  : &'static str = "src/pushconstants/lights.vert";
+const FRAGMENT_SHADER_SOURCE_PATH: &'static str = "src/pushconstants/lights.frag";
+const MODEL_PATH: &'static str = "src/pushconstants/samplescene.gltf";
+const TIMER: f32 = 0.10;
 
 pub struct VulkanExample {
 
-    lights  : [Vector4<f32>; 4],
-    ubo_data: Vec<UBOMatrices>,
+    ubo_data: Vec<UBOVS>,
 
     model_entity: GsglTFEntity,
     #[allow(dead_code)]
     model_repository: GsBufferRepository<Device>,
 
-    push_ranges : Vec<GsPushConstantRange>,
+    push_range : GsPushConstantRange,
 
-    ubo_matrices: GsUniformBuffer,
-    ubo_params  : GsUniformBuffer,
+    ubo_buffer  : GsUniformBuffer,
     ubo_storage : GsBufferRepository<Host>,
 
     pipeline: GsPipeline<Graphics>,
@@ -71,20 +66,19 @@ impl VulkanExample {
         let screen_dimension = loader.screen_dimension();
 
         let mut camera = GsCameraFactory::config()
-            .place_at(Point3::new(0.0, 0.0, 2.5))
+            .place_at(Point3::new(20.0, 20.0, 2.5))
             .screen_aspect_ratio(screen_dimension.width as f32 / screen_dimension.height as f32)
             .into_flight_camera();
-        camera.set_move_speed(20.0);
+        camera.set_move_speed(50.0);
 
         let view_port = CmdViewportInfo::new(screen_dimension);
         let scissor = CmdScissorInfo::new(screen_dimension);
 
         let ubo_data = vec![
-            UBOMatrices {
+            UBOVS {
                 projection: camera.proj_matrix(),
-                view      : camera.view_matrix(),
                 model     : Matrix4::identity(),
-                camera_pos: camera.current_position(),
+                view      : camera.view_matrix(),
                 y_correction: Matrix4::new(
                     1.0,  0.0, 0.0, 0.0,
                     0.0, -1.0, 0.0, 0.0,
@@ -93,34 +87,23 @@ impl VulkanExample {
                 ),
             },
         ];
-        const P: f32 = 15.0;
-        let lights = [
-            Vector4::new(-P, -P * 0.5, -P, 1.0),
-            Vector4::new(-P, -P * 0.5,  P, 1.0),
-            Vector4::new( P, -P * 0.5,  P, 1.0),
-            Vector4::new( P, -P * 0.5, -P, 1.0),
-        ];
 
-        let (model_entity, model_repository) = loader.assets(|kit| {
-            VulkanExample::load_model(kit)
+        let (model_entity, model_repository, ubo_buffer, ubo_storage) = loader.assets(|kit| {
+            VulkanExample::load_model(kit, &ubo_data)
         })?;
 
-        let (ubo_matrices, ubo_params, ubo_storage) = loader.assets(|kit| {
-            VulkanExample::uniform_buffers(kit)
-        })?;
-
-        let push_ranges = VulkanExample::push_constants()?;
+        let push_range = VulkanExample::push_constants();
 
         let (depth_attachment, image_storage) = loader.assets(|kit| {
             VulkanExample::image(kit, screen_dimension)
         })?;
 
         let (ubo_set, desc_storage) = loader.assets(|kit| {
-            VulkanExample::ubo(kit, &ubo_matrices, &ubo_params)
+            VulkanExample::ubo(kit, &model_entity, &ubo_buffer)
         })?;
 
         let pipeline = loader.pipelines(|kit| {
-            VulkanExample::pipelines(kit, &ubo_set, push_ranges.clone(), &depth_attachment)
+            VulkanExample::pipelines(kit, &ubo_set, push_range.clone(), &depth_attachment)
         })?;
 
         let present_availables = loader.syncs(|kit| {
@@ -132,9 +115,9 @@ impl VulkanExample {
         })?;
 
         let procedure = VulkanExample {
-            ubo_data, lights,
+            ubo_data,
             model_entity, model_repository,
-            ubo_matrices, ubo_params, push_ranges, ubo_storage,
+            ubo_buffer, push_range, ubo_storage,
             desc_storage, ubo_set,
             pipeline,
             depth_attachment, image_storage,
@@ -151,89 +134,68 @@ impl VulkanExample {
 
         if self.is_toggle_event {
 
-            // Update UBOMatrices
-            self.ubo_data[0].projection = self.camera.proj_matrix();
+            // Update UBOVS uniform block.
+            // self.ubo_data[0].projection = self.camera.proj_matrix();
             self.ubo_data[0].view = self.camera.view_matrix();
-            self.ubo_data[0].camera_pos = self.camera.current_position();
-
-            // Update lights
-            const P: f32 = 15.0;
-            self.lights = [
-                Vector4::new(-P, -P * 0.5, -P, 1.0),
-                Vector4::new(-P, -P * 0.5,  P, 1.0),
-                Vector4::new( P, -P * 0.5,  P, 1.0),
-                Vector4::new( P, -P * 0.5, -P, 1.0),
-            ];
 
             // Update data in memory.
             self.ubo_storage.data_updater()?
-                .update(&self.ubo_matrices, &self.ubo_data)?
-                .update(&self.ubo_params, &self.lights)?
+                .update(&self.ubo_buffer, &self.ubo_data)?
                 .finish()?;
         }
 
         Ok(())
     }
 
-    fn load_model(kit: AllocatorKit) -> GsResult<(GsglTFEntity, GsBufferRepository<Device>)> {
+    fn load_model(kit: AllocatorKit, ubo_data: &Vec<UBOVS>) -> GsResult<(GsglTFEntity, GsBufferRepository<Device>, GsUniformBuffer, GsBufferRepository<Host>)> {
+
+        let mut model_allocator = kit.buffer(BufferStorageType::DEVICE);
+        let mut ubo_allocator = kit.buffer(BufferStorageType::HOST);
+
+        // allocate uniform data buffer.
+        // refer to `layout (binding = 0) uniform UBO` in pbr.frag.
+        let ubo_vertex_info = GsBufUniformInfo::new(0, 1, data_size!(UBOVS));
+        let ubo_vertex_index = ubo_allocator.assign(ubo_vertex_info)?;
 
         // allocate model data buffer.
         let gltf_importer = kit.gltf_loader();
         let (mut model_entity, model_data) = gltf_importer.load(Path::new(MODEL_PATH))?;
 
-        let mut model_allocator = kit.buffer(BufferStorageType::DEVICE);
         let model_vertex_index = model_allocator.assign_v2(&model_data.vertex_allot_delegate())?;
+        let model_uniform_index = ubo_allocator.assign_v2(&model_data.uniform_allot_delegate(1))?;
+
         let model_distributor = model_allocator.allocate()?;
+        let ubo_distributor = ubo_allocator.allocate()?;
+
         model_entity.acquire_vertex(model_vertex_index, &model_distributor);
+        model_entity.acquire_uniform(model_uniform_index, &ubo_distributor);
         
         let mut model_repository = model_distributor.into_repository();
         model_repository.data_uploader()?
             .upload_v2(&model_entity.vertex_upload_delegate().unwrap(), &model_data)?
             .finish()?;
 
-        Ok((model_entity, model_repository))
-    }
-    
-    fn uniform_buffers(kit: AllocatorKit) -> GsResult<(GsUniformBuffer, GsUniformBuffer, GsBufferRepository<Host>)> {
+        let ubo_buffer = ubo_distributor.acquire(ubo_vertex_index);
+        let mut ubo_repository = ubo_distributor.into_repository();
+        ubo_repository.data_uploader()?
+            .upload_v2(&model_entity.uniform_upload_delegate().unwrap(), &model_data)?
+            .upload(&ubo_buffer, ubo_data)?
+            .finish()?;
 
-        let mut ubo_allocator = kit.buffer(BufferStorageType::HOST);
-
-        // allocate uniform data buffer.
-        // refer to `layout (binding = 0) uniform UBO` in pbr.frag.
-        let ubo_matrix_info = GsBufUniformInfo::new(0, 1, data_size!(UBOMatrices));
-        let ubo_matrix_index = ubo_allocator.assign(ubo_matrix_info)?;
-        // refer to `layout (binding = 1) uniform UBOShared` in pbr.frag.
-        let ubo_params_info = GsBufUniformInfo::new(1, 1, data_size!(UboParams));
-        let ubo_params_index = ubo_allocator.assign(ubo_params_info)?;
-
-        let ubo_distributor = ubo_allocator.allocate()?;
-
-        let matrix_buffer = ubo_distributor.acquire(ubo_matrix_index);
-        let params_buffer = ubo_distributor.acquire(ubo_params_index);
-
-        let ubo_repository = ubo_distributor.into_repository();
-
-        Ok((matrix_buffer, params_buffer, ubo_repository))
+        Ok((model_entity, model_repository, ubo_buffer, ubo_repository))
     }
 
-    fn push_constants() -> GsResult<Vec<GsPushConstantRange>> {
+    fn push_constants() -> GsPushConstantRange {
 
-        let ranges = vec![
-            // refer to `layout(push_constant) uniform PushConsts` in pbr.vert.
-            GsPushConstantRange::new(GsPipelineStage::VERTEX, 0, data_size!(Vector3F)),
-            // refer to `layout(push_constant) uniform PushConsts` in pbr.frag.
-            GsPushConstantRange::new(GsPipelineStage::FRAGMENT, data_size!(Vector3F), data_size!(MaterialPushBlock)),
-        ];
-
-        Ok(ranges)
+        GsPushConstantRange::new(GsPipelineStage::VERTEX, 0, data_size!(PushConstants))
     }
 
-    fn ubo(kit: AllocatorKit, ubo_matrices: &GsUniformBuffer, ubo_params: &GsUniformBuffer) -> GsResult<(DescriptorSet, GsDescriptorRepository)> {
+    fn ubo(kit: AllocatorKit, model: &GsglTFEntity, ubo_buffer: &GsUniformBuffer) -> GsResult<(DescriptorSet, GsDescriptorRepository)> {
 
         // descriptor
         let mut descriptor_set_config = DescriptorSetConfig::init();
-        descriptor_set_config.add_buffer_binding(ubo_matrices, GsPipelineStage::VERTEX | GsPipelineStage::FRAGMENT);
-        descriptor_set_config.add_buffer_binding(ubo_params, GsPipelineStage::FRAGMENT);
+        descriptor_set_config.add_buffer_binding(ubo_buffer, GsPipelineStage::VERTEX);
+        descriptor_set_config.add_buffer_binding(model, GsPipelineStage::VERTEX);
 
         let mut descriptor_allocator = kit.descriptor(vk::DescriptorPoolCreateFlags::empty());
         let desc_index = descriptor_allocator.assign(descriptor_set_config);
@@ -261,19 +223,11 @@ impl VulkanExample {
         Ok((depth_attachment, image_storage))
     }
 
-    fn pipelines(kit: PipelineKit, ubo_set: &DescriptorSet, ranges: Vec<GsPushConstantRange>, depth_image: &GsDSAttachment) -> GsResult<GsPipeline<Graphics>> {
+    fn pipelines(kit: PipelineKit, ubo_set: &DescriptorSet, range: GsPushConstantRange, depth_image: &GsDSAttachment) -> GsResult<GsPipeline<Graphics>> {
 
         // shaders
-        let vertex_shader = GsShaderInfo::from_source(
-            GsPipelineStage::VERTEX,
-            Path::new(VERTEX_SHADER_SOURCE_PATH),
-            None,
-            "[Vertex Shader]");
-        let fragment_shader = GsShaderInfo::from_source(
-            GsPipelineStage::FRAGMENT,
-            Path::new(FRAGMENT_SHADER_SOURCE_PATH),
-            None,
-            "[Fragment Shader]");
+        let vertex_shader = GsShaderInfo::from_source(GsPipelineStage::VERTEX, Path::new(VERTEX_SHADER_SOURCE_PATH), None, "[Vertex Shader]");
+        let fragment_shader = GsShaderInfo::from_source(GsPipelineStage::FRAGMENT, Path::new(FRAGMENT_SHADER_SOURCE_PATH), None, "[Fragment Shader]");
         let shader_infos = vec![vertex_shader, fragment_shader];
         let vertex_input_desc = Vertex::input_description();
 
@@ -305,13 +259,13 @@ impl VulkanExample {
         let render_pass = render_pass_builder.build()?;
         let depth_stencil = GsDepthStencilState::setup(GsDepthStencilPrefab::EnableDepth);
         let mut rasterization = GsRasterizerState::setup(RasterizerPrefab::Common);
-        rasterization.set_front_face(vk::FrontFace::COUNTER_CLOCKWISE); // TODO: Fix Clockwise different to tutorial.
+        rasterization.set_front_face(vk::FrontFace::COUNTER_CLOCKWISE);
 
         let pipeline_config = kit.pipeline_config(shader_infos, vertex_input_desc, render_pass)
             .with_depth_stencil(depth_stencil)
             .with_viewport(ViewportStateType::Dynamic { count: 1 })
             .with_rasterizer(rasterization)
-            .add_push_constants(ranges)
+            .add_push_constants(vec![range])
             .add_descriptor_sets(&[ubo_set])
             .finish();
 
@@ -362,38 +316,36 @@ impl VulkanExample {
 
         let model_render_params = GsglTFRenderParams {
             is_use_vertex        : true,
-            is_use_node_transform: false,
+            is_use_node_transform: true,
             is_push_materials    : false,
         };
 
-        // select a material from candidate materials.
-        let mut mat = MATERIAL_DATA[MATERIAL_INDEX].clone();
-        mat.metallic = 1.0;
+        // Update light positions
+        const R: f32 = 10.5;
+        const Y1: f32 = -2.0;
+        const Y2: f32 = 15.0;
 
-        for y in 0..GRID_DIM {
-            for x in 0..GRID_DIM {
+        let sin_t = (TIMER * 360.0).to_radians().sin();
+        let cos_t = (TIMER * 360.0).to_radians().cos();
 
-                // upload push constant in pbr.vert.
-                let pos = ObjPosPushBlock {
-                    pos: [((x as f32) - (GRID_DIM as f32 / 2.0)) * 2.5, 0.0, 0.0],
-                };
-                let pos_data = bincode::serialize(&pos).map_err(GsError::serialize)?; // serialize data to bytes.
-                let pos_size = data_size!(pos_data, u8);
-                recorder.push_constants(GsPipelineStage::VERTEX, 0, &pos_data);
+        let push_data = PushConstants {
+            // w component = light radius scale.
+            lights: [
+                [R * 1.1 * sin_t, Y1, R * 1.1 * cos_t, 2.0],
+                [-R * sin_t, Y1, -R * cos_t, 2.0],
+                [R * 0.85 * sin_t, Y1, -sin_t * 2.5, 3.0],
+                [0.0, Y2, R * 1.25 * cos_t, 3.0],
+                [R * 2.25 * cos_t, Y2, 0.0, 2.5],
+                [R * 2.5 * cos_t, Y2, R * 2.5 * sin_t, 2.5],
+            ],
+        };
+        let raw_data = bincode::serialize(&push_data)
+            .map_err(GsError::serialize)?;
 
-                // upload push constant in pbr.frag.
-                mat.metallic  = nalgebra::clamp(x as f32 / (GRID_DIM - 1) as f32,  0.1, 1.0);
-                mat.roughness = nalgebra::clamp(y as f32 / (GRID_DIM - 1) as f32, 0.05, 1.0);
+        recorder.push_constants(GsPipelineStage::VERTEX, 0, &raw_data);
 
-                let mat_data = bincode::serialize(&mat).map_err(GsError::serialize)?; // serialize data to bytes.
-                recorder.push_constants(GsPipelineStage::FRAGMENT, pos_size, &mat_data);
-
-                // draw the model.
-                model.record_command(recorder, ubo_set, &[], Some(model_render_params.clone()))?;
-
-                return Ok(())
-            }
-        }
+        // draw the model.
+        model.record_command(recorder, ubo_set, &[], Some(model_render_params))?;
 
         Ok(())
     }
@@ -432,7 +384,7 @@ impl GraphicsRoutine for VulkanExample {
     fn reload_res(&mut self, loader: AssetsLoader) -> GsResult<()> {
 
         self.pipeline = loader.pipelines(|kit| {
-            VulkanExample::pipelines(kit, &self.ubo_set, self.push_ranges.clone(), &self.depth_attachment)
+            VulkanExample::pipelines(kit, &self.ubo_set, self.push_range.clone(), &self.depth_attachment)
         })?;
 
         self.present_availables = loader.syncs(|kit| {
@@ -464,8 +416,8 @@ impl GraphicsRoutine for VulkanExample {
                 return SceneAction::Terminal
             }
 
-            self.camera.react_input(inputer, delta_time);
             self.is_toggle_event = true;
+            self.camera.react_input(inputer, delta_time);
         } else {
             self.is_toggle_event = false;
         }

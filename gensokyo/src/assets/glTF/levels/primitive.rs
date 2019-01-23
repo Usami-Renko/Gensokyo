@@ -115,8 +115,6 @@ impl GsglTFPrimitiveEntity {
                 recorder.draw(vertex_count, 1, first_vertex, 0);
             },
             | DrawMethod::DrawIndex { index_count, first_index } => {
-                dbg!(index_count);
-                dbg!(first_index);
                 recorder.draw_indexed(index_count, 1, first_index, 0, 0);
             },
         }
