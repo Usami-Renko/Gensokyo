@@ -42,7 +42,7 @@ pub(crate) struct GsglTFLoadingData {
 
 pub(crate) struct AttrExtendInfo {
 
-    pub start_index: vkuint,
+    pub start_vertex: vkuint,
     pub extend_vertex_count: vkuint,
     pub start_offset: vkbytes,
 }
@@ -78,18 +78,17 @@ impl GsglTFLoadingData {
         let extend_count = data_content.extend(primitive, source)?;
 
         let extend_info = AttrExtendInfo {
-            start_index: start_vertex_index as _,
+            start_vertex: start_vertex_index as _,
             extend_vertex_count: extend_count as _,
             start_offset: offset,
         };
         Ok(extend_info)
     }
 
-    pub fn extend_indices<'a, 's, F>(&mut self, reader: &gltf::mesh::Reader<'a, 's, F>) -> Result<IndicesExtendInfo, GltfError>
-        where F: Clone + Fn(gltf::Buffer<'a>) -> Option<&'s [u8]> {
+    pub fn extend_indices(&mut self, primitive: &gltf::Primitive, source: &IntermediateglTFData) -> Result<IndicesExtendInfo, GltfError> {
 
         let start_indices_index = self.indices.indices_count();
-        let extend_count = self.indices.extend(reader)?;
+        let extend_count = self.indices.extend(primitive, source)?;
 
         let extend_info = IndicesExtendInfo {
             start_index: start_indices_index as _,

@@ -76,8 +76,7 @@ impl<'a> GsglTFLevelEntity<'a> for GsglTFPrimitiveEntity {
         self.offset = vertex_extend_info.start_offset;
 
         // load indices.
-        let reader = level.reader(|b| Some(&source.data_buffer[b.index()]));
-        let indices_extend_info = data.extend_indices(&reader)?;
+        let indices_extend_info = data.extend_indices(&level, source)?;
 
         // load material.
         let raw_material = GsglTFMaterialData::from(&level.material());
@@ -87,8 +86,8 @@ impl<'a> GsglTFLevelEntity<'a> for GsglTFPrimitiveEntity {
         self.method = match self.method {
             | DrawMethod::DrawArray { .. } => {
                 DrawMethod::DrawArray {
-                    vertex_count: vertex_extend_info.start_index,
-                    first_vertex: vertex_extend_info.extend_vertex_count,
+                    vertex_count: vertex_extend_info.extend_vertex_count,
+                    first_vertex: vertex_extend_info.start_vertex,
                 }
             },
             | DrawMethod::DrawIndex { .. } => {
@@ -116,6 +115,8 @@ impl GsglTFPrimitiveEntity {
                 recorder.draw(vertex_count, 1, first_vertex, 0);
             },
             | DrawMethod::DrawIndex { index_count, first_index } => {
+                dbg!(index_count);
+                dbg!(first_index);
                 recorder.draw_indexed(index_count, 1, first_index, 0, 0);
             },
         }

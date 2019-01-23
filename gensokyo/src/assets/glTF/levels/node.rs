@@ -16,6 +16,8 @@ use gsvk::types::vkuint;
 /// A wrapper class for node level in glTF, containing the render parameters read from glTF file.
 pub(crate) struct GsglTFNodeEntity {
 
+    name: Option<String>,
+
     local_mesh: Option<GsglTFMeshEntity>,
     children: Vec<Box<GsglTFNodeEntity>>,
 
@@ -79,7 +81,10 @@ impl<'a> GsglTFLevelEntity<'a> for GsglTFNodeEntity {
         }
 
         let target_arch = GsglTFArchitecture {
-            arch: GsglTFNodeEntity { local_mesh, children, draw_order, local_transform },
+            arch: GsglTFNodeEntity {
+                name: None,
+                local_mesh, children, draw_order, local_transform,
+            },
             attr_flags: attr_flag,
             node_flags: node_flag,
         };
@@ -87,6 +92,9 @@ impl<'a> GsglTFLevelEntity<'a> for GsglTFNodeEntity {
     }
 
     fn read_data(&mut self, level: Self::GltfDataLevel, source: &IntermediateglTFData, data: &mut GsglTFLoadingData) -> Result<(), GltfError> {
+
+        self.name = level.name()
+            .and_then(|n| Some(n.to_string()));
 
         // read the Mesh data referred by current Node.
         if let Some(ref mut mesh) = self.local_mesh {
@@ -122,12 +130,15 @@ impl GsglTFNodeEntity {
             // rebind the DescriptorSets.
             recorder.bind_descriptor_sets_dynamic(0, &mess.binding_sets, &mess.dynamic_offsets);
 
+            if let Some(ref name) = self.name {
+                dbg!(name);
+            }
             mesh.record_command(recorder, params);
         }
 
-        for child_node in self.children.iter() {
-            child_node.record_command(recorder, mess, params);
-        }
+         for child_node in self.children.iter() {
+             child_node.record_command(recorder, mess, params);
+         }
     }
 }
 // --------------------------------------------------------------------------------------

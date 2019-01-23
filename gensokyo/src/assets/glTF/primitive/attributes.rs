@@ -351,6 +351,7 @@ macro_rules! define_gpa {
 
             fn upload(&self, to: &GsVertexBuffer, by: &mut GsBufferDataUploader) -> VkResult<()> {
 
+                // println!("{:?}", &self.data);
                 let _  = by.upload(to, &self.data)?;
                 Ok(())
             }
