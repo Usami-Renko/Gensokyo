@@ -17,8 +17,8 @@ impl GsViewportState {
     pub fn single(info: ViewportStateInfo) -> GsViewportState {
 
         GsViewportState {
-            ports   : vec![info.viewport.content],
-            scissors: vec![info.scissor.content],
+            ports   : vec![info.viewport.0],
+            scissors: vec![info.scissor.0],
 
             length: 1,
         }
@@ -31,8 +31,8 @@ impl GsViewportState {
         let length = infos.len();
 
         for info in infos.into_iter() {
-            ports.push(info.viewport.content);
-            scissors.push(info.scissor.content);
+            ports.push(info.viewport.0);
+            scissors.push(info.scissor.0);
         }
 
         GsViewportState {
@@ -42,8 +42,8 @@ impl GsViewportState {
 
     pub fn add_viewport(&mut self, viewport: ViewportStateInfo) {
 
-        self.ports.push(viewport.viewport.content);
-        self.scissors.push(viewport.scissor.content);
+        self.ports.push(viewport.viewport.0);
+        self.scissors.push(viewport.scissor.0);
         self.length += 1;
     }
 
@@ -87,10 +87,10 @@ pub enum ViewportStateType {
     FixedViewportDynamicScissor { viewports: Vec<ViewportInfo> },
 }
 
-impl ViewportStateType {
+impl From<ViewportStateType> for GsViewportState {
 
-    pub(crate) fn into_viewport_state(self) -> GsViewportState {
-        match self {
+    fn from(raw: ViewportStateType) -> GsViewportState {
+        match raw {
             | ViewportStateType::Fixed { state } => {
                 state
             },
@@ -105,14 +105,14 @@ impl ViewportStateType {
                 let length = scissors.len();
                 GsViewportState {
                     ports: vec![],
-                    scissors: scissors.into_iter().map(|s| s.content).collect(),
+                    scissors: scissors.into_iter().map(|s| s.0).collect(),
                     length,
                 }
             },
             | ViewportStateType::FixedViewportDynamicScissor { viewports } => {
                 let length = viewports.len();
                 GsViewportState {
-                    ports: viewports.into_iter().map(|v| v.content).collect(),
+                    ports: viewports.into_iter().map(|v| v.0).collect(),
                     scissors: vec![],
                     length,
                 }
@@ -122,25 +122,36 @@ impl ViewportStateType {
 }
 
 #[derive(Debug, Clone)]
-pub struct ViewportInfo {
+pub struct ViewportInfo(pub(crate) vk::Viewport);
 
-    pub(crate) content: vk::Viewport,
+impl From<vkDim2D> for ViewportInfo {
+
+    fn from(dimension: vkDim2D) -> ViewportInfo {
+        let content = vk::Viewport {
+            x: 0.0,
+            y: 0.0,
+            width : dimension.width  as _,
+            height: dimension.height as _,
+            min_depth: 0.0,
+            max_depth: 1.0,
+        };
+        ViewportInfo(content)
+    }
 }
 
 impl ViewportInfo {
 
-    pub fn new(dimension: vkDim2D) -> ViewportInfo {
+    pub fn new(x: vkuint, y: vkuint, width: vkuint, height: vkuint) -> ViewportInfo {
 
-        ViewportInfo {
-            content: vk::Viewport {
-                x: 0.0,
-                y: 0.0,
-                width : dimension.width  as _,
-                height: dimension.height as _,
-                min_depth: 0.0,
-                max_depth: 1.0,
-            }
-        }
+        let content = vk::Viewport {
+            x: x as _,
+            y: y as _,
+            width: width as _,
+            height: height as _,
+            min_depth: 0.0,
+            max_depth: 1.0,
+        };
+        ViewportInfo(content)
     }
 
     /// Set the all the detail of viewport information.
@@ -156,33 +167,36 @@ impl ViewportInfo {
     /// `min_depth` is minimum depth value for the viewport.
     ///
     /// `max_depth` is maximum depth value for the viewport.
-    pub fn set_detail(&mut self, x: vkfloat, y: vkfloat, width: vkfloat, height: vkfloat, min_depth: vkfloat, max_depth: vkfloat) {
-        self.content = vk::Viewport {
-            x, y, width, height, min_depth, max_depth,
+    pub fn set_detail(&mut self, x: vkuint, y: vkuint, width: vkuint, height: vkuint, min_depth: vkfloat, max_depth: vkfloat) {
+        self.0 = vk::Viewport {
+            x: x as _,
+            y: y as _,
+            width: width as _,
+            height: height as _,
+            min_depth, max_depth,
         };
     }
 }
 
 #[derive(Debug, Clone)]
-pub struct ScissorInfo {
+pub struct ScissorInfo(pub(crate) vk::Rect2D);
 
-    pub(crate) content: vk::Rect2D,
+impl From<vkDim2D> for ScissorInfo {
+
+    fn from(dimension: vkDim2D) -> ScissorInfo {
+
+        let content = vk::Rect2D {
+            offset: vk::Offset2D { x: 0, y: 0 },
+            extent: vkDim2D {
+                width: dimension.width,
+                height: dimension.height,
+            }
+        };
+        ScissorInfo(content)
+    }
 }
 
 impl ScissorInfo {
-
-    pub fn new(dimension: vkDim2D) -> ScissorInfo {
-
-        ScissorInfo {
-            content: vk::Rect2D {
-                offset: vk::Offset2D { x: 0, y: 0 },
-                extent: vkDim2D {
-                    width: dimension.width,
-                    height: dimension.height
-                }
-            }
-        }
-    }
 
     /// Set all the detail of scissor information.
     ///
@@ -194,7 +208,7 @@ impl ScissorInfo {
     ///
     /// `height` is the width of scissor area.
     pub fn set_detail(&mut self, x: vksint, y: vksint, width: vkuint, height: vkuint) {
-        self.content = vk::Rect2D {
+        self.0 = vk::Rect2D {
             offset: vk::Offset2D { x, y },
             extent: vkDim2D { width, height },
         }
@@ -208,13 +222,12 @@ pub struct ViewportStateInfo {
     pub scissor : ScissorInfo,
 }
 
-impl ViewportStateInfo {
+impl From<vkDim2D> for ViewportStateInfo {
 
-    pub fn new(dimension: vkDim2D) -> ViewportStateInfo {
-
+    fn from(dimension: vkDim2D) -> ViewportStateInfo {
         ViewportStateInfo {
-            viewport: ViewportInfo::new(dimension),
-            scissor : ScissorInfo::new(dimension),
+            viewport: ViewportInfo::from(dimension),
+            scissor : ScissorInfo::from(dimension),
         }
     }
 }

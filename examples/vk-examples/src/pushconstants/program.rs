@@ -14,6 +14,7 @@ use gsvk::prelude::api::*;
 
 use gsma::data_size;
 
+use vk_examples::Y_CORRECTION;
 use super::data::{ Vertex, UBOVS, PushConstants };
 
 use nalgebra::{ Matrix4, Point3 };
@@ -21,7 +22,7 @@ use std::path::Path;
 
 const VERTEX_SHADER_SOURCE_PATH  : &'static str = "src/pushconstants/lights.vert";
 const FRAGMENT_SHADER_SOURCE_PATH: &'static str = "src/pushconstants/lights.frag";
-const MODEL_PATH: &'static str = "src/pushconstants/samplescene.gltf";
+const MODEL_PATH: &'static str = "models/samplescene.gltf";
 const TIMER: f32 = 0.10;
 
 pub struct VulkanExample {
@@ -71,20 +72,15 @@ impl VulkanExample {
             .into_flight_camera();
         camera.set_move_speed(50.0);
 
-        let view_port = CmdViewportInfo::new(screen_dimension);
-        let scissor = CmdScissorInfo::new(screen_dimension);
+        let view_port = CmdViewportInfo::from(screen_dimension);
+        let scissor = CmdScissorInfo::from(screen_dimension);
 
         let ubo_data = vec![
             UBOVS {
                 projection: camera.proj_matrix(),
                 model     : Matrix4::identity(),
                 view      : camera.view_matrix(),
-                y_correction: Matrix4::new(
-                    1.0,  0.0, 0.0, 0.0,
-                    0.0, -1.0, 0.0, 0.0,
-                    0.0,  0.0, 0.5, 0.5,
-                    0.0,  0.0, 0.0, 1.0,
-                ),
+                y_correction: Y_CORRECTION.clone(),
             },
         ];
 
@@ -132,17 +128,13 @@ impl VulkanExample {
 
     fn update_uniforms(&mut self) -> GsResult<()> {
 
-        if self.is_toggle_event {
+        // Update UBOVS uniform block.
+        self.ubo_data[0].view = self.camera.view_matrix();
 
-            // Update UBOVS uniform block.
-            // self.ubo_data[0].projection = self.camera.proj_matrix();
-            self.ubo_data[0].view = self.camera.view_matrix();
-
-            // Update data in memory.
-            self.ubo_storage.data_updater()?
-                .update(&self.ubo_buffer, &self.ubo_data)?
-                .finish()?;
-        }
+        // Update data in memory.
+        self.ubo_storage.data_updater()?
+            .update(&self.ubo_buffer, &self.ubo_data)?
+            .finish()?;
 
         Ok(())
     }
@@ -296,7 +288,7 @@ impl VulkanExample {
             let mut recorder = kit.pipeline_recorder(graphics_pipeline, command);
 
             recorder.begin_record(vk::CommandBufferUsageFlags::SIMULTANEOUS_USE)?
-                .begin_render_pass(graphics_pipeline, frame_index)
+                .begin_render_pass(graphics_pipeline.render_pass_ref(), frame_index)
                 .set_viewport(0, &[view_port.clone()])
                 .set_scissor(0, &[scissor.clone()])
                 .bind_pipeline();
@@ -318,6 +310,7 @@ impl VulkanExample {
             is_use_vertex        : true,
             is_use_node_transform: true,
             is_push_materials    : false,
+            material_stage: GsPipelineStage::VERTEX,
         };
 
         // Update light positions
@@ -355,7 +348,9 @@ impl GraphicsRoutine for VulkanExample {
 
     fn draw(&mut self, device: &GsDevice, device_available: &GsFence, image_available: &GsSemaphore, image_index: usize, _: f32) -> GsResult<&GsSemaphore> {
 
-        self.update_uniforms()?;
+        if self.is_toggle_event {
+            self.update_uniforms()?;
+        }
 
         let submit_info = QueueSubmitBundle {
             wait_semaphores: &[image_available],

@@ -5,7 +5,8 @@ use ash::version::DeviceV1_0;
 use crate::command::record::{ GsCmdRecorder, GsVkCommandType };
 use crate::command::infos::{ CmdViewportInfo, CmdScissorInfo, CmdDepthBiasInfo, CmdDepthBoundInfo };
 
-use crate::pipeline::target::{ GsPipeline, GsPipelineStage, GsVkPipelineType };
+use crate::pipeline::target::{ GsPipelineStage, GsVkPipelineType };
+use crate::pipeline::pass::GsRenderPass;
 use crate::descriptor::DescriptorSet;
 use crate::buffer::instance::{ GsVertexBuffer, GsIndexBuffer };
 use crate::utils::phantom::Graphics;
@@ -19,7 +20,7 @@ impl GsVkCommandType for Graphics {
 
 pub trait GsCmdGraphicsApi {
 
-    fn begin_render_pass(&self, pipeline: &GsPipeline<Graphics>, framebuffer_index: usize) -> &Self;
+    fn begin_render_pass(&self, render_pass: &GsRenderPass, framebuffer_index: usize) -> &Self;
 
     /// Set the viewport dynamically.
     /// Before using this function, the `ViewportStateType::Dynamic` or `ViewportStateType::DynamicViewportFixedScissor` must be set to ViewportState in pipeline creation(by calling `GraphicsPipelineConfig::setup_viewport()`).
@@ -107,9 +108,9 @@ pub trait GsCmdGraphicsApi {
 
 impl GsCmdGraphicsApi for GsCmdRecorder<Graphics> {
 
-    fn begin_render_pass(&self, pipeline: &GsPipeline<Graphics>, framebuffer_index: usize) -> &Self {
+    fn begin_render_pass(&self, render_pass: &GsRenderPass, framebuffer_index: usize) -> &Self {
 
-        let begin_info = pipeline.pass.begin_info(framebuffer_index);
+        let begin_info = render_pass.begin_info(framebuffer_index);
         unsafe {
             self.device.handle.cmd_begin_render_pass(self.cmd_handle, &begin_info, self.cmd_usage.contents());
         } self
@@ -118,7 +119,7 @@ impl GsCmdGraphicsApi for GsCmdRecorder<Graphics> {
     fn set_viewport(&self, first_viewport: vkuint, viewports: &[CmdViewportInfo]) -> &Self {
 
         let ports: Vec<vk::Viewport> = viewports.iter()
-            .map(|p| p.content).collect();
+            .map(|p| p.0).collect();
         unsafe {
             self.device.handle.cmd_set_viewport(self.cmd_handle, first_viewport, &ports);
         } self
@@ -127,7 +128,7 @@ impl GsCmdGraphicsApi for GsCmdRecorder<Graphics> {
     fn set_scissor(&self, first_scissor: vkuint, scissors: &[CmdScissorInfo]) -> &Self {
 
         let scissors: Vec<vk::Rect2D> = scissors.iter()
-            .map(|s| s.content).collect();
+            .map(|s| s.0).collect();
         unsafe {
             self.device.handle.cmd_set_scissor(self.cmd_handle, first_scissor, &scissors);
         } self

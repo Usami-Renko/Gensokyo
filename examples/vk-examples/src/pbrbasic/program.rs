@@ -14,6 +14,7 @@ use gsvk::prelude::api::*;
 
 use gsma::data_size;
 
+use vk_examples::Y_CORRECTION;
 use super::data::{ Vertex, UBOMatrices, UboParams, ObjPosPushBlock, MaterialPushBlock };
 use super::data::MATERIAL_DATA;
 
@@ -23,7 +24,7 @@ type Vector3F = Vector3<f32>;
 
 const VERTEX_SHADER_SOURCE_PATH  : &'static str = "src/pbrbasic/pbr.vert";
 const FRAGMENT_SHADER_SOURCE_PATH: &'static str = "src/pbrbasic/pbr.frag";
-const MODEL_PATH: &'static str = "src/pbrbasic/geosphere.gltf";
+const MODEL_PATH: &'static str = "modles/geosphere.gltf";
 const GRID_DIM: usize = 7;
 const MATERIAL_INDEX: usize = 0;
 
@@ -76,8 +77,8 @@ impl VulkanExample {
             .into_flight_camera();
         camera.set_move_speed(20.0);
 
-        let view_port = CmdViewportInfo::new(screen_dimension);
-        let scissor = CmdScissorInfo::new(screen_dimension);
+        let view_port = CmdViewportInfo::from(screen_dimension);
+        let scissor = CmdScissorInfo::from(screen_dimension);
 
         let ubo_data = vec![
             UBOMatrices {
@@ -85,12 +86,7 @@ impl VulkanExample {
                 view      : camera.view_matrix(),
                 model     : Matrix4::identity(),
                 camera_pos: camera.current_position(),
-                y_correction: Matrix4::new(
-                    1.0,  0.0, 0.0, 0.0,
-                    0.0, -1.0, 0.0, 0.0,
-                    0.0,  0.0, 0.5, 0.5,
-                    0.0,  0.0, 0.0, 1.0,
-                ),
+                y_correction: Y_CORRECTION.clone(),
             },
         ];
         const P: f32 = 15.0;
@@ -342,7 +338,7 @@ impl VulkanExample {
             let mut recorder = kit.pipeline_recorder(graphics_pipeline, command);
 
             recorder.begin_record(vk::CommandBufferUsageFlags::SIMULTANEOUS_USE)?
-                .begin_render_pass(graphics_pipeline, frame_index)
+                .begin_render_pass(graphics_pipeline.render_pass_ref(), frame_index)
                 .set_viewport(0, &[view_port.clone()])
                 .set_scissor(0, &[scissor.clone()])
                 .bind_pipeline();
@@ -364,6 +360,7 @@ impl VulkanExample {
             is_use_vertex        : true,
             is_use_node_transform: false,
             is_push_materials    : false,
+            material_stage: GsPipelineStage::VERTEX,
         };
 
         // select a material from candidate materials.

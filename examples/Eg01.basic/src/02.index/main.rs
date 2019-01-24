@@ -78,7 +78,7 @@ impl DrawIndexProcedure {
             DrawIndexProcedure::commands(kit, &graphics_pipeline, &vertex_buffer, &index_buffer, index_data.len())
         })?;
 
-        let procecure = DrawIndexProcedure {
+        let procedure = DrawIndexProcedure {
             index_data,
             buffer_storage, vertex_buffer, index_buffer,
             graphics_pipeline,
@@ -86,7 +86,7 @@ impl DrawIndexProcedure {
             present_availables,
         };
 
-        Ok(procecure)
+        Ok(procedure)
     }
 
     fn assets(kit: AllocatorKit, vertex_data: &Vec<Vertex>, index_data: &Vec<vkuint>) -> GsResult<(GsVertexBuffer, GsIndexBuffer, GsBufferRepository<Cached>)> {
@@ -187,7 +187,7 @@ impl DrawIndexProcedure {
             let mut recorder = kit.pipeline_recorder(graphics_pipeline, command);
 
             recorder.begin_record(vk::CommandBufferUsageFlags::SIMULTANEOUS_USE)?
-                .begin_render_pass(graphics_pipeline, frame_index)
+                .begin_render_pass(graphics_pipeline.render_pass_ref(), frame_index)
                 .bind_pipeline()
                 .bind_vertex_buffers(0, &[vertex_buffer])
                 .bind_index_buffer(index_buffer, 0)

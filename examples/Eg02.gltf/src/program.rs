@@ -239,11 +239,11 @@ impl<T: ShaderInputDefinition> GltfModelViewer<T> {
         let pipeline_config = kit.pipeline_config(shader_infos, vertex_input_desc, render_pass)
             .with_depth_stencil(depth_stencil)
             .add_descriptor_sets(&[ubo_set])
-            .add_push_constants(vec![model.pushconst_description()])
+            .add_push_constants(vec![model.pushconst_description(GsPipelineStage::FRAGMENT)])
             .finish();
 
         let mut pipeline_builder = kit.graphics_pipeline_builder()?;
-        pipeline_builder.add_config(&pipeline_config);
+        pipeline_builder.add_config(&pipeline_config)?;
 
         let mut pipelines = pipeline_builder.build(PipelineDeriveState::Independence)?;
         let graphics_pipeline = pipelines.pop().unwrap();
@@ -269,7 +269,7 @@ impl<T: ShaderInputDefinition> GltfModelViewer<T> {
             let mut recorder = kit.pipeline_recorder(graphics_pipeline, command);
 
             recorder.begin_record(vk::CommandBufferUsageFlags::SIMULTANEOUS_USE)?
-                .begin_render_pass(graphics_pipeline, frame_index)
+                .begin_render_pass(graphics_pipeline.render_pass_ref(), frame_index)
                 .bind_pipeline();
 
             model.record_command(&recorder, ubo_set, &[], None)?;

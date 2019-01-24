@@ -230,7 +230,7 @@ impl TextureMappingProcedure {
             let mut recorder = kit.pipeline_recorder(graphics_pipeline, command);
 
             recorder.begin_record(vk::CommandBufferUsageFlags::SIMULTANEOUS_USE)?
-                .begin_render_pass(graphics_pipeline, frame_index)
+                .begin_render_pass(graphics_pipeline.render_pass_ref(), frame_index)
                 .bind_pipeline()
                 .bind_vertex_buffers(0, &[vertex_buffer])
                 .bind_descriptor_sets(0, &[sampler_set])

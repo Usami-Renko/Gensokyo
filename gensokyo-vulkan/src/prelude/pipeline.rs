@@ -13,6 +13,7 @@ pub use crate::pipeline::state::{
     depth_stencil::{ GsDepthStencilState, GsDepthStencilPrefab, DepthTest, DepthBoundInfo, StencilTest, StencilOpState },
     blend::GsBlendState,
     tessellation::GsTessellationState,
+    dynamic::DynamicableValue,
 };
 
 pub use crate::pipeline::graphics::PipelineDeriveState;

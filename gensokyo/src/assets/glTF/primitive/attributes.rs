@@ -142,11 +142,11 @@ macro_rules! read_attribute {
         if let Some(pos_iter) = $reader.read_positions() {
 
             if $target.data.len() == $origin_length {
-                let new_vertexs = pos_iter.map(|pos| {
+                let vertex_iter = pos_iter.map(|pos| {
                     let position = Point3F::from(pos);
                     $VertexType { position, ..Default::default() }
-                }).collect::<Vec<_>>();
-                $target.data.extend(new_vertexs);
+                });
+                $target.data.extend(vertex_iter);
             } else {
                 for (i, pos) in pos_iter.enumerate() {
                     $target.data[i + $origin_length].position = Point3F::from(pos);
@@ -160,11 +160,11 @@ macro_rules! read_attribute {
         if let Some(normal_iter) = $reader.read_normals() {
 
             if $target.data.len() == $origin_length {
-                let new_vertexs = normal_iter.map(|nor| {
+                let vertex_iter = normal_iter.map(|nor| {
                     let normal = Vector3F::from(nor);
                     $VertexType { normal, ..Default::default() }
-                }).collect::<Vec<_>>();
-                $target.data.extend(new_vertexs);
+                });
+                $target.data.extend(vertex_iter);
             } else {
                 for (i, normal) in normal_iter.enumerate() {
                     $target.data[i + $origin_length].normal = Vector3F::from(normal);
@@ -178,11 +178,11 @@ macro_rules! read_attribute {
         if let Some(tangents_iter) = $reader.read_tangents() {
 
             if $target.data.len() == $origin_length {
-                let new_vertexs = tangents_iter.map(|tan| {
+                let vertex_iter = tangents_iter.map(|tan| {
                     let tangents = Vector4F::from(tan);
                     $VertexType { tangents, ..Default::default() }
-                }).collect::<Vec<_>>();
-                $target.data.extend(new_vertexs);
+                });
+                $target.data.extend(vertex_iter);
             } else {
                 for (i, tangent) in tangents_iter.enumerate() {
                     $target.data[i + $origin_length].tangents = Vector4F::from(tangent);
@@ -195,11 +195,11 @@ macro_rules! read_attribute {
         if let Some(texcoord_0_iter) = $reader.read_tex_coords(0) {
 
             if $target.data.len() == $origin_length {
-                let new_vertexs = texcoord_0_iter.into_f32().map(|texcoord| {
+                let vertex_iter = texcoord_0_iter.into_f32().map(|texcoord| {
                     let texcoord_0 = Point2F::from(texcoord);
                     $VertexType { texcoord_0, ..Default::default() }
-                }).collect::<Vec<_>>();
-                $target.data.extend(new_vertexs);
+                });
+                $target.data.extend(vertex_iter);
             } else {
                 for (i, texcoord_0) in texcoord_0_iter.into_f32().enumerate() {
                     $target.data[i + $origin_length].texcoord_0 = Point2F::from(texcoord_0);
@@ -212,11 +212,11 @@ macro_rules! read_attribute {
         if let Some(texcoord_1_iter) = $reader.read_tex_coords(1) {
 
             if $target.data.len() == $origin_length {
-                let new_vertexs = texcoord_1_iter.into_f32().map(|texcoord| {
+                let vertex_iter = texcoord_1_iter.into_f32().map(|texcoord| {
                     let texcoord_1 = Point2F::from(texcoord);
                     $VertexType { texcoord_1, ..Default::default() }
-                }).collect::<Vec<_>>();
-                $target.data.extend(new_vertexs);
+                });
+                $target.data.extend(vertex_iter);
             } else {
                 for (i, texcoord_1) in texcoord_1_iter.into_f32().enumerate() {
                     $target.data[i + $origin_length].texcoord_1 = Point2F::from(texcoord_1);
@@ -229,11 +229,11 @@ macro_rules! read_attribute {
         if let Some(color_0_iter) = $reader.read_colors(0) {
 
             if $target.data.len() == $origin_length {
-                let new_vertexs = color_0_iter.into_rgba_f32().map(|color| {
+                let vertex_iter = color_0_iter.into_rgba_f32().map(|color| {
                     let color_0 = Vector4F::from(color);
                     $VertexType { color_0, ..Default::default() }
-                }).collect::<Vec<_>>();
-                $target.data.extend(new_vertexs);
+                });
+                $target.data.extend(vertex_iter);
             } else {
                 for (i, color_0) in color_0_iter.into_rgba_f32().enumerate() {
                     $target.data[i + $origin_length].color_0 = Vector4F::from(color_0);
@@ -246,11 +246,11 @@ macro_rules! read_attribute {
         if let Some(joints_0_iter) = $reader.read_joints(0) {
 
             if $target.data.len() == $origin_length {
-                let new_vertexs = joints_0_iter.into_u16().map(|joint| {
+                let vertex_iter = joints_0_iter.into_u16().map(|joint| {
                     let joints_0 = Vector4U::from(joint);
                     $VertexType { joints_0, ..Default::default() }
-                }).collect::<Vec<_>>();
-                $target.data.extend(new_vertexs);
+                });
+                $target.data.extend(vertex_iter);
             } else {
                 for (i, joints_0) in joints_0_iter.into_u16().enumerate() {
                     $target.data[i + $origin_length].joints_0 = Vector4U::from(joints_0);
@@ -263,11 +263,11 @@ macro_rules! read_attribute {
         if let Some(weights_0_iter) = $reader.read_weights(0) {
 
             if $target.data.len() == $origin_length {
-                let new_vertexs = weights_0_iter.into_f32().map(|weight| {
+                let vertex_iter = weights_0_iter.into_f32().map(|weight| {
                     let weights_0 = Vector4F::from(weight);
                     $VertexType { weights_0, ..Default::default() }
-                }).collect::<Vec<_>>();
-                $target.data.extend(new_vertexs);
+                });
+                $target.data.extend(vertex_iter);
             } else {
                 for (i, weights_0) in weights_0_iter.into_f32().enumerate() {
                     $target.data[i + $origin_length].weights_0 = Vector4F::from(weights_0);

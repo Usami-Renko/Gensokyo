@@ -71,14 +71,14 @@ impl TriangleProcedure {
             TriangleProcedure::commands(kit, &graphics_pipeline, &vertex_buffer, &vertex_data)
         })?;
 
-        let procecure = TriangleProcedure {
+        let procedure = TriangleProcedure {
             vertex_data, vertex_storage, vertex_buffer,
             graphics_pipeline,
             command_pool, command_buffers,
             present_availables,
         };
 
-        Ok(procecure)
+        Ok(procedure)
     }
 
     fn assets(kit: AllocatorKit, vertex_data: &Vec<Vertex>) -> GsResult<(GsVertexBuffer, GsBufferRepository<Host>)> {
@@ -172,7 +172,7 @@ impl TriangleProcedure {
             let mut recorder = kit.pipeline_recorder(&graphics_pipeline, command);
 
             recorder.begin_record(vk::CommandBufferUsageFlags::SIMULTANEOUS_USE)?
-                .begin_render_pass(graphics_pipeline, frame_index)
+                .begin_render_pass(graphics_pipeline.render_pass_ref(), frame_index)
                 .bind_pipeline()
                 .bind_vertex_buffers(0, &[vertex_buffer])
                 .draw(data.len() as vkuint, 1, 0, 0)

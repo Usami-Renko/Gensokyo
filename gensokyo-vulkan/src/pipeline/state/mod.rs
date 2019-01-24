@@ -31,7 +31,7 @@ impl PipelineStates {
         PipelineStates {
             vertex_input  : input.into_desc(),
             input_assembly: self::input_assembly::GsInputAssemblyState::default(),
-            viewport      : self::viewport::GsViewportState::single(self::viewport::ViewportStateInfo::new(dimension)),
+            viewport      : self::viewport::GsViewportState::single(self::viewport::ViewportStateInfo::from(dimension)),
             rasterizer    : self::rasterizer::GsRasterizerState::default(),
             multisample   : self::multisample::GsMultisampleState::default(),
             depth_stencil : self::depth_stencil::GsDepthStencilState::default(),

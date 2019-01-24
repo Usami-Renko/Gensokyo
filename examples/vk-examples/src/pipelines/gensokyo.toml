@@ -1,0 +1,14 @@
+
+[window]
+title = "Vulkan Example - Pipeline state objects"
+
+[window.dimension]
+width  = 1280
+height = 720
+
+[core.physical]
+features = ["fill_mode_non_solid"]
+
+[window.cursor]
+is_grab = true
+is_hide = true

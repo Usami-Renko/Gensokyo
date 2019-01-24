@@ -7,7 +7,6 @@ use crate::assets::glTF::primitive::attributes::GsglTFAttrFlags;
 use crate::assets::glTF::primitive::transforms::GsglTFNodeUniformFlags;
 use crate::assets::error::GltfError;
 
-use gsvk::pipeline::target::GsPipelineStage;
 use gsvk::command::{ GsCmdRecorder, GsCmdGraphicsApi };
 use gsvk::utils::phantom::Graphics;
 use gsvk::types::{ vkbytes, vkuint };
@@ -107,7 +106,7 @@ impl GsglTFPrimitiveEntity {
     pub(super) fn record_command(&self, recorder: &GsCmdRecorder<Graphics>, params: &GsglTFRenderParams) {
 
         if params.is_push_materials {
-            recorder.push_constants(GsPipelineStage::FRAGMENT, 0, &self.material);
+            recorder.push_constants(params.material_stage, 0, &self.material);
         }
 
         match self.method {
@@ -122,7 +121,7 @@ impl GsglTFPrimitiveEntity {
 }
 // --------------------------------------------------------------------------------------
 
-// -------------------------------------------------------------------------------------
+// --------------------------------------------------------------------------------------
 #[derive(Debug, Clone, Eq, PartialEq)]
 enum DrawMethod {
     DrawArray { vertex_count: vkuint, first_vertex: vkuint },

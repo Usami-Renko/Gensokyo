@@ -23,6 +23,10 @@ name = "triangle"
 path = "src/triangle/main.rs"
 
 [[bin]]
+name = "pipelines"
+path = "src/pipelines/main.rs"
+
+[[bin]]
 name = "pushconstants"
 path = "src/pushconstants/main.rs"
 

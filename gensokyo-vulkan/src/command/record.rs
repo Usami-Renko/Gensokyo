@@ -7,7 +7,7 @@ use crate::core::device::GsDevice;
 use crate::command::buffer::{ GsCommandBuffer, CmdBufferUsage };
 use crate::pipeline::target::{ GsPipeline, GsVkPipelineType };
 use crate::error::{ VkResult, VkError };
-use crate::utils::phantom::Copy;
+use crate::utils::phantom::{ Graphics, Compute, Copy };
 
 use std::marker::PhantomData;
 use std::ptr;
@@ -91,5 +91,21 @@ impl<T> GsCmdRecorder<T> where T: GsVkCommandType {
 
         let buffer = GsCommandBuffer::new(self.cmd_handle, self.cmd_usage);
         Ok(buffer)
+    }
+}
+
+impl GsCmdRecorder<Graphics> {
+
+    pub fn switch_pipeline(&mut self, new_pipeline: &GsPipeline<Graphics>) {
+        self.pipeline_handle = new_pipeline.handle;
+        self.pipeline_layout = new_pipeline.layout.handle;
+    }
+}
+
+impl GsCmdRecorder<Compute> {
+
+    pub fn switch_pipeline(&mut self, new_pipeline: &GsPipeline<Graphics>) {
+        self.pipeline_handle = new_pipeline.handle;
+        self.pipeline_layout = new_pipeline.layout.handle;
     }
 }

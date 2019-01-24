@@ -10,29 +10,29 @@ use crate::pipeline::pass::GsRenderPass;
 use crate::utils::phantom::{ Graphics, Compute };
 
 use std::marker::PhantomData;
+use std::rc::Rc;
 use std::ops::{ BitAnd, BitAndAssign, BitOr, BitOrAssign };
 
 // -------------------------------------------------------------------------------------
-pub struct GsPipeline<T: GsVkPipelineType> {
+pub struct GsPipeline<T> where T: GsVkPipelineType {
 
     phantom_type: PhantomData<T>,
 
     pub(crate) handle: vk::Pipeline,
-    pub(crate) pass  : GsRenderPass,
-    pub(crate) layout: GsPipelineLayout,
+    pub(crate) pass  : Rc<GsRenderPass>,
+    pub(crate) layout: Rc<GsPipelineLayout>,
 
     device: GsDevice,
 }
 
-impl<T: GsVkPipelineType> GsPipeline<T> {
+impl<T> GsPipeline<T> where T: GsVkPipelineType {
 
-    pub(super) fn new(device: &GsDevice, handle: vk::Pipeline, layout: vk::PipelineLayout, pass: GsRenderPass) -> GsPipeline<T> {
+    pub(super) fn new(device: &GsDevice, handle: vk::Pipeline, layout: Rc<GsPipelineLayout>, pass: Rc<GsRenderPass>) -> GsPipeline<T> {
 
         GsPipeline {
             phantom_type: PhantomData,
             device: device.clone(),
-            layout: GsPipelineLayout { handle: layout },
-            handle, pass,
+            layout, handle, pass,
         }
     }
 
@@ -40,17 +40,33 @@ impl<T: GsVkPipelineType> GsPipeline<T> {
         self.pass.frame_count()
     }
 
+    pub fn render_pass_ref(&self) -> &Rc<GsRenderPass> {
+        &self.pass
+    }
+
     pub fn destroy(&self) {
 
+        // TODO: Fix destroy.
+    }
+}
+
+impl<T> Drop for GsPipeline<T> where T: GsVkPipelineType {
+
+    fn drop(&mut self) {
         unsafe {
             self.device.handle.destroy_pipeline(self.handle, None);
         }
-        self.layout.destroy(&self.device);
-        self.pass.destroy(&self.device);
+
+        if Rc::strong_count(&self.layout) == 1 {
+            self.layout.destroy(&self.device);
+        }
+
+        if Rc::strong_count(&self.pass) == 1 {
+            self.pass.destroy(&self.device);
+        }
     }
 }
 // -------------------------------------------------------------------------------------
-
 
 // -------------------------------------------------------------------------------------
 pub trait GsVkPipelineType {

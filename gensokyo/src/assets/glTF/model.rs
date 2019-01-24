@@ -78,6 +78,7 @@ impl<'d, 's: 'd> GsglTFEntity {
                 is_use_vertex: self.vertex.is_some(),
                 is_use_node_transform: self.uniform.is_some(),
                 is_push_materials: true,
+                material_stage: GsPipelineStage::FRAGMENT,
             }
         );
 
@@ -136,10 +137,10 @@ impl<'d, 's: 'd> GsglTFEntity {
         Ok(())
     }
 
-    pub fn pushconst_description(&self) -> GsPushConstantRange {
+    pub fn pushconst_description(&self, stage: GsPipelineStage) -> GsPushConstantRange {
         use std::mem;
         // TODO: Fix stage.
-        GsPushConstantRange::new(GsPipelineStage::FRAGMENT, 0, mem::size_of::<MaterialConstants>() as vkuint)
+        GsPushConstantRange::new(stage, 0, mem::size_of::<MaterialConstants>() as vkuint)
     }
 }
 
@@ -172,6 +173,7 @@ pub struct GsglTFRenderParams {
     pub is_use_vertex: bool,
     pub is_use_node_transform: bool,
     pub is_push_materials: bool,
+    pub material_stage: GsPipelineStage,
 }
 // ------------------------------------------------------------------------------------
 

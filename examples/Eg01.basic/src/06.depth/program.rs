@@ -104,7 +104,7 @@ impl DepthProcedure {
             DepthProcedure::commands(kit, &pipeline, &vertex_buffer, &index_buffer, &ubo_set, index_data.len())
         })?;
 
-        let procecure = DepthProcedure {
+        let procedure = DepthProcedure {
             index_data, ubo_data,
             buffer_storage, vertex_buffer, index_buffer, ubo_buffer,
             desc_storage, ubo_set,
@@ -115,7 +115,7 @@ impl DepthProcedure {
             present_availables,
         };
 
-        Ok(procecure)
+        Ok(procedure)
     }
 
     fn update_uniforms(&mut self) -> GsResult<()> {
@@ -238,7 +238,7 @@ impl DepthProcedure {
             .finish();
 
         let mut pipeline_builder = kit.graphics_pipeline_builder()?;
-        pipeline_builder.add_config(&pipeline_config);
+        pipeline_builder.add_config(&pipeline_config)?;
 
         let mut pipelines = pipeline_builder.build(PipelineDeriveState::Independence)?;
         let graphics_pipeline = pipelines.pop().unwrap();
@@ -270,7 +270,7 @@ impl DepthProcedure {
             let mut recorder = kit.pipeline_recorder(graphics_pipeline, command);
 
             recorder.begin_record(vk::CommandBufferUsageFlags::SIMULTANEOUS_USE)?
-                .begin_render_pass(graphics_pipeline, frame_index)
+                .begin_render_pass(graphics_pipeline.render_pass_ref(), frame_index)
                 .bind_pipeline()
                 .bind_vertex_buffers(0, &[vertex_buffer])
                 .bind_index_buffer(index_buffer, 0)

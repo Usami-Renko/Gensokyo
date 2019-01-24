@@ -92,7 +92,7 @@ impl UniformBufferProcedure {
             UniformBufferProcedure::commands(kit, &graphics_pipeline, &vertex_buffer, &ubo_set, &vertex_data)
         })?;
 
-        let procecure = UniformBufferProcedure {
+        let procedure = UniformBufferProcedure {
             vertex_data, buffer_storage, vertex_buffer,
             ubo_set, desc_storage,
             graphics_pipeline,
@@ -100,7 +100,7 @@ impl UniformBufferProcedure {
             present_availables,
         };
 
-        Ok(procecure)
+        Ok(procedure)
     }
 
     fn buffers(kit: AllocatorKit, vertex_data: &Vec<Vertex>, uniform_data: &Vec<UboObject>) -> GsResult<(GsVertexBuffer, GsUniformBuffer, GsBufferRepository<Host>)> {
@@ -219,7 +219,7 @@ impl UniformBufferProcedure {
             let mut recorder = kit.pipeline_recorder(graphics_pipeline, command);
 
             recorder.begin_record(vk::CommandBufferUsageFlags::SIMULTANEOUS_USE)?
-                .begin_render_pass(graphics_pipeline, frame_index)
+                .begin_render_pass(graphics_pipeline.render_pass_ref(), frame_index)
                 .bind_pipeline()
                 .bind_vertex_buffers(0, &[vertex_buffer])
                 .bind_descriptor_sets(0, &[desc_set])

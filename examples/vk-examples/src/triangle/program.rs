@@ -14,14 +14,15 @@ use gsvk::prelude::api::*;
 
 use gsma::data_size;
 
+use vk_examples::Y_CORRECTION;
 use super::data::{ Vertex, UboObject };
 use super::data::{ VERTEX_DATA, INDEX_DATA };
 
 use nalgebra::{ Matrix4, Point3 };
 use std::path::Path;
 
-const VERTEX_SHADER_SOURCE_PATH  : &str = "src/triangle/triangle.vert";
-const FRAGMENT_SHADER_SOURCE_PATH: &str = "src/triangle/triangle.frag";
+const VERTEX_SHADER_SOURCE_PATH  : &'static str = "src/triangle/triangle.vert";
+const FRAGMENT_SHADER_SOURCE_PATH: &'static str = "src/triangle/triangle.frag";
 
 pub struct VulkanExample {
 
@@ -70,17 +71,12 @@ impl VulkanExample {
                 projection: camera.proj_matrix(),
                 view      : camera.view_matrix(),
                 model     : Matrix4::identity(),
-                y_correction: Matrix4::new(
-                    1.0,  0.0, 0.0, 0.0,
-                    0.0, -1.0, 0.0, 0.0,
-                    0.0,  0.0, 0.5, 0.5,
-                    0.0,  0.0, 0.0, 1.0,
-                ),
+                y_correction: Y_CORRECTION.clone(),
             },
         ];
 
-        let view_port = CmdViewportInfo::new(screen_dimension);
-        let scissor = CmdScissorInfo::new(screen_dimension);
+        let view_port = CmdViewportInfo::from(screen_dimension);
+        let scissor = CmdScissorInfo::from(screen_dimension);
 
         let (vertex_buffer, index_buffer, vertex_storage, ubo_buffer, ubo_storage) = loader.assets(|kit| {
             VulkanExample::buffers(kit)
@@ -106,7 +102,7 @@ impl VulkanExample {
             VulkanExample::commands(kit, &pipeline, &vertex_buffer, &index_buffer, &ubo_set, &view_port, &scissor)
         })?;
 
-        let procecure = VulkanExample {
+        let procedure = VulkanExample {
             ubo_data,
             vertex_storage, vertex_buffer, index_buffer,
             ubo_buffer, ubo_storage,
@@ -118,7 +114,7 @@ impl VulkanExample {
             present_availables,
         };
 
-        Ok(procecure)
+        Ok(procedure)
     }
 
     fn update_uniforms(&mut self) -> GsResult<()> {
@@ -275,7 +271,7 @@ impl VulkanExample {
             let mut recorder = kit.pipeline_recorder(graphics_pipeline, command);
 
             recorder.begin_record(vk::CommandBufferUsageFlags::SIMULTANEOUS_USE)?
-                .begin_render_pass(graphics_pipeline, frame_index)
+                .begin_render_pass(graphics_pipeline.render_pass_ref(), frame_index)
                 .set_viewport(0, &[view_port.clone()])
                 .set_scissor(0, &[scissor.clone()])
                 .bind_descriptor_sets(0, &[ubo_set])

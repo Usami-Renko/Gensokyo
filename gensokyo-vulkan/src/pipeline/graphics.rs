@@ -18,7 +18,7 @@ use crate::pipeline::{
     state::tessellation::GsTessellationState,
     pass::GsRenderPass,
     target::GsPipeline,
-    layout::{ PipelineLayoutBuilder, GsPushConstantRange },
+    layout::{ GsPipelineLayout, PipelineLayoutBuilder, GsPushConstantRange },
 };
 
 use crate::descriptor::DescriptorSet;
@@ -26,6 +26,7 @@ use crate::error::{ VkResult, VkError };
 use crate::types::vkDim2D;
 use crate::utils::phantom::Graphics;
 
+use std::rc::Rc;
 use std::ops::{ BitAnd, BitAndAssign, BitOrAssign, BitOr };
 use std::ptr;
 
@@ -57,6 +58,7 @@ impl<'a, 'c: 'a> GraphicsPipelineBuilder<'a> {
         Ok(builder)
     }
 
+    #[inline]
     pub fn with_flag(&mut self, flags: GsPipelineCIFlags) {
         self.ci_flag |= flags;
     }
@@ -102,15 +104,14 @@ impl<'a, 'c: 'a> GraphicsPipelineBuilder<'a> {
 
             let (pipeline_layout, base_pipeline) = match derive {
                 | PipelineDeriveState::AsChildren { parent } => {
-                    (parent.layout.handle, parent.handle)
+                    (parent.layout.clone(), parent.handle)
                 },
                 | PipelineDeriveState::AsParent
                 | PipelineDeriveState::Independence => {
                     let layout = config.content.layout_builder.build(&self.device)?;
-                    (layout, vk::Pipeline::null())
+                    (Rc::new(GsPipelineLayout { handle: layout }), vk::Pipeline::null())
                 },
             };
-            layouts.push(pipeline_layout);
 
             let graphics_pipeline_create_info = vk::GraphicsPipelineCreateInfo {
                 s_type: vk::StructureType::GRAPHICS_PIPELINE_CREATE_INFO,
@@ -127,7 +128,7 @@ impl<'a, 'c: 'a> GraphicsPipelineBuilder<'a> {
                 p_color_blend_state   : &config.content.states.blend.info(),
                 p_tessellation_state  : tessellation_info,
                 p_dynamic_state       : dynamic_info,
-                layout     : pipeline_layout,
+                layout     : pipeline_layout.handle,
                 render_pass: config.content.render_pass.handle,
                 // TODO: Add configuration for this field.
                 subpass: 0,
@@ -136,6 +137,7 @@ impl<'a, 'c: 'a> GraphicsPipelineBuilder<'a> {
             };
 
             infos.push(graphics_pipeline_create_info);
+            layouts.push(pipeline_layout);
             // Notice: keep `shader_create_infos` outlive for loop, or the pointer will be invalid.
             _shader_infos.push(shader_create_infos);
         }
@@ -147,10 +149,15 @@ impl<'a, 'c: 'a> GraphicsPipelineBuilder<'a> {
 
         let pipelines = self.configs.iter().enumerate()
             .map(|(i, config)|
-                GsPipeline::new(&self.device, handles[i], layouts[i], config.content.render_pass.clone())
+                GsPipeline::new(&self.device, handles[i], layouts[i].clone(), config.content.render_pass.clone())
         ).collect();
 
         Ok(pipelines)
+    }
+
+    pub fn reset(&mut self) {
+        self.ci_flag = GsPipelineCIFlags::empty();
+        self.configs.clear();
     }
 }
 
@@ -239,7 +246,7 @@ pub struct GraphicsPipelineConfig {
 
     shaders: Vec<GsShaderInfo>,
     states: PipelineStates,
-    render_pass: GsRenderPass,
+    render_pass: Rc<GsRenderPass>,
 
     layout_builder: PipelineLayoutBuilder,
 }
@@ -252,7 +259,7 @@ impl GraphicsPipelineConfig {
             shaders : shaders.into(),
             states  : PipelineStates::setup(input, dimension),
 
-            render_pass,
+            render_pass: Rc::new(render_pass),
             layout_builder: PipelineLayoutBuilder::default(),
         }
     }
@@ -292,7 +299,7 @@ impl GraphicsPipelineConfig {
             },
         }
 
-        self.states.viewport = state.into_viewport_state();
+        self.states.viewport = state.into();
         self
     }
 

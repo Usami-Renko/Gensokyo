@@ -19,21 +19,17 @@ impl GsglTFIndicesData {
 
         let reader = primitive.reader(|b| Some(&source.data_buffer[b.index()]));
         let indices_range = get_indices_range(primitive)?;
+        let start_index = self.start_index.clone();
 
         // TODO: Support other integer type.
-        let new_indices = reader.read_indices()
-            .and_then(|index_iter| {
+        let index_iter = reader.read_indices()
+            .ok_or(GltfError::loading("Missing indices property in glTF primitive."))?
+            .into_u32()
+            .map(move |index_element| index_element + start_index);
+        let (extend_count, _) = index_iter.size_hint();
 
-                let result = index_iter.into_u32()
-                    .map(|index_element| index_element + self.start_index).collect();
-                Some(result)
-            }).unwrap_or(Vec::new());
-
-        let extend_count = new_indices.len();
-        // println!("indices: {:?}", new_indices);
-
+        self.data.extend(index_iter);
         self.start_index += indices_range as u32;
-        self.data.extend(new_indices);
 
         Ok(extend_count)
     }
@@ -47,10 +43,12 @@ impl GsglTFIndicesData {
         }
     }
 
+    #[inline]
     fn is_contain_indices(&self) -> bool {
         !self.data.is_empty()
     }
 
+    #[inline]
     pub fn indices_count(&self) -> usize {
         self.data.len()
     }
