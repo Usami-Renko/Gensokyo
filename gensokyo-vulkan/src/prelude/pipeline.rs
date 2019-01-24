@@ -15,6 +15,8 @@ pub use crate::pipeline::state::{
     tessellation::GsTessellationState,
 };
 
+pub use crate::pipeline::graphics::PipelineDeriveState;
+
 pub use crate::pipeline::pass::SubpassStage;
 pub use crate::pipeline::layout::GsPushConstantRange;
 

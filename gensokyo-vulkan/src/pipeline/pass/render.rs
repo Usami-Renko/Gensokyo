@@ -9,6 +9,7 @@ use crate::types::vkDim2D;
 
 use std::ptr;
 
+#[derive(Clone)]
 pub struct GsRenderPass {
 
     pub(crate) handle: vk::RenderPass,

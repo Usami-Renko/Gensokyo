@@ -22,28 +22,22 @@ pub struct GsPipeline<T: GsVkPipelineType> {
     pub(crate) layout: GsPipelineLayout,
 
     device: GsDevice,
-
-    frame_count: usize,
 }
 
 impl<T: GsVkPipelineType> GsPipeline<T> {
 
     pub(super) fn new(device: &GsDevice, handle: vk::Pipeline, layout: vk::PipelineLayout, pass: GsRenderPass) -> GsPipeline<T> {
 
-        let frame_count = pass.frame_count();
-
         GsPipeline {
             phantom_type: PhantomData,
-            handle,
             device: device.clone(),
             layout: GsPipelineLayout { handle: layout },
-            pass,
-            frame_count,
+            handle, pass,
         }
     }
 
     pub fn frame_count(&self) -> usize {
-        self.frame_count
+        self.pass.frame_count()
     }
 
     pub fn destroy(&self) {

@@ -249,9 +249,9 @@ impl VulkanExample {
             .finish();
 
         let mut pipeline_builder = kit.graphics_pipeline_builder()?;
-        pipeline_builder.add_config(pipeline_config);
+        pipeline_builder.add_config(&pipeline_config)?;
 
-        let mut pipelines = pipeline_builder.build()?;
+        let mut pipelines = pipeline_builder.build(PipelineDeriveState::Independence)?;
         let graphics_pipeline = pipelines.pop().unwrap();
 
         Ok(graphics_pipeline)

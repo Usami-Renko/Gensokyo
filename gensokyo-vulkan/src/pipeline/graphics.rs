@@ -26,16 +26,221 @@ use crate::error::{ VkResult, VkError };
 use crate::types::vkDim2D;
 use crate::utils::phantom::Graphics;
 
+use std::ops::{ BitAnd, BitAndAssign, BitOrAssign, BitOr };
 use std::ptr;
 
+// ------------------------------------------------------------------------------------------
+pub struct GraphicsPipelineBuilder<'a> {
+
+    device : GsDevice,
+    ci_flag: GsPipelineCIFlags,
+    configs: Vec<PipelineConfigTmp<'a>>,
+    shaderc: GsShaderCompiler,
+}
+
+struct PipelineConfigTmp<'a> {
+    content: &'a GraphicsPipelineConfig,
+    modules: Vec<GsShaderModule>,
+}
+
+impl<'a, 'c: 'a> GraphicsPipelineBuilder<'a> {
+
+    pub fn new(device: &GsDevice) -> VkResult<GraphicsPipelineBuilder<'a>> {
+
+        let builder = GraphicsPipelineBuilder {
+            device : device.clone(),
+            ci_flag: GsPipelineCIFlags::empty(),
+            configs: vec![],
+            shaderc: GsShaderCompiler::setup(ShaderCompilePrefab::Vulkan)?,
+        };
+
+        Ok(builder)
+    }
+
+    pub fn with_flag(&mut self, flags: GsPipelineCIFlags) {
+        self.ci_flag |= flags;
+    }
+
+    pub fn set_shaderc(&mut self, configuration: ShadercConfiguration) -> VkResult<()> {
+
+        self.shaderc = GsShaderCompiler::setup_from_configuration(configuration)?;
+        Ok(())
+    }
+
+    pub fn add_config(&mut self, pipeline_config: &'c GraphicsPipelineConfig) -> VkResult<()> {
+
+        let mut shader_modules = Vec::with_capacity(pipeline_config.shaders.len());
+        for shader in pipeline_config.shaders.iter() {
+            let module = shader.build(&self.device, &mut self.shaderc)?;
+            shader_modules.push(module);
+        }
+
+        self.configs.push(PipelineConfigTmp {
+            content: pipeline_config,
+            modules: shader_modules,
+        });
+        Ok(())
+    }
+
+    pub fn build(&self, derive: PipelineDeriveState) -> VkResult<Vec<GsPipeline<Graphics>>> {
+
+        let pipeline_count = self.configs.len();
+        let ci_flag = self.ci_flag.combine_derive(&derive);
+
+        let mut layouts = Vec::with_capacity(pipeline_count);
+        let mut _shader_infos = Vec::with_capacity(pipeline_count);
+        let mut infos = Vec::with_capacity(pipeline_count);
+
+        for config in self.configs.iter() {
+
+            let shader_create_infos: Vec<vk::PipelineShaderStageCreateInfo> = config.modules.iter()
+                .map(|m| m.info()).collect();
+            let tessellation_info = config.content.states.tessellation.as_ref()
+                .map_or(ptr::null(), |t| &t.info());
+            let dynamic_info = if config.content.states.dynamic.is_contain_state() {
+                &config.content.states.dynamic.info() } else { ptr::null() };
+
+            let (pipeline_layout, base_pipeline) = match derive {
+                | PipelineDeriveState::AsChildren { parent } => {
+                    (parent.layout.handle, parent.handle)
+                },
+                | PipelineDeriveState::AsParent
+                | PipelineDeriveState::Independence => {
+                    let layout = config.content.layout_builder.build(&self.device)?;
+                    (layout, vk::Pipeline::null())
+                },
+            };
+            layouts.push(pipeline_layout);
+
+            let graphics_pipeline_create_info = vk::GraphicsPipelineCreateInfo {
+                s_type: vk::StructureType::GRAPHICS_PIPELINE_CREATE_INFO,
+                p_next: ptr::null(),
+                flags : ci_flag.0,
+                stage_count: shader_create_infos.len() as _,
+                p_stages   : shader_create_infos.as_ptr(),
+                p_vertex_input_state  : &config.content.states.vertex_input.info(),
+                p_input_assembly_state: &config.content.states.input_assembly.info(),
+                p_viewport_state      : &config.content.states.viewport.info(),
+                p_rasterization_state : &config.content.states.rasterizer.info(),
+                p_multisample_state   : &config.content.states.multisample.info(),
+                p_depth_stencil_state : &config.content.states.depth_stencil.info(),
+                p_color_blend_state   : &config.content.states.blend.info(),
+                p_tessellation_state  : tessellation_info,
+                p_dynamic_state       : dynamic_info,
+                layout     : pipeline_layout,
+                render_pass: config.content.render_pass.handle,
+                // TODO: Add configuration for this field.
+                subpass: 0,
+                base_pipeline_handle: base_pipeline,
+                base_pipeline_index: -1,
+            };
+
+            infos.push(graphics_pipeline_create_info);
+            // Notice: keep `shader_create_infos` outlive for loop, or the pointer will be invalid.
+            _shader_infos.push(shader_create_infos);
+        }
+
+        let handles = unsafe {
+            self.device.handle.create_graphics_pipelines(vk::PipelineCache::null(), &infos, None)
+                .or(Err(VkError::create("Graphics Pipelines")))?
+        };
+
+        let pipelines = self.configs.iter().enumerate()
+            .map(|(i, config)|
+                GsPipeline::new(&self.device, handles[i], layouts[i], config.content.render_pass.clone())
+        ).collect();
+
+        Ok(pipelines)
+    }
+}
+
+impl<'a> Drop for GraphicsPipelineBuilder<'a> {
+
+    fn drop(&mut self) {
+
+        for config in self.configs.iter() {
+            for module in config.modules.iter() {
+                module.destroy(&self.device);
+            }
+        }
+    }
+}
+// ------------------------------------------------------------------------------------------
+
+// ------------------------------------------------------------------------------------------
+pub enum PipelineDeriveState<'p> {
+    AsParent,
+    AsChildren { parent: &'p GsPipeline<Graphics> },
+    Independence,
+}
+
+impl<'p> PipelineDeriveState<'p> {
+
+    fn flag(&self) -> vk::PipelineCreateFlags {
+        match self {
+            | PipelineDeriveState::AsParent => vk::PipelineCreateFlags::ALLOW_DERIVATIVES,
+            | PipelineDeriveState::AsChildren { .. } => vk::PipelineCreateFlags::DERIVATIVE,
+            | PipelineDeriveState::Independence => vk::PipelineCreateFlags::empty(),
+        }
+    }
+}
+// ------------------------------------------------------------------------------------------
+
+// ------------------------------------------------------------------------------------------
+pub struct GsPipelineCIFlags(vk::PipelineCreateFlags);
+
+impl GsPipelineCIFlags {
+    pub const DISABLE_OPTIMIZATION: GsPipelineCIFlags = GsPipelineCIFlags(vk::PipelineCreateFlags::DISABLE_OPTIMIZATION);
+    pub const DEFER_COMPILE_NV: GsPipelineCIFlags = GsPipelineCIFlags(vk::PipelineCreateFlags::DEFER_COMPILE_NV);
+    pub const VIEW_INDEX_FROM_DEVICE_INDEX: GsPipelineCIFlags = GsPipelineCIFlags(vk::PipelineCreateFlags::VIEW_INDEX_FROM_DEVICE_INDEX);
+    pub const DISPATCH_BASE: GsPipelineCIFlags = GsPipelineCIFlags(vk::PipelineCreateFlags::DISPATCH_BASE);
+
+    fn combine_derive(&self, derive: &PipelineDeriveState) -> GsPipelineCIFlags {
+        GsPipelineCIFlags(self.0 | derive.flag())
+    }
+    fn empty() -> GsPipelineCIFlags {
+        GsPipelineCIFlags(vk::PipelineCreateFlags::empty())
+    }
+}
+
+impl BitAnd for GsPipelineCIFlags {
+    type Output = Self;
+
+    fn bitand(self, rhs: Self) -> Self {
+        GsPipelineCIFlags(self.0 & rhs.0)
+    }
+}
+
+impl BitAndAssign for GsPipelineCIFlags {
+
+    fn bitand_assign(&mut self, rhs: Self) {
+        self.0 &= rhs.0
+    }
+}
+
+impl BitOr for GsPipelineCIFlags {
+    type Output = Self;
+
+    fn bitor(self, rhs: Self) -> Self {
+        GsPipelineCIFlags(self.0 | rhs.0)
+    }
+}
+
+impl BitOrAssign for GsPipelineCIFlags {
+
+    fn bitor_assign(&mut self, rhs: Self) {
+        self.0 |= rhs.0;
+    }
+}
+// ------------------------------------------------------------------------------------------
+
+// ------------------------------------------------------------------------------------------
 pub struct GraphicsPipelineConfig {
 
     shaders: Vec<GsShaderInfo>,
     states: PipelineStates,
-    flags: vk::PipelineCreateFlags,
     render_pass: GsRenderPass,
 
-    shader_modules: Vec<GsShaderModule>,
     layout_builder: PipelineLayoutBuilder,
 }
 
@@ -46,148 +251,18 @@ impl GraphicsPipelineConfig {
         GraphicsPipelineConfig {
             shaders : shaders.into(),
             states  : PipelineStates::setup(input, dimension),
-            flags   : vk::PipelineCreateFlags::empty(),
 
             render_pass,
-            shader_modules: vec![],
             layout_builder: PipelineLayoutBuilder::default(),
         }
     }
 
-    pub fn with_flags(&mut self, flags: vk::PipelineCreateFlags) {
-        self.flags = flags;
+    pub fn with_shader(mut self, shaders: Vec<GsShaderInfo>) -> GraphicsPipelineConfig {
+        self.shaders = shaders;
+        self
     }
 
     pub fn finish(self) -> GraphicsPipelineConfig {
-        // TODO: Configure layout property here
-        // code goes here...
-
-        self
-    }
-}
-
-pub struct GraphicsPipelineBuilder {
-
-    device : GsDevice,
-    configs: Vec<GraphicsPipelineConfig>,
-    shaderc: GsShaderCompiler,
-}
-
-impl GraphicsPipelineBuilder {
-
-    pub fn new(device: &GsDevice) -> VkResult<GraphicsPipelineBuilder> {
-
-        let builder = GraphicsPipelineBuilder {
-            device : device.clone(),
-            configs: vec![],
-            shaderc: GsShaderCompiler::setup(ShaderCompilePrefab::Vulkan)?,
-        };
-
-        Ok(builder)
-    }
-
-    pub fn set_shaderc(&mut self, configuration: ShadercConfiguration) -> VkResult<()> {
-
-        self.shaderc = GsShaderCompiler::setup_from_configuration(configuration)?;
-        Ok(())
-    }
-
-    pub fn add_config(&mut self, config: GraphicsPipelineConfig) {
-
-        self.configs.push(config);
-    }
-
-    pub fn build(mut self) -> VkResult<Vec<GsPipeline<Graphics>>> {
-
-        for config in self.configs.iter_mut() {
-            let mut shader_modules = vec![];
-            for shader in config.shaders.iter() {
-                let module = shader.build(&self.device, &mut self.shaderc)?;
-                shader_modules.push(module);
-            }
-            config.shader_modules = shader_modules;
-        }
-
-        let pipeline_count = self.configs.len();
-        let mut layouts = Vec::with_capacity(pipeline_count);
-        let mut _shader_infos = Vec::with_capacity(pipeline_count);
-        let mut infos = Vec::with_capacity(pipeline_count);
-
-        for config in self.configs.iter() {
-
-            let shader_create_infos: Vec<vk::PipelineShaderStageCreateInfo> = config.shader_modules.iter()
-                .map(|m| m.info()).collect();
-            let tessellation_info = config.states.tessellation.as_ref()
-                .map_or(ptr::null(), |t| &t.info());
-            let dynamic_info = if config.states.dynamic.is_contain_state() {
-                &config.states.dynamic.info() } else { ptr::null() };
-
-            let pipeline_layout = config.layout_builder.build(&self.device)?;
-            layouts.push(pipeline_layout);
-
-            let graphics_pipeline_create_info = vk::GraphicsPipelineCreateInfo {
-                s_type: vk::StructureType::GRAPHICS_PIPELINE_CREATE_INFO,
-                p_next: ptr::null(),
-                // TODO: Add configuration for vk::PipelineCreateFlags.
-                flags : vk::PipelineCreateFlags::empty(),
-                stage_count: shader_create_infos.len() as _,
-                p_stages   : shader_create_infos.as_ptr(),
-                p_vertex_input_state  : &config.states.vertex_input.info(),
-                p_input_assembly_state: &config.states.input_assembly.info(),
-                p_viewport_state      : &config.states.viewport.info(),
-                p_rasterization_state : &config.states.rasterizer.info(),
-                p_multisample_state   : &config.states.multisample.info(),
-                p_depth_stencil_state : &config.states.depth_stencil.info(),
-                p_color_blend_state   : &config.states.blend.info(),
-                p_tessellation_state  : tessellation_info,
-                p_dynamic_state       : dynamic_info,
-                layout: pipeline_layout,
-                render_pass: config.render_pass.handle,
-                // TODO: Add configuration for this field.
-                subpass: 0,
-                // TODO: Add configuration for this field.
-                base_pipeline_handle: vk::Pipeline::null(),
-                // TODO: Add configuration for this field.
-                base_pipeline_index: -1,
-            };
-
-            infos.push(graphics_pipeline_create_info);
-            // Notice: keep `shader_create_infos` outlive for loop, or the pointer will be invalid.
-            _shader_infos.push(shader_create_infos);
-        }
-
-        let handles = unsafe {
-            self.device.handle.create_graphics_pipelines(vk::PipelineCache::null(), infos.as_slice(), None)
-                .or(Err(VkError::create("Graphics Pipelines")))?
-        };
-
-        self.destroy_shader_modules();
-
-
-        let mut pipelines = Vec::with_capacity(pipeline_count);
-        for (i, config) in self.configs.into_iter().enumerate() {
-            let pipeline = GsPipeline::new(&self.device, handles[i], layouts[i], config.render_pass);
-            pipelines.push(pipeline);
-        }
-
-        Ok(pipelines)
-    }
-
-    fn destroy_shader_modules(&self) {
-
-        for config in self.configs.iter() {
-            for module in config.shader_modules.iter() {
-                module.destroy(&self.device);
-            }
-        }
-    }
-}
-
-
-impl GraphicsPipelineConfig {
-
-    pub fn with_shader(mut self, shaders: Vec<GsShaderInfo>) -> GraphicsPipelineConfig {
-        self.shaders = shaders;
         self
     }
 
@@ -289,3 +364,4 @@ impl GraphicsPipelineConfig {
         self
     }
 }
+// ------------------------------------------------------------------------------------------

@@ -9,6 +9,7 @@ use crate::types::{ vkuint, vkDim2D };
 
 use std::ptr;
 
+#[derive(Clone)]
 pub struct GsFramebuffer {
 
     pub(crate) handle: vk::Framebuffer,
