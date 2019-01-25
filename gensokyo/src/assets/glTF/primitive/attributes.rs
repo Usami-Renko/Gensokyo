@@ -79,7 +79,7 @@ impl GsglTFAttrFlags {
     // POSITION, NORMAL.
     pub const GPA_PN      : GsglTFAttrFlags = GsglTFAttrFlags(0b11);
     // POSITION, NORMAL, TEXCOORD_0.
-    pub const GPA_PNTE0   : GsglTFAttrFlags = GsglTFAttrFlags(0b1101);
+    pub const GPA_PNTE0   : GsglTFAttrFlags = GsglTFAttrFlags(0b1011);
     // POSITION, NORMAL, TANGENT, TEXCOORD_0, TEXCOORD_1, COLOR_0, JOINTS_0, WEIGHTS_0.
     pub const GPA_ULTIMATE: GsglTFAttrFlags = GsglTFAttrFlags(0b11111111);
 

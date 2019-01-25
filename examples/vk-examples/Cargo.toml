@@ -18,6 +18,7 @@ serde        = "1.0.80"
 serde_derive = "1.0.80"
 bincode      = "1.0.1"
 
+# Basics ----------------------------------------------
 [[bin]]
 name = "triangle"
 path = "src/triangle/main.rs"
@@ -27,8 +28,13 @@ name = "pipelines"
 path = "src/pipelines/main.rs"
 
 [[bin]]
+name = "descriptorsets"
+path = "src/descriptorsets/main.rs"
+
+[[bin]]
 name = "pushconstants"
 path = "src/pushconstants/main.rs"
+# -----------------------------------------------------
 
 [[bin]]
 name = "pbrbasic"
