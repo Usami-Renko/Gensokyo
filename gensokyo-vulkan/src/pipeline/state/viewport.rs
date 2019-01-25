@@ -47,7 +47,7 @@ impl GsViewportState {
         self.length += 1;
     }
 
-    pub(crate) fn info(&self) -> vk::PipelineViewportStateCreateInfo {
+    pub(crate) fn ci(&self) -> vk::PipelineViewportStateCreateInfo {
 
         vk::PipelineViewportStateCreateInfo {
             s_type: vk::StructureType::PIPELINE_VIEWPORT_STATE_CREATE_INFO,

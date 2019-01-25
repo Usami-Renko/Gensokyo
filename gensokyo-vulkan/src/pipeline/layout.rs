@@ -22,7 +22,7 @@ impl PipelineLayoutBuilder {
 
     pub fn build(&self, device: &GsDevice) -> VkResult<vk::PipelineLayout> {
 
-        let create_info = vk::PipelineLayoutCreateInfo {
+        let pipeline_layout_ci = vk::PipelineLayoutCreateInfo {
             s_type: vk::StructureType::PIPELINE_LAYOUT_CREATE_INFO,
             p_next: ptr::null(),
             // flags is reserved for future use in API version 1.1.82.
@@ -34,7 +34,7 @@ impl PipelineLayoutBuilder {
         };
 
         unsafe {
-            device.handle.create_pipeline_layout(&create_info, None)
+            device.handle.create_pipeline_layout(&pipeline_layout_ci, None)
                 .or(Err(VkError::create("Pipeline Layout")))
         }
     }

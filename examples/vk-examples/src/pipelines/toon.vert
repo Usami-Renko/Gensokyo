@@ -9,7 +9,7 @@ layout (location = 1) out vec3 outColor;
 layout (location = 2) out vec3 outViewVec;
 layout (location = 3) out vec3 outLightVec;
 
-layout (binding = 0) uniform UBO {
+layout (set = 0, binding = 0) uniform UBO {
 	mat4 projection;
 	mat4 view;
 	mat4 model;
@@ -35,7 +35,7 @@ void main() {
 
 	outNormal = inNormal;
 	outColor  = material.base_color_factor.xyz;
-	gl_Position = ubo.y_correction * ubo.projection * ubo.model * dyn_node.transform * vec4(inPos.xyz, 1.0);
+	gl_Position = ubo.y_correction * ubo.projection * ubo.view * ubo.model * dyn_node.transform * vec4(inPos.xyz, 1.0);
 	
 	vec4 pos = ubo.model * vec4(inPos, 1.0);
 	outNormal = mat3(ubo.model) * inNormal;

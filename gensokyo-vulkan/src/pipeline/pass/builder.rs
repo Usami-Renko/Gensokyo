@@ -97,7 +97,7 @@ impl RenderPassBuilder {
         let dependencies: Vec<vk::SubpassDependency> = self.dependencies.into_iter()
             .map(|d| d.take()).collect();
 
-        let create_info = vk::RenderPassCreateInfo {
+        let render_pass_ci = vk::RenderPassCreateInfo {
             s_type: vk::StructureType::RENDER_PASS_CREATE_INFO,
             p_next: ptr::null(),
             // flags is reserved for future use in API version 1.1.82.
@@ -111,7 +111,7 @@ impl RenderPassBuilder {
         };
 
         let handle = unsafe {
-            self.device.handle.create_render_pass(&create_info, None)
+            self.device.handle.create_render_pass(&render_pass_ci, None)
                 .or(Err(VkError::create("Render Pass")))?
         };
 

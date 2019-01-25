@@ -17,7 +17,7 @@ use crate::buffer::instance::{
     GsImgsrcBuffer, IImgSrc,
 };
 
-use crate::utils::api::{ GsAssignIndex, GsDistributeApi, GsDistIntoRepository };
+use crate::utils::allot::{ GsAssignIndex, GsDistributeApi, GsDistIntoRepository };
 use crate::types::vkbytes;
 
 use std::marker::PhantomData;

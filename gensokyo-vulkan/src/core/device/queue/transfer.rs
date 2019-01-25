@@ -132,15 +132,6 @@ impl GsTransfer {
     }
 }
 
-impl Drop for GsTransfer {
-
-    fn drop(&mut self) {
-
-        self.fence.destroy();
-    }
-}
-
-
 struct TransferCommandPool {
 
     handle: vk::CommandPool,
@@ -150,7 +141,7 @@ impl TransferCommandPool {
 
     fn setup(device: &ash::Device, queue: &GsQueue) -> VkResult<TransferCommandPool> {
 
-        let info = vk::CommandPoolCreateInfo {
+        let command_pool_ci = vk::CommandPoolCreateInfo {
             s_type: vk::StructureType::COMMAND_POOL_CREATE_INFO,
             p_next: ptr::null(),
             // TODO: Consider CommandPoolFlag::ResetCommandBufferBit.
@@ -160,7 +151,7 @@ impl TransferCommandPool {
         };
 
         let handle = unsafe {
-            device.create_command_pool(&info, None)
+            device.create_command_pool(&command_pool_ci, None)
                 .or(Err(VkError::create("Command Pool")))?
         };
 

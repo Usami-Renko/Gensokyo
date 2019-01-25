@@ -17,7 +17,7 @@ impl GsSemaphore {
 
     pub fn setup(device: &GsDevice) -> VkResult<GsSemaphore> {
 
-        let create_info = vk::SemaphoreCreateInfo {
+        let semaphore_ci = vk::SemaphoreCreateInfo {
             s_type: vk::StructureType::SEMAPHORE_CREATE_INFO,
             p_next: ptr::null(),
             // flags is reserved for future use in API version 1.1.82.
@@ -25,7 +25,7 @@ impl GsSemaphore {
         };
 
         let handle = unsafe {
-            device.handle.create_semaphore(&create_info, None)
+            device.handle.create_semaphore(&semaphore_ci, None)
                 .or(Err(VkError::create("Semaphore")))?
         };
 
@@ -35,8 +35,11 @@ impl GsSemaphore {
         };
         Ok(semaphore)
     }
+}
 
-    pub fn destroy(&self) {
+impl Drop for GsSemaphore {
+
+    fn drop(&mut self) {
         unsafe {
             self.device.handle.destroy_semaphore(self.handle, None);
         }

@@ -183,14 +183,11 @@ impl UniformBufferProcedure {
         let render_pass = render_pass_builder.build()?;
 
         let pipeline_config = kit.pipeline_config(shader_infos, vertex_input_desc, render_pass)
-            .add_descriptor_sets(&[descriptor_set])
+            .with_descriptor_sets(&[descriptor_set])
             .finish();
 
-        let mut pipeline_builder = kit.graphics_pipeline_builder()?;
-        pipeline_builder.add_config(&pipeline_config)?;
-
-        let mut pipelines = pipeline_builder.build(PipelineDeriveState::Independence)?;
-        let graphics_pipeline = pipelines.pop().unwrap();
+        let mut pipeline_builder = kit.gfx_builder()?;
+        let graphics_pipeline = pipeline_builder.build(pipeline_config)?;
 
         Ok(graphics_pipeline)
     }
@@ -219,7 +216,7 @@ impl UniformBufferProcedure {
             let mut recorder = kit.pipeline_recorder(graphics_pipeline, command);
 
             recorder.begin_record(vk::CommandBufferUsageFlags::SIMULTANEOUS_USE)?
-                .begin_render_pass(graphics_pipeline.render_pass_ref(), frame_index)
+                .begin_render_pass(graphics_pipeline, frame_index)
                 .bind_pipeline()
                 .bind_vertex_buffers(0, &[vertex_buffer])
                 .bind_descriptor_sets(0, &[desc_set])
@@ -251,18 +248,6 @@ impl GraphicsRoutine for UniformBufferProcedure {
         return Ok(&self.present_availables[image_index])
     }
 
-    fn clean_resources(&mut self, _: &GsDevice) -> GsResult<()> {
-
-        self.present_availables.iter()
-            .for_each(|semaphore| semaphore.destroy());
-        self.present_availables.clear();
-        self.command_buffers.clear();
-        self.command_pool.destroy();
-        self.graphics_pipeline.destroy();
-
-        Ok(())
-    }
-
     fn reload_res(&mut self, loader: AssetsLoader) -> GsResult<()> {
 
         self.graphics_pipeline = loader.pipelines(|kit| {
@@ -280,14 +265,6 @@ impl GraphicsRoutine for UniformBufferProcedure {
         self.command_buffers = command_buffers;
 
         Ok(())
-    }
-
-    fn clean_routine(&mut self, _device: &GsDevice) {
-
-        self.present_availables.iter()
-            .for_each(|semaphore| semaphore.destroy());
-        self.graphics_pipeline.destroy();
-        self.command_pool.destroy();
     }
 
     fn react_input(&mut self, inputer: &ActionNerve, _: f32) -> SceneAction {

@@ -18,8 +18,8 @@ use crate::memory::transfer::DataCopyer;
 
 use crate::error::VkResult;
 use crate::command::GsCmdCopyApi;
-use crate::utils::api::{ GsAllocatorApi, GsAllotIntoDistributor };
-use crate::utils::api::{ GsDistributeApi, GsDistIntoRepository };
+use crate::utils::allot::{ GsAllocatorApi, GsAllotIntoDistributor };
+use crate::utils::allot::{ GsDistributeApi, GsDistIntoRepository };
 use crate::utils::phantom::Staging;
 
 pub struct SampleImageBarrierBundle {

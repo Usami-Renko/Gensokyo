@@ -92,7 +92,7 @@ impl GsShaderInfo {
 
     fn create_module(&self, device: &GsDevice, codes: &Vec<u8>) -> VkResult<vk::ShaderModule> {
 
-        let module_create_info = vk::ShaderModuleCreateInfo {
+        let shader_module_ci = vk::ShaderModuleCreateInfo {
             s_type    : vk::StructureType::SHADER_MODULE_CREATE_INFO,
             p_next    : ptr::null(),
             // flags is reserved for future use in API version 1.1.82.
@@ -102,7 +102,7 @@ impl GsShaderInfo {
         };
 
         unsafe {
-            device.handle.create_shader_module(&module_create_info, None)
+            device.handle.create_shader_module(&shader_module_ci, None)
                 .or(Err(VkError::create("Shader Module")))
         }
     }
@@ -118,7 +118,7 @@ pub struct GsShaderModule {
 
 impl GsShaderModule {
 
-    pub(crate) fn info(&self) -> vk::PipelineShaderStageCreateInfo {
+    pub(crate) fn ci(&self) -> vk::PipelineShaderStageCreateInfo {
 
         vk::PipelineShaderStageCreateInfo {
             s_type : vk::StructureType::PIPELINE_SHADER_STAGE_CREATE_INFO,

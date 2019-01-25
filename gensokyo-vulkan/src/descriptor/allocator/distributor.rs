@@ -6,7 +6,7 @@ use crate::descriptor::set::DescriptorSet;
 use crate::descriptor::repository::GsDescriptorRepository;
 use crate::descriptor::allocator::index::IDescriptorSet;
 
-use crate::utils::api::{ GsAssignIndex, GsDistributeApi, GsDistIntoRepository };
+use crate::utils::allot::{ GsAssignIndex, GsDistributeApi, GsDistIntoRepository };
 
 use crate::utils::wrapper::VKWrapperInfo;
 

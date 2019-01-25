@@ -14,7 +14,7 @@ use gsvk::prelude::api::*;
 
 use gsma::data_size;
 
-use vk_examples::Y_CORRECTION;
+use vk_examples::{ Y_CORRECTION, DEFAULT_CLEAR_COLOR };
 use super::data::{ Vertex, UBOVS, PipelineContent };
 
 use nalgebra::{ Matrix4, Point3, Vector4 };
@@ -38,9 +38,7 @@ pub struct VulkanExample {
     ubo_buffer : GsUniformBuffer,
     ubo_storage: GsBufferRepository<Host>,
 
-    phone_pipeline: PipelineContent,
-    toon_pipeline: PipelineContent,
-    wireframe_pipeline: PipelineContent,
+    pipelines: PipelineContent,
 
     ubo_set     : DescriptorSet,
     #[allow(dead_code)]
@@ -66,8 +64,9 @@ impl VulkanExample {
         let screen_dimension = loader.screen_dimension();
 
         let mut camera = GsCameraFactory::config()
-            .place_at(Point3::new(0.0, 0.0, 2.5))
-            .screen_aspect_ratio(screen_dimension.width as f32 / screen_dimension.height as f32)
+            .place_at(Point3::new(0.25, 2.25, 8.75))
+            // adjust the aspect ratio since the screen has been separated into 3 parts.
+            .screen_aspect_ratio((screen_dimension.width as f32 / 3.0) / screen_dimension.height as f32)
             .into_flight_camera();
         camera.set_move_speed(50.0);
 
@@ -93,16 +92,16 @@ impl VulkanExample {
             VulkanExample::image(kit, screen_dimension)
         })?;
 
-        let (phone_pipeline, toon_pipeline, wireframe_pipeline) = loader.pipelines(|kit| {
+        let pipelines = loader.pipelines(|kit| {
             VulkanExample::pipelines(kit, &model_entity, &ubo_set, &depth_attachment, screen_dimension)
         })?;
 
         let present_availables = loader.syncs(|kit| {
-            VulkanExample::sync_resources(kit, &phone_pipeline.pipeline)
+            VulkanExample::sync_resources(kit, &pipelines.pipeline_set)
         })?;
 
         let (command_pool, command_buffers) = loader.commands(|kit| {
-            VulkanExample::commands(kit, &phone_pipeline, &toon_pipeline, &wireframe_pipeline, &model_entity, &ubo_set)
+            VulkanExample::commands(kit, &pipelines, &model_entity, &ubo_set)
         })?;
 
         let procedure = VulkanExample {
@@ -110,7 +109,7 @@ impl VulkanExample {
             model_entity, model_storage,
             ubo_buffer, ubo_storage,
             desc_storage, ubo_set,
-            phone_pipeline, toon_pipeline, wireframe_pipeline,
+            pipelines,
             depth_attachment, image_storage,
             command_pool, command_buffers,
             camera,
@@ -202,7 +201,7 @@ impl VulkanExample {
         Ok((depth_attachment, image_storage))
     }
 
-    fn pipelines(kit: PipelineKit, model_entity: &GsglTFEntity, ubo_set: &DescriptorSet, depth_image: &GsDSAttachment, dimension: vkDim2D) -> GsResult<(PipelineContent, PipelineContent, PipelineContent)> {
+    fn pipelines(kit: PipelineKit, model_entity: &GsglTFEntity, ubo_set: &DescriptorSet, depth_image: &GsDSAttachment, dimension: vkDim2D) -> GsResult<PipelineContent> {
 
         // shaders ------------------------------------------------------------------------
         let vertex_input_desc = Vertex::input_description();
@@ -230,7 +229,7 @@ impl VulkanExample {
 
             let color_attachment = kit.present_attachment()
                 .op(vk::AttachmentLoadOp::CLEAR, vk::AttachmentStoreOp::STORE)
-                .clear_value(vk::ClearValue { color: vk::ClearColorValue { float32: [0.025, 0.025, 0.025, 1.0] } });
+                .clear_value(DEFAULT_CLEAR_COLOR.clone());
             let depth_attachment = depth_image.attachment()
                 .op(vk::AttachmentLoadOp::CLEAR, vk::AttachmentStoreOp::DONT_CARE);
 
@@ -256,95 +255,82 @@ impl VulkanExample {
         // set pipeline states ----------------------------------------------------------------------------
         let depth_stencil = GsDepthStencilState::setup(GsDepthStencilPrefab::EnableDepth);
         let viewport_state = ViewportStateType::Dynamic { count: 1 }; // use dynamic viewport and scissor.
-        // TODO: Wide line is not support yet.
+        // FIXME: Wide line is not support yet.
         // rasterizer.set_line_width(DynamicableValue::Dynamic); // use dynamic line with.
 
-        let phong_config = kit.pipeline_config(phong_shader_infos, vertex_input_desc, render_pass)
+        let pipeline_template = kit.pipeline_config(phong_shader_infos, vertex_input_desc, render_pass)
             .with_depth_stencil(depth_stencil)
             .with_viewport(viewport_state)
-            .add_descriptor_sets(&[ubo_set])
-            .add_push_constants(vec![model_entity.pushconst_description(GsPipelineStage::VERTEX)])
+            .with_descriptor_sets(&[ubo_set])
+            .with_push_constants(vec![model_entity.pushconst_description(GsPipelineStage::VERTEX)])
             .finish();
-        // --------------------------------------------------------------------------------
+        // -----------------------------------------------------------------------------------------------
 
-        // create phone pipeline. ---------------------------------------------------------------
+        // create phone pipeline. ------------------------------------------------------------------------
         let width_stride = (dimension.width as f32 / 3.0) as vkuint;
+        let mut pipeline_builder = kit.gfx_set_builder(pipeline_template)?;
 
-        let phong_pipeline = {
-            let mut pipeline_builder = kit.graphics_pipeline_builder()?;
-            pipeline_builder.add_config(&phong_config)?;
+        let (phong_pipeline, phone_viewport) = {
 
-            let mut pipelines = pipeline_builder.build(PipelineDeriveState::AsParent)?;
-
-            PipelineContent {
-                pipeline: pipelines.pop().unwrap(),
-                // Left: Solid colored.
-                viewport: CmdViewportInfo::new(0, 0, width_stride, dimension.height),
-                scissor : CmdScissorInfo::from(dimension),
-            }
+            let pipeline = pipeline_builder.build_template()?;
+            // Left: Solid colored.
+            let viewport =  CmdViewportInfo::new(0, 0, width_stride, dimension.height);
+            (pipeline, viewport)
         };
-        // --------------------------------------------------------------------------------
+        // -----------------------------------------------------------------------------------------------
 
-        // create toon pipeline -----------------------------------------------------------
-        let toon_config = phong_config
-            .with_shader(tone_shader_infos)
-            .finish();
+        // create toon pipeline --------------------------------------------------------------------------
+        let (toon_pipeline, toon_viewport) = {
 
-        let toon_pipeline = {
-            let mut pipeline_builder = kit.graphics_pipeline_builder()?;
-            pipeline_builder.add_config(&toon_config)?;
-
-            let derive_state = PipelineDeriveState::AsChildren { parent: &phong_pipeline.pipeline };
-            let mut pipelines = pipeline_builder.build(derive_state)?;
-
-            PipelineContent {
-                pipeline: pipelines.pop().unwrap(),
-                // Center: Toon
-                viewport: CmdViewportInfo::new(width_stride, 0, width_stride, dimension.height),
-                scissor : CmdScissorInfo::from(dimension),
-            }
+            let pipeline_template = pipeline_builder.template_mut();
+            pipeline_template.reset_shader(tone_shader_infos);
+            let pipeline = pipeline_builder.build_template()?;
+            // Center: Toon
+            let viewport = CmdViewportInfo::new(width_stride, 0, width_stride, dimension.height);
+            (pipeline, viewport)
         };
-        // --------------------------------------------------------------------------------
+        // ----------------------------------------------------------------------------------------------
 
-        // create wireframe pipeline ------------------------------------------------------
-        let mut rasterizer = GsRasterizerState::setup(RasterizerPrefab::Common);
-        rasterizer.set_polygon_mode(vk::PolygonMode::LINE);
-        let wireframe_config = toon_config
-            .with_shader(wireframe_shader_infos)
-            .with_rasterizer(rasterizer)
-            .finish();
+        // create wireframe pipeline --------------------------------------------------------------------
+        let (wireframe_pipeline, wireframe_viewport) = {
 
-        let wireframe_pipeline = {
-            let mut pipeline_builder = kit.graphics_pipeline_builder()?;
-            pipeline_builder.add_config(&wireframe_config)?;
+            let mut rasterizer = GsRasterizerState::setup(RasterizerPrefab::Common);
+            rasterizer.set_polygon_mode(vk::PolygonMode::LINE);
 
-            let derive_state = PipelineDeriveState::AsChildren { parent: &phong_pipeline.pipeline };
-            let mut pipelines = pipeline_builder.build(derive_state)?;
-
-            PipelineContent {
-                pipeline: pipelines.pop().unwrap(),
-                /// Right: Wireframe
-                viewport: CmdViewportInfo::new(width_stride * 2, 0, width_stride, dimension.height),
-                scissor : CmdScissorInfo::from(dimension),
-            }
+            let pipeline_template = pipeline_builder.template_mut();
+            pipeline_template
+                .reset_shader(wireframe_shader_infos)
+                .reset_rasterizer(rasterizer);
+            let pipeline = pipeline_builder.build_template()?;
+            // Right: Wireframe
+            let viewport = CmdViewportInfo::new(width_stride * 2, 0, width_stride, dimension.height);
+            (pipeline, viewport)
         };
-        // --------------------------------------------------------------------------------
+        // ---------------------------------------------------------------------------------------------
 
-        Ok((phong_pipeline, toon_pipeline, wireframe_pipeline))
+        let result = PipelineContent {
+            pipeline_set: pipeline_builder.collect_into_set(),
+            phone: phong_pipeline,
+            toon : toon_pipeline,
+            wireframe: wireframe_pipeline,
+            phone_viewport, toon_viewport, wireframe_viewport,
+            scissor: CmdScissorInfo::from(dimension),
+        };
+        Ok(result)
     }
 
-    fn sync_resources(kit: SyncKit, graphics_pipeline: &GsPipeline<Graphics>) -> GsResult<Vec<GsSemaphore>> {
+    fn sync_resources(kit: SyncKit, graphics_pipeline: &GsPipelineSet<Graphics>) -> GsResult<Vec<GsSemaphore>> {
 
         // sync
         kit.multi_semaphores(graphics_pipeline.frame_count())
     }
 
-    fn commands(kit: CommandKit, phong: &PipelineContent, toon: &PipelineContent, wireframe: &PipelineContent, model_entity: &GsglTFEntity, ubo_set: &DescriptorSet) -> GsResult<(GsCommandPool, Vec<GsCommandBuffer>)> {
+    fn commands(kit: CommandKit, pipelines: &PipelineContent, model_entity: &GsglTFEntity, ubo_set: &DescriptorSet) -> GsResult<(GsCommandPool, Vec<GsCommandBuffer>)> {
 
         let command_pool = kit.pool(DeviceQueueIdentifier::Graphics)?;
         let mut command_buffers = vec![];
 
-        let command_buffer_count = phong.pipeline.frame_count();
+        let command_buffer_count = pipelines.pipeline_set.frame_count();
         let raw_commands = command_pool.allocate(CmdBufferUsage::UnitaryCommand, command_buffer_count)?;
 
         for (frame_index, command) in raw_commands.into_iter().enumerate() {
@@ -356,34 +342,37 @@ impl VulkanExample {
                 material_stage: GsPipelineStage::VERTEX,
             };
 
-            let mut recorder = kit.pipeline_recorder(&phong.pipeline, command);
+            let phong_pipeline = pipelines.pipeline_set.element(&pipelines.phone);
+            let mut recorder = kit.pipeline_recorder(&phong_pipeline, command);
             recorder.begin_record(vk::CommandBufferUsageFlags::SIMULTANEOUS_USE)?
                 // three pipeline shared the same render pass. So it's ok to set once here.
-                .begin_render_pass(phong.pipeline.render_pass_ref(), frame_index);
+                .begin_render_pass(&phong_pipeline, frame_index);
 
             { // Draw with Phong Pipeline.
                 recorder
                     .bind_pipeline()
-                    .set_viewport(0, &[phong.viewport.clone()])
-                    .set_scissor(0, &[phong.scissor.clone()]);
+                    .set_viewport(0, &[pipelines.phone_viewport.clone()])
+                    .set_scissor(0, &[pipelines.scissor.clone()]);
 
                 model_entity.record_command(&recorder, ubo_set, &[], Some(render_params.clone()))?;
             }
 
             { // Draw with Toon Pipeline.
-                recorder.switch_pipeline(&toon.pipeline);
+                let toon_pipeline = pipelines.pipeline_set.element(&pipelines.toon);
+                recorder.switch_pipeline(&toon_pipeline);
                 recorder
                     .bind_pipeline()
-                    .set_viewport(0, &[toon.viewport.clone()]);
+                    .set_viewport(0, &[pipelines.toon_viewport.clone()]);
 
                 model_entity.record_command(&recorder, ubo_set, &[], Some(render_params.clone()))?;
             }
 
             { // Draw with Wireframe Pipeline.
-                recorder.switch_pipeline(&wireframe.pipeline);
+                let wireframe_pipeline = pipelines.pipeline_set.element(&pipelines.wireframe);
+                recorder.switch_pipeline(&wireframe_pipeline);
                 recorder
                     .bind_pipeline()
-                    .set_viewport(0, &[wireframe.viewport.clone()]);
+                    .set_viewport(0, &[pipelines.wireframe_viewport.clone()]);
 
                 model_entity.record_command(&recorder, ubo_set, &[], Some(render_params.clone()))?;
             }
@@ -418,50 +407,23 @@ impl GraphicsRoutine for VulkanExample {
         return Ok(&self.present_availables[image_index])
     }
 
-    fn clean_resources(&mut self, _: &GsDevice) -> GsResult<()> {
-
-        self.present_availables.iter()
-            .for_each(|semaphore| semaphore.destroy());
-        self.present_availables.clear();
-        self.command_buffers.clear();
-        self.command_pool.destroy();
-        self.phone_pipeline.pipeline.destroy();
-        self.toon_pipeline.pipeline.destroy();
-        self.wireframe_pipeline.pipeline.destroy();
-
-        Ok(())
-    }
-
     fn reload_res(&mut self, loader: AssetsLoader) -> GsResult<()> {
 
-        let (phone, toon, wireframe) = loader.pipelines(|kit| {
+        self.pipelines = loader.pipelines(|kit| {
             VulkanExample::pipelines(kit, &self.model_entity, &self.ubo_set, &self.depth_attachment, loader.screen_dimension())
         })?;
-        self.phone_pipeline = phone;
-        self.toon_pipeline = toon;
-        self.wireframe_pipeline = wireframe;
 
         self.present_availables = loader.syncs(|kit| {
-            VulkanExample::sync_resources(kit, &self.phone_pipeline.pipeline)
+            VulkanExample::sync_resources(kit, &self.pipelines.pipeline_set)
         })?;
 
         let (command_pool, command_buffers) = loader.commands(|kit| {
-            VulkanExample::commands(kit, &self.phone_pipeline, &self.toon_pipeline, &self.wireframe_pipeline, &self.model_entity, &self.ubo_set)
+            VulkanExample::commands(kit, &self.pipelines, &self.model_entity, &self.ubo_set)
         })?;
         self.command_pool = command_pool;
         self.command_buffers = command_buffers;
 
         Ok(())
-    }
-
-    fn clean_routine(&mut self, _: &GsDevice) {
-
-        self.present_availables.iter()
-            .for_each(|semaphore| semaphore.destroy());
-        self.phone_pipeline.pipeline.destroy();
-        self.toon_pipeline.pipeline.destroy();
-        self.wireframe_pipeline.pipeline.destroy();
-        self.command_pool.destroy();
     }
 
     fn react_input(&mut self, inputer: &ActionNerve, delta_time: f32) -> SceneAction {

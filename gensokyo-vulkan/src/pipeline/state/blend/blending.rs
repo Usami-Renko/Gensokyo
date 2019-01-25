@@ -56,7 +56,7 @@ impl GsBlendState {
         prefab.generate()
     }
 
-    pub(crate) fn info(&self) -> vk::PipelineColorBlendStateCreateInfo {
+    pub(crate) fn ci(&self) -> vk::PipelineColorBlendStateCreateInfo {
 
         vk::PipelineColorBlendStateCreateInfo {
             s_type : vk::StructureType::PIPELINE_COLOR_BLEND_STATE_CREATE_INFO,

@@ -139,11 +139,8 @@ impl TriangleProcedure {
         let pipeline_config = kit.pipeline_config(shader_infos, vertex_input_desc, render_pass)
             .finish();
 
-        let mut pipeline_builder = kit.graphics_pipeline_builder()?;
-        pipeline_builder.add_config(&pipeline_config)?;
-
-        let mut pipelines = pipeline_builder.build(PipelineDeriveState::Independence)?;
-        let graphics_pipeline = pipelines.pop().unwrap();
+        let mut pipeline_builder = kit.gfx_builder()?;
+        let graphics_pipeline = pipeline_builder.build(pipeline_config)?;
 
         Ok(graphics_pipeline)
     }
@@ -169,10 +166,10 @@ impl TriangleProcedure {
         let raw_commands = command_pool.allocate(CmdBufferUsage::UnitaryCommand, command_buffer_count)?;
 
         for (frame_index, command) in raw_commands.into_iter().enumerate() {
-            let mut recorder = kit.pipeline_recorder(&graphics_pipeline, command);
+            let mut recorder = kit.pipeline_recorder(graphics_pipeline, command);
 
             recorder.begin_record(vk::CommandBufferUsageFlags::SIMULTANEOUS_USE)?
-                .begin_render_pass(graphics_pipeline.render_pass_ref(), frame_index)
+                .begin_render_pass(graphics_pipeline, frame_index)
                 .bind_pipeline()
                 .bind_vertex_buffers(0, &[vertex_buffer])
                 .draw(data.len() as vkuint, 1, 0, 0)
@@ -202,18 +199,6 @@ impl GraphicsRoutine for TriangleProcedure {
         return Ok(&self.present_availables[image_index])
     }
 
-    fn clean_resources(&mut self, _: &GsDevice) -> GsResult<()> {
-
-        self.present_availables.iter()
-            .for_each(|semaphore| semaphore.destroy());
-        self.present_availables.clear();
-        self.command_buffers.clear();
-        self.command_pool.destroy();
-        self.graphics_pipeline.destroy();
-
-        Ok(())
-    }
-
     fn reload_res(&mut self, loader: AssetsLoader) -> GsResult<()> {
 
         self.graphics_pipeline = loader.pipelines(|kit| {
@@ -231,14 +216,6 @@ impl GraphicsRoutine for TriangleProcedure {
         self.command_buffers = command_buffers;
 
         Ok(())
-    }
-
-    fn clean_routine(&mut self, _device: &GsDevice) {
-
-        self.present_availables.iter()
-            .for_each(|semaphore| semaphore.destroy());
-        self.graphics_pipeline.destroy();
-        self.command_pool.destroy();
     }
 
     fn react_input(&mut self, inputer: &ActionNerve, _: f32) -> SceneAction {

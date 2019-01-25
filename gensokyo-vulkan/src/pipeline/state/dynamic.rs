@@ -21,7 +21,7 @@ pub struct GsDynamicState {
 
 impl GsDynamicState {
 
-    pub(crate) fn info(&self) -> vk::PipelineDynamicStateCreateInfo {
+    pub(crate) fn ci(&self) -> vk::PipelineDynamicStateCreateInfo {
 
         vk::PipelineDynamicStateCreateInfo {
             s_type: vk::StructureType::PIPELINE_DYNAMIC_STATE_CREATE_INFO,

@@ -21,7 +21,7 @@ use crate::memory::{ MemoryFilter, MemoryDstEntity };
 use crate::memory::transfer::DataCopyer;
 
 use crate::error::{ VkResult, VkError };
-use crate::utils::api::{ GsAssignIndex, GsAllocatorApi, GsAllotIntoDistributor };
+use crate::utils::allot::{ GsAssignIndex, GsAllocatorApi, GsAllotIntoDistributor };
 use crate::types::vkbytes;
 
 use std::collections::HashMap;

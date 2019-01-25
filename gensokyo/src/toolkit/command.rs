@@ -6,10 +6,11 @@ use crate::error::GsResult;
 use gsvk::core::device::GsDevice;
 use gsvk::core::device::DeviceQueueIdentifier;
 
-use gsvk::pipeline::target::{ GsPipeline, GsVkPipelineType };
+use gsvk::pipeline::target::GsVkPipelineType;
 
 use gsvk::command::{ GsCommandBuffer, GsCommandPool };
 use gsvk::command::{ GsVkCommandType, GsCmdRecorder };
+use gsvk::command::CmdPipelineAbs;
 
 use gsvk::utils::phantom::Copy;
 
@@ -38,7 +39,7 @@ impl CommandKit {
         GsCmdRecorder::new_copy(&self.device, command)
     }
 
-    pub fn pipeline_recorder<T>(&self, pipeline: &GsPipeline<T>, command: GsCommandBuffer) -> GsCmdRecorder<T>
+    pub fn pipeline_recorder<T>(&self, pipeline: &impl CmdPipelineAbs, command: GsCommandBuffer) -> GsCmdRecorder<T>
         where T: GsVkPipelineType + GsVkCommandType {
 
         GsCmdRecorder::new(&self.device, command, pipeline)

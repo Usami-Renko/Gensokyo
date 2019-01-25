@@ -55,7 +55,7 @@ impl GsRasterizerState {
         prefab.generate()
     }
 
-    pub(crate) fn info(&self) -> vk::PipelineRasterizationStateCreateInfo {
+    pub(crate) fn ci(&self) -> vk::PipelineRasterizationStateCreateInfo {
 
         let depth_bias = self.depth_bias.to_depth_bias();
 

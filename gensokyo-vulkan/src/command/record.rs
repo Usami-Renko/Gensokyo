@@ -5,7 +5,8 @@ use ash::version::DeviceV1_0;
 use crate::core::device::GsDevice;
 
 use crate::command::buffer::{ GsCommandBuffer, CmdBufferUsage };
-use crate::pipeline::target::{ GsPipeline, GsVkPipelineType };
+use crate::command::traits::CmdPipelineAbs;
+use crate::pipeline::target::GsVkPipelineType;
 use crate::error::{ VkResult, VkError };
 use crate::utils::phantom::{ Graphics, Compute, Copy };
 
@@ -32,15 +33,15 @@ pub struct GsCmdRecorder<T> where T: GsVkCommandType {
 
 impl<T> GsCmdRecorder<T> where T: GsVkCommandType + GsVkPipelineType {
 
-    pub fn new(device: &GsDevice, command: GsCommandBuffer, pipeline: &GsPipeline<T>) -> GsCmdRecorder<T> {
+    pub fn new(device: &GsDevice, command: GsCommandBuffer, pipeline: &impl CmdPipelineAbs) -> GsCmdRecorder<T> {
 
         GsCmdRecorder {
             phantom_type: PhantomData,
             device: device.clone(),
             cmd_handle: command.handle,
             cmd_usage : command.usage,
-            pipeline_handle: pipeline.handle,
-            pipeline_layout: pipeline.layout.handle,
+            pipeline_handle: pipeline.pipeline().clone(),
+            pipeline_layout: pipeline.layout().clone(),
         }
     }
 }
@@ -96,16 +97,16 @@ impl<T> GsCmdRecorder<T> where T: GsVkCommandType {
 
 impl GsCmdRecorder<Graphics> {
 
-    pub fn switch_pipeline(&mut self, new_pipeline: &GsPipeline<Graphics>) {
-        self.pipeline_handle = new_pipeline.handle;
-        self.pipeline_layout = new_pipeline.layout.handle;
+    pub fn switch_pipeline(&mut self, new_pipeline: &impl CmdPipelineAbs) {
+        self.pipeline_handle = new_pipeline.pipeline().clone();
+        self.pipeline_layout = new_pipeline.layout().clone();
     }
 }
 
 impl GsCmdRecorder<Compute> {
 
-    pub fn switch_pipeline(&mut self, new_pipeline: &GsPipeline<Graphics>) {
-        self.pipeline_handle = new_pipeline.handle;
-        self.pipeline_layout = new_pipeline.layout.handle;
+    pub fn switch_pipeline(&mut self, new_pipeline: &impl CmdPipelineAbs) {
+        self.pipeline_handle = new_pipeline.pipeline().clone();
+        self.pipeline_layout = new_pipeline.layout().clone();
     }
 }

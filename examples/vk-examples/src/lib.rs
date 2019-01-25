@@ -1,6 +1,7 @@
 
 #[macro_use] extern crate lazy_static;
 
+use ash::vk;
 use nalgebra::Matrix4;
 
 lazy_static! {
@@ -13,3 +14,8 @@ lazy_static! {
     );
 }
 
+pub const DEFAULT_CLEAR_COLOR: vk::ClearValue = vk::ClearValue {
+    color: vk::ClearColorValue {
+        float32: [0.025, 0.025, 0.025, 1.0]
+    }
+};

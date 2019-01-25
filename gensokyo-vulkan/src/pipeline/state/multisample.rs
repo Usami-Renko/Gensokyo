@@ -38,7 +38,7 @@ impl GsMultisampleState {
         prefab.generate()
     }
 
-    pub(crate) fn info(&self) -> vk::PipelineMultisampleStateCreateInfo {
+    pub(crate) fn ci(&self) -> vk::PipelineMultisampleStateCreateInfo {
 
         vk::PipelineMultisampleStateCreateInfo {
             s_type : vk::StructureType::PIPELINE_MULTISAMPLE_STATE_CREATE_INFO,

@@ -45,7 +45,7 @@ impl FramebufferBuilder {
 
     pub fn build(self, device: &GsDevice, render_pass: vk::RenderPass) -> VkResult<GsFramebuffer> {
 
-        let info = vk::FramebufferCreateInfo {
+        let framebuffer_ci = vk::FramebufferCreateInfo {
             s_type: vk::StructureType::FRAMEBUFFER_CREATE_INFO,
             p_next: ptr::null(),
             // flags is reserved for future use in API version 1.1.82.
@@ -59,7 +59,7 @@ impl FramebufferBuilder {
         };
 
         let handle = unsafe {
-            device.handle.create_framebuffer(&info, None)
+            device.handle.create_framebuffer(&framebuffer_ci, None)
                 .or(Err(VkError::create("FrameBuffer")))?
         };
 

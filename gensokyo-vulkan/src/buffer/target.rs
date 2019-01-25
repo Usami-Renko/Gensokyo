@@ -81,7 +81,7 @@ impl BufferDescInfo {
             | None           => (vk::SharingMode::EXCLUSIVE, vec![]),
         };
 
-        let create_info = vk::BufferCreateInfo {
+        let buffer_ci = vk::BufferCreateInfo {
             s_type: vk::StructureType::BUFFER_CREATE_INFO,
             p_next: ptr::null(),
             // TODO: Add configuration for vk::BufferCreateFlags.
@@ -94,7 +94,7 @@ impl BufferDescInfo {
         };
 
         let handle = unsafe {
-            device.handle.create_buffer(&create_info, None)
+            device.handle.create_buffer(&buffer_ci, None)
                 .or(Err(VkError::create("vk::Buffer")))?
         };
 

@@ -23,14 +23,20 @@ pub trait GraphicsRoutine {
 
     #[allow(unused_variables)]
     fn closure(&mut self, device: &GsDevice) -> GsResult<()> {
+        // Do nothing...
         Ok(())
     }
 
-    fn clean_resources(&mut self, device: &GsDevice) -> GsResult<()>;
+    fn clean_resources(&mut self, _device: &GsDevice) -> GsResult<()> {
+        // Do nothing.
+        Ok(())
+    }
 
     fn reload_res(&mut self, loader: AssetsLoader) -> GsResult<()>;
 
-    fn clean_routine(&mut self, device: &GsDevice);
+    fn clean_routine(&mut self, _device: &GsDevice) {
+        // Empty...
+    }
 
     // input
     fn react_input(&mut self, inputer: &ActionNerve, delta_time: f32) -> SceneAction;

@@ -101,10 +101,7 @@ impl ChainResource {
     pub fn destroy(&self, device: &GsDevice) {
 
         self.swapchain.destroy(device);
-        self.image_awaits.iter()
-            .for_each(|i| i.destroy());
-        self.sync_fences.iter()
-            .for_each(|f| f.destroy());
+        // image_awaits and sync_fences will be drop in its drop func,
     }
 
     fn recreate_syncs(&mut self, device: &GsDevice) -> GsResult<()> {

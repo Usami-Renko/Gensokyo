@@ -50,7 +50,7 @@ impl GsDebugUtils {
 
         let loader = ash::extensions::ext::DebugUtils::new(&instance.entry, &instance.handle);
 
-        let messenger_create_info = vk::DebugUtilsMessengerCreateInfoEXT {
+        let messenger_ci = vk::DebugUtilsMessengerCreateInfoEXT {
             s_type: vk::StructureType::DEBUG_UTILS_MESSENGER_CREATE_INFO_EXT,
             p_next: ptr::null(),
             flags            : config.flags,
@@ -61,7 +61,7 @@ impl GsDebugUtils {
         };
 
         let utils_messenger = unsafe {
-            loader.create_debug_utils_messenger(&messenger_create_info, None)
+            loader.create_debug_utils_messenger(&messenger_ci, None)
                 .or(Err(VkError::create("Debug Utils Callback")))?
         };
 

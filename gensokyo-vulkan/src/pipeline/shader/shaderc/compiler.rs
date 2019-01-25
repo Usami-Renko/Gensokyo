@@ -34,7 +34,7 @@ impl GsShaderCompiler {
         Ok(shader_compiler)
     }
 
-    pub fn setup_from_configuration(configuration: ShadercConfiguration) -> VkResult<GsShaderCompiler> {
+    pub fn from_configuration(configuration: ShadercConfiguration) -> VkResult<GsShaderCompiler> {
 
         let compiler = match configuration {
             | ShadercConfiguration::Vulkan(options) => {

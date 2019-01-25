@@ -57,7 +57,7 @@ impl GsDepthStencilState {
         self.stencil = stencil;
     }
 
-    pub(crate) fn info(&self) -> vk::PipelineDepthStencilStateCreateInfo {
+    pub(crate) fn ci(&self) -> vk::PipelineDepthStencilStateCreateInfo {
 
         let depth_bound = self.depth.depth_bound.to_depth_bound();
 

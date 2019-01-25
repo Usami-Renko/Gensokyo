@@ -14,7 +14,7 @@ use gsvk::prelude::api::*;
 
 use gsma::data_size;
 
-use vk_examples::Y_CORRECTION;
+use vk_examples::{ Y_CORRECTION, DEFAULT_CLEAR_COLOR };
 use super::data::{ Vertex, UBOVS, PushConstants };
 
 use nalgebra::{ Matrix4, Point3 };
@@ -229,7 +229,7 @@ impl VulkanExample {
 
         let color_attachment = kit.present_attachment()
             .op(vk::AttachmentLoadOp::CLEAR, vk::AttachmentStoreOp::STORE)
-            .clear_value(vk::ClearValue { color: vk::ClearColorValue { float32: [0.025, 0.025, 0.025, 1.0] } });
+            .clear_value(DEFAULT_CLEAR_COLOR.clone());
         let depth_attachment = depth_image.attachment()
             .op(vk::AttachmentLoadOp::CLEAR, vk::AttachmentStoreOp::DONT_CARE);
 
@@ -257,15 +257,12 @@ impl VulkanExample {
             .with_depth_stencil(depth_stencil)
             .with_viewport(ViewportStateType::Dynamic { count: 1 })
             .with_rasterizer(rasterization)
-            .add_push_constants(vec![range])
-            .add_descriptor_sets(&[ubo_set])
+            .with_push_constants(vec![range])
+            .with_descriptor_sets(&[ubo_set])
             .finish();
 
-        let mut pipeline_builder = kit.graphics_pipeline_builder()?;
-        pipeline_builder.add_config(&pipeline_config)?;
-
-        let mut pipelines = pipeline_builder.build(PipelineDeriveState::Independence)?;
-        let graphics_pipeline = pipelines.pop().unwrap();
+        let mut pipeline_builder = kit.gfx_builder()?;
+        let graphics_pipeline = pipeline_builder.build(pipeline_config)?;
 
         Ok(graphics_pipeline)
     }
@@ -288,7 +285,7 @@ impl VulkanExample {
             let mut recorder = kit.pipeline_recorder(graphics_pipeline, command);
 
             recorder.begin_record(vk::CommandBufferUsageFlags::SIMULTANEOUS_USE)?
-                .begin_render_pass(graphics_pipeline.render_pass_ref(), frame_index)
+                .begin_render_pass(graphics_pipeline, frame_index)
                 .set_viewport(0, &[view_port.clone()])
                 .set_scissor(0, &[scissor.clone()])
                 .bind_pipeline();
@@ -364,18 +361,6 @@ impl GraphicsRoutine for VulkanExample {
         return Ok(&self.present_availables[image_index])
     }
 
-    fn clean_resources(&mut self, _: &GsDevice) -> GsResult<()> {
-
-        self.present_availables.iter()
-            .for_each(|semaphore| semaphore.destroy());
-        self.present_availables.clear();
-        self.command_buffers.clear();
-        self.command_pool.destroy();
-        self.pipeline.destroy();
-
-        Ok(())
-    }
-
     fn reload_res(&mut self, loader: AssetsLoader) -> GsResult<()> {
 
         self.pipeline = loader.pipelines(|kit| {
@@ -393,14 +378,6 @@ impl GraphicsRoutine for VulkanExample {
         self.command_buffers = command_buffers;
 
         Ok(())
-    }
-
-    fn clean_routine(&mut self, _: &GsDevice) {
-
-        self.present_availables.iter()
-            .for_each(|semaphore| semaphore.destroy());
-        self.pipeline.destroy();
-        self.command_pool.destroy();
     }
 
     fn react_input(&mut self, inputer: &ActionNerve, delta_time: f32) -> SceneAction {

@@ -1,3 +1,3 @@
 
-pub use crate::utils::api::{ GsAllocatorApi, GsAllotIntoDistributor };
-pub use crate::utils::api::{ GsDistributeApi, GsDistIntoRepository };
+pub use crate::utils::allot::{ GsAllocatorApi, GsAllotIntoDistributor };
+pub use crate::utils::allot::{ GsDistributeApi, GsDistIntoRepository };

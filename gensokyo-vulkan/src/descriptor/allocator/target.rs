@@ -10,7 +10,7 @@ use crate::descriptor::allocator::distributor::GsDescriptorDistributor;
 use crate::descriptor::allocator::index::IDescriptorSet;
 
 use crate::error::VkResult;
-use crate::utils::api::{ GsAssignIndex, GsAllocatorApi, GsAllotIntoDistributor };
+use crate::utils::allot::{ GsAssignIndex, GsAllocatorApi, GsAllotIntoDistributor };
 use crate::types::vkuint;
 
 use std::collections::HashMap;

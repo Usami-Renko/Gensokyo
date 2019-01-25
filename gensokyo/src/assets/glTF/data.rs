@@ -15,7 +15,7 @@ use gsvk::buffer::allocator::{ GsBufferAllocator, GsBufferAllocatable };
 use gsvk::buffer::instance::{ IVertex, IIndices, IUniform };
 
 use gsvk::types::{ vkuint, vkbytes };
-use gsvk::utils::api::{ GsAssignIndex, GsAllocatorApi };
+use gsvk::utils::allot::{ GsAssignIndex, GsAllocatorApi };
 use gsvk::utils::phantom::Host;
 
 use gsvk::error::VkResult;

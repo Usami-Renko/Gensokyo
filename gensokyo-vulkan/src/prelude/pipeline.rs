@@ -1,5 +1,5 @@
 
-pub use crate::pipeline::target::{ GsPipeline, GsPipelineStage };
+pub use crate::pipeline::target::{ GsPipeline, GsPipelineStage, PipelineIndex, GsPipelineSet };
 
 pub use crate::pipeline::shader::GsShaderInfo;
 pub use crate::pipeline::shader::{ VertexInputDescription, GsVertexInputAttribute, GsVertexInputBinding };
@@ -15,8 +15,6 @@ pub use crate::pipeline::state::{
     tessellation::GsTessellationState,
     dynamic::DynamicableValue,
 };
-
-pub use crate::pipeline::graphics::PipelineDeriveState;
 
 pub use crate::pipeline::pass::SubpassStage;
 pub use crate::pipeline::layout::GsPushConstantRange;

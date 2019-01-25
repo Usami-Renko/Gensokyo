@@ -24,7 +24,7 @@ impl GsCommandPool {
 
         let queue = device.queue_handle_by_identifier(queue);
 
-        let command_info = vk::CommandPoolCreateInfo {
+        let command_pool_ci = vk::CommandPoolCreateInfo {
             s_type: vk::StructureType::COMMAND_POOL_CREATE_INFO,
             p_next: ptr::null(),
             flags,
@@ -32,7 +32,7 @@ impl GsCommandPool {
         };
 
         let handle = unsafe {
-            device.handle.create_command_pool(&command_info, None)
+            device.handle.create_command_pool(&command_pool_ci, None)
                 .or(Err(VkError::create("Command Pool")))?
         };
 
@@ -75,8 +75,11 @@ impl GsCommandPool {
             self.device.handle.free_command_buffers(self.handle, &buffer_handles);
         }
     }
+}
 
-    pub fn destroy(&self) {
+impl Drop for GsCommandPool {
+
+    fn drop(&mut self) {
         unsafe {
             self.device.handle.destroy_command_pool(self.handle, None);
         }

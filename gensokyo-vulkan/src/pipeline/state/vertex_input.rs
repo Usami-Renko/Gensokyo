@@ -18,7 +18,7 @@ impl GsVertexInputState {
         GsVertexInputState { bindings, attributes }
     }
 
-    pub(crate) fn info(&self) -> vk::PipelineVertexInputStateCreateInfo {
+    pub(crate) fn ci(&self) -> vk::PipelineVertexInputStateCreateInfo {
 
         vk::PipelineVertexInputStateCreateInfo {
             s_type : vk::StructureType::PIPELINE_VERTEX_INPUT_STATE_CREATE_INFO,

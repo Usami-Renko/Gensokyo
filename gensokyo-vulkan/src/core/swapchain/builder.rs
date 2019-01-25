@@ -54,7 +54,7 @@ impl<'s> SwapchainBuilder<'s> {
         let prefer_format = self.support.optimal_format();
         let prefer_extent = self.support.optimal_extent(window_dimension)?;
 
-        let swapchain_create_info = vk::SwapchainCreateInfoKHR {
+        let swapchain_ci = vk::SwapchainCreateInfoKHR {
             s_type                   : vk::StructureType::SWAPCHAIN_CREATE_INFO_KHR,
             p_next                   : ptr::null(),
             // TODO: Add configuration for SwapchainCreateFlagsKHR.
@@ -90,7 +90,7 @@ impl<'s> SwapchainBuilder<'s> {
         let loader = ash::extensions::khr::Swapchain::new(&instance.handle, &self.device.handle);
 
         let handle = unsafe {
-            loader.create_swapchain(&swapchain_create_info, None)
+            loader.create_swapchain(&swapchain_ci, None)
                 .or(Err(VkError::create("Swapchain")))?
         };
 

@@ -3,7 +3,7 @@
 
 pub mod format;
 pub mod memory;
-pub mod api;
+pub mod allot;
 pub mod cast;
 pub mod phantom;
 

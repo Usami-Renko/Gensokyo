@@ -89,7 +89,7 @@ impl ImageDescInfo {
 
     pub fn build(&self, device: &GsDevice) -> VkResult<GsImage> {
 
-        let image_create_info = vk::ImageCreateInfo {
+        let image_ci = vk::ImageCreateInfo {
             s_type : vk::StructureType::IMAGE_CREATE_INFO,
             p_next : ptr::null(),
             flags  : self.property.flags,
@@ -108,7 +108,7 @@ impl ImageDescInfo {
         };
 
         let handle = unsafe {
-            device.handle.create_image(&image_create_info, None)
+            device.handle.create_image(&image_ci, None)
                 .or(Err(VkError::create("Image View")))?
         };
 

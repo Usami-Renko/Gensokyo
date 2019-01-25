@@ -17,7 +17,7 @@ use gsvk::command::{ GsCmdRecorder, GsCmdGraphicsApi, CmdDescriptorSetBindInfo }
 use gsvk::descriptor::{ DescriptorSet, DescriptorBufferBindableTarget, DescriptorBufferBindingInfo };
 use gsvk::memory::transfer::{ GsBufferDataUploader, GsBufferUploadable };
 
-use gsvk::utils::api::GsDistributeApi;
+use gsvk::utils::allot::GsDistributeApi;
 use gsvk::utils::phantom::{ Graphics, Host };
 
 use gsvk::types::{ vkuint, vkbytes };

@@ -59,7 +59,7 @@ impl<'a> LogicalDeviceBuilder<'a> {
         self.queue_request.inspect_queue_availability(&self.physical)?;
         let queue_infos = self.queue_request.to_queue_infos();
 
-        let queue_create_infos: Vec<vk::DeviceQueueCreateInfo> = queue_infos.iter()
+        let queue_cis: Vec<vk::DeviceQueueCreateInfo> = queue_infos.iter()
             .map(|queue_info| {
                 vk::DeviceQueueCreateInfo {
                     s_type: vk::StructureType::DEVICE_QUEUE_CREATE_INFO,
@@ -83,8 +83,8 @@ impl<'a> LogicalDeviceBuilder<'a> {
             p_next                     : ptr::null(),
             // flags is reserved for future use in API version 1.1.82.
             flags                      : vk::DeviceCreateFlags::empty(),
-            queue_create_info_count    : queue_create_infos.len() as _,
-            p_queue_create_infos       : queue_create_infos.as_ptr(),
+            queue_create_info_count    : queue_cis.len() as _,
+            p_queue_create_infos       : queue_cis.as_ptr(),
             enabled_layer_count        : enable_layer_names.len() as _,
             pp_enabled_layer_names     : enable_layer_names.as_ptr(),
             enabled_extension_count    : enable_extension_names.len() as _,

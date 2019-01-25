@@ -133,7 +133,7 @@ impl Default for SamplerDescInfo {
 
     fn default() -> SamplerDescInfo {
 
-        let info = vk::SamplerCreateInfo {
+        let sampler_ci = vk::SamplerCreateInfo {
             s_type            : vk::StructureType::SAMPLER_CREATE_INFO,
             p_next            : ptr::null(),
             // flags is reserved for future use in API version 1.1.82.
@@ -155,6 +155,6 @@ impl Default for SamplerDescInfo {
             unnormalized_coordinates : VK_FALSE,
         };
 
-        SamplerDescInfo(info)
+        SamplerDescInfo(sampler_ci)
     }
 }

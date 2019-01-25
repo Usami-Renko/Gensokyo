@@ -6,7 +6,7 @@ layout (location = 1) in vec3 inNormal;
 
 layout (location = 0) out vec3 outColor;
 
-layout (binding = 0) uniform UBO {
+layout (set = 0, binding = 0) uniform UBO {
 	mat4 projection;
 	mat4 view;
 	mat4 model;
@@ -32,5 +32,5 @@ void main() {
 
     outColor = material.base_color_factor.xyz;
 
-    gl_Position = ubo.y_correction * ubo.projection * ubo.model * dyn_node.transform * vec4(inPos.xyz, 1.0);
+    gl_Position = ubo.y_correction * ubo.projection * ubo.view * ubo.model * dyn_node.transform * vec4(inPos.xyz, 1.0);
 }

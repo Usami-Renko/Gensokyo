@@ -59,7 +59,7 @@ impl ImageViewDescInfo {
 
     pub fn build(&self, device: &GsDevice, image: &GsImage, specific: &ImageSpecificInfo) -> VkResult<GsImageView> {
 
-        let view_info = vk::ImageViewCreateInfo {
+        let image_view_ci = vk::ImageViewCreateInfo {
             s_type     : vk::StructureType::IMAGE_VIEW_CREATE_INFO,
             p_next     : ptr::null(),
             // flags is reserved for future use in API version 1.1.82.
@@ -72,7 +72,7 @@ impl ImageViewDescInfo {
         };
 
         let handle = unsafe {
-            device.handle.create_image_view(&view_info, None)
+            device.handle.create_image_view(&image_view_ci, None)
                 .or(Err(VkError::create("Image View")))?
         };
 

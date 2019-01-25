@@ -10,7 +10,7 @@ use crate::error::{ VkResult, VkError };
 use crate::buffer::allocator::types::BufferMemoryTypeAbs;
 use crate::buffer::allocator::memory::{ BufferAllocateInfos, BufMemAllocator };
 use crate::buffer::allocator::distributor::GsBufferDistributor;
-use crate::utils::api::{ GsAssignIndex, GsAllocatorApi, GsAllotIntoDistributor };
+use crate::utils::allot::{ GsAssignIndex, GsAllocatorApi, GsAllotIntoDistributor };
 use crate::types::vkbytes;
 
 use std::marker::PhantomData;

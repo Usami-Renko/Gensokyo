@@ -50,7 +50,7 @@ impl GsDebugReport {
         let loader = ash::extensions::ext::DebugReport::new(&instance.entry, &instance.handle);
 
         // configure debug callback.
-        let debug_callback_create_info = vk::DebugReportCallbackCreateInfoEXT {
+        let debug_callback_ci = vk::DebugReportCallbackCreateInfoEXT {
             s_type      : vk::StructureType::DEBUG_REPORT_CALLBACK_CREATE_INFO_EXT,
             p_next      : ptr::null(),
             // Enum DebugReportFlags enumerate all available flags.
@@ -60,7 +60,7 @@ impl GsDebugReport {
         };
 
         let callback = unsafe {
-            loader.create_debug_report_callback(&debug_callback_create_info, None)
+            loader.create_debug_report_callback(&debug_callback_ci, None)
                 .or(Err(VkError::create("Debug Report Callback")))?
         };
 

@@ -4,9 +4,9 @@ use ash::version::DeviceV1_0;
 
 use crate::command::record::{ GsCmdRecorder, GsVkCommandType };
 use crate::command::infos::{ CmdViewportInfo, CmdScissorInfo, CmdDepthBiasInfo, CmdDepthBoundInfo };
+use crate::command::traits::CmdPipelineAbs;
 
 use crate::pipeline::target::{ GsPipelineStage, GsVkPipelineType };
-use crate::pipeline::pass::GsRenderPass;
 use crate::descriptor::DescriptorSet;
 use crate::buffer::instance::{ GsVertexBuffer, GsIndexBuffer };
 use crate::utils::phantom::Graphics;
@@ -20,7 +20,7 @@ impl GsVkCommandType for Graphics {
 
 pub trait GsCmdGraphicsApi {
 
-    fn begin_render_pass(&self, render_pass: &GsRenderPass, framebuffer_index: usize) -> &Self;
+    fn begin_render_pass(&self, pipeline: &impl CmdPipelineAbs, framebuffer_index: usize) -> &Self;
 
     /// Set the viewport dynamically.
     /// Before using this function, the `ViewportStateType::Dynamic` or `ViewportStateType::DynamicViewportFixedScissor` must be set to ViewportState in pipeline creation(by calling `GraphicsPipelineConfig::setup_viewport()`).
@@ -108,9 +108,9 @@ pub trait GsCmdGraphicsApi {
 
 impl GsCmdGraphicsApi for GsCmdRecorder<Graphics> {
 
-    fn begin_render_pass(&self, render_pass: &GsRenderPass, framebuffer_index: usize) -> &Self {
+    fn begin_render_pass(&self, pipeline: &impl CmdPipelineAbs, framebuffer_index: usize) -> &Self {
 
-        let begin_info = render_pass.begin_info(framebuffer_index);
+        let begin_info = pipeline.render_pass().begin_info(framebuffer_index);
         unsafe {
             self.device.handle.cmd_begin_render_pass(self.cmd_handle, &begin_info, self.cmd_usage.contents());
         } self

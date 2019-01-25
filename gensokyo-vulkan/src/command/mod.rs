@@ -5,7 +5,7 @@ pub use self::graphics::GsCmdGraphicsApi;
 pub use self::compute::GsCmdComputeApi;
 pub use self::copy::GsCmdCopyApi;
 pub use self::pool::GsCommandPool;
-pub use self::traits::IntoVKBarrier;
+pub use self::traits::{ IntoVKBarrier, CmdPipelineAbs };
 pub use self::infos::{ CmdDescriptorSetBindInfo, CmdViewportInfo, CmdScissorInfo, CmdDepthBiasInfo, CmdDepthBoundInfo };
 
 mod pool;

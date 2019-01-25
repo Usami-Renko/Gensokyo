@@ -25,14 +25,14 @@ impl GsFence {
             vk::FenceCreateFlags::empty()
         };
 
-        let create_info = vk::FenceCreateInfo {
+        let fence_ci = vk::FenceCreateInfo {
             s_type: vk::StructureType::FENCE_CREATE_INFO,
             p_next: ptr::null(),
             flags,
         };
 
         let handle = unsafe {
-            device.handle.create_fence(&create_info, None)
+            device.handle.create_fence(&fence_ci, None)
                 .map_err(|_| VkError::create("Fence"))?
         };
 
@@ -54,8 +54,11 @@ impl GsFence {
     pub fn reset(&self) -> VkResult<()> {
         self.device.reset_fences(&[self])
     }
+}
 
-    pub fn destroy(&self) {
+impl Drop for GsFence {
+
+    fn drop(&mut self) {
         unsafe {
             self.device.handle.destroy_fence(self.handle, None);
         }

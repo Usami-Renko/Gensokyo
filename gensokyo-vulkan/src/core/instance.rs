@@ -64,7 +64,7 @@ impl GsInstance {
         let require_extensions = GsInstance::require_extensions(validation);
         let enable_extension_names = instance_extensions_to_names(&require_extensions);
 
-        let instance_create_info = vk::InstanceCreateInfo {
+        let instance_ci = vk::InstanceCreateInfo {
             s_type                     : vk::StructureType::INSTANCE_CREATE_INFO,
             p_next                     : ptr::null(),
             // flags is reserved for future use in API version 1.1.82.
@@ -78,7 +78,7 @@ impl GsInstance {
 
         // create vk::Instance object.
         let handle = unsafe {
-            entry.create_instance(&instance_create_info, None)
+            entry.create_instance(&instance_ci, None)
                 .or(Err(VkError::unlink("Instance")))?
         };
 

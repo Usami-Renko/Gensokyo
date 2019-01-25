@@ -7,66 +7,12 @@ use crate::core::device::GsDevice;
 use crate::pipeline::layout::GsPipelineLayout;
 use crate::pipeline::pass::GsRenderPass;
 
+use crate::command::CmdPipelineAbs;
 use crate::utils::phantom::{ Graphics, Compute };
 
 use std::marker::PhantomData;
-use std::rc::Rc;
 use std::ops::{ BitAnd, BitAndAssign, BitOr, BitOrAssign };
 
-// -------------------------------------------------------------------------------------
-pub struct GsPipeline<T> where T: GsVkPipelineType {
-
-    phantom_type: PhantomData<T>,
-
-    pub(crate) handle: vk::Pipeline,
-    pub(crate) pass  : Rc<GsRenderPass>,
-    pub(crate) layout: Rc<GsPipelineLayout>,
-
-    device: GsDevice,
-}
-
-impl<T> GsPipeline<T> where T: GsVkPipelineType {
-
-    pub(super) fn new(device: &GsDevice, handle: vk::Pipeline, layout: Rc<GsPipelineLayout>, pass: Rc<GsRenderPass>) -> GsPipeline<T> {
-
-        GsPipeline {
-            phantom_type: PhantomData,
-            device: device.clone(),
-            layout, handle, pass,
-        }
-    }
-
-    pub fn frame_count(&self) -> usize {
-        self.pass.frame_count()
-    }
-
-    pub fn render_pass_ref(&self) -> &Rc<GsRenderPass> {
-        &self.pass
-    }
-
-    pub fn destroy(&self) {
-
-        // TODO: Fix destroy.
-    }
-}
-
-impl<T> Drop for GsPipeline<T> where T: GsVkPipelineType {
-
-    fn drop(&mut self) {
-        unsafe {
-            self.device.handle.destroy_pipeline(self.handle, None);
-        }
-
-        if Rc::strong_count(&self.layout) == 1 {
-            self.layout.destroy(&self.device);
-        }
-
-        if Rc::strong_count(&self.pass) == 1 {
-            self.pass.destroy(&self.device);
-        }
-    }
-}
-// -------------------------------------------------------------------------------------
 
 // -------------------------------------------------------------------------------------
 pub trait GsVkPipelineType {
@@ -82,6 +28,137 @@ impl GsVkPipelineType for Compute {
 }
 // -------------------------------------------------------------------------------------
 
+// -------------------------------------------------------------------------------------
+pub struct GsPipeline<T> where T: GsVkPipelineType {
+
+    phantom_type: PhantomData<T>,
+
+    pub(crate) handle: vk::Pipeline,
+    pub(crate) pass  : GsRenderPass,
+    pub(crate) layout: GsPipelineLayout,
+
+    device: GsDevice,
+}
+
+impl<T> GsPipeline<T> where T: GsVkPipelineType {
+
+    pub(super) fn new(device: GsDevice, handle: vk::Pipeline, layout: vk::PipelineLayout, pass: GsRenderPass) -> GsPipeline<T> {
+
+        GsPipeline {
+            phantom_type: PhantomData,
+            layout: GsPipelineLayout { handle: layout },
+            device, handle, pass,
+        }
+    }
+
+    pub fn frame_count(&self) -> usize {
+        self.pass.frame_count()
+    }
+}
+
+impl<T> Drop for GsPipeline<T> where T: GsVkPipelineType {
+
+    fn drop(&mut self) {
+
+        unsafe {
+            self.device.handle.destroy_pipeline(self.handle, None);
+        }
+
+        self.layout.destroy(&self.device);
+        self.pass.destroy(&self.device);
+    }
+}
+
+impl<T> CmdPipelineAbs for GsPipeline<T> where T: GsVkPipelineType {
+
+    fn layout(&self)   -> &vk::PipelineLayout {
+        &self.layout.handle
+    }
+
+    fn pipeline(&self) -> &vk::Pipeline {
+        &self.handle
+    }
+
+    fn render_pass(&self) -> &GsRenderPass {
+        &self.pass
+    }
+}
+// -------------------------------------------------------------------------------------
+
+// -------------------------------------------------------------------------------------
+pub struct GsPipelineSet<T> where T: GsVkPipelineType {
+
+    phantom_type: PhantomData<T>,
+
+    pub(crate) handles: Vec<vk::Pipeline>,
+    pub(crate) pass   : GsRenderPass,
+    pub(crate) layout : GsPipelineLayout,
+
+    device: GsDevice,
+}
+
+pub struct PipelineIndex(pub(crate) usize);
+
+pub struct GsPipelineElement<'a> {
+    pipeline: vk::Pipeline,
+    layout  : &'a GsPipelineLayout,
+    pass    : &'a GsRenderPass,
+}
+
+impl<T> GsPipelineSet<T> where T: GsVkPipelineType {
+
+    pub(crate) fn new(device: GsDevice, handles: Vec<vk::Pipeline>, layout: vk::PipelineLayout, pass: GsRenderPass) -> GsPipelineSet<Graphics> {
+
+        GsPipelineSet {
+            phantom_type: PhantomData,
+            layout: GsPipelineLayout { handle: layout },
+            device, handles, pass,
+        }
+    }
+
+    pub fn element(&self, at: &PipelineIndex) -> GsPipelineElement {
+
+        GsPipelineElement {
+            pipeline: self.handles[at.0],
+            layout  : &self.layout,
+            pass    : &self.pass,
+        }
+    }
+
+    pub fn frame_count(&self) -> usize {
+        self.pass.frame_count()
+    }
+}
+
+impl<T> Drop for GsPipelineSet<T> where T: GsVkPipelineType {
+
+    fn drop(&mut self) {
+
+        for &handle in self.handles.iter() {
+            unsafe {
+                self.device.handle.destroy_pipeline(handle, None);
+            }
+        }
+        self.layout.destroy(&self.device);
+        self.pass.destroy(&self.device);
+    }
+}
+
+impl<'a> CmdPipelineAbs for GsPipelineElement<'a> {
+
+    fn layout(&self) -> &vk::PipelineLayout {
+        &self.layout.handle
+    }
+
+    fn pipeline(&self) -> &vk::Pipeline {
+        &self.pipeline
+    }
+
+    fn render_pass(&self) -> &GsRenderPass {
+        &self.pass
+    }
+}
+// -------------------------------------------------------------------------------------
 
 // -------------------------------------------------------------------------------------
 #[derive(Debug, Clone, Copy, Eq, PartialEq)]
