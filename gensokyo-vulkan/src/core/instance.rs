@@ -127,7 +127,7 @@ fn required_layers(entry: &ash::Entry, validation: &ValidationConfig) -> VkResul
     let mut enable_layer_names = vec![];
 
     if validation.is_enable {
-        if debug::is_support_validation_layer(entry, &validation.required_validation_layers)? {
+        if debug::is_support_validation_layer(entry, &validation.required_validation_layers, &validation)? {
 
             for layer in validation.required_validation_layers.iter() {
 

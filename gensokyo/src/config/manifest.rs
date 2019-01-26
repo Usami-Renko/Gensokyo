@@ -6,7 +6,7 @@ pub(super) fn manifest_toml() -> ::toml::Value {
     toml! {
         [core]
         [core.version]
-        api         = "1.0.92"
+        api         = "1.0.97"
         application = "1.0.0"
         engine      = "1.0.0"
 
@@ -18,6 +18,7 @@ pub(super) fn manifest_toml() -> ::toml::Value {
         enable = true
         layers = ["VK_LAYER_LUNARG_standard_validation"]
         types  = "DebugUtils"
+        print_instance_layers = false
 
         [core.validation.report]
         flags = ["Error", "Warning", "PerformanceWarning"]
@@ -31,6 +32,12 @@ pub(super) fn manifest_toml() -> ::toml::Value {
         queue_request_strategy = "SingleFamilySingleQueue"
         transfer_time_out = "Infinite"
         transfer_duration = 1000
+
+        [core.device.print]
+        device_name        = false
+        device_api_version = false
+        device_type        = false
+        device_queues      = false
 
         [core.physical]
         device_types       = ["CPU", "IntegratedGPU", "DiscreteGPU"]
@@ -98,6 +105,7 @@ fn complete_manifest_toml() {
 //    enable = true
 //    layers = ["VK_LAYER_LUNARG_standard_validation"]
 //    types  = "DebugReport" | "DebugUtils"
+//    print_instance_layers = false
 //
 //    [core.validation.report]
 //    flags = ["Error", "Warning", "PerformanceWarning"]
@@ -111,6 +119,12 @@ fn complete_manifest_toml() {
 //    queue_request_strategy = "SingleFamilySingleQueue" | "SingleFamilyMultiQueues"
 //    transfer_time_out = "Infinte" | "Immediate" | "Timing"
 //    transfer_duration = 1000
+//
+//    [core.device.print]
+//    device_name        = false
+//    device_api_version = false
+//    device_type        = false
+//    device_queues      = false
 //
 //    [core.physical]
 //    device_types       = ["CPU", "IntegratedGPU", "DiscreteGPU", "VirtualGPU"]

@@ -5,7 +5,6 @@ use crate::core::instance::GsInstance;
 use crate::core::debug::report::{ GsDebugReport, DebugReportConfig };
 use crate::core::debug::utils::{ GsDebugUtils, DebugUtilsConfig };
 
-use crate::VERBOSE;
 use crate::utils::cast;
 
 use crate::error::{ VkResult, VkError };
@@ -41,10 +40,12 @@ pub struct ValidationConfig {
     pub required_validation_layers: Vec<String>,
     /// `instance_type` is the type of debug tools to use(Debug Report or Debug Utils).
     pub debug_type: DebugInstanceType,
-    /// `report_config` specifies the configuration paramaters used in Debug Report.
+    /// `report_config` specifies the configuration parameters used in Debug Report.
     pub report_config: Option<DebugReportConfig>,
-    /// `utils_config` specifies the configuration paramaters used in Debug Utils.
+    /// `utils_config` specifies the configuration parameters used in Debug Utils.
     pub  utils_config: Option<DebugUtilsConfig>,
+    /// `print_instance_layers` specifies if print all the available instance layers to console.
+    pub print_instance_layers: bool,
 }
 
 impl GsDebugger {
@@ -93,13 +94,13 @@ impl GsDebugger {
 }
 
 /// helper function to check if all required layers of validation layer are satisfied.
-pub(in crate::core) fn is_support_validation_layer(entry: &ash::Entry, required_validation_layers: &[String]) -> VkResult<bool> {
+pub(in crate::core) fn is_support_validation_layer(entry: &ash::Entry, required_validation_layers: &[String], config: &ValidationConfig) -> VkResult<bool> {
 
     let layer_properties = entry.enumerate_instance_layer_properties()
         .or(Err(VkError::query("Layer Properties")))?;
 
     // Print the layer name to console in verbose mode.
-    if VERBOSE {
+    if config.print_instance_layers {
         if layer_properties.len() == 0 {
             println!("[info] No available layers.");
         } else {

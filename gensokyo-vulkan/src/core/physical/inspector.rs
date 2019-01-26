@@ -14,8 +14,6 @@ use crate::core::physical::property::PhysicalProperties;
 
 use crate::error::{ VkResult, VkError };
 
-use crate::VERBOSE;
-
 pub struct PhysicalInspector {
 
     config: PhysicalConfig,
@@ -75,10 +73,6 @@ impl PhysicalInspector {
                 handle: physical_device,
                 properties, families, features, extensions, memory,
             };
-
-            if VERBOSE {
-                physical.properties.print_device_detail();
-            }
 
             optimal_device = Some(physical);
 

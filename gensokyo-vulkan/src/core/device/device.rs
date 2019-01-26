@@ -149,4 +149,9 @@ pub struct DeviceConfig {
 
     pub queue_request_strategy: QueueRequestStrategy,
     pub transfer_wait_time: vklint,
+
+    pub print_device_name : bool,
+    pub print_device_api  : bool,
+    pub print_device_type : bool,
+    pub print_device_queues: bool,
 }

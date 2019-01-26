@@ -17,6 +17,11 @@ pub(crate) struct DeviceConfigMirror {
     queue_request_strategy: String,
     transfer_time_out: String,
     transfer_duration: u64, // in ms unit
+
+    print_device_name  : bool, // default is false.
+    print_device_api   : bool, // default is false.
+    print_device_type  : bool, // default is false.
+    print_device_queues: bool, // default is false.
 }
 
 impl ConfigMirror for DeviceConfigMirror {
@@ -27,6 +32,11 @@ impl ConfigMirror for DeviceConfigMirror {
         let config = DeviceConfig {
             queue_request_strategy: vk_raw2queue_request_strategy(&self.queue_request_strategy)?,
             transfer_wait_time    : vk_raw2transfer_wait_time(&self.transfer_time_out, self.transfer_duration)?.vulkan_time(),
+
+            print_device_name  : self.print_device_name,
+            print_device_api   : self.print_device_api,
+            print_device_type  : self.print_device_type,
+            print_device_queues: self.print_device_queues,
         };
 
         Ok(config)
@@ -36,17 +46,36 @@ impl ConfigMirror for DeviceConfigMirror {
 
         if let Some(v) = toml.get("queue_request_strategy") {
             self.queue_request_strategy = v.as_str()
-                .ok_or(GsError::config("queue_request_strategy"))?.to_owned();
+                .ok_or(GsError::config("core.device.queue_request_strategy"))?.to_owned();
         }
 
         if let Some(v) = toml.get("transfer_time_out") {
             self.transfer_time_out = v.as_str()
-                .ok_or(GsError::config("transfer_time_out"))?.to_owned();
+                .ok_or(GsError::config("core.device.transfer_time_out"))?.to_owned();
         }
 
         if let Some(v) = toml.get("transfer_duration") {
             self.transfer_duration = v.as_integer()
-                .ok_or(GsError::config("transfer_duration"))?.to_owned() as u64;
+                .ok_or(GsError::config("core.device.transfer_duration"))?.to_owned() as u64;
+        }
+
+        if let Some(v) = toml.get("print") {
+            if let Some(v) = v.get("device_name") {
+                self.print_device_name = v.as_bool()
+                    .ok_or(GsError::config("core.device.print.device_name"))?.to_owned();
+            }
+            if let Some(v) = v.get("device_api_version") {
+                self.print_device_api = v.as_bool()
+                    .ok_or(GsError::config("core.device.print.device_api_version"))?.to_owned();
+            }
+            if let Some(v) = v.get("device_type") {
+                self.print_device_type = v.as_bool()
+                    .ok_or(GsError::config("core.device.print.device_type"))?.to_owned();
+            }
+            if let Some(v) = v.get("device_queues") {
+                self.print_device_queues = v.as_bool()
+                    .ok_or(GsError::config("core.device.print.device_queues"))?.to_owned();
+            }
         }
 
         Ok(())

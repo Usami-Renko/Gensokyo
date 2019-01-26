@@ -4,6 +4,7 @@ use ash::{ vk_version_major, vk_version_minor, vk_version_patch };
 use ash::version::InstanceV1_0;
 
 use crate::core::instance::GsInstance;
+use crate::core::device::DeviceConfig;
 use crate::core::physical::config::PhysicalInspectProperty;
 
 use crate::types::vkuint;
@@ -40,27 +41,29 @@ impl PhysicalProperties {
         }
     }
 
-    pub fn print_device_detail(&self) {
+    pub fn print_device_info(&self, config: &DeviceConfig) {
 
-        let (major, minor, patch) = (
-            vk_version_major!(self.api_version),
-            vk_version_minor!(self.api_version),
-            vk_version_patch!(self.api_version),
-        );
-
-        let device_type = self.handle.device_type;
-        let device_type = match device_type {
-            | vk::PhysicalDeviceType::CPU            => "CPU",
-            | vk::PhysicalDeviceType::INTEGRATED_GPU => "Integrated GPU",
-            | vk::PhysicalDeviceType::DISCRETE_GPU   => "Discrete GPU",
-            | vk::PhysicalDeviceType::VIRTUAL_GPU    => "Virtual GPU",
-            | _ => "Unknown",
-        };
-
-        println!("[info] Physical Device Details:");
-        println!("\tDevice Name: {}", self.device_name);
-        println!("\tDevice API version: ({}, {}, {})", major, minor, patch);
-        println!("\tDevice Type: {}", device_type);
+        if config.print_device_name {
+            println!("[Info] Using device: {}", self.device_name);
+        }
+        if config.print_device_api {
+            let (major, minor, patch) = (
+                vk_version_major!(self.api_version),
+                vk_version_minor!(self.api_version),
+                vk_version_patch!(self.api_version),
+            );
+            println!("[Info] Device API version: {}.{}.{}", major, minor, patch);
+        }
+        if config.print_device_type {
+            let device_type = match self.handle.device_type {
+                | vk::PhysicalDeviceType::CPU            => "CPU",
+                | vk::PhysicalDeviceType::INTEGRATED_GPU => "Integrated GPU",
+                | vk::PhysicalDeviceType::DISCRETE_GPU   => "Discrete GPU",
+                | vk::PhysicalDeviceType::VIRTUAL_GPU    => "Virtual GPU",
+                | _ => "Unknown",
+            };
+            println!("[Info] Device Type: {}", device_type);
+        }
     }
 }
 

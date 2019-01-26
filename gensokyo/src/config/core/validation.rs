@@ -16,6 +16,8 @@ pub(crate) struct ValidationConfigMirror {
     instance_type: Option<String>,
     report_config: Option<DebugReportConfigMirror>,
     utils_config : Option<DebugUtilsConfigMirror>,
+
+    print_instance_layers: bool, // default is false.
 }
 
 impl ConfigMirror for ValidationConfigMirror {
@@ -30,6 +32,8 @@ impl ConfigMirror for ValidationConfigMirror {
             debug_type: vk_raw2debug_instance_type(&self.instance_type)?,
             report_config: if let Some(config) = self.report_config { Some(config.into_config()?) } else { None },
             utils_config : if let Some(config) = self.utils_config  { Some(config.into_config()?) } else { None },
+
+            print_instance_layers: self.print_instance_layers,
         };
 
         Ok(config)
@@ -39,7 +43,7 @@ impl ConfigMirror for ValidationConfigMirror {
 
         if let Some(v) = toml.get("enable") {
             self.enable = v.as_bool()
-                .ok_or(GsError::config("[core.validation.enable]"))?;
+                .ok_or(GsError::config("core.validation.enable"))?;
         }
 
         if let Some(v) = toml.get("layers") {
@@ -54,13 +58,13 @@ impl ConfigMirror for ValidationConfigMirror {
                     }
                 }
             } else {
-                return Err(GsError::config("[core.validation.layers]"))
+                return Err(GsError::config("core.validation.layers"))
             }
         }
 
         if let Some(v) = toml.get("types") {
             let instance_type = v.as_str()
-                .ok_or(GsError::config("[core.validation.types]"))?.to_owned();
+                .ok_or(GsError::config("core.validation.types"))?.to_owned();
             self.instance_type = Some(instance_type);
         }
 
@@ -74,6 +78,11 @@ impl ConfigMirror for ValidationConfigMirror {
             let mut utils_config = DebugUtilsConfigMirror::default();
             utils_config.parse(v)?;
             self.utils_config = Some(utils_config);
+        }
+
+        if let Some(v) = toml.get("print_instance_layers") {
+            self.print_instance_layers = v.as_bool()
+                .ok_or(GsError::config("core.validation.print_instance_layers"))?.to_owned();
         }
 
         Ok(())
@@ -130,7 +139,7 @@ impl ConfigMirror for DebugReportConfigMirror {
                     }
                 }
             } else {
-                return Err(GsError::config("[core.validation.report.flags]"))
+                return Err(GsError::config("core.validation.report.flags"))
             }
         }
 
@@ -196,7 +205,7 @@ impl ConfigMirror for DebugUtilsConfigMirror {
                     }
                 }
             } else {
-                return Err(GsError::config("[core.validation.utils.flags]"))
+                return Err(GsError::config("core.validation.utils.flags"))
             }
         }
 
@@ -212,7 +221,7 @@ impl ConfigMirror for DebugUtilsConfigMirror {
                     }
                 }
             } else {
-                return Err(GsError::config("[core.validation.utils.severity]"))
+                return Err(GsError::config("core.validation.utils.severity"))
             }
         }
 
@@ -228,7 +237,7 @@ impl ConfigMirror for DebugUtilsConfigMirror {
                     }
                 }
             } else {
-                return Err(GsError::config("[core.validation.utils.types]"))
+                return Err(GsError::config("core.validation.utils.types"))
             }
         }
 

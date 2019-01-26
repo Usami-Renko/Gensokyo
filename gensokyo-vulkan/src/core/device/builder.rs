@@ -12,7 +12,6 @@ use crate::core::device::queue::{ QueueRequester, SFSQ, SFMQ };
 use crate::error::{ VkResult, VkError };
 
 use crate::utils::cast;
-use crate::VERBOSE;
 
 use std::ptr;
 
@@ -97,9 +96,7 @@ impl<'a> LogicalDeviceBuilder<'a> {
                 .or(Err(VkError::create("Logical Device")))?
         };
 
-        if VERBOSE {
-            self.queue_request.print_message();
-        }
+        self.print_message();
 
         let mut queues = self.queue_request.collect_queues(&handle);
         let transfer_queue = GsTransferQueue::new(&handle, queues.pop().unwrap(), &self.config)?;
@@ -108,5 +105,14 @@ impl<'a> LogicalDeviceBuilder<'a> {
 
         let device = GsLogicalDevice::new(handle, graphics_queue, present_queue, transfer_queue);
         Ok((device, queues))
+    }
+
+    fn print_message(&self) {
+
+        self.physical.properties.print_device_info(&self.config);
+
+        if self.config.print_device_queues {
+            self.queue_request.print_message();
+        }
     }
 }
