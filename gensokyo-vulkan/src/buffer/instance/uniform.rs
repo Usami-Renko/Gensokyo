@@ -23,7 +23,9 @@ pub struct GsBufUniformInfo {
 
     usage: UniformUsage,
     binding: DescriptorBindingContent,
+    /// the actual data size of each element.
     element_size: vkbytes,
+    /// the minimum uniform buffer offset alignment required by Vulkan.
     alignment: vkbytes,
 }
 
@@ -64,12 +66,12 @@ impl GsBufUniformInfo {
                 descriptor_type: GsDescriptorType::Buffer(BufferDescriptorType::DynamicUniformBuffer),
             },
             element_size: slice_size * (slice_count as vkbytes),
-            alignment: 0,
+            alignment: 0, // alignment will be set when add it to allocator.
         }
     }
 
     fn set_alignment(&mut self, physical: &GsPhysicalDevice) {
-
+        // query alignment from Vulkan.
         self.alignment = physical.limits().min_uniform_buffer_offset_alignment;
     }
 }
@@ -147,7 +149,7 @@ impl DescriptorBufferBindableTarget for GsUniformBuffer {
             content: self.iuniform.binding.clone(),
             element_indices: sub_block_indices.unwrap_or(vec![0]),
             buffer_handle: self.block.handle,
-            element_size: self.alignment_size(),
+            element_size: self.element_size(),
         }
     }
 }
@@ -161,11 +163,27 @@ impl BufferCopiable for GsUniformBuffer {
 
 impl GsUniformBuffer {
 
-    pub fn alignment(&self) -> vkbytes {
+    /// Return the min uniform offset alignment query from Vulkan.
+    ///
+    /// This value is only meaningful to dynamic uniform buffer.
+    pub fn require_dynamic_alignment(&self) -> vkbytes {
         self.iuniform.alignment
     }
 
-    pub fn alignment_size(&self) -> vkbytes {
+    /// For common uniform buffer, this func just return the whole size of this uniform buffer.
+    ///
+    /// For dynamic uniform buffer, this func return the aligned size of each element.
+    pub fn aligned_size(&self) -> vkbytes {
+
+        match self.iuniform.usage {
+            | UniformUsage::Common => self.block.size,
+            | UniformUsage::Dynamic { slice_size, .. } => {
+                bound_to_alignment(slice_size, self.iuniform.alignment)
+            }
+        }
+    }
+
+    fn element_size(&self) -> vkbytes {
 
         match self.iuniform.usage {
             | UniformUsage::Common => self.iuniform.element_size,

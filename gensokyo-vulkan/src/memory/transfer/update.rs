@@ -6,6 +6,8 @@ use crate::memory::instance::GsBufferMemory;
 use crate::memory::transfer::traits::MemoryDataDelegate;
 use crate::error::VkResult;
 
+use crate::types::vkbytes;
+
 pub struct GsBufferDataUpdater {
 
     device: GsDevice,
@@ -33,6 +35,14 @@ impl GsBufferDataUpdater {
 
         let writer = to.acquire_write_ptr(&mut self.agency)?;
         writer.write_data(data);
+
+        Ok(self)
+    }
+
+    pub fn update_align(&mut self, to: &impl BufferInstance, data: &[impl Copy], alignment: vkbytes) -> VkResult<&mut GsBufferDataUpdater> {
+
+        let writer = to.acquire_write_ptr(&mut self.agency)?;
+        writer.write_data_with_alignment(data, alignment);
 
         Ok(self)
     }

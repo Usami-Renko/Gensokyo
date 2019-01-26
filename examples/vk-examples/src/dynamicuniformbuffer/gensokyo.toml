@@ -1,0 +1,11 @@
+
+[window]
+title = "Vulkan Example - Dynamic uniform buffers"
+
+[window.dimension]
+width  = 1280
+height = 720
+
+[window.cursor]
+is_grab = true
+is_hide = true

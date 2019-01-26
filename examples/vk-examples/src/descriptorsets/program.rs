@@ -135,7 +135,7 @@ impl VulkanExample {
         Ok(procedure)
     }
 
-    fn update_uniforms(&mut self, delta_time: f32) -> GsResult<()> {
+    fn update_uniforms(&mut self) -> GsResult<()> {
 
         // Update UBOMatrices uniform block.
         self.cubes.matrices[0][0].view = self.camera.view_matrix();

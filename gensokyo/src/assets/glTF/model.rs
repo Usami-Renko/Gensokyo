@@ -120,7 +120,7 @@ impl<'d, 's: 'd> GsglTFEntity {
         };
 
         let uniform_aligned_size = if let Some(ref b) = self.uniform {
-            b.alignment_size()
+            b.aligned_size()
         } else {
             0
         };
@@ -213,7 +213,7 @@ impl<'d> GsBufferUploadable<GsglTFDataStorage> for GUDUDelegate<'d> {
         let upload_func = |model: &GUDUDelegate, by: &mut GsBufferDataUploader, data: &GsglTFDataStorage| {
 
             // upload uniform data.
-            let element_alignment = model.uniform.alignment();
+            let element_alignment = model.uniform.require_dynamic_alignment();
             data.node_transforms.data_content().upload(model.uniform, by, element_alignment)
         };
         Box::new(upload_func)

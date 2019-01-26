@@ -17,6 +17,7 @@ lazy_static  = "1.2.0"
 serde        = "1.0.80"
 serde_derive = "1.0.80"
 bincode      = "1.0.1"
+rand         = "0.6"
 
 # Basics ----------------------------------------------
 [[bin]]
@@ -30,6 +31,10 @@ path = "src/pipelines/main.rs"
 [[bin]]
 name = "descriptorsets"
 path = "src/descriptorsets/main.rs"
+
+[[bin]]
+name = "dynamicuniformbuffer"
+path = "src/dynamicuniformbuffer/main.rs"
 
 [[bin]]
 name = "pushconstants"
