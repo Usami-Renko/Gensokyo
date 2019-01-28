@@ -32,7 +32,9 @@ impl BufferAllocateInfos {
 }
 
 
-pub struct BufMemAllocator<M> where M: BufferMemoryTypeAbs {
+pub struct BufMemAllocator<M>
+    where
+        M: BufferMemoryTypeAbs {
 
     phantom_type: M,
 
@@ -40,7 +42,9 @@ pub struct BufMemAllocator<M> where M: BufferMemoryTypeAbs {
     pub memory: GsBufferMemory,
 }
 
-impl<M> BufMemAllocator<M> where M: BufferMemoryTypeAbs {
+impl<M> BufMemAllocator<M>
+    where
+        M: BufferMemoryTypeAbs {
 
     pub fn allot_memory(phantom_type: M, device: &GsDevice, infos: BufferAllocateInfos, size: vkbytes, filter: &MemoryFilter) -> VkResult<BufMemAllocator<M>> {
 

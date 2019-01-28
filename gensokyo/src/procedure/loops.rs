@@ -12,13 +12,17 @@ use gsvk::core::device::GsDevice;
 use gsvk::core::swapchain::SwapchainSyncError;
 use gsvk::error::VkErrorKind;
 
-pub struct RoutineFlow<Routine> where Routine: GraphicsRoutine {
+pub struct RoutineFlow<Routine>
+    where
+        Routine: GraphicsRoutine {
 
     chain: ChainResource,
     routine: Routine,
 }
 
-impl<Routine> RoutineFlow<Routine> where Routine: GraphicsRoutine {
+impl<Routine> RoutineFlow<Routine>
+    where
+        Routine: GraphicsRoutine {
 
     pub(super) fn new(routine: Routine, chain: ChainResource) -> RoutineFlow<Routine> {
 

@@ -40,7 +40,8 @@ impl<'d, 's: 'd> GsglTFEntity {
     }
 
     pub fn acquire_vertex<M>(&mut self, vertex_index: GsglTFVertexAllotIndex, distributor: &GsBufferDistributor<M>)
-        where M: BufferMemoryTypeAbs {
+        where
+            M: BufferMemoryTypeAbs {
 
         self.vertex = Some(distributor.acquire(vertex_index.vertex));
         self.indices = vertex_index.indices.and_then(|indices_index| {

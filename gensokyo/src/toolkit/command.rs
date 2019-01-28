@@ -40,7 +40,8 @@ impl CommandKit {
     }
 
     pub fn pipeline_recorder<T>(&self, pipeline: &impl CmdPipelineAbs, command: GsCommandBuffer) -> GsCmdRecorder<T>
-        where T: GsVkPipelineType + GsVkCommandType {
+        where
+            T: GsVkPipelineType + GsVkCommandType {
 
         GsCmdRecorder::new(&self.device, command, pipeline)
     }

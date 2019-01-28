@@ -29,7 +29,9 @@ impl GsVkPipelineType for Compute {
 // -------------------------------------------------------------------------------------
 
 // -------------------------------------------------------------------------------------
-pub struct GsPipeline<T> where T: GsVkPipelineType {
+pub struct GsPipeline<T>
+    where
+        T: GsVkPipelineType {
 
     phantom_type: PhantomData<T>,
 
@@ -40,7 +42,9 @@ pub struct GsPipeline<T> where T: GsVkPipelineType {
     device: GsDevice,
 }
 
-impl<T> GsPipeline<T> where T: GsVkPipelineType {
+impl<T> GsPipeline<T>
+    where
+        T: GsVkPipelineType {
 
     pub(super) fn new(device: GsDevice, handle: vk::Pipeline, layout: vk::PipelineLayout, pass: GsRenderPass) -> GsPipeline<T> {
 
@@ -56,7 +60,9 @@ impl<T> GsPipeline<T> where T: GsVkPipelineType {
     }
 }
 
-impl<T> Drop for GsPipeline<T> where T: GsVkPipelineType {
+impl<T> Drop for GsPipeline<T>
+    where
+        T: GsVkPipelineType {
 
     fn drop(&mut self) {
 
@@ -69,7 +75,9 @@ impl<T> Drop for GsPipeline<T> where T: GsVkPipelineType {
     }
 }
 
-impl<T> CmdPipelineAbs for GsPipeline<T> where T: GsVkPipelineType {
+impl<T> CmdPipelineAbs for GsPipeline<T>
+    where
+        T: GsVkPipelineType {
 
     fn layout(&self)   -> &vk::PipelineLayout {
         &self.layout.handle
@@ -86,7 +94,9 @@ impl<T> CmdPipelineAbs for GsPipeline<T> where T: GsVkPipelineType {
 // -------------------------------------------------------------------------------------
 
 // -------------------------------------------------------------------------------------
-pub struct GsPipelineSet<T> where T: GsVkPipelineType {
+pub struct GsPipelineSet<T>
+    where
+        T: GsVkPipelineType {
 
     phantom_type: PhantomData<T>,
 
@@ -105,7 +115,9 @@ pub struct GsPipelineElement<'a> {
     pass    : &'a GsRenderPass,
 }
 
-impl<T> GsPipelineSet<T> where T: GsVkPipelineType {
+impl<T> GsPipelineSet<T>
+    where
+        T: GsVkPipelineType {
 
     pub(crate) fn new(device: GsDevice, handles: Vec<vk::Pipeline>, layout: vk::PipelineLayout, pass: GsRenderPass) -> GsPipelineSet<Graphics> {
 
@@ -130,7 +142,9 @@ impl<T> GsPipelineSet<T> where T: GsVkPipelineType {
     }
 }
 
-impl<T> Drop for GsPipelineSet<T> where T: GsVkPipelineType {
+impl<T> Drop for GsPipelineSet<T>
+    where
+        T: GsVkPipelineType {
 
     fn drop(&mut self) {
 

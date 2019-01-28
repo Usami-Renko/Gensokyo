@@ -44,7 +44,9 @@ impl<C> Default for GsCamera<C> {
     }
 }
 
-impl<C> GsCamera<C> where Self: GsCameraApi<C> {
+impl<C> GsCamera<C>
+    where
+        Self: GsCameraApi<C> {
 
     pub fn new(place_at: Point3F) -> GsCamera<C> {
         GsCamera {

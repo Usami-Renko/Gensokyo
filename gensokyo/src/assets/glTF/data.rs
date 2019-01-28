@@ -158,7 +158,9 @@ impl<'d, 's: 'd> GsglTFDataStorage {
     }
 }
 
-impl<'d, M> GsBufferAllocatable<M, GsglTFVertexAllotIndex> for GVDADelegate<'d> where M: BufferMemoryTypeAbs {
+impl<'d, M> GsBufferAllocatable<M, GsglTFVertexAllotIndex> for GVDADelegate<'d>
+    where
+        M: BufferMemoryTypeAbs {
 
     fn allot_func(&self) -> Box<dyn Fn(&Self, &mut GsBufferAllocator<M>) -> VkResult<GsglTFVertexAllotIndex>> {
 

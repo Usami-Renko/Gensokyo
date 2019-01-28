@@ -16,7 +16,9 @@ use crate::types::vkbytes;
 use std::marker::PhantomData;
 
 
-pub struct GsBufferAllocator<M> where M: BufferMemoryTypeAbs {
+pub struct GsBufferAllocator<M>
+    where
+        M: BufferMemoryTypeAbs {
 
     phantom_type: PhantomData<M>,
     storage_type: M,
@@ -33,8 +35,9 @@ pub struct GsBufferAllocator<M> where M: BufferMemoryTypeAbs {
 }
 
 impl<M, I, R> GsAllocatorApi<I, R, GsBufferDistributor<M>> for GsBufferAllocator<M>
-    where I: BufferInfoAbstract<R>,
-          M: BufferMemoryTypeAbs {
+    where
+        I: BufferInfoAbstract<R>,
+        M: BufferMemoryTypeAbs {
 
     type AssignResult = VkResult<GsAssignIndex<R>>;
 
@@ -79,7 +82,8 @@ impl<M, I, R> GsAllocatorApi<I, R, GsBufferDistributor<M>> for GsBufferAllocator
 }
 
 impl<M> GsAllotIntoDistributor<GsBufferDistributor<M>> for GsBufferAllocator<M>
-    where M: BufferMemoryTypeAbs {
+    where
+        M: BufferMemoryTypeAbs {
 
     fn allocate(self) -> VkResult<GsBufferDistributor<M>> {
 
@@ -116,7 +120,9 @@ impl<M> GsAllotIntoDistributor<GsBufferDistributor<M>> for GsBufferAllocator<M>
     }
 }
 
-impl<M> GsBufferAllocator<M> where M: BufferMemoryTypeAbs {
+impl<M> GsBufferAllocator<M>
+    where
+        M: BufferMemoryTypeAbs {
 
     pub fn new(physical: &GsPhyDevice, device: &GsDevice, storage_type: M) -> GsBufferAllocator<M> {
 
@@ -142,7 +148,10 @@ impl<M> GsBufferAllocator<M> where M: BufferMemoryTypeAbs {
     }
 }
 
-pub trait GsBufferAllocatable<M, R> where Self: Sized, M: BufferMemoryTypeAbs {
+pub trait GsBufferAllocatable<M, R>
+    where
+        M: BufferMemoryTypeAbs,
+        Self: Sized {
 
     fn allot_func(&self) -> Box<dyn Fn(&Self, &mut GsBufferAllocator<M>) -> VkResult<R>>;
 }

@@ -59,7 +59,8 @@ impl RenderPassBuilder {
 
     /// create a attachment and set its reference to subpass.
     pub fn add_attachment<A>(&mut self, attachment: RenderAttachment<A>, subpass_index: vkuint)
-        where A: RenderAttType {
+        where
+            A: RenderAttType {
 
         // `attachment_index` is the index of attachments used in a specific render pass.
         let attachment_index = self.attachments.len();

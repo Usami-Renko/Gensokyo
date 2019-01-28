@@ -22,7 +22,9 @@ use crate::types::vkbytes;
 
 use std::marker::PhantomData;
 
-pub struct GsBufferDistributor<M> where M: BufferMemoryTypeAbs {
+pub struct GsBufferDistributor<M>
+    where
+        M: BufferMemoryTypeAbs {
 
     phantom_type: PhantomData<M>,
 
@@ -38,7 +40,8 @@ pub struct GsBufferDistributor<M> where M: BufferMemoryTypeAbs {
 }
 
 impl<M> GsDistributeApi<IVertex, GsVertexBuffer, GsBufferRepository<M>> for GsBufferDistributor<M>
-    where M: BufferMemoryTypeAbs {
+    where
+        M: BufferMemoryTypeAbs {
 
     fn acquire(&self, index: GsAssignIndex<IVertex>) -> GsVertexBuffer {
 
@@ -49,7 +52,8 @@ impl<M> GsDistributeApi<IVertex, GsVertexBuffer, GsBufferRepository<M>> for GsBu
 }
 
 impl<M> GsDistributeApi<IIndices, GsIndexBuffer, GsBufferRepository<M>> for GsBufferDistributor<M>
-    where M: BufferMemoryTypeAbs {
+    where
+        M: BufferMemoryTypeAbs {
 
     fn acquire(&self, index: GsAssignIndex<IIndices>) -> GsIndexBuffer {
 
@@ -70,7 +74,8 @@ impl GsDistributeApi<IUniform, GsUniformBuffer, GsBufferRepository<Host>> for Gs
 }
 
 impl<M> GsDistributeApi<IImgSrc, GsImgsrcBuffer, GsBufferRepository<M>> for GsBufferDistributor<M>
-    where M: BufferMemoryTypeAbs {
+    where
+        M: BufferMemoryTypeAbs {
 
     fn acquire(&self, index: GsAssignIndex<IImgSrc>) -> GsImgsrcBuffer {
 
@@ -81,7 +86,8 @@ impl<M> GsDistributeApi<IImgSrc, GsImgsrcBuffer, GsBufferRepository<M>> for GsBu
 }
 
 impl<M> GsDistIntoRepository<GsBufferRepository<M>> for GsBufferDistributor<M>
-    where M: BufferMemoryTypeAbs {
+    where
+        M: BufferMemoryTypeAbs {
 
     fn into_repository(self) -> GsBufferRepository<M> {
 
@@ -89,7 +95,9 @@ impl<M> GsDistIntoRepository<GsBufferRepository<M>> for GsBufferDistributor<M>
     }
 }
 
-impl<M> GsBufferDistributor<M> where M: BufferMemoryTypeAbs {
+impl<M> GsBufferDistributor<M>
+    where
+        M: BufferMemoryTypeAbs {
 
     pub(super) fn new(phantom_type: PhantomData<M>, device: GsDevice, physical: GsPhyDevice, memory: GsBufferMemory, buffers: Vec<GsBuffer>, spaces: Vec<vkbytes>, allot_infos: BufferAllocateInfos) -> GsBufferDistributor<M> {
 

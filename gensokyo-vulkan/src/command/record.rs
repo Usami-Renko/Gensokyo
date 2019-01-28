@@ -18,7 +18,9 @@ pub trait GsVkCommandType {
     // Empty...
 }
 
-pub struct GsCmdRecorder<T> where T: GsVkCommandType {
+pub struct GsCmdRecorder<T>
+    where
+        T: GsVkCommandType {
 
     phantom_type: PhantomData<T>,
 
@@ -31,7 +33,9 @@ pub struct GsCmdRecorder<T> where T: GsVkCommandType {
     pub(super) pipeline_layout: vk::PipelineLayout,
 }
 
-impl<T> GsCmdRecorder<T> where T: GsVkCommandType + GsVkPipelineType {
+impl<T> GsCmdRecorder<T>
+    where
+        T: GsVkCommandType + GsVkPipelineType {
 
     pub fn new(device: &GsDevice, command: GsCommandBuffer, pipeline: &impl CmdPipelineAbs) -> GsCmdRecorder<T> {
 

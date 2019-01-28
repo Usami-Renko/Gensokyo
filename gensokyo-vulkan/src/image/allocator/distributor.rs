@@ -14,7 +14,9 @@ use crate::utils::allot::{ GsAssignIndex, GsDistributeApi, GsDistIntoRepository 
 
 use std::marker::PhantomData;
 
-pub struct GsImageDistributor<M> where M: ImageMemoryTypeAbs {
+pub struct GsImageDistributor<M>
+    where
+        M: ImageMemoryTypeAbs {
 
     phantom_type: PhantomData<M>,
 
@@ -26,8 +28,9 @@ pub struct GsImageDistributor<M> where M: ImageMemoryTypeAbs {
 }
 
 impl<M, R, T> GsDistributeApi<R, T, GsImageRepository<M>> for GsImageDistributor<M>
-    where T: ImageInstance<R>,
-          M: ImageMemoryTypeAbs {
+    where
+        T: ImageInstance<R>,
+        M: ImageMemoryTypeAbs {
 
     fn acquire(&self, index: GsAssignIndex<R>) -> T {
 
@@ -41,7 +44,8 @@ impl<M, R, T> GsDistributeApi<R, T, GsImageRepository<M>> for GsImageDistributor
 }
 
 impl<M> GsDistIntoRepository<GsImageRepository<M>> for GsImageDistributor<M>
-    where M: ImageMemoryTypeAbs {
+    where
+        M: ImageMemoryTypeAbs {
 
     fn into_repository(self) -> GsImageRepository<M> {
 
@@ -52,7 +56,9 @@ impl<M> GsDistIntoRepository<GsImageRepository<M>> for GsImageDistributor<M>
     }
 }
 
-impl<M> GsImageDistributor<M> where M: ImageMemoryTypeAbs {
+impl<M> GsImageDistributor<M>
+    where
+        M: ImageMemoryTypeAbs {
 
     pub(super) fn new(phantom_type: PhantomData<M>, device: GsDevice, image_infos: Vec<ImageAllotInfo>, memory: GsImageMemory) -> VkResult<GsImageDistributor<M>> {
 

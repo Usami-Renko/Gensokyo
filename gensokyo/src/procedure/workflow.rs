@@ -67,7 +67,9 @@ impl<'env> RoutineBuilder<'env> {
         self.chain.assets_loader(&self.env.vulkan_env, &self.env.config.resources)
     }
 
-    pub fn build<Routine>(self, routine: Routine) -> RoutineFlow<Routine> where Routine: GraphicsRoutine {
+    pub fn build<Routine>(self, routine: Routine) -> RoutineFlow<Routine>
+        where
+            Routine: GraphicsRoutine {
 
         RoutineFlow::new(routine, self.chain)
     }

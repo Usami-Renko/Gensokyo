@@ -1,14 +1,17 @@
 
 pub struct VKWrapperInfo<C, I>
-    where C: Sized,
-          I: Sized {
+    where
+        C: Sized,
+        I: Sized {
 
     pub contents: Vec<C>,
     pub infos   : Vec<I>,
 }
 
 pub struct VKWrapperPair<C, I>
-    where C: Sized, I: Sized {
+    where
+        C: Sized,
+        I: Sized {
 
     pub content: C,
     pub info   : I,

@@ -12,7 +12,8 @@ type ReferenceIndex = usize;
 type   StorageIndex = usize;
 
 pub(super) struct GsglTFAssetLib<Asset, AssetData>
-    where Asset: GsglTFAsset<AssetData> {
+    where
+        Asset: GsglTFAsset<AssetData> {
 
     phantom_type: PhantomData<AssetData>,
     #[allow(dead_code)]
@@ -21,7 +22,8 @@ pub(super) struct GsglTFAssetLib<Asset, AssetData>
 }
 
 impl<Asset, AssetData> Default for GsglTFAssetLib<Asset, AssetData>
-    where Asset: GsglTFAsset<AssetData> {
+    where
+        Asset: GsglTFAsset<AssetData> {
 
     fn default() -> GsglTFAssetLib<Asset, AssetData> {
         GsglTFAssetLib {
@@ -33,11 +35,13 @@ impl<Asset, AssetData> Default for GsglTFAssetLib<Asset, AssetData>
 }
 
 impl<Asset, AssetData> GsglTFAssetLib<Asset, AssetData>
-    where Asset: GsglTFAsset<AssetData> {
+    where
+        Asset: GsglTFAsset<AssetData> {
 
     #[allow(dead_code)]
     pub fn load<Document>(&mut self, doc: Document, ref_index: ReferenceIndex) -> StorageIndex
-        where Asset: From<Document> {
+        where
+            Asset: From<Document> {
 
         if let Some(store_index) = self.indices.get(&ref_index) {
 

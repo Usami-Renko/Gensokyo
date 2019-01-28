@@ -31,7 +31,8 @@ impl AssetsLoader {
     }
 
     pub fn assets<R, F>(&self, func: F) -> R
-        where F: FnOnce(AllocatorKit) -> R {
+        where
+            F: FnOnce(AllocatorKit) -> R {
 
         let kit = AllocatorKit::init(&self.physical, &self.device, self.config.clone());
 
@@ -39,7 +40,8 @@ impl AssetsLoader {
     }
 
     pub fn pipelines<R, F>(&self, func: F) -> R
-        where F: FnOnce(PipelineKit) -> R {
+        where
+            F: FnOnce(PipelineKit) -> R {
 
         let kit = PipelineKit::init(&self.device, &self.swapchain);
 
@@ -47,7 +49,8 @@ impl AssetsLoader {
     }
 
     pub fn syncs<R, F>(&self, func: F) -> R
-        where F: FnOnce(SyncKit) -> R {
+        where
+            F: FnOnce(SyncKit) -> R {
 
         let kit = SyncKit::init(&self.device);
 
@@ -55,7 +58,8 @@ impl AssetsLoader {
     }
 
     pub fn commands<R, F>(&self, func: F) -> R
-        where F: FnOnce(CommandKit) -> R {
+        where
+            F: FnOnce(CommandKit) -> R {
 
         let kit = CommandKit::init(&self.device);
 

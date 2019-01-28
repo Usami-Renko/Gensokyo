@@ -14,7 +14,9 @@ use crate::error::{ VkResult, VkError };
 
 use std::marker::PhantomData;
 
-pub struct GsBufferRepository<M> where M: BufferMemoryTypeAbs {
+pub struct GsBufferRepository<M>
+    where
+        M: BufferMemoryTypeAbs {
 
     phantom_type: PhantomData<M>,
 
@@ -26,7 +28,9 @@ pub struct GsBufferRepository<M> where M: BufferMemoryTypeAbs {
     allocate_infos: BufferAllocateInfos,
 }
 
-impl<M> GsBufferRepository<M> where M: BufferMemoryTypeAbs {
+impl<M> GsBufferRepository<M>
+    where
+        M: BufferMemoryTypeAbs {
 
     pub(crate) fn store(phantom_type: PhantomData<M>, device: GsDevice, physical: GsPhyDevice, buffers: Vec<GsBuffer>, memory: GsBufferMemory, allocate_infos: BufferAllocateInfos) -> GsBufferRepository<M> {
 
@@ -59,7 +63,9 @@ impl<M> GsBufferRepository<M> where M: BufferMemoryTypeAbs {
     }
 }
 
-impl<M> Drop for GsBufferRepository<M> where M: BufferMemoryTypeAbs {
+impl<M> Drop for GsBufferRepository<M>
+    where
+        M: BufferMemoryTypeAbs {
 
     fn drop(&mut self) {
 

@@ -23,7 +23,9 @@ pub struct Present;
 pub struct DepthStencil(pub(crate) vk::ImageView);
 
 /// Wrapper class of vk::Attachment.
-pub struct RenderAttachment<T> where T: RenderAttType {
+pub struct RenderAttachment<T>
+    where
+        T: RenderAttType {
 
     phantom: T,
     content: vk::AttachmentDescription,
@@ -32,7 +34,9 @@ pub struct RenderAttachment<T> where T: RenderAttType {
     clear_value: vk::ClearValue,
 }
 
-impl<T> RenderAttachment<T> where T: RenderAttType {
+impl<T> RenderAttachment<T>
+    where
+        T: RenderAttType {
 
     /// `format` is a vk::Format value specifying the format of the image view that will be used for the attachment.
     pub fn setup(att_type: T, attachment_format: GsFormat) -> RenderAttachment<T> {

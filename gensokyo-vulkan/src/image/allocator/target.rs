@@ -29,7 +29,9 @@ use std::marker::PhantomData;
 
 // TODO: Currently not support multi imageview for an image.
 
-pub struct GsImageAllocator<M> where M: ImageMemoryTypeAbs {
+pub struct GsImageAllocator<M>
+    where
+        M: ImageMemoryTypeAbs {
 
     phantom_type: PhantomData<M>,
     storage_type: M,
@@ -43,8 +45,9 @@ pub struct GsImageAllocator<M> where M: ImageMemoryTypeAbs {
 }
 
 impl<M, I, R> GsAllocatorApi<I, R, GsImageDistributor<M>> for GsImageAllocator<M>
-    where I: ImageInfoAbstract<R>,
-          M: ImageMemoryTypeAbs {
+    where
+        I: ImageInfoAbstract<R>,
+        M: ImageMemoryTypeAbs {
 
     type AssignResult = VkResult<GsAssignIndex<R>>;
 
@@ -74,7 +77,8 @@ impl<M, I, R> GsAllocatorApi<I, R, GsImageDistributor<M>> for GsImageAllocator<M
 }
 
 impl<M> GsAllotIntoDistributor<GsImageDistributor<M>> for GsImageAllocator<M>
-    where M: ImageMemoryTypeAbs {
+    where
+        M: ImageMemoryTypeAbs {
 
     fn allocate(self) -> VkResult<GsImageDistributor<M>> {
 
@@ -116,7 +120,9 @@ impl<M> GsAllotIntoDistributor<GsImageDistributor<M>> for GsImageAllocator<M>
     }
 }
 
-impl<M> GsImageAllocator<M> where M: ImageMemoryTypeAbs {
+impl<M> GsImageAllocator<M>
+    where
+        M: ImageMemoryTypeAbs {
 
     pub fn new(physical: &GsPhyDevice, device: &GsDevice, storage_type: M) -> GsImageAllocator<M> {
 
