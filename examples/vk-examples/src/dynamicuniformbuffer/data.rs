@@ -53,14 +53,14 @@ impl RotationData {
 
         for i in 0..OBJECT_INSTANCE {
             data.rotations[i] = Vector3::new(
+                rnd_dist.sample(&mut rnd_engine), // generate a random float between -1.0 ~ 1.0.
                 rnd_dist.sample(&mut rnd_engine),
                 rnd_dist.sample(&mut rnd_engine),
-                rnd_dist.sample(&mut rnd_engine)
             );
             data.rotate_speeds[i] = Vector3::new(
                 rnd_dist.sample(&mut rnd_engine),
                 rnd_dist.sample(&mut rnd_engine),
-                rnd_dist.sample(&mut rnd_engine)
+                rnd_dist.sample(&mut rnd_engine),
             );
         }
 
@@ -90,9 +90,6 @@ impl UboDataDynamic {
             for y in 0..dim {
                 for z in 0..dim {
 
-                    let x_f = x as f32;
-                    let y_f = y as f32;
-                    let z_f = z as f32;
                     let dim_f = dim as f32;
 
                     let index = x * dim * dim + y * dim + z;
@@ -100,13 +97,14 @@ impl UboDataDynamic {
                     rotations.rotations[index] += delta_time * rotations.rotate_speeds[index];
 
                     let pos = Vector3::new(
-                        -((dim_f * offset.x) / 2.0) + offset.x / 2.0 + x_f * offset.x,
-                        -((dim_f * offset.y) / 2.0) + offset.y / 2.0 + y_f * offset.y,
-                        -((dim_f * offset.z) / 2.0) + offset.z / 2.0 + z_f * offset.z,
+                        -((dim_f * offset.x) / 2.0) + offset.x / 2.0 + (x as f32) * offset.x,
+                        -((dim_f * offset.y) / 2.0) + offset.y / 2.0 + (y as f32) * offset.y,
+                        -((dim_f * offset.z) / 2.0) + offset.z / 2.0 + (z as f32) * offset.z,
                     );
                     let translate = Matrix4::new_translation(&pos);
                     let rotate = Matrix4::new_rotation(rotations.rotations[index]);
-                    self.model[index] = rotate * translate;
+
+                    self.model[index] = translate * rotate;
                 }
             }
         }

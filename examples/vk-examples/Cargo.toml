@@ -39,6 +39,10 @@ path = "src/dynamicuniformbuffer/main.rs"
 [[bin]]
 name = "pushconstants"
 path = "src/pushconstants/main.rs"
+
+[[bin]]
+name = "specializationconstants"
+path = "src/specializationconstants/main.rs"
 # -----------------------------------------------------
 
 [[bin]]

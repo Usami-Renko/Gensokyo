@@ -233,7 +233,7 @@ impl VulkanExample {
         let image_loader = kit.image_loader();
         let image_storage1 = image_loader.load_2d(Path::new(TEXTURE1_PATH))?; // texture 1 for cube 1
         let image_storage2 = image_loader.load_2d(Path::new(TEXTURE2_PATH))?; // texture 2 for cube 2
-        // refer to `layout (set = 0, binding = 1) sampler2D samplerColorMap` in cube.frag. Accessible from the fragment shader only.
+        // refer to `layout (set = 0, binding = 2) sampler2D samplerColorMap` in cube.frag. Accessible from the fragment shader only.
         let image_info1 = GsSampleImgInfo::new(2, 1, image_storage1, ImagePipelineStage::FragmentStage);
         let image_info2 = GsSampleImgInfo::new(2, 1, image_storage2, ImagePipelineStage::FragmentStage);
         let sample_image_index1 = image_allocator.assign(image_info1)?;

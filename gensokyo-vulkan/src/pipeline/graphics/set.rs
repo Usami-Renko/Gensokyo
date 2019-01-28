@@ -24,6 +24,8 @@ pub struct GfxPipelineSetBuilder {
     template: GfxPipelineConfig,
     layout: vk::PipelineLayout,
     pipelines: Vec<vk::Pipeline>,
+
+    is_use_base_pipeline: bool,
 }
 
 impl GfxPipelineSetBuilder {
@@ -38,12 +40,17 @@ impl GfxPipelineSetBuilder {
             shaderc: GsShaderCompiler::setup(ShaderCompilePrefab::Vulkan)?,
             template, layout,
             pipelines: vec![],
+            is_use_base_pipeline: true,
         };
         Ok(builder)
     }
 
     pub fn with_flag(&mut self, flags: GsPipelineCIFlags) {
         self.ci_flag |= flags;
+    }
+
+    pub fn set_base_pipeline_use(&mut self, is_use_base_pipeline: bool) {
+        self.is_use_base_pipeline = is_use_base_pipeline;
     }
 
     pub fn set_shaderc(&mut self, configuration: ShadercConfiguration) -> VkResult<()> {
@@ -59,14 +66,18 @@ impl GfxPipelineSetBuilder {
 
     pub fn build_template(&mut self) -> VkResult<PipelineIndex> {
 
-        let derive_state = if self.pipelines.is_empty() {
-            PipelineDeriveState::AsParent {
-                layout: self.layout,
-            }
+        let derive_state = if self.is_use_base_pipeline {
+            PipelineDeriveState::Independence
         } else {
-            PipelineDeriveState::AsChildren {
-                parent: self.pipelines.first().unwrap().clone(),
-                layout: self.layout,
+            if self.pipelines.is_empty() {
+                PipelineDeriveState::AsParent {
+                    layout: self.layout,
+                }
+            } else {
+                PipelineDeriveState::AsChildren {
+                    parent: self.pipelines.first().unwrap().clone(),
+                    layout: self.layout,
+                }
             }
         };
 

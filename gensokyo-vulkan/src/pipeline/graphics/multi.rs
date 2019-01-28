@@ -82,7 +82,7 @@ impl GfxMultiPipelineBuilder {
             pipeline_cis.push(pipeline_ci.content);
             layouts.push(pipeline_ci.pipeline_layout);
             // Notice: keep `shader_ci` outlive for loop, or the pointer will be invalid.
-            _shader_cis.push(pipeline_ci.shader_ci);
+            _shader_cis.push(pipeline_ci.shader_cis);
         }
 
         let handles = unsafe {

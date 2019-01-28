@@ -144,7 +144,7 @@ impl BitOrAssign for GsPipelineCIFlags {
 pub(super) struct GfxPipelineCI {
 
     pub content: vk::GraphicsPipelineCreateInfo,
-    pub shader_ci: Vec<vk::PipelineShaderStageCreateInfo>,
+    pub shader_cis: Vec<vk::PipelineShaderStageCreateInfo>,
     pub pipeline_layout: vk::PipelineLayout,
 }
 
@@ -165,13 +165,20 @@ pub(super) fn destroy_modules(device: &GsDevice, modules: &[GsShaderModule]) {
     }
 }
 
+
+// this function must be inline, or the ptr may be lost.
 #[inline(always)]
 pub(super) fn pipeline_ci(device: &GsDevice, flag: &GsPipelineCIFlags, shader_modules: &[GsShaderModule], config: &GfxPipelineConfig, derive_state: &PipelineDeriveState) -> VkResult<GfxPipelineCI> {
 
     let ci_flag = flag.combine_derive(&derive_state);
 
-    let shader_ci: Vec<vk::PipelineShaderStageCreateInfo> = shader_modules.iter()
-        .map(|m| m.ci()).collect();
+    // Don't use collect method here, or some ptr may be lost.
+    let mut shader_cis = Vec::with_capacity(shader_modules.len());
+    for shader_module in shader_modules.iter() {
+        let shader_ci = shader_module.ci();
+        shader_cis.push(shader_ci);
+    }
+
     let tessellation_ci = config.states.tessellation.as_ref()
         .map_or(ptr::null(), |t| &t.ci());
     let dynamic_ci = if config.states.dynamic.is_contain_state() {
@@ -196,8 +203,8 @@ pub(super) fn pipeline_ci(device: &GsDevice, flag: &GsPipelineCIFlags, shader_mo
         // `flags` specifies how the pipeline will be generated.
         flags : ci_flag.0,
         // `p_stages` describes the set of the shader stages to be included in the graphics pipeline.
-        stage_count: shader_ci.len() as _,
-        p_stages   : shader_ci.as_ptr(),
+        stage_count: shader_cis.len() as _,
+        p_stages   : shader_cis.as_ptr(),
         p_vertex_input_state  : &config.states.vertex_input.ci(),
         p_input_assembly_state: &config.states.input_assembly.ci(),
         p_viewport_state      : &config.states.viewport.ci(),
@@ -220,7 +227,7 @@ pub(super) fn pipeline_ci(device: &GsDevice, flag: &GsPipelineCIFlags, shader_mo
 
     let result = GfxPipelineCI {
         content: pipeline_ci,
-        shader_ci,
+        shader_cis,
         pipeline_layout,
     };
     Ok(result)

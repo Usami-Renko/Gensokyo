@@ -58,11 +58,11 @@ pub struct PipelineContent {
 
     pub pipeline_set: GsPipelineSet<Graphics>,
 
-    pub phone: PipelineIndex,
+    pub phong: PipelineIndex,
     pub toon : PipelineIndex,
     pub wireframe: PipelineIndex,
 
-    pub phone_viewport: CmdViewportInfo,
+    pub phong_viewport: CmdViewportInfo,
     pub toon_viewport : CmdViewportInfo,
     pub wireframe_viewport: CmdViewportInfo,
     pub scissor : CmdScissorInfo,

@@ -1,0 +1,25 @@
+
+[core.device.print]
+device_name        = true
+device_api_version = true
+device_type        = true
+
+[window]
+title = "Vulkan Example - Specialization constants"
+
+[window.dimension]
+width  = 1280
+height = 720
+
+[window.cursor]
+is_grab = true
+is_hide = true
+
+#[core.validation]
+#enable = true
+#layers = ["VK_LAYER_LUNARG_standard_validation"]
+#types  = "DebugReport"
+#print_instance_layers = false
+#
+#[core.validation.report]
+#flags = ["Error", "Warning", "PerformanceWarning", "Debug", "Information"]

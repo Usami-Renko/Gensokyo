@@ -270,7 +270,7 @@ impl VulkanExample {
         let width_stride = (dimension.width as f32 / 3.0) as vkuint;
         let mut pipeline_builder = kit.gfx_set_builder(pipeline_template)?;
 
-        let (phong_pipeline, phone_viewport) = {
+        let (phong_pipeline, phong_viewport) = {
 
             let pipeline = pipeline_builder.build_template()?;
             // Left: Solid colored.
@@ -310,19 +310,18 @@ impl VulkanExample {
 
         let result = PipelineContent {
             pipeline_set: pipeline_builder.collect_into_set(),
-            phone: phong_pipeline,
-            toon : toon_pipeline,
-            wireframe: wireframe_pipeline,
-            phone_viewport, toon_viewport, wireframe_viewport,
+            phong: phong_pipeline, phong_viewport,
+            toon : toon_pipeline, toon_viewport,
+            wireframe: wireframe_pipeline, wireframe_viewport,
             scissor: CmdScissorInfo::from(dimension),
         };
         Ok(result)
     }
 
-    fn sync_resources(kit: SyncKit, graphics_pipeline: &GsPipelineSet<Graphics>) -> GsResult<Vec<GsSemaphore>> {
+    fn sync_resources(kit: SyncKit, pipelines: &GsPipelineSet<Graphics>) -> GsResult<Vec<GsSemaphore>> {
 
         // sync
-        kit.multi_semaphores(graphics_pipeline.frame_count())
+        kit.multi_semaphores(pipelines.frame_count())
     }
 
     fn commands(kit: CommandKit, pipelines: &PipelineContent, model_entity: &GsglTFEntity, ubo_set: &DescriptorSet) -> GsResult<(GsCommandPool, Vec<GsCommandBuffer>)> {
@@ -342,7 +341,7 @@ impl VulkanExample {
                 material_stage: GsPipelineStage::VERTEX,
             };
 
-            let phong_pipeline = pipelines.pipeline_set.element(&pipelines.phone);
+            let phong_pipeline = pipelines.pipeline_set.element(&pipelines.phong);
             let mut recorder = kit.pipeline_recorder(&phong_pipeline, command);
             recorder.begin_record(vk::CommandBufferUsageFlags::SIMULTANEOUS_USE)?
                 // three pipeline shared the same render pass. So it's ok to set once here.
@@ -351,7 +350,7 @@ impl VulkanExample {
             { // Draw with Phong Pipeline.
                 recorder
                     .bind_pipeline()
-                    .set_viewport(0, &[pipelines.phone_viewport.clone()])
+                    .set_viewport(0, &[pipelines.phong_viewport.clone()])
                     .set_scissor(0, &[pipelines.scissor.clone()]);
 
                 model_entity.record_command(&recorder, ubo_set, &[], Some(render_params.clone()))?;

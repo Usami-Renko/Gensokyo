@@ -24,6 +24,8 @@ pub struct GsShaderInfo {
 
     pattern : ShaderSourcePattern,
     tag_name: Option<String>,
+
+    specialization: Option<vk::SpecializationInfo>,
 }
 
 enum ShaderSourcePattern {
@@ -44,6 +46,7 @@ impl GsShaderInfo {
             stage, path, main,
             pattern : ShaderSourcePattern::SourceCode,
             tag_name: Some(tag_name.to_owned()),
+            specialization: None,
         }
     }
 
@@ -58,7 +61,12 @@ impl GsShaderInfo {
             stage, path, main,
             pattern : ShaderSourcePattern::SprivCode,
             tag_name: None,
+            specialization: None,
         }
+    }
+
+    pub fn set_specialization(&mut self, info: vk::SpecializationInfo) {
+        self.specialization = Some(info);
     }
 
     pub fn build(&self, device: &GsDevice, compiler: &mut GsShaderCompiler) -> VkResult<GsShaderModule> {
@@ -86,6 +94,7 @@ impl GsShaderInfo {
             stage: self.stage.0,
             // TODO: handle unwrap().
             main : CString::new(self.main.as_str()).unwrap(),
+            specialization: self.specialization.clone(),
         };
         Ok(shader_module)
     }
@@ -114,11 +123,21 @@ pub struct GsShaderModule {
     main   : CString,
     stage  : vk::ShaderStageFlags,
     handle : vk::ShaderModule,
+
+    specialization: Option<vk::SpecializationInfo>,
 }
 
 impl GsShaderModule {
 
+    // this function must be inline, or the ptr may be lost.
+    #[inline(always)]
     pub(crate) fn ci(&self) -> vk::PipelineShaderStageCreateInfo {
+
+        let specialization_ptr = if let Some(specialization) = self.specialization {
+            &specialization as *const vk::SpecializationInfo
+        } else {
+            ptr::null()
+        };
 
         vk::PipelineShaderStageCreateInfo {
             s_type : vk::StructureType::PIPELINE_SHADER_STAGE_CREATE_INFO,
@@ -128,8 +147,7 @@ impl GsShaderModule {
             stage  : self.stage,
             module : self.handle,
             p_name : self.main.as_ptr(),
-            // TODO: This field has not been covered.
-            p_specialization_info: ptr::null(),
+            p_specialization_info: specialization_ptr,
         }
     }
 

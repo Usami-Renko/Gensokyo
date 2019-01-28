@@ -108,7 +108,7 @@ fn complete_manifest_toml() {
 //    print_instance_layers = false
 //
 //    [core.validation.report]
-//    flags = ["Error", "Warning", "PerformanceWarning"]
+//    flags = ["Error", "Warning", "PerformanceWarning", "Debug", "Information"]
 //
 //    [core.validation.utils]
 //    flags    = []
