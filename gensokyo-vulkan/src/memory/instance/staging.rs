@@ -1,8 +1,7 @@
 
 use ash::vk;
 
-use crate::core::device::GsDevice;
-use crate::core::physical::GsPhyDevice;
+use crate::core::GsDevice;
 
 use crate::buffer::{ GsBuffer, BufferBlock };
 use crate::buffer::allocator::BufferAllocateInfos;
@@ -66,7 +65,7 @@ impl GsMemoryAbstract for GsStagingMemory {
 
 impl GsBufferMemoryAbs for GsStagingMemory {
 
-    fn to_upload_agency(&self, _: &GsDevice, _: &GsPhyDevice, _: &BufferAllocateInfos) -> VkResult<Box<dyn MemoryDataDelegate>> {
+    fn to_upload_agency(&self, _: &GsDevice, _: &BufferAllocateInfos) -> VkResult<Box<dyn MemoryDataDelegate>> {
 
         let agency = StagingDataAgency::new(self)?;
         Ok(Box::new(agency))
@@ -148,9 +147,9 @@ pub struct UploadStagingResource {
 
 impl UploadStagingResource {
 
-    pub fn new(device: &GsDevice, physical: &GsPhyDevice, allocate_infos: &BufferAllocateInfos) -> VkResult<UploadStagingResource> {
+    pub fn new(device: &GsDevice, allocate_infos: &BufferAllocateInfos) -> VkResult<UploadStagingResource> {
 
-        let mut memory_filter = MemoryFilter::new(physical, GsMemoryType::StagingMemory);
+        let mut memory_filter = MemoryFilter::new(device, GsMemoryType::StagingMemory);
 
         // generate buffers
         let mut buffers = vec![];

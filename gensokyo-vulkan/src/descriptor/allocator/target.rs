@@ -1,7 +1,7 @@
 
 use ash::vk;
 
-use crate::core::device::GsDevice;
+use crate::core::GsDevice;
 
 use crate::descriptor::DescriptorSetConfig;
 use crate::descriptor::DescriptorPoolInfo;

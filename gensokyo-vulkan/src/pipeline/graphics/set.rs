@@ -2,7 +2,7 @@
 use ash::vk;
 use ash::version::DeviceV1_0;
 
-use crate::core::device::GsDevice;
+use crate::core::GsDevice;
 
 use crate::pipeline::target::{ GsPipelineSet, PipelineIndex };
 use crate::pipeline::shader::shaderc::{ GsShaderCompiler, ShaderCompilePrefab, ShadercConfiguration };
@@ -88,7 +88,7 @@ impl GfxPipelineSetBuilder {
 
         // build pipeline.
         let mut handles = unsafe {
-            self.device.handle.create_graphics_pipelines(vk::PipelineCache::null(), &[pipeline_ci.content], None)
+            self.device.logic.handle.create_graphics_pipelines(vk::PipelineCache::null(), &[pipeline_ci.content], None)
                 .or(Err(VkError::create("Graphics Pipelines")))?
         };
         builder::destroy_modules(&self.device, &shader_modules);

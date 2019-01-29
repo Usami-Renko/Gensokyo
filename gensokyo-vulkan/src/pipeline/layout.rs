@@ -2,7 +2,7 @@
 use ash::vk;
 use ash::version::DeviceV1_0;
 
-use crate::core::device::GsDevice;
+use crate::core::GsDevice;
 use crate::pipeline::target::GsPipelineStage;
 use crate::descriptor::GsDescriptorSetLayout;
 
@@ -34,7 +34,7 @@ impl PipelineLayoutBuilder {
         };
 
         unsafe {
-            device.handle.create_pipeline_layout(&pipeline_layout_ci, None)
+            device.logic.handle.create_pipeline_layout(&pipeline_layout_ci, None)
                 .or(Err(VkError::create("Pipeline Layout")))
         }
     }
@@ -58,7 +58,7 @@ impl GsPipelineLayout {
 
     pub fn destroy(&self, device: &GsDevice) {
         unsafe {
-            device.handle.destroy_pipeline_layout(self.handle, None);
+            device.logic.handle.destroy_pipeline_layout(self.handle, None);
         }
     }
 }

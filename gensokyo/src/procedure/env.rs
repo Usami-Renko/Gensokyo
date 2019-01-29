@@ -10,8 +10,9 @@ use crate::error::{ GsResult, GsError };
 use gsvk::core::instance::GsInstance;
 use gsvk::core::debug::GsDebugger;
 use gsvk::core::surface::GsSurface;
-use gsvk::core::device::{ GsDevice, LogicalDeviceBuilder };
-use gsvk::core::physical::{ GsPhyDevice, PhysicalInspector };
+use gsvk::core::{ GsDevice, GsVirtualDevice };
+use gsvk::core::device::LogicalDeviceBuilder;
+use gsvk::core::physical::PhysicalInspector;
 use gsvk::core::swapchain::{ GsChain, SwapchainConfig, SwapchainBuilder };
 use gsvk::types::vkDim2D;
 
@@ -85,7 +86,6 @@ pub(super) struct VulkanEnv {
 
     surface: GsSurface,
 
-    pub(super) physical : GsPhyDevice,
     pub(super) device   : GsDevice,
 }
 
@@ -99,15 +99,18 @@ impl VulkanEnv {
         let surface = GsSurface::new(&instance, win)?;
 
         let physical_inspector = PhysicalInspector::new(&config.core.physical);
-        let physical = physical_inspector.inspect(&instance, &surface)?;
+        let physical_device = physical_inspector.inspect(&instance, &surface)?;
         // Initialize the device with default queues. (one graphics queue, one present queue, one transfer queue)
-        let (device, _custom_queues) = LogicalDeviceBuilder::init(&instance, &physical, &config.core.device)
+        let (logical_device, _custom_queues) = LogicalDeviceBuilder::init(&instance, &physical_device, &config.core.device)
             .build()?;
+        let virtual_device = GsVirtualDevice {
+            phys : physical_device,
+            logic: logical_device,
+        };
 
         let env = VulkanEnv {
             instance, debugger, surface,
-            physical : Rc::new(physical),
-            device   : Rc::new(device),
+            device: Rc::new(virtual_device),
         };
         Ok(env)
     }
@@ -117,7 +120,7 @@ impl VulkanEnv {
         let win_dimension = window.get_inner_size()
             .ok_or(GsError::window("Failed to get Window size."))?;
         let window_dimension = vkDim2D { width: win_dimension.width as _, height: win_dimension.height as _ };
-        let chain = SwapchainBuilder::init(config, &self.physical, &self.device, &self.surface)?
+        let chain = SwapchainBuilder::init(config, &self.device, &self.surface)?
             .build(&self.instance, old_chain, &window_dimension)?;
         Ok(Rc::new(chain))
     }
@@ -125,8 +128,8 @@ impl VulkanEnv {
     /// use destroy function, so that the order of deinitialization can be customizable.
     pub fn destroy(&self) {
 
-        self.physical.destroy();
-        self.device.destroy();
+        self.device.logic.destroy();
+        self.device.phys.destroy();
 
         self.surface.destroy();
 

@@ -1,6 +1,5 @@
 
-use crate::core::device::GsDevice;
-use crate::core::physical::GsPhyDevice;
+use crate::core::GsDevice;
 
 use crate::buffer::BufferBlock;
 use crate::buffer::allocator::BufferAllocateInfos;
@@ -46,9 +45,9 @@ impl GsMemoryAbstract for GsCachedMemory {
 
 impl GsBufferMemoryAbs for GsCachedMemory {
 
-    fn to_upload_agency(&self, device: &GsDevice, physical: &GsPhyDevice, allot_infos: &BufferAllocateInfos) -> VkResult<Box<dyn MemoryDataDelegate>> {
+    fn to_upload_agency(&self, device: &GsDevice, allot_infos: &BufferAllocateInfos) -> VkResult<Box<dyn MemoryDataDelegate>> {
 
-        let agency = CachedDataAgency::new(device, physical, allot_infos)?;
+        let agency = CachedDataAgency::new(device, allot_infos)?;
         Ok(Box::new(agency))
     }
 
@@ -68,10 +67,10 @@ pub struct CachedDataAgency {
 
 impl CachedDataAgency {
 
-    fn new(device: &GsDevice, physical: &GsPhyDevice, infos: &BufferAllocateInfos) -> VkResult<CachedDataAgency> {
+    fn new(device: &GsDevice, infos: &BufferAllocateInfos) -> VkResult<CachedDataAgency> {
 
         let agency = CachedDataAgency {
-            res: UploadStagingResource::new(device, physical, infos)?,
+            res: UploadStagingResource::new(device, infos)?,
         };
         Ok(agency)
     }

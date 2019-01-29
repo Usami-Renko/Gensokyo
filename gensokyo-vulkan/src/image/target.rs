@@ -2,7 +2,7 @@
 use ash::vk;
 use ash::version::DeviceV1_0;
 
-use crate::core::device::GsDevice;
+use crate::core::GsDevice;
 
 use crate::image::traits::ImageHandleEntity;
 use crate::memory::MemoryDstEntity;
@@ -27,7 +27,7 @@ impl GsImage {
     fn new(device: &GsDevice, handle: vk::Image) -> GsImage {
 
         let requirement = unsafe {
-            device.handle.get_image_memory_requirements(handle)
+            device.logic.handle.get_image_memory_requirements(handle)
         };
 
         GsImage {
@@ -38,7 +38,7 @@ impl GsImage {
     pub fn destroy(&self, device: &GsDevice) {
 
         unsafe {
-            device.handle.destroy_image(self.handle, None);
+            device.logic.handle.destroy_image(self.handle, None);
         }
     }
 }
@@ -108,7 +108,7 @@ impl ImageDescInfo {
         };
 
         let handle = unsafe {
-            device.handle.create_image(&image_ci, None)
+            device.logic.handle.create_image(&image_ci, None)
                 .or(Err(VkError::create("Image View")))?
         };
 

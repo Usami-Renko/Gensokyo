@@ -1,7 +1,7 @@
 
 use ash::vk;
 
-use crate::core::device::GsDevice;
+use crate::core::GsDevice;
 
 use crate::image::entity::ImageEntity;
 use crate::image::traits::{ ImageInstance, ImageCopiable };

@@ -15,8 +15,8 @@ use gsma::{ define_input, offset_of, vk_format, vertex_rate, data_size };
 use std::path::{ Path, PathBuf };
 
 const MANIFEST_PATH: &'static str = "src/02.index/gensokyo.toml";
-const VERTEX_SHADER_SOURCE_PATH  : &'static str = "src/02.index/index.vert";
-const FRAGMENT_SHADER_SOURCE_PATH: &'static str = "src/02.index/index.frag";
+const VERTEX_SHADER_SOURCE_PATH  : &'static str = "src/02.index/index.vert.glsl";
+const FRAGMENT_SHADER_SOURCE_PATH: &'static str = "src/02.index/index.frag.glsl";
 
 define_input! {
     #[binding = 0, rate = vertex]
@@ -211,7 +211,7 @@ impl GraphicsRoutine for DrawIndexProcedure {
             commands       : &[&self.command_buffers[image_index]],
         };
 
-        device.submit_single(&submit_info, Some(device_available), DeviceQueueIdentifier::Graphics)?;
+        device.logic.submit_single(&submit_info, Some(device_available), DeviceQueueIdentifier::Graphics)?;
 
         return Ok(&self.present_availables[image_index])
     }

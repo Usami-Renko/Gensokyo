@@ -2,7 +2,7 @@
 use ash::vk;
 use ash::version::DeviceV1_0;
 
-use crate::core::device::GsDevice;
+use crate::core::GsDevice;
 
 use crate::descriptor::binding::DescriptorBindingInfo;
 use crate::error::{ VkResult, VkError };
@@ -62,7 +62,7 @@ impl DescriptorSetLayoutInfo {
         };
 
         let handle = unsafe {
-            device.handle.create_descriptor_set_layout(&layout_info, None)
+            device.logic.handle.create_descriptor_set_layout(&layout_info, None)
                 .or(Err(VkError::create("Descriptor Set Layout")))?
         };
 
@@ -81,7 +81,7 @@ impl GsDescriptorSetLayout {
 
     pub fn destroy(&self, device: &GsDevice) {
         unsafe {
-            device.handle.destroy_descriptor_set_layout(self.handle, None);
+            device.logic.handle.destroy_descriptor_set_layout(self.handle, None);
         }
     }
 }

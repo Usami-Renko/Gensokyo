@@ -14,4 +14,4 @@ pub struct Graphics;
 pub struct Compute;
 
 #[derive(Debug, Clone, Copy)]
-pub struct r#Copy;
+pub struct Transfer;

@@ -1,8 +1,7 @@
 
 use ash::vk;
 
-use crate::core::device::GsDevice;
-use crate::core::physical::GsPhyDevice;
+use crate::core::GsDevice;
 
 use crate::image::target::GsImage;
 use crate::image::allocator::ImageAllotInfo;
@@ -46,5 +45,5 @@ pub trait GsImageViewDescAbs: Sized {
 /// Image Barrier Bundle Abstract.
 pub trait ImageBarrierBundleAbs {
 
-    fn make_barrier_transform(&mut self, physical: &GsPhyDevice, device: &GsDevice, copyer: &DataCopyer, infos: &mut Vec<ImageAllotInfo>) -> VkResult<()>;
+    fn make_barrier_transform(&mut self, device: &GsDevice, copyer: &DataCopyer, infos: &mut Vec<ImageAllotInfo>) -> VkResult<()>;
 }

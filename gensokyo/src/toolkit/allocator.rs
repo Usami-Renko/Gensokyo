@@ -1,8 +1,7 @@
 
 use ash::vk;
 
-use gsvk::core::physical::GsPhyDevice;
-use gsvk::core::device::GsDevice;
+use gsvk::core::GsDevice;
 
 use gsvk::buffer::allocator::GsBufferAllocator;
 use gsvk::buffer::allocator::types::BufferMemoryTypeAbs;
@@ -18,7 +17,6 @@ use crate::assets::io::ImageLoader;
 
 pub struct AllocatorKit {
 
-    physical: GsPhyDevice,
     device  : GsDevice,
 
     config: ResourceConfig,
@@ -26,17 +24,16 @@ pub struct AllocatorKit {
 
 impl AllocatorKit {
 
-    pub(crate) fn init(physical: &GsPhyDevice, device: &GsDevice, config: ResourceConfig) -> AllocatorKit {
+    pub(crate) fn init(device: &GsDevice, config: ResourceConfig) -> AllocatorKit {
 
         AllocatorKit {
-            physical: physical.clone(),
-            device  : device.clone(),
+            device: device.clone(),
             config,
         }
     }
 
     pub fn buffer<B: BufferMemoryTypeAbs>(&self, typ: B) -> GsBufferAllocator<B> {
-        GsBufferAllocator::new(&self.physical, &self.device, typ)
+        GsBufferAllocator::new(&self.device, typ)
     }
 
     pub fn descriptor(&self, flags: vk::DescriptorPoolCreateFlags) -> GsDescriptorAllocator {
@@ -44,7 +41,7 @@ impl AllocatorKit {
     }
 
     pub fn image<I: ImageMemoryTypeAbs>(&self, typ: I) -> GsImageAllocator<I> {
-        GsImageAllocator::new(&self.physical, &self.device, typ)
+        GsImageAllocator::new(&self.device, typ)
     }
 
     pub fn image_loader(&self) -> ImageLoader {
@@ -52,6 +49,6 @@ impl AllocatorKit {
     }
 
     pub fn gltf_loader<'a, 's: 'a>(&'s self) -> GsglTFImporter<'a> {
-        GsglTFImporter { physical: &self.physical }
+        GsglTFImporter { device: &self.device }
     }
 }

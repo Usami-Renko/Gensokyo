@@ -1,7 +1,4 @@
 
-use std::rc::Rc;
-pub type GsPhyDevice = Rc<self::target::GsPhysicalDevice>;
-
 pub use self::target::GsPhysicalDevice;
 pub use self::inspector::PhysicalInspector;
 

@@ -1,11 +1,11 @@
 
 use ash::vk;
 
-use crate::core::device::GsDevice;
+use crate::core::GsDevice;
 
 use crate::image::target::{ GsImage, ImageDescInfo, ImagePropertyInfo, ImageSpecificInfo };
 use crate::image::view::ImageViewDescInfo;
-use crate::image::sampler::SamplerDescInfo;
+use crate::image::sampler::GsSamplerCI;
 use crate::image::enums::{ ImageInstanceType, ImagePipelineStage };
 use crate::image::storage::ImageStorageInfo;
 use crate::image::instance::traits::{ GsImageDescAbs, GsImageViewDescAbs, ImageInfoAbstract };
@@ -23,7 +23,7 @@ pub struct GsSampleImgInfo {
     image_desc  : ImageDescInfo,
     view_desc   : ImageViewDescInfo,
 
-    sampler_desc: SamplerDescInfo,
+    sampler_ci: GsSamplerCI,
     binding: DescriptorBindingContent,
 
     storage: ImageStorageInfo,
@@ -46,7 +46,7 @@ impl GsSampleImgInfo {
             pipeline_stage, storage,
             image_desc: ImageDescInfo { property, specific },
             view_desc : ImageViewDescInfo::new(vk::ImageViewType::TYPE_2D, vk::ImageAspectFlags::COLOR),
-            sampler_desc: SamplerDescInfo::default(),
+            sampler_ci: GsSamplerCI::new().build(),
             binding: DescriptorBindingContent {
                 binding, count,
                 descriptor_type: GsDescriptorType::Image(ImageDescriptorType::CombinedImageSampler)
@@ -54,8 +54,8 @@ impl GsSampleImgInfo {
         }
     }
 
-    pub fn reset_sampler(&mut self, sampler_desc: SamplerDescInfo) {
-        self.sampler_desc = sampler_desc;
+    pub fn reset_sampler(&mut self, ci: GsSamplerCI) {
+        self.sampler_ci = ci;
     }
 }
 
@@ -67,7 +67,7 @@ impl ImageInfoAbstract<ISampleImg> for GsSampleImgInfo {
 
     fn refactor(self, device: &GsDevice, image: GsImage) -> VkResult<(ImageAllotInfo, ISampleImg)> {
 
-        let sampler = self.sampler_desc.build(device)?;
+        let sampler = self.sampler_ci.build(device)?;
         let isi = ISampleImg::new(sampler, self.binding);
 
         let allot = ImageAllotInfo::new(

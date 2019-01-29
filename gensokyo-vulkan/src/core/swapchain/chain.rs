@@ -3,7 +3,8 @@ use ash::vk;
 
 use gsma::collect_handle;
 
-use crate::core::device::{ GsDevice, DeviceQueueIdentifier };
+use crate::core::GsDevice;
+use crate::core::device::DeviceQueueIdentifier;
 use crate::error::{ VkResult, VkError };
 
 use crate::image::{ GsImage, GsImageView };
@@ -105,7 +106,7 @@ impl GsSwapchain {
         };
 
         let is_sub_optimal = unsafe {
-            self.loader.queue_present(device.queue_handle_by_identifier(queue).handle, &present_info)
+            self.loader.queue_present(device.logic.queue_handle_by_identifier(queue).handle, &present_info)
                 .or(Err(VkError::swapchain_sync(SwapchainSyncError::Unknown)))?
         };
 

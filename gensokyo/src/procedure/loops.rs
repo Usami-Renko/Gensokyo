@@ -8,7 +8,7 @@ use crate::input::{ ActionNerve, SceneReaction };
 use crate::error::{ GsResult, GsError, GsErrorKind };
 use crate::utils::fps::GsFpsTimer;
 
-use gsvk::core::device::GsDevice;
+use gsvk::core::GsDevice;
 use gsvk::core::swapchain::SwapchainSyncError;
 use gsvk::error::VkErrorKind;
 
@@ -121,7 +121,7 @@ impl<Routine> RoutineFlow<Routine>
 
     fn wait_device_idle(&self, device: &GsDevice) -> GsResult<()> {
 
-        device.wait_idle()?; Ok(())
+        device.logic.wait_idle()?; Ok(())
     }
 }
 

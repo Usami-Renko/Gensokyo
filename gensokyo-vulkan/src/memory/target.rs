@@ -3,7 +3,7 @@ use ash::vk;
 
 use ash::version::DeviceV1_0;
 
-use crate::core::device::GsDevice;
+use crate::core::GsDevice;
 use crate::memory::filter::MemoryFilter;
 
 use crate::error::{ VkResult, VkError };
@@ -35,7 +35,7 @@ impl GsMemory {
         };
 
         let handle = unsafe {
-            device.handle.allocate_memory(&allocate_info, None)
+            device.logic.handle.allocate_memory(&allocate_info, None)
                 .or(Err(VkError::device("An error occurred when trying to allocate memory for buffer or image object.")))?
         };
 
@@ -50,7 +50,7 @@ impl GsMemory {
     pub fn destroy(&self, device: &GsDevice) {
 
         unsafe {
-            device.handle.free_memory(self.handle, None);
+            device.logic.handle.free_memory(self.handle, None);
         }
     }
 }

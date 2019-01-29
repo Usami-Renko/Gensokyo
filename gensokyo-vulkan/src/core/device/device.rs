@@ -4,7 +4,7 @@ use ash::version::DeviceV1_0;
 
 use gsma::collect_handle;
 
-use crate::core::device::GsDevice;
+use crate::core::GsDevice;
 use crate::core::device::enums::{ DeviceQueueIdentifier, QueueRequestStrategy };
 use crate::core::device::queue::{ GsGraphicsQueue, GsPresentQueue, GsTransferQueue, GsTransfer };
 use crate::core::device::queue::{ GsQueue, QueueSubmitBundle };
@@ -121,7 +121,7 @@ impl GsLogicalDevice {
 
     pub fn transfer(device: &GsDevice) -> VkResult<GsTransfer> {
 
-        device.transfer_queue.transfer(device)
+        device.logic.transfer_queue.transfer(device)
     }
 
     pub fn queue_handle_by_identifier(&self, identifier: DeviceQueueIdentifier) -> &GsQueue {

@@ -1,5 +1,5 @@
 
-use crate::core::device::GsDevice;
+use crate::core::GsDevice;
 
 use crate::buffer::target::BufferDescInfo;
 use crate::buffer::allocator::types::BufferMemoryTypeAbs;

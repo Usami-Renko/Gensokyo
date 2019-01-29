@@ -112,7 +112,7 @@ impl GsCmdGraphicsApi for GsCmdRecorder<Graphics> {
 
         let begin_info = pipeline.render_pass().begin_info(framebuffer_index);
         unsafe {
-            self.device.handle.cmd_begin_render_pass(self.cmd_handle, &begin_info, self.cmd_usage.contents());
+            self.device.logic.handle.cmd_begin_render_pass(self.cmd_handle, &begin_info, self.cmd_usage.contents());
         } self
     }
 
@@ -121,7 +121,7 @@ impl GsCmdGraphicsApi for GsCmdRecorder<Graphics> {
         let ports: Vec<vk::Viewport> = viewports.iter()
             .map(|p| p.0).collect();
         unsafe {
-            self.device.handle.cmd_set_viewport(self.cmd_handle, first_viewport, &ports);
+            self.device.logic.handle.cmd_set_viewport(self.cmd_handle, first_viewport, &ports);
         } self
     }
 
@@ -130,61 +130,61 @@ impl GsCmdGraphicsApi for GsCmdRecorder<Graphics> {
         let scissors: Vec<vk::Rect2D> = scissors.iter()
             .map(|s| s.0).collect();
         unsafe {
-            self.device.handle.cmd_set_scissor(self.cmd_handle, first_scissor, &scissors);
+            self.device.logic.handle.cmd_set_scissor(self.cmd_handle, first_scissor, &scissors);
         } self
     }
 
     fn set_line_width(&self, width: vkfloat) -> &Self {
         unsafe {
-            self.device.handle.cmd_set_line_width(self.cmd_handle, width);
+            self.device.logic.handle.cmd_set_line_width(self.cmd_handle, width);
         } self
     }
 
     fn set_depth_bias(&self, bias: CmdDepthBiasInfo) -> &Self {
         unsafe {
-            self.device.handle.cmd_set_depth_bias(self.cmd_handle, bias.constant_factor, bias.clamp, bias.slope_factor);
+            self.device.logic.handle.cmd_set_depth_bias(self.cmd_handle, bias.constant_factor, bias.clamp, bias.slope_factor);
         } self
     }
 
     fn set_blend_constants(&self, constants: [vkfloat; 4]) -> &Self {
         unsafe {
-            self.device.handle.cmd_set_blend_constants(self.cmd_handle, constants);
+            self.device.logic.handle.cmd_set_blend_constants(self.cmd_handle, constants);
         } self
     }
 
     fn set_depth_bound(&self, bound: CmdDepthBoundInfo) -> &Self {
         unsafe {
-            self.device.handle.cmd_set_depth_bounds(self.cmd_handle, bound.min_bound, bound.max_bound);
+            self.device.logic.handle.cmd_set_depth_bounds(self.cmd_handle, bound.min_bound, bound.max_bound);
         } self
     }
 
     fn set_stencil_compare_mask(&self, face: vk::StencilFaceFlags, mask: vkuint) -> &Self {
         unsafe {
-            self.device.handle.cmd_set_stencil_compare_mask(self.cmd_handle, face, mask);
+            self.device.logic.handle.cmd_set_stencil_compare_mask(self.cmd_handle, face, mask);
         } self
     }
 
     fn set_stencil_write_mask(&self, face: vk::StencilFaceFlags, mask: vkuint) -> &Self {
         unsafe {
-            self.device.handle.cmd_set_stencil_write_mask(self.cmd_handle, face, mask);
+            self.device.logic.handle.cmd_set_stencil_write_mask(self.cmd_handle, face, mask);
         } self
     }
 
     fn set_stencil_reference(&self, face: vk::StencilFaceFlags, reference: vkuint) -> &Self {
         unsafe {
-            self.device.handle.cmd_set_stencil_reference(self.cmd_handle, face, reference);
+            self.device.logic.handle.cmd_set_stencil_reference(self.cmd_handle, face, reference);
         } self
     }
 
     fn push_constants(&self, stage: GsPipelineStage, offset: vkuint, data: &[u8]) -> &Self {
         unsafe {
-            self.device.handle.cmd_push_constants(self.cmd_handle, self.pipeline_layout, stage.0, offset, data);
+            self.device.logic.handle.cmd_push_constants(self.cmd_handle, self.pipeline_layout, stage.0, offset, data);
         } self
     }
 
     fn bind_pipeline(&self) -> &Self {
         unsafe {
-            self.device.handle.cmd_bind_pipeline(self.cmd_handle, Graphics::BIND_POINT, self.pipeline_handle);
+            self.device.logic.handle.cmd_bind_pipeline(self.cmd_handle, Graphics::BIND_POINT, self.pipeline_handle);
         } self
     }
 
@@ -201,7 +201,7 @@ impl GsCmdGraphicsApi for GsCmdRecorder<Graphics> {
         }
 
         unsafe {
-            self.device.handle.cmd_bind_vertex_buffers(self.cmd_handle, first_binding, &handles, &offsets);
+            self.device.logic.handle.cmd_bind_vertex_buffers(self.cmd_handle, first_binding, &handles, &offsets);
         } self
     }
 
@@ -209,7 +209,7 @@ impl GsCmdGraphicsApi for GsCmdRecorder<Graphics> {
 
         let (indices_handle, indices_type) = buffer.render_info();
         unsafe {
-            self.device.handle.cmd_bind_index_buffer(self.cmd_handle, indices_handle, offset, indices_type);
+            self.device.logic.handle.cmd_bind_index_buffer(self.cmd_handle, indices_handle, offset, indices_type);
         } self
     }
 
@@ -217,7 +217,7 @@ impl GsCmdGraphicsApi for GsCmdRecorder<Graphics> {
 
         let handles = collect_handle!(sets, entity);
         unsafe {
-            self.device.handle.cmd_bind_descriptor_sets(self.cmd_handle, Graphics::BIND_POINT, self.pipeline_layout, first_set, &handles, &[]);
+            self.device.logic.handle.cmd_bind_descriptor_sets(self.cmd_handle, Graphics::BIND_POINT, self.pipeline_layout, first_set, &handles, &[]);
         } self
     }
 
@@ -225,26 +225,26 @@ impl GsCmdGraphicsApi for GsCmdRecorder<Graphics> {
 
         let handles = collect_handle!(sets, entity);
         unsafe {
-            self.device.handle.cmd_bind_descriptor_sets(self.cmd_handle, Graphics::BIND_POINT, self.pipeline_layout, first_set, &handles, dynamics);
+            self.device.logic.handle.cmd_bind_descriptor_sets(self.cmd_handle, Graphics::BIND_POINT, self.pipeline_layout, first_set, &handles, dynamics);
         } self
     }
 
     fn draw(&self, vertex_count: vkuint, instance_count: vkuint, first_vertex: vkuint, first_instance: vkuint) -> &Self {
         unsafe {
-            self.device.handle.cmd_draw(self.cmd_handle, vertex_count, instance_count, first_vertex, first_instance);
+            self.device.logic.handle.cmd_draw(self.cmd_handle, vertex_count, instance_count, first_vertex, first_instance);
         } self
     }
 
     fn draw_indexed(&self, index_count: vkuint, instance_count: vkuint, first_index: vkuint, vertex_offset: vksint, first_instance: vkuint) -> &Self {
         unsafe {
-            self.device.handle.cmd_draw_indexed(self.cmd_handle, index_count, instance_count, first_index, vertex_offset, first_instance);
+            self.device.logic.handle.cmd_draw_indexed(self.cmd_handle, index_count, instance_count, first_index, vertex_offset, first_instance);
         } self
     }
 
     fn end_render_pass(&self) -> &Self {
         // Ending the render pass will add an implicit barrier transitioning the frame buffer color attachment vk::IMAGE_LAYOUT_PRESENT_SRC_KHR for presenting it to the windowing system.
         unsafe {
-            self.device.handle.cmd_end_render_pass(self.cmd_handle);
+            self.device.logic.handle.cmd_end_render_pass(self.cmd_handle);
         } self
     }
 }

@@ -4,7 +4,7 @@ use ash::version::DeviceV1_0;
 
 use gsma::collect_handle;
 
-use crate::core::device::GsDevice;
+use crate::core::GsDevice;
 
 use crate::descriptor::set::GsDescriptorSet;
 use crate::descriptor::layout::GsDescriptorSetLayout;
@@ -61,7 +61,7 @@ impl DescriptorPoolInfo {
         };
 
         let handle = unsafe {
-            device.handle.create_descriptor_pool(&info, None)
+            device.logic.handle.create_descriptor_pool(&info, None)
                 .or(Err(VkError::create("Descriptor Pool")))?
         };
 
@@ -91,7 +91,7 @@ impl GsDescriptorPool {
         };
 
         let handles = unsafe {
-            device.handle.allocate_descriptor_sets(&allocate_info)
+            device.logic.handle.allocate_descriptor_sets(&allocate_info)
                 .or(Err(VkError::device("Failed to allocate Descriptor Set.")))?
         };
 
@@ -106,7 +106,7 @@ impl GsDescriptorPool {
     pub fn destroy(&self, device: &GsDevice) {
 
         unsafe {
-            device.handle.destroy_descriptor_pool(self.handle, None);
+            device.logic.handle.destroy_descriptor_pool(self.handle, None);
         }
     }
 }

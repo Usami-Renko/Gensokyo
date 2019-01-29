@@ -1,8 +1,7 @@
 
 use ash::vk;
 
-use crate::core::physical::GsPhyDevice;
-use crate::core::device::GsDevice;
+use crate::core::GsDevice;
 
 use crate::image::barrier::GsImageBarrier;
 use crate::image::allocator::ImageAllotInfo;
@@ -20,7 +19,7 @@ pub struct DSImageBarrierBundle {
 
 impl ImageBarrierBundleAbs for DSImageBarrierBundle {
 
-    fn make_barrier_transform(&mut self, _physical: &GsPhyDevice, _device: &GsDevice, copyer: &DataCopyer, infos: &mut Vec<ImageAllotInfo>) -> VkResult<()> {
+    fn make_barrier_transform(&mut self, _device: &GsDevice, copyer: &DataCopyer, infos: &mut Vec<ImageAllotInfo>) -> VkResult<()> {
 
         let final_barriers = self.info_indices.iter()
             .map(|&index| self.final_barrier(&mut infos[index])).collect();

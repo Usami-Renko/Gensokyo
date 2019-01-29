@@ -2,8 +2,8 @@
 use ash::vk;
 
 use crate::core::instance::GsInstance;
-use crate::core::physical::GsPhyDevice;
-use crate::core::device::{ GsDevice, DeviceQueueIdentifier };
+use crate::core::GsDevice;
+use crate::core::device::DeviceQueueIdentifier;
 use crate::core::surface::GsSurface;
 
 use crate::core::swapchain::GsChain;
@@ -30,10 +30,10 @@ pub struct SwapchainBuilder<'s> {
 
 impl<'s> SwapchainBuilder<'s> {
 
-    pub fn init(config: &SwapchainConfig, physical: &GsPhyDevice, device: &GsDevice, surface: &'s GsSurface)
+    pub fn init(config: &SwapchainConfig, device: &GsDevice, surface: &'s GsSurface)
         -> VkResult<SwapchainBuilder<'s>> {
 
-        let support = SwapchainSupport::query_support(surface, physical.handle, config)?;
+        let support = SwapchainSupport::query_support(surface, device.phys.handle, config)?;
         let image_share_info = sharing_mode(device);
 
         let builder = SwapchainBuilder {
@@ -87,7 +87,7 @@ impl<'s> SwapchainBuilder<'s> {
             old_swapchain: old_chain.and_then(|c| Some(c.handle)).unwrap_or(vk::SwapchainKHR::null()),
         };
 
-        let loader = ash::extensions::khr::Swapchain::new(&instance.handle, &self.device.handle);
+        let loader = ash::extensions::khr::Swapchain::new(&instance.handle, &self.device.logic.handle);
 
         let handle = unsafe {
             loader.create_swapchain(&swapchain_ci, None)
@@ -126,8 +126,8 @@ struct SwapchainImageSharingInfo {
 
 fn sharing_mode(device: &GsDevice) -> SwapchainImageSharingInfo {
 
-    let graphics_queue = device.queue_handle_by_identifier(DeviceQueueIdentifier::Graphics);
-    let present_queue = device.queue_handle_by_identifier(DeviceQueueIdentifier::Present);
+    let graphics_queue = device.logic.queue_handle_by_identifier(DeviceQueueIdentifier::Graphics);
+    let present_queue = device.logic.queue_handle_by_identifier(DeviceQueueIdentifier::Present);
 
     if graphics_queue.family_index == present_queue.family_index {
         SwapchainImageSharingInfo {

@@ -1,6 +1,5 @@
 
-use crate::core::device::GsDevice;
-use crate::core::physical::GsPhyDevice;
+use crate::core::GsDevice;
 
 use crate::buffer::target::GsBuffer;
 use crate::buffer::allocator::BufferAllocateInfos;
@@ -21,7 +20,6 @@ pub struct GsBufferRepository<M>
     phantom_type: PhantomData<M>,
 
     device  : GsDevice,
-    physical: GsPhyDevice,
     buffers : Vec<GsBuffer>,
     memory  : GsBufferMemory,
 
@@ -32,11 +30,11 @@ impl<M> GsBufferRepository<M>
     where
         M: BufferMemoryTypeAbs {
 
-    pub(crate) fn store(phantom_type: PhantomData<M>, device: GsDevice, physical: GsPhyDevice, buffers: Vec<GsBuffer>, memory: GsBufferMemory, allocate_infos: BufferAllocateInfos) -> GsBufferRepository<M> {
+    pub(crate) fn store(phantom_type: PhantomData<M>, device: GsDevice, buffers: Vec<GsBuffer>, memory: GsBufferMemory, allocate_infos: BufferAllocateInfos) -> GsBufferRepository<M> {
 
         GsBufferRepository {
             phantom_type,
-            device, physical, memory,
+            device, memory,
 
             buffers,
             allocate_infos,
@@ -45,7 +43,7 @@ impl<M> GsBufferRepository<M>
 
     pub fn data_uploader(&mut self) -> VkResult<GsBufferDataUploader> {
 
-        GsBufferDataUploader::new(&self.physical, &self.device, &self.memory, &self.allocate_infos)
+        GsBufferDataUploader::new(&self.device, &self.memory, &self.allocate_infos)
     }
 
     pub fn data_updater(&mut self) -> VkResult<GsBufferDataUpdater> {

@@ -4,8 +4,8 @@ pub mod input_desc;
 use gs::prelude::*;
 
 const MANIFEST_PATH: &str = "src/gensokyo.toml";
-const VERTEX_SHADER_SOURCE_PATH  : &str = "src/02.box/box.vert";
-const FRAGMENT_SHADER_SOURCE_PATH: &str = "src/02.box/box.frag";
+const VERTEX_SHADER_SOURCE_PATH  : &str = "src/02.box/box.vert.glsl";
+const FRAGMENT_SHADER_SOURCE_PATH: &str = "src/02.box/box.frag.glsl";
 const MODEL_GLTF_PATH: &str = "src/02.box/Box.gltf";
 
 use example02::FilePathConstants;

@@ -1,5 +1,6 @@
 
-pub use crate::core::device::{ GsDevice, DeviceQueueIdentifier };
+pub use crate::core::GsDevice;
+pub use crate::core::device::DeviceQueueIdentifier;
 pub use crate::core::device::queue::QueueSubmitBundle;
 
 pub use crate::types::{ vkuint, vkbytes, vkfloat, vkDim2D, vkDim3D };

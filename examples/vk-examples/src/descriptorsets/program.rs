@@ -20,8 +20,8 @@ use super::data::{ Vertex, UBOMatrices, CubeResources };
 use nalgebra::{ Matrix4, Point3, Vector3 };
 use std::path::Path;
 
-const VERTEX_SHADER_SOURCE_PATH  : &'static str = "src/descriptorsets/cube.vert";
-const FRAGMENT_SHADER_SOURCE_PATH: &'static str = "src/descriptorsets/cube.frag";
+const VERTEX_SHADER_SOURCE_PATH  : &'static str = "src/descriptorsets/cube.vert.glsl";
+const FRAGMENT_SHADER_SOURCE_PATH: &'static str = "src/descriptorsets/cube.frag.glsl";
 const MODEL_PATH: &'static str = "models/cube.gltf";
 const TEXTURE1_PATH: &'static str = "textures/crate01_color_height_rgba.png";
 const TEXTURE2_PATH: &'static str = "textures/crate02_color_height_rgba.png";
@@ -365,7 +365,7 @@ impl GraphicsRoutine for VulkanExample {
             commands       : &[&self.command_buffers[image_index]],
         };
 
-        device.submit_single(&submit_info, Some(device_available), DeviceQueueIdentifier::Graphics)?;
+        device.logic.submit_single(&submit_info, Some(device_available), DeviceQueueIdentifier::Graphics)?;
 
         return Ok(&self.present_availables[image_index])
     }

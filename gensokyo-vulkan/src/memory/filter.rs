@@ -1,7 +1,7 @@
 
 use ash::vk;
 
-use crate::core::physical::GsPhyDevice;
+use crate::core::GsDevice;
 
 use crate::memory::types::GsMemoryType;
 use crate::memory::traits::MemoryDstEntity;
@@ -11,7 +11,7 @@ const MEMORY_FILTER_ERROR_MESSAGE: &'static str = "Failed to find suitable memor
 
 pub struct MemoryFilter {
 
-    physical: GsPhyDevice,
+    device: GsDevice,
     /// The index of memory type that available to use.
     candidate_memories: Vec<usize>,
 
@@ -21,12 +21,12 @@ pub struct MemoryFilter {
 
 impl MemoryFilter {
 
-    pub fn new(physical: &GsPhyDevice, dst_memory: GsMemoryType) -> MemoryFilter {
+    pub fn new(device: &GsDevice, dst_memory: GsMemoryType) -> MemoryFilter {
 
         let memory_flag = dst_memory.property_flags();
 
         MemoryFilter {
-            physical: physical.clone(),
+            device: device.clone(),
             candidate_memories: vec![],
             dst_memory,
             memory_flag,
@@ -35,7 +35,7 @@ impl MemoryFilter {
 
     pub fn filter(&mut self, dst_entity: &impl MemoryDstEntity) -> VkResult<()> {
 
-        let new_candidates = self.physical.memory.find_memory_type(
+        let new_candidates = self.device.phys.memory.find_memory_type(
             dst_entity.type_bytes(),
             self.memory_flag,
             if self.candidate_memories.is_empty() { None } else { Some(&self.candidate_memories) }
@@ -61,7 +61,7 @@ impl MemoryFilter {
 
         let optimal_index = self.candidate_memories.first()
             .ok_or(VkError::device(MEMORY_FILTER_ERROR_MESSAGE))?.clone();
-        let result = self.physical.memory.memory_type(optimal_index);
+        let result = self.device.phys.memory.memory_type(optimal_index);
 
         Ok(result)
     }

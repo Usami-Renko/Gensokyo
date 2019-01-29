@@ -2,7 +2,7 @@
 use ash::vk;
 use ash::version::DeviceV1_0;
 
-use crate::core::device::GsDevice;
+use crate::core::GsDevice;
 
 use crate::pipeline::pass::framebuffer::GsFramebuffer;
 use crate::types::vkDim2D;
@@ -54,7 +54,7 @@ impl GsRenderPass {
     pub fn destroy(&self, device: &GsDevice) {
 
         unsafe {
-            device.handle.destroy_render_pass(self.handle, None);
+            device.logic.handle.destroy_render_pass(self.handle, None);
         }
 
         self.framebuffers.iter()

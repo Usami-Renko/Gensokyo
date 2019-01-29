@@ -1,6 +1,5 @@
 
-use crate::core::device::GsDevice;
-use crate::core::physical::GsPhyDevice;
+use crate::core::GsDevice;
 
 use crate::buffer::{ GsBuffer, BufferBlock };
 use crate::buffer::allocator::memory::BufferAllocateInfos;
@@ -28,9 +27,8 @@ pub struct GsBufferDistributor<M>
 
     phantom_type: PhantomData<M>,
 
-    device   : GsDevice,
-    physical : GsPhyDevice,
-    memory   : GsBufferMemory,
+    device  : GsDevice,
+    memory  : GsBufferMemory,
 
     buffers : Vec<GsBuffer>,
     spaces  : Vec<vkbytes>,
@@ -91,7 +89,7 @@ impl<M> GsDistIntoRepository<GsBufferRepository<M>> for GsBufferDistributor<M>
 
     fn into_repository(self) -> GsBufferRepository<M> {
 
-        GsBufferRepository::store(self.phantom_type, self.device, self.physical, self.buffers, self.memory, self.allot_infos)
+        GsBufferRepository::store(self.phantom_type, self.device, self.buffers, self.memory, self.allot_infos)
     }
 }
 
@@ -99,13 +97,13 @@ impl<M> GsBufferDistributor<M>
     where
         M: BufferMemoryTypeAbs {
 
-    pub(super) fn new(phantom_type: PhantomData<M>, device: GsDevice, physical: GsPhyDevice, memory: GsBufferMemory, buffers: Vec<GsBuffer>, spaces: Vec<vkbytes>, allot_infos: BufferAllocateInfos) -> GsBufferDistributor<M> {
+    pub(super) fn new(phantom_type: PhantomData<M>, device: GsDevice, memory: GsBufferMemory, buffers: Vec<GsBuffer>, spaces: Vec<vkbytes>, allot_infos: BufferAllocateInfos) -> GsBufferDistributor<M> {
 
         use crate::utils::memory::spaces_to_offsets;
         let offsets = spaces_to_offsets(&spaces);
 
         GsBufferDistributor {
-            phantom_type, device, physical, memory, buffers, spaces, offsets, allot_infos,
+            phantom_type, device, memory, buffers, spaces, offsets, allot_infos,
         }
     }
 

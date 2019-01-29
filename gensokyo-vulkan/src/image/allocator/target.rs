@@ -1,8 +1,7 @@
 
 use ash::vk;
 
-use crate::core::device::GsDevice;
-use crate::core::physical::GsPhyDevice;
+use crate::core::GsDevice;
 
 use crate::image::target::{ GsImage, ImageDescInfo };
 use crate::image::view::ImageViewDescInfo;
@@ -36,7 +35,6 @@ pub struct GsImageAllocator<M>
     phantom_type: PhantomData<M>,
     storage_type: M,
 
-    physical: GsPhyDevice,
     device  : GsDevice,
 
     image_infos: Vec<ImageAllotInfo>,
@@ -109,7 +107,7 @@ impl<M> GsAllotIntoDistributor<GsImageDistributor<M>> for GsImageAllocator<M>
 
         let mut barrier_bundles = collect_barrier_bundle(&allocator.image_infos);
         for bundle in barrier_bundles.iter_mut() {
-            bundle.make_barrier_transform(&allocator.physical, &allocator.device, &copyer, &mut allocator.image_infos)?;
+            bundle.make_barrier_transform(&allocator.device, &copyer, &mut allocator.image_infos)?;
         }
 
         // 5.execute image barrier transition.
@@ -124,18 +122,17 @@ impl<M> GsImageAllocator<M>
     where
         M: ImageMemoryTypeAbs {
 
-    pub fn new(physical: &GsPhyDevice, device: &GsDevice, storage_type: M) -> GsImageAllocator<M> {
+    pub fn new(device: &GsDevice, storage_type: M) -> GsImageAllocator<M> {
 
         GsImageAllocator {
             phantom_type: PhantomData,
             storage_type,
 
-            physical: physical.clone(),
             device  : device.clone(),
 
             image_infos: vec![],
 
-            memory_filter: MemoryFilter::new(physical, storage_type.memory_type()),
+            memory_filter: MemoryFilter::new(device, storage_type.memory_type()),
         }
     }
 }

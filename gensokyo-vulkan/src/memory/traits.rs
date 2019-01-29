@@ -2,7 +2,7 @@
 use ash::vk;
 use ash::version::DeviceV1_0;
 
-use crate::core::device::GsDevice;
+use crate::core::GsDevice;
 
 use crate::memory::target::GsMemory;
 use crate::memory::filter::MemoryFilter;
@@ -30,7 +30,7 @@ pub trait GsMemoryAbstract {
     fn bind_to_buffer(&self, device: &GsDevice, buffer: &GsBuffer, memory_offset: vkbytes) -> VkResult<()> {
 
         unsafe {
-            device.handle.bind_buffer_memory(buffer.handle, self.target().handle, memory_offset)
+            device.logic.handle.bind_buffer_memory(buffer.handle, self.target().handle, memory_offset)
                 .or(Err(VkError::device("Failed to bind memory to buffer object.")))
         }
     }
@@ -38,14 +38,14 @@ pub trait GsMemoryAbstract {
     fn bind_to_image(&self, device: &GsDevice, image: &GsImage, memory_offset: vkbytes) -> VkResult<()> {
 
         unsafe {
-            device.handle.bind_image_memory(image.handle, self.target().handle, memory_offset)
+            device.logic.handle.bind_image_memory(image.handle, self.target().handle, memory_offset)
                 .or(Err(VkError::device("Failed to bind memory to image object.")))
         }
     }
 
     fn destroy(&mut self, device: &GsDevice) {
         unsafe {
-            device.handle.free_memory(self.target().handle, None);
+            device.logic.handle.free_memory(self.target().handle, None);
         }
     }
 }
@@ -66,7 +66,7 @@ pub trait MemoryMappable {
 
             if let Some(range) = range {
 
-                device.handle.map_memory(
+                device.logic.handle.map_memory(
                     self.map_handle(),
                     // zero-based byte offset from the beginning of the memory object.
                     range.offset,
@@ -77,7 +77,7 @@ pub trait MemoryMappable {
                 ).or(Err(VkError::device("An error occurred during mapping memory.")))?
 
             } else {
-                device.handle.map_memory(self.map_handle(), 0, vk::WHOLE_SIZE, vk::MemoryMapFlags::empty())
+                device.logic.handle.map_memory(self.map_handle(), 0, vk::WHOLE_SIZE, vk::MemoryMapFlags::empty())
                     .or(Err(VkError::device("An error occurred during mapping memory.")))?
             }
         };
@@ -102,7 +102,7 @@ pub trait MemoryMappable {
             }).collect();
 
         unsafe {
-            device.handle.flush_mapped_memory_ranges(&flush_ranges)
+            device.logic.handle.flush_mapped_memory_ranges(&flush_ranges)
                 .or(Err(VkError::device("Failed to flush certain range of memory.")))
         }
     }
@@ -110,7 +110,7 @@ pub trait MemoryMappable {
     fn unmap(&mut self, device: &GsDevice) {
 
         unsafe {
-            device.handle.unmap_memory(self.map_handle())
+            device.logic.handle.unmap_memory(self.map_handle())
         }
 
         let map_status = self.mut_status();

@@ -2,7 +2,7 @@
 use ash::vk;
 use ash::version::DeviceV1_0;
 
-use crate::core::device::GsDevice;
+use crate::core::GsDevice;
 
 use crate::error::{ VkResult, VkError };
 use crate::types::{ vkuint, vkDim2D };
@@ -19,7 +19,7 @@ impl GsFramebuffer {
 
     pub fn destroy(&self, device: &GsDevice) {
         unsafe {
-            device.handle.destroy_framebuffer(self.handle, None);
+            device.logic.handle.destroy_framebuffer(self.handle, None);
         }
     }
 }
@@ -59,7 +59,7 @@ impl FramebufferBuilder {
         };
 
         let handle = unsafe {
-            device.handle.create_framebuffer(&framebuffer_ci, None)
+            device.logic.handle.create_framebuffer(&framebuffer_ci, None)
                 .or(Err(VkError::create("FrameBuffer")))?
         };
 

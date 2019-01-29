@@ -6,7 +6,7 @@ pub use crate::image::GsImageRepository;
 pub use crate::image::instance::sample::{ GsSampleImage, GsSampleImgInfo, ISampleImg };
 pub use crate::image::instance::depth::{ GsDSAttachment, GsDSAttachmentInfo, IDepthStencilImg };
 
-pub use crate::image::SamplerDescInfo;
+pub use crate::image::GsSamplerCI;
 
 pub use crate::image::allocator::types::ImageStorageType;
 

@@ -4,7 +4,8 @@ use crate::config::resources::ResourceConfig;
 use crate::procedure::env::{ ProgramEnv, VulkanEnv };
 use crate::procedure::loader::AssetsLoader;
 
-use gsvk::core::device::{ GsDevice, DeviceQueueIdentifier };
+use gsvk::core::GsDevice;
+use gsvk::core::device::DeviceQueueIdentifier;
 use gsvk::core::swapchain::{ GsChain, SwapchainConfig };
 use gsvk::sync::{ GsSemaphore, GsFence };
 use gsvk::types::vkuint;

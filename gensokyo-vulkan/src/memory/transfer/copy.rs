@@ -1,19 +1,20 @@
 
 use ash::vk;
 
-use crate::core::device::{ GsDevice, GsLogicalDevice };
+use crate::core::GsDevice;
+use crate::core::device::GsLogicalDevice;
 use crate::core::device::queue::GsTransfer;
 
 use crate::buffer::BufferCopiable;
 use crate::image::ImageCopiable;
 use crate::command::{ GsCmdRecorder, GsCmdCopyApi };
 use crate::error::VkResult;
-use crate::utils::phantom::Copy;
+use crate::utils::phantom::Transfer;
 
 pub struct DataCopyer {
 
     transfer: GsTransfer,
-    recorder: GsCmdRecorder<r#Copy>,
+    recorder: GsCmdRecorder<Transfer>,
 }
 
 impl DataCopyer {
@@ -134,7 +135,7 @@ impl DataCopyer {
         Ok(())
     }
 
-    pub fn recorder(&self) -> &GsCmdRecorder<r#Copy> {
+    pub fn recorder(&self) -> &GsCmdRecorder<Transfer> {
         &self.recorder
     }
 }

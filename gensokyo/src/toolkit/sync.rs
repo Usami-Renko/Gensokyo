@@ -1,7 +1,7 @@
 
 use crate::error::GsResult;
 
-use gsvk::core::device::GsDevice;
+use gsvk::core::GsDevice;
 
 pub use gsvk::sync::GsSemaphore;
 pub use gsvk::sync::GsFence;

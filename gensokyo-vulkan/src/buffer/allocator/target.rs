@@ -1,6 +1,5 @@
 
-use crate::core::device::GsDevice;
-use crate::core::physical::GsPhyDevice;
+use crate::core::GsDevice;
 
 use crate::buffer::target::{ GsBuffer, BufferDescInfo };
 use crate::buffer::instance::types::BufferInfoAbstract;
@@ -23,7 +22,6 @@ pub struct GsBufferAllocator<M>
     phantom_type: PhantomData<M>,
     storage_type: M,
 
-    physical: GsPhyDevice,
     device  : GsDevice,
 
     buffers : Vec<GsBuffer>,
@@ -49,7 +47,7 @@ impl<M, I, R> GsAllocatorApi<I, R, GsBufferDistributor<M>> for GsBufferAllocator
         }
 
         let mut info = info; // make it mutable.
-        info.check_limits(&self.physical);
+        info.check_limits(&self.device);
 
         let buffer_description = BufferDescInfo::new(info.estimate_size(), I::VK_FLAG);
         let buffer = buffer_description.build(&self.device, self.storage_type, None)?;
@@ -113,7 +111,7 @@ impl<M> GsAllotIntoDistributor<GsBufferDistributor<M>> for GsBufferAllocator<M>
 
         let distributor = GsBufferDistributor::new(
             self.phantom_type,
-            self.device, self.physical, memory, buffers_to_distribute, self.spaces, allot_infos
+            self.device, memory, buffers_to_distribute, self.spaces, allot_infos
         );
 
         Ok(distributor)
@@ -124,20 +122,19 @@ impl<M> GsBufferAllocator<M>
     where
         M: BufferMemoryTypeAbs {
 
-    pub fn new(physical: &GsPhyDevice, device: &GsDevice, storage_type: M) -> GsBufferAllocator<M> {
+    pub fn new(device: &GsDevice, storage_type: M) -> GsBufferAllocator<M> {
 
         GsBufferAllocator {
             phantom_type: PhantomData,
             storage_type,
 
-            physical: physical.clone(),
             device  : device.clone(),
 
             buffers: vec![],
             spaces : vec![],
 
             allot_infos: BufferAllocateInfos::new(),
-            memory_filter: MemoryFilter::new(physical, storage_type.memory_type()),
+            memory_filter: MemoryFilter::new(device, storage_type.memory_type()),
         }
     }
 

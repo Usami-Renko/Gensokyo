@@ -4,8 +4,8 @@ pub mod input_desc;
 use gs::prelude::*;
 
 const MANIFEST_PATH: &str = "src/gensokyo.toml";
-const VERTEX_SHADER_SOURCE_PATH  : &str = "src/01.triangle/triangle.vert";
-const FRAGMENT_SHADER_SOURCE_PATH: &str = "src/01.triangle/triangle.frag";
+const VERTEX_SHADER_SOURCE_PATH  : &str = "src/01.triangle/triangle.vert.glsl";
+const FRAGMENT_SHADER_SOURCE_PATH: &str = "src/01.triangle/triangle.frag.glsl";
 const MODEL_GLTF_PATH: &str = "src/01.triangle/triangle.gltf";
 
 use example02::FilePathConstants;

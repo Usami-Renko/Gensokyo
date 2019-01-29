@@ -1,7 +1,7 @@
 
 // TODO: Remove #[allow(dead_code)]
 
-use gsvk::core::physical::GsPhysicalDevice;
+use gsvk::core::GsDevice;
 use gsvk::types::vkuint;
 
 use std::collections::HashMap;
@@ -80,11 +80,11 @@ pub(crate) struct GsglTFPhyLimits {
     pub max_push_constant_size: vkuint,
 }
 
-impl<'a> From<&'a GsPhysicalDevice> for GsglTFPhyLimits {
+impl<'a> From<&'a GsDevice> for GsglTFPhyLimits {
 
-    fn from(phy: &'a GsPhysicalDevice) -> GsglTFPhyLimits {
+    fn from(device: &'a GsDevice) -> GsglTFPhyLimits {
         GsglTFPhyLimits {
-            max_push_constant_size: phy.limits().max_push_constants_size,
+            max_push_constant_size: device.phys.limits().max_push_constants_size,
         }
     }
 }

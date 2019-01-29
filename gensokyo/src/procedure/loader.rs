@@ -1,6 +1,5 @@
 
-use gsvk::core::device::GsDevice;
-use gsvk::core::physical::GsPhyDevice;
+use gsvk::core::GsDevice;
 use gsvk::core::swapchain::GsChain;
 
 use gsvk::types::vkDim2D;
@@ -14,7 +13,6 @@ pub struct AssetsLoader {
     config: ResourceConfig,
 
     device    : GsDevice,
-    physical  : GsPhyDevice,
     swapchain : GsChain,
 }
 
@@ -26,7 +24,6 @@ impl AssetsLoader {
             config: config.clone(),
             swapchain: swapchain.clone(),
             device   : env.device.clone(),
-            physical : env.physical.clone(),
         }
     }
 
@@ -34,7 +31,7 @@ impl AssetsLoader {
         where
             F: FnOnce(AllocatorKit) -> R {
 
-        let kit = AllocatorKit::init(&self.physical, &self.device, self.config.clone());
+        let kit = AllocatorKit::init(&self.device, self.config.clone());
 
         func(kit)
     }

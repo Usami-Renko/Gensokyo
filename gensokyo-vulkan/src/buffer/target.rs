@@ -2,7 +2,7 @@
 use ash::vk;
 use ash::version::DeviceV1_0;
 
-use crate::core::device::GsDevice;
+use crate::core::GsDevice;
 
 use crate::buffer::allocator::types::BufferMemoryTypeAbs;
 use crate::memory::MemoryDstEntity;
@@ -23,7 +23,7 @@ impl GsBuffer {
     fn new(device: &GsDevice, handle: vk::Buffer) -> GsBuffer {
 
         let requirement = unsafe {
-            device.handle.get_buffer_memory_requirements(handle)
+            device.logic.handle.get_buffer_memory_requirements(handle)
         };
 
         GsBuffer {
@@ -34,7 +34,7 @@ impl GsBuffer {
     pub fn destroy(&self, device: &GsDevice) {
 
         unsafe {
-            device.handle.destroy_buffer(self.handle, None);
+            device.logic.handle.destroy_buffer(self.handle, None);
         }
     }
 }
@@ -94,7 +94,7 @@ impl BufferDescInfo {
         };
 
         let handle = unsafe {
-            device.handle.create_buffer(&buffer_ci, None)
+            device.logic.handle.create_buffer(&buffer_ci, None)
                 .or(Err(VkError::create("vk::Buffer")))?
         };
 

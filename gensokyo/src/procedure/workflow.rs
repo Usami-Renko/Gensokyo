@@ -1,5 +1,5 @@
 
-use gsvk::core::device::GsDevice;
+use gsvk::core::GsDevice;
 use gsvk::sync::{ GsFence, GsSemaphore };
 
 use crate::procedure::env::ProgramEnv;

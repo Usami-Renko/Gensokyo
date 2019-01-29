@@ -2,7 +2,7 @@
 use ash::vk;
 use ash::version::DeviceV1_0;
 
-use crate::core::device::GsDevice;
+use crate::core::GsDevice;
 
 use crate::error::{ VkError, VkResult };
 use crate::types::vklint;
@@ -32,7 +32,7 @@ impl GsFence {
         };
 
         let handle = unsafe {
-            device.handle.create_fence(&fence_ci, None)
+            device.logic.handle.create_fence(&fence_ci, None)
                 .map_err(|_| VkError::create("Fence"))?
         };
 
@@ -47,12 +47,12 @@ impl GsFence {
     ///
     /// To wait for a group of fences, use LogicalDevice::wait_fences() method instead.
     pub fn wait(&self, timeout: vklint) -> VkResult<()> {
-        self.device.wait_fences(&[self], true, timeout)
+        self.device.logic.wait_fences(&[self], true, timeout)
     }
 
     /// reset a single fence.
     pub fn reset(&self) -> VkResult<()> {
-        self.device.reset_fences(&[self])
+        self.device.logic.reset_fences(&[self])
     }
 }
 
@@ -60,7 +60,7 @@ impl Drop for GsFence {
 
     fn drop(&mut self) {
         unsafe {
-            self.device.handle.destroy_fence(self.handle, None);
+            self.device.logic.handle.destroy_fence(self.handle, None);
         }
     }
 }

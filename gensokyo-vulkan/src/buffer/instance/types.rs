@@ -1,7 +1,7 @@
 
 use ash::vk;
 
-use crate::core::physical::GsPhysicalDevice;
+use crate::core::GsDevice;
 use crate::memory::types::GsMemoryType;
 use crate::types::vkbytes;
 
@@ -16,7 +16,7 @@ pub trait BufferInfoAbstract<I>: Sized {
 
     fn into_index(self) -> I;
 
-    fn check_limits(&mut self, _physical: &GsPhysicalDevice) {
+    fn check_limits(&mut self, _device: &GsDevice) {
         // Default implementation is empty.
     }
 }

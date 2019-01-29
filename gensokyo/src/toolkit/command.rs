@@ -3,7 +3,7 @@ use ash::vk;
 
 use crate::error::GsResult;
 
-use gsvk::core::device::GsDevice;
+use gsvk::core::GsDevice;
 use gsvk::core::device::DeviceQueueIdentifier;
 
 use gsvk::pipeline::target::GsVkPipelineType;
@@ -12,7 +12,7 @@ use gsvk::command::{ GsCommandBuffer, GsCommandPool };
 use gsvk::command::{ GsVkCommandType, GsCmdRecorder };
 use gsvk::command::CmdPipelineAbs;
 
-use gsvk::utils::phantom::Copy;
+use gsvk::utils::phantom::Transfer;
 
 pub struct CommandKit {
 
@@ -35,7 +35,7 @@ impl CommandKit {
         Ok(pool)
     }
 
-    pub fn copy_recorder(&self, command: GsCommandBuffer) -> GsCmdRecorder<r#Copy> {
+    pub fn copy_recorder(&self, command: GsCommandBuffer) -> GsCmdRecorder<Transfer> {
         GsCmdRecorder::new_copy(&self.device, command)
     }
 

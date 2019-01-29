@@ -1,7 +1,7 @@
 
 use ash::vk;
 
-use crate::core::device::GsDevice;
+use crate::core::GsDevice;
 
 use crate::memory::MemoryMappable;
 use crate::memory::types::GsMemoryType;

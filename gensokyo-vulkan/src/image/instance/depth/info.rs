@@ -1,7 +1,7 @@
 
 use ash::vk;
 
-use crate::core::device::GsDevice;
+use crate::core::GsDevice;
 
 use crate::image::target::{ GsImage, ImageDescInfo, ImagePropertyInfo, ImageSpecificInfo };
 use crate::image::view::ImageViewDescInfo;

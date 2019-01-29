@@ -21,8 +21,8 @@ use super::data::{ VERTEX_DATA, INDEX_DATA };
 use nalgebra::{ Matrix4, Point3 };
 use std::path::Path;
 
-const VERTEX_SHADER_SOURCE_PATH  : &'static str = "src/triangle/triangle.vert";
-const FRAGMENT_SHADER_SOURCE_PATH: &'static str = "src/triangle/triangle.frag";
+const VERTEX_SHADER_SOURCE_PATH  : &'static str = "src/triangle/triangle.vert.glsl";
+const FRAGMENT_SHADER_SOURCE_PATH: &'static str = "src/triangle/triangle.frag.glsl";
 
 pub struct VulkanExample {
 
@@ -299,7 +299,7 @@ impl GraphicsRoutine for VulkanExample {
             commands       : &[&self.command_buffers[image_index]],
         };
 
-        device.submit_single(&submit_info, Some(device_available), DeviceQueueIdentifier::Graphics)?;
+        device.logic.submit_single(&submit_info, Some(device_available), DeviceQueueIdentifier::Graphics)?;
 
         return Ok(&self.present_availables[image_index])
     }

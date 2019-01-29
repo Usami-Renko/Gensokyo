@@ -20,12 +20,12 @@ use super::data::{ Vertex, UBOVS, PipelineContent };
 use nalgebra::{ Matrix4, Point3, Vector4 };
 use std::path::Path;
 
-const PHONG_VERTEX_SHADER_SOURCE_PATH      : &'static str = "src/pipelines/phong.vert";
-const PHONG_FRAGMENT_SHADER_SOURCE_PATH    : &'static str = "src/pipelines/phong.frag";
-const TOON_VERTEX_SHADER_SOURCE_PATH       : &'static str = "src/pipelines/toon.vert";
-const TOON_FRAGMENT_SHADER_SOURCE_PATH     : &'static str = "src/pipelines/toon.frag";
-const WIREFRAME_VERTEX_SHADER_SOURCE_PATH  : &'static str = "src/pipelines/wireframe.vert";
-const WIREFRAME_FRAGMENT_SHADER_SOURCE_PATH: &'static str = "src/pipelines/wireframe.frag";
+const PHONG_VERTEX_SHADER_SOURCE_PATH      : &'static str = "src/pipelines/phong.vert.glsl";
+const PHONG_FRAGMENT_SHADER_SOURCE_PATH    : &'static str = "src/pipelines/phong.frag.glsl";
+const TOON_VERTEX_SHADER_SOURCE_PATH       : &'static str = "src/pipelines/toon.vert.glsl";
+const TOON_FRAGMENT_SHADER_SOURCE_PATH     : &'static str = "src/pipelines/toon.frag.glsl";
+const WIREFRAME_VERTEX_SHADER_SOURCE_PATH  : &'static str = "src/pipelines/wireframe.vert.glsl";
+const WIREFRAME_FRAGMENT_SHADER_SOURCE_PATH: &'static str = "src/pipelines/wireframe.frag.glsl";
 const MODEL_PATH: &'static str = "models/treasure_smooth.gltf";
 
 pub struct VulkanExample {
@@ -402,7 +402,7 @@ impl GraphicsRoutine for VulkanExample {
             commands       : &[&self.command_buffers[image_index]],
         };
 
-        device.submit_single(&submit_info, Some(device_available), DeviceQueueIdentifier::Graphics)?;
+        device.logic.submit_single(&submit_info, Some(device_available), DeviceQueueIdentifier::Graphics)?;
 
         return Ok(&self.present_availables[image_index])
     }

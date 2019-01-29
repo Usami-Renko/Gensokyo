@@ -6,7 +6,7 @@ mod program;
 
 use gs::prelude::*;
 
-const MANIFEST_PATH: &'static str = "src/triangle/Gensokyo.toml";
+const MANIFEST_PATH: &'static str = "src/texture/Gensokyo.toml";
 
 use self::program::VulkanExample;
 

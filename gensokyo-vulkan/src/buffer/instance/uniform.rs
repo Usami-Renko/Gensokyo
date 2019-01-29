@@ -1,8 +1,7 @@
 
 use ash::vk;
 
-use crate::core::physical::GsPhysicalDevice;
-
+use crate::core::GsDevice;
 use crate::buffer::entity::BufferBlock;
 use crate::buffer::instance::types::BufferInfoAbstract;
 use crate::buffer::traits::{ BufferInstance, BufferCopiable, BufferCopyInfo };
@@ -70,9 +69,9 @@ impl GsBufUniformInfo {
         }
     }
 
-    fn set_alignment(&mut self, physical: &GsPhysicalDevice) {
+    fn set_alignment(&mut self, device: &GsDevice) {
         // query alignment from Vulkan.
-        self.alignment = physical.limits().min_uniform_buffer_offset_alignment;
+        self.alignment = device.phys.limits().min_uniform_buffer_offset_alignment;
     }
 }
 
@@ -102,8 +101,8 @@ impl BufferInfoAbstract<IUniform> for GsBufUniformInfo {
     }
 
     // Handle uniform buffer particularly.
-    fn check_limits(&mut self, physical: &GsPhysicalDevice) {
-        self.set_alignment(physical);
+    fn check_limits(&mut self, device: &GsDevice) {
+        self.set_alignment(device);
     }
 }
 

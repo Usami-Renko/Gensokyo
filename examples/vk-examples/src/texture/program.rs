@@ -21,8 +21,8 @@ use super::data::{ VERTEX_DATA, INDEX_DATA };
 use nalgebra::{ Matrix4, Point3, Point4 };
 use std::path::Path;
 
-const VERTEX_SHADER_SOURCE_PATH  : &'static str = "src/texture/texture.vert";
-const FRAGMENT_SHADER_SOURCE_PATH: &'static str = "src/texture/texture.frag";
+const VERTEX_SHADER_SOURCE_PATH  : &'static str = "src/texture/texture.vert.glsl";
+const FRAGMENT_SHADER_SOURCE_PATH: &'static str = "src/texture/texture.frag.glsl";
 const TEXTURE_PATH: &'static str = "textures/metalplate01_rgba.png";
 
 pub struct VulkanExample {
@@ -193,15 +193,17 @@ impl VulkanExample {
 
         // combine sample image.
         let image_storage = kit.image_loader().load_2d(Path::new(TEXTURE_PATH))?;
-        let mut sampler_description = SamplerDescInfo::default();
-        sampler_description.filter(vk::Filter::LINEAR, vk::Filter::LINEAR);
-        sampler_description.mipmap(vk::SamplerMipmapMode::LINEAR, vk::SamplerAddressMode::REPEAT, vk::SamplerAddressMode::REPEAT, vk::SamplerAddressMode::REPEAT);
-        sampler_description.anisotropy(Some(16.0));
-        sampler_description.lod(0.0, 0.0, 1.0);
-        sampler_description.compare_op(None);
-        sampler_description.border_color(vk::BorderColor::FLOAT_OPAQUE_WHITE);
+        let sampler_ci = GsSamplerCI::new()
+            .filter(vk::Filter::LINEAR, vk::Filter::LINEAR)
+            .mipmap(vk::SamplerMipmapMode::LINEAR, vk::SamplerAddressMode::REPEAT, vk::SamplerAddressMode::REPEAT, vk::SamplerAddressMode::REPEAT)
+            .anisotropy(Some(16.0))
+            .lod(0.0, 0.0, 1.0)
+            .compare_op(None)
+            .border_color(vk::BorderColor::FLOAT_OPAQUE_WHITE)
+            .build();
         // refer to `layout (binding = 1) uniform sampler2D samplerColor` in texture.frag.
-        let sample_image_info = GsSampleImgInfo::new(1, 1, image_storage, ImagePipelineStage::FragmentStage);
+        let mut sample_image_info = GsSampleImgInfo::new(1, 1, image_storage, ImagePipelineStage::FragmentStage);
+        sample_image_info.reset_sampler(sampler_ci);
         let sample_image_index = image_allocator.assign(sample_image_info)?;
 
         let image_distributor = image_allocator.allocate()?;
@@ -337,7 +339,7 @@ impl GraphicsRoutine for VulkanExample {
             commands       : &[&self.command_buffers[image_index]],
         };
 
-        device.submit_single(&submit_info, Some(device_available), DeviceQueueIdentifier::Graphics)?;
+        device.logic.submit_single(&submit_info, Some(device_available), DeviceQueueIdentifier::Graphics)?;
 
         return Ok(&self.present_availables[image_index])
     }

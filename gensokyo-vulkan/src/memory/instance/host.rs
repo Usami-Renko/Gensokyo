@@ -1,8 +1,7 @@
 
 use ash::vk;
 
-use crate::core::device::GsDevice;
-use crate::core::physical::GsPhyDevice;
+use crate::core::GsDevice;
 
 use crate::buffer::BufferBlock;
 use crate::buffer::allocator::BufferAllocateInfos;
@@ -70,7 +69,7 @@ impl GsMemoryAbstract for GsHostMemory {
 
 impl GsBufferMemoryAbs for GsHostMemory {
 
-    fn to_upload_agency(&self, _: &GsDevice, _: &GsPhyDevice, _: &BufferAllocateInfos) -> VkResult<Box<dyn MemoryDataDelegate>> {
+    fn to_upload_agency(&self, _: &GsDevice, _: &BufferAllocateInfos) -> VkResult<Box<dyn MemoryDataDelegate>> {
 
         let agency = HostDataAgency::new(self);
         Ok(Box::new(agency))

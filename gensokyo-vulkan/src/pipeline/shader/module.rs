@@ -2,7 +2,7 @@
 use ash::vk;
 use ash::version::DeviceV1_0;
 
-use crate::core::device::GsDevice;
+use crate::core::GsDevice;
 
 use crate::pipeline::target::GsPipelineStage;
 use crate::pipeline::shader::shaderc::GsShaderCompiler;
@@ -111,7 +111,7 @@ impl GsShaderInfo {
         };
 
         unsafe {
-            device.handle.create_shader_module(&shader_module_ci, None)
+            device.logic.handle.create_shader_module(&shader_module_ci, None)
                 .or(Err(VkError::create("Shader Module")))
         }
     }
@@ -154,7 +154,7 @@ impl GsShaderModule {
     pub fn destroy(&self, device: &GsDevice) {
 
         unsafe {
-            device.handle.destroy_shader_module(self.handle, None);
+            device.logic.handle.destroy_shader_module(self.handle, None);
         }
     }
 }

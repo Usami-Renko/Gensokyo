@@ -22,8 +22,8 @@ use std::path::Path;
 use std::mem;
 use std::ffi::c_void;
 
-const VERTEX_SHADER_SOURCE_PATH  : &'static str = "src/specializationconstants/uber.vert";
-const FRAGMENT_SHADER_SOURCE_PATH: &'static str = "src/specializationconstants/uber.frag";
+const VERTEX_SHADER_SOURCE_PATH  : &'static str = "src/specializationconstants/uber.vert.glsl";
+const FRAGMENT_SHADER_SOURCE_PATH: &'static str = "src/specializationconstants/uber.frag.glsl";
 const MODEL_PATH  : &'static str = "models/color_teapot_spheres.gltf";
 const TEXTURE_PATH: &'static str = "textures/metalplate_nomips_rgba.png";
 
@@ -443,7 +443,7 @@ impl GraphicsRoutine for VulkanExample {
             commands       : &[&self.command_buffers[image_index]],
         };
 
-        device.submit_single(&submit_info, Some(device_available), DeviceQueueIdentifier::Graphics)?;
+        device.logic.submit_single(&submit_info, Some(device_available), DeviceQueueIdentifier::Graphics)?;
 
         return Ok(&self.present_availables[image_index])
     }

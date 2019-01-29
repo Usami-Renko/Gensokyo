@@ -1,7 +1,8 @@
 
 use ash::vk;
 
-pub struct GsShaderSpecialize<T>
+#[allow(dead_code)]
+struct GsShaderSpecialize<T>
     where
         T: SpecializeData {
 

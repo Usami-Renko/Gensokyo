@@ -20,8 +20,8 @@ use super::data::{ Vertex, UBOVS, PushConstants };
 use nalgebra::{ Matrix4, Point3 };
 use std::path::Path;
 
-const VERTEX_SHADER_SOURCE_PATH  : &'static str = "src/pushconstants/lights.vert";
-const FRAGMENT_SHADER_SOURCE_PATH: &'static str = "src/pushconstants/lights.frag";
+const VERTEX_SHADER_SOURCE_PATH  : &'static str = "src/pushconstants/lights.vert.glsl";
+const FRAGMENT_SHADER_SOURCE_PATH: &'static str = "src/pushconstants/lights.frag.glsl";
 const MODEL_PATH: &'static str = "models/samplescene.gltf";
 const TIMER: f32 = 0.10;
 
@@ -358,7 +358,7 @@ impl GraphicsRoutine for VulkanExample {
             commands       : &[&self.command_buffers[image_index]],
         };
 
-        device.submit_single(&submit_info, Some(device_available), DeviceQueueIdentifier::Graphics)?;
+        device.logic.submit_single(&submit_info, Some(device_available), DeviceQueueIdentifier::Graphics)?;
 
         return Ok(&self.present_availables[image_index])
     }

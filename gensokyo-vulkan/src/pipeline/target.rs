@@ -2,7 +2,7 @@
 use ash::vk;
 use ash::version::DeviceV1_0;
 
-use crate::core::device::GsDevice;
+use crate::core::GsDevice;
 
 use crate::pipeline::layout::GsPipelineLayout;
 use crate::pipeline::pass::GsRenderPass;
@@ -67,7 +67,7 @@ impl<T> Drop for GsPipeline<T>
     fn drop(&mut self) {
 
         unsafe {
-            self.device.handle.destroy_pipeline(self.handle, None);
+            self.device.logic.handle.destroy_pipeline(self.handle, None);
         }
 
         self.layout.destroy(&self.device);
@@ -150,7 +150,7 @@ impl<T> Drop for GsPipelineSet<T>
 
         for &handle in self.handles.iter() {
             unsafe {
-                self.device.handle.destroy_pipeline(handle, None);
+                self.device.logic.handle.destroy_pipeline(handle, None);
             }
         }
         self.layout.destroy(&self.device);

@@ -4,7 +4,7 @@ use ash::version::DeviceV1_0;
 
 use gsma::collect_handle;
 
-use crate::core::device::GsDevice;
+use crate::core::GsDevice;
 use crate::core::device::device::{ GsLogicalDevice, DeviceConfig };
 use crate::core::device::queue::GsQueue;
 
@@ -74,7 +74,7 @@ impl GsTransfer {
     pub fn commands(&self, count: usize) -> VkResult<Vec<GsCommandBuffer>> {
 
         // just use a single primary command buffer for transfer.
-        let transfer_queue = self.device.transfer_queue();
+        let transfer_queue = self.device.logic.transfer_queue();
         let commands = transfer_queue.pool.allocate(&self.device, count)?;
         Ok(commands)
     }
@@ -86,7 +86,7 @@ impl GsTransfer {
 
     pub fn command(&self) -> VkResult<GsCommandBuffer> {
 
-        let transfer_queue = self.device.transfer_queue();
+        let transfer_queue = self.device.logic.transfer_queue();
         let mut commands = transfer_queue.pool.allocate(&self.device, 1)?;
         Ok(commands.pop().unwrap())
     }
@@ -117,10 +117,10 @@ impl GsTransfer {
             p_signal_semaphores   : ptr::null(),
         };
 
-        let transfer_queue = self.device.transfer_queue();
+        let transfer_queue = self.device.logic.transfer_queue();
 
         unsafe {
-            self.device.handle.queue_submit(transfer_queue.queue.handle, &[submit_info], self.fence.handle)
+            self.device.logic.handle.queue_submit(transfer_queue.queue.handle, &[submit_info], self.fence.handle)
                 .or(Err(VkError::device("Failed to submit command to device.")))?
         };
 
@@ -170,7 +170,7 @@ impl TransferCommandPool {
         };
 
         let handles = unsafe {
-            device.handle.allocate_command_buffers(&allocate_info)
+            device.logic.handle.allocate_command_buffers(&allocate_info)
                 .or(Err(VkError::create("Command Buffer")))?
         };
 
@@ -187,7 +187,7 @@ impl TransferCommandPool {
         let buffer_handles: Vec<vk::CommandBuffer> = collect_handle!(buffers_to_free);
 
         unsafe {
-            device.handle.free_command_buffers(self.handle, &buffer_handles);
+            device.logic.handle.free_command_buffers(self.handle, &buffer_handles);
         }
     }
 

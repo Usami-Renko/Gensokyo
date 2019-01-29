@@ -1,5 +1,5 @@
 
-use crate::core::device::GsDevice;
+use crate::core::GsDevice;
 
 use crate::descriptor::GsDescriptorPool;
 use crate::descriptor::GsDescriptorSet;

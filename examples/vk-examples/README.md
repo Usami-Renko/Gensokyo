@@ -2,26 +2,28 @@
 
 A Rust implementation of [Vulkan examples](https://github.com/SaschaWillems/Vulkan) using Gensokyo Rendering Engine.
 
+**Note: Text rendering is not implement yet in all examples.**
+
 ## Basic
 
-| example                       | status | Note |
-| ----------------------------- | ------ | ---- |
-| 01 - Triangle                 |        |      |
-| 02 - Pipelines                |        |      |
-| 03 - Descriptor set           |        |      |
-| 04 - Dynamic uniform buffers  |        |      |
-| 05 - Push constants           |        |      |
-| 06 - Specialization constants |        |      |
-| 07 - Texture mapping          |        |      |
-| 08 - Cube map textures        |        |      |
-| 09 - Texture arrays           |        |      |
-| 10 - 3D textures              |        |      |
-| 11 - Model rendering          |        |      |
-| 12 - Input attachments        |        |      |
-| 13 - Sub passes               |        |      |
-| 14 - Offscreen rendering      |        |      |
-| 15 - CPU particle system      |        |      |
-| 16 - Stencil buffer           |        |      |
+| example                       | status | Note                      |
+| ----------------------------- | ------ | ------------------------- |
+| 01 - Triangle                 | ✅      |                           |
+| 02 - Pipelines                | ✅      |                           |
+| 03 - Descriptor set           | ✅      |                           |
+| 04 - Dynamic uniform buffers  | ✅      |                           |
+| 05 - Push constants           | ✅      |                           |
+| 06 - Specialization constants | ✅      |                           |
+| 07 - Texture mapping          | ⚠️      | Unimplement: mipmap level |
+| 08 - Cube map textures        |        |                           |
+| 09 - Texture arrays           |        |                           |
+| 10 - 3D textures              |        |                           |
+| 11 - Model rendering          |        |                           |
+| 12 - Input attachments        |        |                           |
+| 13 - Sub passes               |        |                           |
+| 14 - Offscreen rendering      |        |                           |
+| 15 - CPU particle system      |        |                           |
+| 16 - Stencil buffer           |        |                           |
 
 
 
@@ -57,7 +59,7 @@ A Rust implementation of [Vulkan examples](https://github.com/SaschaWillems/Vulk
 
 | example                       | status | Note |
 | ----------------------------- | ------ | ---- |
-| 01 - PBR basics               |        |      |
+| 01 - PBR basics               | ❌     |      |
 | 02 - PBR image based lighting |        |      |
 | 03 - Textured PBR with IBL    |        |      |
 

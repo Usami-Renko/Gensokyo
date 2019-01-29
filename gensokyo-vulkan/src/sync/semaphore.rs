@@ -2,7 +2,7 @@
 use ash::vk;
 use ash::version::DeviceV1_0;
 
-use crate::core::device::GsDevice;
+use crate::core::GsDevice;
 use crate::error::{ VkResult, VkError };
 
 use std::ptr;
@@ -25,7 +25,7 @@ impl GsSemaphore {
         };
 
         let handle = unsafe {
-            device.handle.create_semaphore(&semaphore_ci, None)
+            device.logic.handle.create_semaphore(&semaphore_ci, None)
                 .or(Err(VkError::create("Semaphore")))?
         };
 
@@ -41,7 +41,7 @@ impl Drop for GsSemaphore {
 
     fn drop(&mut self) {
         unsafe {
-            self.device.handle.destroy_semaphore(self.handle, None);
+            self.device.logic.handle.destroy_semaphore(self.handle, None);
         }
     }
 }

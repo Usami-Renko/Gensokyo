@@ -6,13 +6,14 @@ use crate::assets::glTF::asset::GsglTFPhyLimits;
 use crate::assets::error::{ GltfError, AssetsError };
 use crate::error::GsResult;
 
-use gsvk::core::physical::GsPhysicalDevice;
+
+use gsvk::core::GsDevice;
 
 use std::path::Path;
 
 // ------------------------------------------------------------------------------------
 pub struct GsglTFImporter<'a> {
-    pub(crate) physical: &'a GsPhysicalDevice,
+    pub(crate) device: &'a GsDevice,
 }
 
 impl<'a> GsglTFImporter<'a> {
@@ -24,7 +25,7 @@ impl<'a> GsglTFImporter<'a> {
             .map_err(|e| AssetsError::Gltf(GltfError::Reading(e)))?;
         let intermediate_data = IntermediateglTFData {
             doc, data_buffer, data_image,
-            limits: GsglTFPhyLimits::from(self.physical),
+            limits: GsglTFPhyLimits::from(self.device),
         };
 
         // Only support loading the default scene or first scene in gltf file.

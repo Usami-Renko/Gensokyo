@@ -1,5 +1,5 @@
 
-use crate::core::device::GsDevice;
+use crate::core::GsDevice;
 use crate::buffer::BufferBlock;
 use crate::memory::utils::MemoryWritePtr;
 use crate::error::VkResult;

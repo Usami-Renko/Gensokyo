@@ -2,7 +2,7 @@
 use ash::vk;
 use ash::version::DeviceV1_0;
 
-use crate::core::device::GsDevice;
+use crate::core::GsDevice;
 use crate::core::swapchain::GsChain;
 
 use crate::pipeline::pass::render::GsRenderPass;
@@ -112,7 +112,7 @@ impl RenderPassBuilder {
         };
 
         let handle = unsafe {
-            self.device.handle.create_render_pass(&render_pass_ci, None)
+            self.device.logic.handle.create_render_pass(&render_pass_ci, None)
                 .or(Err(VkError::create("Render Pass")))?
         };
 

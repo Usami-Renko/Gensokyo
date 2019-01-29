@@ -22,8 +22,8 @@ use nalgebra::{ Matrix4, Point3, Vector3, Vector4 };
 use std::path::Path;
 type Vector3F = Vector3<f32>;
 
-const VERTEX_SHADER_SOURCE_PATH  : &'static str = "src/pbrbasic/pbr.vert";
-const FRAGMENT_SHADER_SOURCE_PATH: &'static str = "src/pbrbasic/pbr.frag";
+const VERTEX_SHADER_SOURCE_PATH  : &'static str = "src/pbrbasic/pbr.vert.glsl";
+const FRAGMENT_SHADER_SOURCE_PATH: &'static str = "src/pbrbasic/pbr.frag.glsl";
 const MODEL_PATH: &'static str = "modles/geosphere.gltf";
 const GRID_DIM: usize = 7;
 const MATERIAL_INDEX: usize = 0;
@@ -406,7 +406,7 @@ impl GraphicsRoutine for VulkanExample {
             commands       : &[&self.command_buffers[image_index]],
         };
 
-        device.submit_single(&submit_info, Some(device_available), DeviceQueueIdentifier::Graphics)?;
+        device.logic.submit_single(&submit_info, Some(device_available), DeviceQueueIdentifier::Graphics)?;
 
         return Ok(&self.present_availables[image_index])
     }

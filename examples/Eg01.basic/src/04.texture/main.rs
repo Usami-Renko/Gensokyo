@@ -17,8 +17,8 @@ use gsma::{ define_input, offset_of, vk_format, vertex_rate, data_size };
 use std::path::{ Path, PathBuf };
 
 const MANIFEST_PATH: &str = "src/04.texture/gensokyo.toml";
-const VERTEX_SHADER_SOURCE_PATH  : &str = "src/04.texture/texture.vert";
-const FRAGMENT_SHADER_SOURCE_PATH: &str = "src/04.texture/texture.frag";
+const VERTEX_SHADER_SOURCE_PATH  : &str = "src/04.texture/texture.vert.glsl";
+const FRAGMENT_SHADER_SOURCE_PATH: &str = "src/04.texture/texture.frag.glsl";
 const TEXTURE_PATH: &str = "textures/texture.jpg";
 
 define_input! {
@@ -253,7 +253,7 @@ impl GraphicsRoutine for TextureMappingProcedure {
             commands       : &[&self.command_buffers[image_index]],
         };
 
-        device.submit_single(&submit_info, Some(device_available), DeviceQueueIdentifier::Graphics)?;
+        device.logic.submit_single(&submit_info, Some(device_available), DeviceQueueIdentifier::Graphics)?;
 
         return Ok(&self.present_availables[image_index])
     }

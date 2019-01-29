@@ -20,8 +20,8 @@ use super::data::{ VERTEX_DATA, INDEX_DATA };
 use nalgebra::{ Matrix4, Point3 };
 use std::path::Path;
 
-const VERTEX_SHADER_SOURCE_PATH  : &str = "src/06.depth/depth.vert";
-const FRAGMENT_SHADER_SOURCE_PATH: &str = "src/06.depth/depth.frag";
+const VERTEX_SHADER_SOURCE_PATH  : &str = "src/06.depth/depth.vert.glsl";
+const FRAGMENT_SHADER_SOURCE_PATH: &str = "src/06.depth/depth.frag.glsl";
 
 pub struct DepthProcedure {
 
@@ -296,7 +296,7 @@ impl GraphicsRoutine for DepthProcedure {
             commands       : &[&self.command_buffers[image_index]],
         };
 
-        device.submit_single(&submit_info, Some(device_available), DeviceQueueIdentifier::Graphics)?;
+        device.logic.submit_single(&submit_info, Some(device_available), DeviceQueueIdentifier::Graphics)?;
 
         return Ok(&self.present_availables[image_index])
     }

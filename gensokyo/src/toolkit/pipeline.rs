@@ -1,7 +1,7 @@
 
 use crate::error::GsResult;
 
-use gsvk::core::device::GsDevice;
+use gsvk::core::GsDevice;
 use gsvk::core::swapchain::GsChain;
 
 use gsvk::pipeline::graphics::GfxPipelineConfig;

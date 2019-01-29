@@ -13,3 +13,7 @@ height = 720
 
 [core.physical]
 features = ["sampler_anisotropy"]
+
+[window.cursor]
+is_grab = true
+is_hide = true

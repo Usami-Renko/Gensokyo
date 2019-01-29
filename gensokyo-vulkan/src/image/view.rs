@@ -2,7 +2,7 @@
 use ash::vk;
 use ash::version::DeviceV1_0;
 
-use crate::core::device::GsDevice;
+use crate::core::GsDevice;
 use crate::image::target::{ GsImage, ImageSpecificInfo };
 use crate::error::{ VkResult, VkError };
 use crate::types::format::GsFormat;
@@ -23,7 +23,7 @@ impl GsImageView {
 
     pub fn destroy(&self, device: &GsDevice) {
         unsafe {
-            device.handle.destroy_image_view(self.handle, None);
+            device.logic.handle.destroy_image_view(self.handle, None);
         }
     }
 }
@@ -72,7 +72,7 @@ impl ImageViewDescInfo {
         };
 
         let handle = unsafe {
-            device.handle.create_image_view(&image_view_ci, None)
+            device.logic.handle.create_image_view(&image_view_ci, None)
                 .or(Err(VkError::create("Image View")))?
         };
 

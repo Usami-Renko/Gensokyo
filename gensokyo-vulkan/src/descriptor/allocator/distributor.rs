@@ -1,5 +1,5 @@
 
-use crate::core::device::GsDevice;
+use crate::core::GsDevice;
 
 use crate::descriptor::{ GsDescriptorPool, GsDescriptorSet, DescriptorSetConfig };
 use crate::descriptor::set::DescriptorSet;
@@ -64,6 +64,6 @@ impl GsDescriptorDistributor {
             }
         }
 
-        self.device.update_descriptor_sets(write_infos.borrow_info());
+        self.device.logic.update_descriptor_sets(write_infos.borrow_info());
     }
 }

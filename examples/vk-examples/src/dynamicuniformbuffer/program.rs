@@ -22,8 +22,8 @@ use nalgebra::{ Matrix4, Point3 };
 use std::path::Path;
 type Matrix4F = Matrix4<f32>;
 
-const VERTEX_SHADER_SOURCE_PATH  : &'static str = "src/dynamicuniformbuffer/base.vert";
-const FRAGMENT_SHADER_SOURCE_PATH: &'static str = "src/dynamicuniformbuffer/base.frag";
+const VERTEX_SHADER_SOURCE_PATH  : &'static str = "src/dynamicuniformbuffer/base.vert.glsl";
+const FRAGMENT_SHADER_SOURCE_PATH: &'static str = "src/dynamicuniformbuffer/base.frag.glsl";
 pub const OBJECT_INSTANCE: usize = 125;
 
 pub struct VulkanExample {
@@ -341,7 +341,7 @@ impl GraphicsRoutine for VulkanExample {
             commands       : &[&self.command_buffers[image_index]],
         };
 
-        device.submit_single(&submit_info, Some(device_available), DeviceQueueIdentifier::Graphics)?;
+        device.logic.submit_single(&submit_info, Some(device_available), DeviceQueueIdentifier::Graphics)?;
 
         return Ok(&self.present_availables[image_index])
     }

@@ -1,6 +1,5 @@
 
-use crate::core::device::GsDevice;
-use crate::core::physical::GsPhyDevice;
+use crate::core::GsDevice;
 
 use crate::buffer::BufferInstance;
 use crate::buffer::allocator::BufferAllocateInfos;
@@ -20,9 +19,9 @@ pub struct GsBufferDataUploader {
 
 impl GsBufferDataUploader {
 
-    pub(crate) fn new(physical: &GsPhyDevice, device: &GsDevice, memory: &GsBufferMemory, allocate_infos: &BufferAllocateInfos) -> VkResult<GsBufferDataUploader> {
+    pub(crate) fn new(device: &GsDevice, memory: &GsBufferMemory, allocate_infos: &BufferAllocateInfos) -> VkResult<GsBufferDataUploader> {
 
-        let mut agency = memory.to_upload_agency(device, physical, allocate_infos)?;
+        let mut agency = memory.to_upload_agency(device, allocate_infos)?;
         agency.prepare(device)?;
 
         let uploader = GsBufferDataUploader {

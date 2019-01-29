@@ -18,8 +18,8 @@ use nalgebra::{ Matrix4, Vector3 };
 use std::path::{ Path, PathBuf };
 
 const MANIFEST_PATH: &str = "src/03.uniform/gensokyo.toml";
-const VERTEX_SHADER_SOURCE_PATH  : &str = "src/03.uniform/uniform.vert";
-const FRAGMENT_SHADER_SOURCE_PATH: &str = "src/03.uniform/uniform.frag";
+const VERTEX_SHADER_SOURCE_PATH  : &str = "src/03.uniform/uniform.vert.glsl";
+const FRAGMENT_SHADER_SOURCE_PATH: &str = "src/03.uniform/uniform.frag.glsl";
 
 define_input! {
     #[binding = 0, rate = vertex]
@@ -243,7 +243,7 @@ impl GraphicsRoutine for UniformBufferProcedure {
             commands       : &[&self.command_buffers[image_index]],
         };
 
-        device.submit_single(&submit_info, Some(device_available), DeviceQueueIdentifier::Graphics)?;
+        device.logic.submit_single(&submit_info, Some(device_available), DeviceQueueIdentifier::Graphics)?;
 
         return Ok(&self.present_availables[image_index])
     }

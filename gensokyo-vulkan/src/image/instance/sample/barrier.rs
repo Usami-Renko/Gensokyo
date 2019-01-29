@@ -1,8 +1,7 @@
 
 use ash::vk;
 
-use crate::core::device::GsDevice;
-use crate::core::physical::GsPhyDevice;
+use crate::core::GsDevice;
 
 use crate::buffer::allocator::GsBufferAllocator;
 use crate::buffer::allocator::types::BufferStorageType;
@@ -32,10 +31,10 @@ pub struct SampleImageBarrierBundle {
 
 impl ImageBarrierBundleAbs for SampleImageBarrierBundle {
 
-    fn make_barrier_transform(&mut self, physical: &GsPhyDevice, device: &GsDevice, copyer: &DataCopyer, infos: &mut Vec<ImageAllotInfo>) -> VkResult<()> {
+    fn make_barrier_transform(&mut self, device: &GsDevice, copyer: &DataCopyer, infos: &mut Vec<ImageAllotInfo>) -> VkResult<()> {
 
         // create staging buffer and memories
-        let (mut staging_repository, buffer_blocks) = self.create_staging_repository(physical, device, infos)?;
+        let (mut staging_repository, buffer_blocks) = self.create_staging_repository(device, infos)?;
         // send textures to the staging buffer
         self.upload_staging_data(&mut staging_repository, &buffer_blocks, infos)?;
 
@@ -80,11 +79,11 @@ impl SampleImageBarrierBundle {
         }
     }
 
-    fn create_staging_repository(&mut self, physical: &GsPhyDevice, device: &GsDevice, infos: &Vec<ImageAllotInfo>) -> VkResult<(GsBufferRepository<Staging>, Vec<GsImgsrcBuffer>)> {
+    fn create_staging_repository(&mut self, device: &GsDevice, infos: &Vec<ImageAllotInfo>) -> VkResult<(GsBufferRepository<Staging>, Vec<GsImgsrcBuffer>)> {
 
         let mut staging_indices = vec![];
 
-        let mut staging_allocator = GsBufferAllocator::new(physical, device, BufferStorageType::STAGING);
+        let mut staging_allocator = GsBufferAllocator::new(device, BufferStorageType::STAGING);
 
         for &index in self.info_indices.iter() {
             let img_info = GsBufImgsrcInfo::new(infos[index].space);
