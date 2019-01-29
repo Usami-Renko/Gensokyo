@@ -67,8 +67,6 @@ impl GfxPipelineSetBuilder {
     pub fn build_template(&mut self) -> VkResult<PipelineIndex> {
 
         let derive_state = if self.is_use_base_pipeline {
-            PipelineDeriveState::Independence
-        } else {
             if self.pipelines.is_empty() {
                 PipelineDeriveState::AsParent {
                     layout: self.layout,
@@ -79,6 +77,8 @@ impl GfxPipelineSetBuilder {
                     layout: self.layout,
                 }
             }
+        } else {
+            PipelineDeriveState::IndependenceLayoutDefined { layout: self.layout }
         };
 
         // compile shader.

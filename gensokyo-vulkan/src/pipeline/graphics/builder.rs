@@ -73,15 +73,23 @@ pub(super) enum PipelineDeriveState {
     AsParent { layout: vk::PipelineLayout },
     AsChildren { parent: vk::Pipeline, layout: vk::PipelineLayout },
     Independence,
+    IndependenceLayoutDefined { layout: vk::PipelineLayout },
 }
 
 impl PipelineDeriveState {
 
     fn flag(&self) -> vk::PipelineCreateFlags {
         match self {
-            | PipelineDeriveState::AsParent { .. }   => vk::PipelineCreateFlags::ALLOW_DERIVATIVES,
-            | PipelineDeriveState::AsChildren { .. } => vk::PipelineCreateFlags::DERIVATIVE,
-            | PipelineDeriveState::Independence      => vk::PipelineCreateFlags::empty(),
+            | PipelineDeriveState::AsParent { .. } => {
+                vk::PipelineCreateFlags::ALLOW_DERIVATIVES
+            },
+            | PipelineDeriveState::AsChildren { .. } => {
+                vk::PipelineCreateFlags::DERIVATIVE
+            },
+            | PipelineDeriveState::IndependenceLayoutDefined { .. }
+            | PipelineDeriveState::Independence => {
+                vk::PipelineCreateFlags::empty()
+            },
         }
     }
 }
@@ -194,6 +202,9 @@ pub(super) fn pipeline_ci(device: &GsDevice, flag: &GsPipelineCIFlags, shader_mo
         | PipelineDeriveState::Independence => {
             let layout = config.layout_builder.build(device)?;
             (layout, vk::Pipeline::null())
+        },
+        | PipelineDeriveState::IndependenceLayoutDefined { layout } => {
+            (layout.clone(), vk::Pipeline::null())
         },
     };
 

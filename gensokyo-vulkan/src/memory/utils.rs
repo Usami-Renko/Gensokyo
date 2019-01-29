@@ -68,6 +68,7 @@ impl MemoryMappable for MemoryMapAlias {
     }
 }
 
+#[derive(Debug)]
 pub struct MemoryWritePtr {
 
     ptr: vkptr,

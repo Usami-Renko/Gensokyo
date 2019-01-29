@@ -85,10 +85,10 @@ impl GsglTFAttrFlags {
 
     fn vertex_size(&self) -> Option<vkbytes> {
         match *self {
-            | GsglTFAttrFlags::GPA_P        => Some(data_size!(GPA_P)),
-            | GsglTFAttrFlags::GPA_PN       => Some(data_size!(GPA_PN)),
-            | GsglTFAttrFlags::GPA_PNTE0    => Some(data_size!(GPA_PNTe0)),
-            | GsglTFAttrFlags::GPA_ULTIMATE => Some(data_size!(GPA_Ultimate)),
+            | GsglTFAttrFlags::GPA_P        => Some(data_size!(GPA_P_Vertex)),
+            | GsglTFAttrFlags::GPA_PN       => Some(data_size!(GPA_PN_Vertex)),
+            | GsglTFAttrFlags::GPA_PNTE0    => Some(data_size!(GPA_PNTe0_Vertex)),
+            | GsglTFAttrFlags::GPA_ULTIMATE => Some(data_size!(GPA_Ultimate_Vertex)),
             | _ => None,
         }
     }

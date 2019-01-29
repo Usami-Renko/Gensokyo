@@ -8,3 +8,4 @@ pub(super) mod shaderc;
 
 mod module;
 mod input;
+mod specialization;
