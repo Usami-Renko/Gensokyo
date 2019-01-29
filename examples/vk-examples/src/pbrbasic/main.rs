@@ -7,7 +7,7 @@ mod program;
 
 use gs::prelude::*;
 
-const MANIFEST_PATH: &str = "src/pbrbasic/gensokyo.toml";
+const MANIFEST_PATH: &'static str = "src/pbrbasic/Gensokyo.toml";
 
 use self::program::VulkanExample;
 

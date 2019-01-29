@@ -29,13 +29,13 @@ impl Vertex {
             ],
             attributes: vec![
                 GsVertexInputAttribute {
-                    binding: 0,
+                    binding : 0,
                     location: 0,
                     format: vk_format!(vec3),
                     offset: offset_of!(Self, position) as _,
                 },
                 GsVertexInputAttribute {
-                    binding: 0,
+                    binding : 0,
                     location: 1,
                     format: vk_format!(vec3),
                     offset: offset_of!(Self, color) as _,

@@ -6,7 +6,7 @@ mod program;
 
 use gs::prelude::*;
 
-const MANIFEST_PATH: &str = "src/dynamicuniformbuffer/gensokyo.toml";
+const MANIFEST_PATH: &'static str = "src/dynamicuniformbuffer/Gensokyo.toml";
 
 use self::program::VulkanExample;
 

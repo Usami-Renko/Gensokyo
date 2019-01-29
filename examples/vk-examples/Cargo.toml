@@ -43,8 +43,14 @@ path = "src/pushconstants/main.rs"
 [[bin]]
 name = "specializationconstants"
 path = "src/specializationconstants/main.rs"
+
+[[bin]]
+name = "texture"
+path = "src/texture/main.rs"
 # -----------------------------------------------------
 
+# Physically Based Rendering --------------------------
 [[bin]]
 name = "pbrbasic"
 path = "src/pbrbasic/main.rs"
+# -----------------------------------------------------

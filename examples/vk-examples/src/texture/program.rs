@@ -15,28 +15,26 @@ use gsvk::prelude::api::*;
 use gsma::data_size;
 
 use vk_examples::{ Y_CORRECTION, DEFAULT_CLEAR_COLOR };
-use super::data::{ Vertex, UBOVS, PushConstants };
+use super::data::{ Vertex, UBOVS };
+use super::data::{ VERTEX_DATA, INDEX_DATA };
 
-use nalgebra::{ Matrix4, Point3 };
+use nalgebra::{ Matrix4, Point3, Point4 };
 use std::path::Path;
 
-const VERTEX_SHADER_SOURCE_PATH  : &'static str = "src/pushconstants/lights.vert";
-const FRAGMENT_SHADER_SOURCE_PATH: &'static str = "src/pushconstants/lights.frag";
-const MODEL_PATH: &'static str = "models/samplescene.gltf";
-const TIMER: f32 = 0.10;
+const VERTEX_SHADER_SOURCE_PATH  : &'static str = "src/texture/texture.vert";
+const FRAGMENT_SHADER_SOURCE_PATH: &'static str = "src/texture/texture.frag";
+const TEXTURE_PATH: &'static str = "textures/metalplate01_rgba.png";
 
 pub struct VulkanExample {
 
-    ubo_data: Vec<UBOVS>,
-
-    model_entity: GsglTFEntity,
+    vertex_buffer : GsVertexBuffer,
+    index_buffer  : GsIndexBuffer,
     #[allow(dead_code)]
-    model_repository: GsBufferRepository<Device>,
+    vertex_storage: GsBufferRepository<Device>,
 
-    push_range : GsPushConstantRange,
-
-    ubo_buffer  : GsUniformBuffer,
-    ubo_storage : GsBufferRepository<Host>,
+    ubo_data   : Vec<UBOVS>,
+    ubo_buffer : GsUniformBuffer,
+    ubo_storage: GsBufferRepository<Host>,
 
     pipeline: GsPipeline<Graphics>,
 
@@ -44,6 +42,7 @@ pub struct VulkanExample {
     #[allow(dead_code)]
     desc_storage: GsDescriptorRepository,
 
+    sample_image: GsSampleImage,
     depth_attachment: GsDSAttachment,
     #[allow(dead_code)]
     image_storage   : GsImageRepository<Device>,
@@ -57,6 +56,7 @@ pub struct VulkanExample {
     camera: GsFlightCamera,
     present_availables: Vec<GsSemaphore>,
 
+    lod_bias: f32,
     is_toggle_event: bool,
 }
 
@@ -66,42 +66,39 @@ impl VulkanExample {
 
         let screen_dimension = loader.screen_dimension();
 
-        let mut camera = GsCameraFactory::config()
-            .place_at(Point3::new(-11.0, 45.0, 26.0))
+        let camera = GsCameraFactory::config()
+            .place_at(Point3::new(0.0, 0.0, 2.5))
             .screen_aspect_ratio(screen_dimension.width as f32 / screen_dimension.height as f32)
-            .pitch(-45.0)
-            .yaw(-45.0)
             .into_flight_camera();
-        camera.set_move_speed(50.0);
+
+        let ubo_data = vec![
+            UBOVS {
+                projection  : camera.proj_matrix(),
+                view        : camera.view_matrix(),
+                model       : Matrix4::identity(),
+                y_correction: Y_CORRECTION.clone(),
+                view_pos    : Point4::from([0.0, 0.0, 2.5, 0.0]),
+                lod_bias    : 0.0,
+            },
+        ];
 
         let view_port = CmdViewportInfo::from(screen_dimension);
         let scissor = CmdScissorInfo::from(screen_dimension);
 
-        let ubo_data = vec![
-            UBOVS {
-                projection: camera.proj_matrix(),
-                model     : Matrix4::identity(),
-                view      : camera.view_matrix(),
-                y_correction: Y_CORRECTION.clone(),
-            },
-        ];
-
-        let (model_entity, model_repository, ubo_buffer, ubo_storage) = loader.assets(|kit| {
-            VulkanExample::load_model(kit, &ubo_data)
+        let (vertex_buffer, index_buffer, vertex_storage, ubo_buffer, ubo_storage) = loader.assets(|kit| {
+            VulkanExample::buffers(kit, &ubo_data)
         })?;
 
-        let push_range = VulkanExample::push_constants();
-
-        let (depth_attachment, image_storage) = loader.assets(|kit| {
+        let (depth_attachment, sample_image, image_storage) = loader.assets(|kit| {
             VulkanExample::image(kit, screen_dimension)
         })?;
 
         let (ubo_set, desc_storage) = loader.assets(|kit| {
-            VulkanExample::ubo(kit, &model_entity, &ubo_buffer)
+            VulkanExample::ubo(kit, &ubo_buffer, &sample_image)
         })?;
 
         let pipeline = loader.pipelines(|kit| {
-            VulkanExample::pipelines(kit, &ubo_set, push_range.clone(), &depth_attachment)
+            VulkanExample::pipelines(kit, &ubo_set, &depth_attachment)
         })?;
 
         let present_availables = loader.syncs(|kit| {
@@ -109,19 +106,21 @@ impl VulkanExample {
         })?;
 
         let (command_pool, command_buffers) = loader.commands(|kit| {
-            VulkanExample::commands(kit, &pipeline, &model_entity, &ubo_set, &view_port, &scissor)
+            VulkanExample::commands(kit, &pipeline, &vertex_buffer, &index_buffer, &ubo_set, &view_port, &scissor)
         })?;
 
         let procedure = VulkanExample {
             ubo_data,
-            model_entity, model_repository,
-            ubo_buffer, push_range, ubo_storage,
+            vertex_storage, vertex_buffer, index_buffer,
+            ubo_buffer, ubo_storage,
             desc_storage, ubo_set,
             pipeline,
-            depth_attachment, image_storage,
+            sample_image, depth_attachment, image_storage,
             command_pool, command_buffers,
             camera, view_port, scissor,
             present_availables,
+
+            lod_bias: 0.0,
             is_toggle_event: false,
         };
 
@@ -130,66 +129,97 @@ impl VulkanExample {
 
     fn update_uniforms(&mut self) -> GsResult<()> {
 
-        // Update UBOVS uniform block.
-        self.ubo_data[0].view = self.camera.view_matrix();
+        if self.is_toggle_event {
 
-        // Update data in memory.
-        self.ubo_storage.data_updater()?
-            .update(&self.ubo_buffer, &self.ubo_data)?
-            .finish()?;
+            let camera_pos = self.camera.current_position();
+
+            self.ubo_data[0].view = self.camera.view_matrix();
+            self.ubo_data[0].lod_bias = self.lod_bias;
+            self.ubo_data[0].view_pos = Point4::new(camera_pos.x, camera_pos.y, camera_pos.z, 0.0);
+
+            self.ubo_storage.data_updater()?
+                .update(&self.ubo_buffer, &self.ubo_data)?
+                .finish()?;
+        }
 
         Ok(())
     }
 
-    fn load_model(kit: AllocatorKit, ubo_data: &Vec<UBOVS>) -> GsResult<(GsglTFEntity, GsBufferRepository<Device>, GsUniformBuffer, GsBufferRepository<Host>)> {
+    fn buffers(kit: AllocatorKit, ubo_data: &[UBOVS]) -> GsResult<(GsVertexBuffer, GsIndexBuffer, GsBufferRepository<Device>, GsUniformBuffer, GsBufferRepository<Host>)> {
 
-        let mut model_allocator = kit.buffer(BufferStorageType::DEVICE);
+        // vertex, index and uniform buffer
+        let mut vertex_allocator = kit.buffer(BufferStorageType::DEVICE);
         let mut ubo_allocator = kit.buffer(BufferStorageType::HOST);
 
-        // allocate uniform data buffer.
-        // refer to `layout (binding = 0) uniform UBO` in pbr.frag.
-        let ubo_vertex_info = GsBufUniformInfo::new(0, 1, data_size!(UBOVS));
-        let ubo_vertex_index = ubo_allocator.assign(ubo_vertex_info)?;
+        let vertex_info = GsBufVertexInfo::new(data_size!(Vertex), VERTEX_DATA.len());
+        let vertex_index = vertex_allocator.assign(vertex_info)?;
 
-        // allocate model data buffer.
-        let gltf_importer = kit.gltf_loader();
-        let (mut model_entity, model_data) = gltf_importer.load(Path::new(MODEL_PATH))?;
+        let index_info = GsBufIndicesInfo::new(INDEX_DATA.len());
+        let index_index = vertex_allocator.assign(index_info)?;
 
-        let model_vertex_index = model_allocator.assign_v2(&model_data.vertex_allot_delegate())?;
-        let model_uniform_index = ubo_allocator.assign_v2(&model_data.uniform_allot_delegate(1))?;
+        // refer to `layout (binding = 0) uniform UBO` in texture.vert.
+        let ubo_info = GsBufUniformInfo::new(0, 1, data_size!(UBOVS));
+        let ubo_index = ubo_allocator.assign(ubo_info)?;
 
-        let model_distributor = model_allocator.allocate()?;
+        let vertex_distributor = vertex_allocator.allocate()?;
         let ubo_distributor = ubo_allocator.allocate()?;
 
-        model_entity.acquire_vertex(model_vertex_index, &model_distributor);
-        model_entity.acquire_uniform(model_uniform_index, &ubo_distributor);
-        
-        let mut model_repository = model_distributor.into_repository();
-        model_repository.data_uploader()?
-            .upload_v2(&model_entity.vertex_upload_delegate().unwrap(), &model_data)?
+        let vertex_buffer = vertex_distributor.acquire(vertex_index);
+        let index_buffer = vertex_distributor.acquire(index_index);
+        let ubo_buffer = ubo_distributor.acquire(ubo_index);
+
+        let mut vertex_storage = vertex_distributor.into_repository();
+        let mut ubo_storage = ubo_distributor.into_repository();
+
+        vertex_storage.data_uploader()?
+            .upload(&vertex_buffer, VERTEX_DATA.as_ref())?
+            .upload(&index_buffer, INDEX_DATA.as_ref())?
             .finish()?;
 
-        let ubo_buffer = ubo_distributor.acquire(ubo_vertex_index);
-        let mut ubo_repository = ubo_distributor.into_repository();
-        ubo_repository.data_uploader()?
-            .upload_v2(&model_entity.uniform_upload_delegate().unwrap(), &model_data)?
+        ubo_storage.data_uploader()?
             .upload(&ubo_buffer, ubo_data)?
             .finish()?;
 
-        Ok((model_entity, model_repository, ubo_buffer, ubo_repository))
+        Ok((vertex_buffer, index_buffer, vertex_storage, ubo_buffer, ubo_storage))
     }
 
-    fn push_constants() -> GsPushConstantRange {
+    fn image(kit: AllocatorKit, dimension: vkDim2D) -> GsResult<(GsDSAttachment, GsSampleImage, GsImageRepository<Device>)> {
 
-        GsPushConstantRange::new(GsPipelineStage::VERTEX, 0, data_size!(PushConstants))
+        // depth attachment image.
+        let mut image_allocator = kit.image(ImageStorageType::DEVICE);
+
+        let depth_attachment_info = GsDSAttachmentInfo::new(dimension, DepthStencilImageFormat::Depth32Bit);
+        let depth_image_index = image_allocator.assign(depth_attachment_info)?;
+
+        // combine sample image.
+        let image_storage = kit.image_loader().load_2d(Path::new(TEXTURE_PATH))?;
+        let mut sampler_description = SamplerDescInfo::default();
+        sampler_description.filter(vk::Filter::LINEAR, vk::Filter::LINEAR);
+        sampler_description.mipmap(vk::SamplerMipmapMode::LINEAR, vk::SamplerAddressMode::REPEAT, vk::SamplerAddressMode::REPEAT, vk::SamplerAddressMode::REPEAT);
+        sampler_description.anisotropy(Some(16.0));
+        sampler_description.lod(0.0, 0.0, 1.0);
+        sampler_description.compare_op(None);
+        sampler_description.border_color(vk::BorderColor::FLOAT_OPAQUE_WHITE);
+        // refer to `layout (binding = 1) uniform sampler2D samplerColor` in texture.frag.
+        let sample_image_info = GsSampleImgInfo::new(1, 1, image_storage, ImagePipelineStage::FragmentStage);
+        let sample_image_index = image_allocator.assign(sample_image_info)?;
+
+        let image_distributor = image_allocator.allocate()?;
+
+        let depth_attachment = image_distributor.acquire(depth_image_index);
+        let sample_image = image_distributor.acquire(sample_image_index);
+
+        let image_storage = image_distributor.into_repository();
+
+        Ok((depth_attachment, sample_image, image_storage))
     }
 
-    fn ubo(kit: AllocatorKit, model: &GsglTFEntity, ubo_buffer: &GsUniformBuffer) -> GsResult<(DescriptorSet, GsDescriptorRepository)> {
+    fn ubo(kit: AllocatorKit, ubo_buffer: &GsUniformBuffer, sample_image: &GsSampleImage) -> GsResult<(DescriptorSet, GsDescriptorRepository)> {
 
         // descriptor
         let mut descriptor_set_config = DescriptorSetConfig::init();
         descriptor_set_config.add_buffer_binding(ubo_buffer, GsPipelineStage::VERTEX);
-        descriptor_set_config.add_buffer_binding(model, GsPipelineStage::VERTEX);
+        descriptor_set_config.add_image_binding(sample_image, GsPipelineStage::FRAGMENT);
 
         let mut descriptor_allocator = kit.descriptor(vk::DescriptorPoolCreateFlags::empty());
         let desc_index = descriptor_allocator.assign(descriptor_set_config);
@@ -202,26 +232,19 @@ impl VulkanExample {
         Ok((ubo_set, desc_storage))
     }
 
-    fn image(kit: AllocatorKit, dimension: vkDim2D) -> GsResult<(GsDSAttachment, GsImageRepository<Device>)> {
-
-        // depth attachment image
-        let mut image_allocator = kit.image(ImageStorageType::DEVICE);
-
-        let depth_attachment_info = GsDSAttachmentInfo::new(dimension, DepthStencilImageFormat::Depth32Bit);
-        let image_index = image_allocator.assign(depth_attachment_info)?;
-
-        let image_distributor = image_allocator.allocate()?;
-        let depth_attachment = image_distributor.acquire(image_index);
-        let image_storage = image_distributor.into_repository();
-
-        Ok((depth_attachment, image_storage))
-    }
-
-    fn pipelines(kit: PipelineKit, ubo_set: &DescriptorSet, range: GsPushConstantRange, depth_image: &GsDSAttachment) -> GsResult<GsPipeline<Graphics>> {
+    fn pipelines(kit: PipelineKit, ubo_set: &DescriptorSet, depth_image: &GsDSAttachment) -> GsResult<GsPipeline<Graphics>> {
 
         // shaders
-        let vertex_shader = GsShaderInfo::from_source(GsPipelineStage::VERTEX, Path::new(VERTEX_SHADER_SOURCE_PATH), None, "[Vertex Shader]");
-        let fragment_shader = GsShaderInfo::from_source(GsPipelineStage::FRAGMENT, Path::new(FRAGMENT_SHADER_SOURCE_PATH), None, "[Fragment Shader]");
+        let vertex_shader = GsShaderInfo::from_source(
+            GsPipelineStage::VERTEX,
+            Path::new(VERTEX_SHADER_SOURCE_PATH),
+            None,
+            "[Vertex Shader]");
+        let fragment_shader = GsShaderInfo::from_source(
+            GsPipelineStage::FRAGMENT,
+            Path::new(FRAGMENT_SHADER_SOURCE_PATH),
+            None,
+            "[Fragment Shader]");
         let shader_infos = vec![vertex_shader, fragment_shader];
         let vertex_input_desc = Vertex::input_description();
 
@@ -231,7 +254,7 @@ impl VulkanExample {
 
         let color_attachment = kit.present_attachment()
             .op(vk::AttachmentLoadOp::CLEAR, vk::AttachmentStoreOp::STORE)
-            .clear_value(DEFAULT_CLEAR_COLOR.clone());
+            .clear_value(DEFAULT_CLEAR_COLOR);
         let depth_attachment = depth_image.attachment()
             .op(vk::AttachmentLoadOp::CLEAR, vk::AttachmentStoreOp::DONT_CARE);
 
@@ -252,14 +275,10 @@ impl VulkanExample {
 
         let render_pass = render_pass_builder.build()?;
         let depth_stencil = GsDepthStencilState::setup(GsDepthStencilPrefab::EnableDepth);
-        let mut rasterization = GsRasterizerState::setup(RasterizerPrefab::Common);
-        rasterization.set_front_face(vk::FrontFace::COUNTER_CLOCKWISE);
 
         let pipeline_config = kit.pipeline_config(shader_infos, vertex_input_desc, render_pass)
             .with_depth_stencil(depth_stencil)
             .with_viewport(ViewportStateType::Dynamic { count: 1 })
-            .with_rasterizer(rasterization)
-            .with_push_constants(vec![range])
             .with_descriptor_sets(&[ubo_set])
             .finish();
 
@@ -275,7 +294,7 @@ impl VulkanExample {
         kit.multi_semaphores(graphics_pipeline.frame_count())
     }
 
-    fn commands(kit: CommandKit, graphics_pipeline: &GsPipeline<Graphics>, model_entity: &GsglTFEntity, ubo_set: &DescriptorSet, view_port: &CmdViewportInfo, scissor: &CmdScissorInfo) -> GsResult<(GsCommandPool, Vec<GsCommandBuffer>)> {
+    fn commands(kit: CommandKit, graphics_pipeline: &GsPipeline<Graphics>, vertex_buffer: &GsVertexBuffer, index_buffer: &GsIndexBuffer, ubo_set: &DescriptorSet, view_port: &CmdViewportInfo, scissor: &CmdScissorInfo) -> GsResult<(GsCommandPool, Vec<GsCommandBuffer>)> {
 
         let command_pool = kit.pool(DeviceQueueIdentifier::Graphics)?;
         let mut command_buffers = vec![];
@@ -290,11 +309,12 @@ impl VulkanExample {
                 .begin_render_pass(graphics_pipeline, frame_index)
                 .set_viewport(0, &[view_port.clone()])
                 .set_scissor(0, &[scissor.clone()])
-                .bind_pipeline();
-
-            VulkanExample::record_commands(&recorder, model_entity, ubo_set)?;
-
-            recorder.end_render_pass();
+                .bind_descriptor_sets(0, &[ubo_set])
+                .bind_pipeline()
+                .bind_vertex_buffers(0, &[vertex_buffer])
+                .bind_index_buffer(index_buffer, 0)
+                .draw_indexed(index_buffer.total_count(), 1, 0, 0, 0)
+                .end_render_pass();
 
             let command_recorded = recorder.end_record()?;
             command_buffers.push(command_recorded);
@@ -302,54 +322,13 @@ impl VulkanExample {
 
         Ok((command_pool, command_buffers))
     }
-
-    fn record_commands(recorder: &GsCmdRecorder<Graphics>, model: &GsglTFEntity, ubo_set: &DescriptorSet) -> GsResult<()> {
-
-        let model_render_params = GsglTFRenderParams {
-            is_use_vertex        : true,
-            is_use_node_transform: true,
-            is_push_materials    : false,
-            material_stage: GsPipelineStage::VERTEX,
-        };
-
-        // Update light positions
-        const R : f32 = 10.5;
-        const Y1: f32 = -2.0;
-        const Y2: f32 = 15.0;
-
-        let sin_t = (TIMER * 360.0).to_radians().sin();
-        let cos_t = (TIMER * 360.0).to_radians().cos();
-
-        let push_data = PushConstants {
-            // w component = light radius scale.
-            lights: [
-                [R * 1.1 * sin_t, Y1, R * 1.1 * cos_t, 2.0],
-                [-R * sin_t, Y1, -R * cos_t, 2.0],
-                [R * 0.85 * sin_t, Y1, -sin_t * 2.5, 3.0],
-                [0.0, Y2, R * 1.25 * cos_t, 3.0],
-                [R * 2.25 * cos_t, Y2, 0.0, 2.5],
-                [R * 2.5 * cos_t, Y2, R * 2.5 * sin_t, 2.5],
-            ],
-        };
-        let raw_data = bincode::serialize(&push_data)
-            .map_err(GsError::serialize)?;
-
-        recorder.push_constants(GsPipelineStage::VERTEX, 0, &raw_data);
-
-        // draw the model.
-        model.record_command(recorder, ubo_set, &[], Some(model_render_params))?;
-
-        Ok(())
-    }
 }
 
 impl GraphicsRoutine for VulkanExample {
 
     fn draw(&mut self, device: &GsDevice, device_available: &GsFence, image_available: &GsSemaphore, image_index: usize, _: f32) -> GsResult<&GsSemaphore> {
 
-        if self.is_toggle_event {
-            self.update_uniforms()?;
-        }
+        self.update_uniforms()?;
 
         let submit_info = QueueSubmitBundle {
             wait_semaphores: &[image_available],
@@ -366,7 +345,7 @@ impl GraphicsRoutine for VulkanExample {
     fn reload_res(&mut self, loader: AssetsLoader) -> GsResult<()> {
 
         self.pipeline = loader.pipelines(|kit| {
-            VulkanExample::pipelines(kit, &self.ubo_set, self.push_range.clone(), &self.depth_attachment)
+            VulkanExample::pipelines(kit, &self.ubo_set, &self.depth_attachment)
         })?;
 
         self.present_availables = loader.syncs(|kit| {
@@ -374,12 +353,17 @@ impl GraphicsRoutine for VulkanExample {
         })?;
 
         let (command_pool, command_buffers) = loader.commands(|kit| {
-            VulkanExample::commands(kit, &self.pipeline, &self.model_entity, &self.ubo_set, &self.view_port, &self.scissor)
+            VulkanExample::commands(kit, &self.pipeline, &self.vertex_buffer, &self.index_buffer, &self.ubo_set, &self.view_port, &self.scissor)
         })?;
         self.command_pool = command_pool;
         self.command_buffers = command_buffers;
 
         Ok(())
+    }
+
+    fn clean_routine(&mut self, device: &GsDevice) {
+
+        self.sample_image.destroy(device);
     }
 
     fn react_input(&mut self, inputer: &ActionNerve, delta_time: f32) -> SceneAction {
@@ -388,6 +372,12 @@ impl GraphicsRoutine for VulkanExample {
 
             if inputer.is_key_pressed(GsKeycode::ESCAPE) {
                 return SceneAction::Terminal
+            }
+
+            if inputer.is_key_pressed(GsKeycode::EQUALS) { // press '='
+                self.lod_bias += 0.1;
+            } else if inputer.is_key_pressed(GsKeycode::MINUS) { // press '-'
+                self.lod_bias -= 0.1;
             }
 
             self.is_toggle_event = true;

@@ -6,7 +6,7 @@ mod program;
 
 use gs::prelude::*;
 
-const MANIFEST_PATH: &str = "src/pushconstants/gensokyo.toml";
+const MANIFEST_PATH: &'static str = "src/pushconstants/Gensokyo.toml";
 
 use self::program::VulkanExample;
 

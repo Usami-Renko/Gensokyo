@@ -53,6 +53,10 @@ impl GsSampleImgInfo {
             },
         }
     }
+
+    pub fn reset_sampler(&mut self, sampler_desc: SamplerDescInfo) {
+        self.sampler_desc = sampler_desc;
+    }
 }
 
 impl ImageInfoAbstract<ISampleImg> for GsSampleImgInfo {

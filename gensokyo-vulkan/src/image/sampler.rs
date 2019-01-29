@@ -117,7 +117,7 @@ impl SamplerDescInfo {
         }
     }
 
-    pub fn build(&self, device: &GsDevice) -> VkResult<GsSampler> {
+    pub(crate) fn build(&self, device: &GsDevice) -> VkResult<GsSampler> {
 
         let handle = unsafe {
             device.handle.create_sampler(&self.0, None)

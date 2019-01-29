@@ -4,7 +4,7 @@ mod program;
 
 use gs::prelude::*;
 
-const MANIFEST_PATH: &str = "src/specializationconstants/gensokyo.toml";
+const MANIFEST_PATH: &'static str = "src/specializationconstants/Gensokyo.toml";
 
 use self::program::VulkanExample;
 

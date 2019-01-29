@@ -53,8 +53,9 @@ impl VulkanExample {
         let screen_dimension = loader.screen_dimension();
 
         let mut camera = GsCameraFactory::config()
-            .place_at(Point3::new(0.0, 0.0, 20.0))
+            .place_at(Point3::new(-1.0, 16.0, 20.0))
             .screen_aspect_ratio(screen_dimension.width as f32 / 3.0 / screen_dimension.height as f32)
+            .pitch(-30.0)
             .into_flight_camera();
         camera.set_move_speed(25.0);
 

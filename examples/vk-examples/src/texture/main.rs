@@ -1,10 +1,12 @@
 
+#[macro_use] extern crate lazy_static;
+
 mod data;
 mod program;
 
 use gs::prelude::*;
 
-const MANIFEST_PATH: &'static str = "src/descriptorsets/Gensokyo.toml";
+const MANIFEST_PATH: &'static str = "src/triangle/Gensokyo.toml";
 
 use self::program::VulkanExample;
 

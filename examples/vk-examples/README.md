@@ -1,6 +1,6 @@
 # Gensokyo/vk-examples
 
-A Rust implementation of [Vulkan examples](https://github.com/SaschaWillems/Vulkan#Basics) using Gensokyo Rendering Engine.
+A Rust implementation of [Vulkan examples](https://github.com/SaschaWillems/Vulkan) using Gensokyo Rendering Engine.
 
 ## Basic
 
