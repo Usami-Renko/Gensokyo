@@ -11,17 +11,33 @@ use crate::utils::time::TimePeriod;
 
 use std::time::Duration;
 
-#[derive(Deserialize, Default)]
+#[derive(Deserialize)]
 pub(crate) struct DeviceConfigMirror {
 
     queue_request_strategy: String,
     transfer_time_out: String,
     transfer_duration: u64, // in ms unit
 
-    print_device_name  : bool, // default is false.
-    print_device_api   : bool, // default is false.
-    print_device_type  : bool, // default is false.
-    print_device_queues: bool, // default is false.
+    print_device_name  : bool,
+    print_device_api   : bool,
+    print_device_type  : bool,
+    print_device_queues: bool,
+}
+
+impl Default for DeviceConfigMirror {
+
+    fn default() -> DeviceConfigMirror {
+        DeviceConfigMirror {
+            queue_request_strategy: String::from("SingleFamilySingleQueue"),
+            transfer_time_out: String::from("Infinite"),
+            transfer_duration: 1000_u64,
+
+            print_device_name  : false,
+            print_device_api   : false,
+            print_device_type  : false,
+            print_device_queues: false,
+        }
+    }
 }
 
 impl ConfigMirror for DeviceConfigMirror {

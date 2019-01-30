@@ -11,7 +11,7 @@ use gsvk::types::vkuint;
 
 use std::time::Duration;
 
-#[derive(Deserialize, Default)]
+#[derive(Deserialize)]
 pub(crate) struct SwapchainConfigMirror {
     
     image_count: vkuint,
@@ -22,6 +22,22 @@ pub(crate) struct SwapchainConfigMirror {
     present_mode_secondary: String,
     acquire_image_time_out: String,
     acquire_image_duration: u64,
+}
+
+impl Default for SwapchainConfigMirror {
+
+    fn default() -> SwapchainConfigMirror {
+        SwapchainConfigMirror {
+            image_count: 2,
+            framebuffer_layers: 1,
+            prefer_surface_format     : String::from("B8G8R8A8_UNORM"),
+            prefer_surface_color_space: String::from("SrgbNonlinear"),
+            present_mode_primary  : String::from("Mailbox"),
+            present_mode_secondary: String::from("Fifo"),
+            acquire_image_time_out: String::from("Infinite"),
+            acquire_image_duration: 1000_u64,
+        }
+    }
 }
 
 impl ConfigMirror for SwapchainConfigMirror {

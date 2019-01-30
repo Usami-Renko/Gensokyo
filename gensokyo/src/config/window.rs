@@ -22,7 +22,7 @@ pub(crate) struct WindowConfig {
     pub is_cursor_hide: bool,
 }
 
-#[derive(Deserialize, Default)]
+#[derive(Deserialize)]
 pub(crate) struct WindowConfigMirror {
 
     title: String,
@@ -34,7 +34,7 @@ pub(crate) struct WindowConfigMirror {
     cursor: Cursor,
 }
 
-#[derive(Deserialize, Default)]
+#[derive(Deserialize)]
 struct Dimension {
     width : vkuint,
     height: vkuint,
@@ -44,10 +44,35 @@ struct Dimension {
     max_height: vkuint,
 }
 
-#[derive(Deserialize, Default)]
+#[derive(Deserialize)]
 struct Cursor {
     is_grab: bool,
     is_hide: bool,
+}
+
+impl Default for WindowConfigMirror {
+
+    fn default() -> WindowConfigMirror {
+        WindowConfigMirror {
+            title: String::from("Gensokyo Rendering Engine"),
+            mode : String::from("normal"),
+            always_on_top: false,
+            is_resizable : true,
+
+            dimension: Dimension {
+                width : 800,
+                height: 600,
+                min_width : 400,
+                min_height: 300,
+                max_width : 1280,
+                max_height: 720,
+            },
+            cursor: Cursor {
+                is_grab: false,
+                is_hide: false,
+            },
+        }
+    }
 }
 
 impl ConfigMirror for WindowConfigMirror {

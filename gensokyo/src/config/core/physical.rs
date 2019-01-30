@@ -9,13 +9,31 @@ use gsvk::core::physical::PhysicalConfig;
 use gsvk::core::physical::DeviceExtensionType;
 use gsvk::core::physical::{ PhysicalExtensionConfig, PhysicalQueueFamilyConfig, PhysicalFeatureConfig, PhysicalPropertiesConfig };
 
-#[derive(Deserialize, Default)]
+#[derive(Deserialize)]
 pub(crate) struct PhysicalConfigMirror {
 
     extensions   : Vec<String>,
     capabilities : Vec<String>,
     features     : Vec<String>,
     devices      : Vec<String>,
+}
+
+impl Default for PhysicalConfigMirror {
+
+    fn default() -> PhysicalConfigMirror {
+        PhysicalConfigMirror {
+            extensions  : vec![
+                String::from("VK_KHR_swapchain"),
+            ],
+            capabilities: Vec::new(),
+            features    : Vec::new(),
+            devices     : vec![
+                String::from("CPU"),
+                String::from("IntegratedGPU"),
+                String::from("DiscreteGPU"),
+            ],
+        }
+    }
 }
 
 impl ConfigMirror for PhysicalConfigMirror {

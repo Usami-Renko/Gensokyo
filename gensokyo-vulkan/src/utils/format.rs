@@ -38,6 +38,7 @@ pub fn vk_string_to_format(raw: &String) -> GsFormat {
     let format = raw_str2vk_format!(raw, Format, {
         UNDEFINED,
         B8G8R8A8_UNORM,
+        R8G8B8A8_UNORM,
         D32_SFLOAT,
         D32_SFLOAT_S8_UINT,
         D24_UNORM_S8_UINT,
@@ -78,7 +79,6 @@ pub fn vk_string_to_format(raw: &String) -> GsFormat {
         B8G8R8_UINT,
         B8G8R8_SINT,
         B8G8R8_SRGB,
-        R8G8B8A8_UNORM,
         R8G8B8A8_SNORM,
         R8G8B8A8_USCALED,
         R8G8B8A8_SSCALED,

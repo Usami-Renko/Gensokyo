@@ -79,6 +79,6 @@ pub struct ImageLoadConfig {
     pub byte_per_pixel: u32,
     /// force_rgba define whether to load the image from file with rgba channel.
     pub force_rgba: bool,
-    // TODO: Currently only support R8g8b8a8Unorm format.
+    ///
     pub img_format: GsFormat,
 }

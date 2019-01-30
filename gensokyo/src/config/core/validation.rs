@@ -7,7 +7,7 @@ use crate::error::{ GsResult, GsError };
 
 use gsvk::core::debug::{ ValidationConfig, DebugReportConfig, DebugUtilsConfig, DebugInstanceType };
 
-#[derive(Deserialize, Default)]
+#[derive(Deserialize)]
 pub(crate) struct ValidationConfigMirror {
 
     enable: bool,
@@ -18,6 +18,24 @@ pub(crate) struct ValidationConfigMirror {
     utils_config : Option<DebugUtilsConfigMirror>,
 
     print_instance_layers: bool, // default is false.
+}
+
+impl Default for ValidationConfigMirror {
+
+    fn default() -> ValidationConfigMirror {
+        ValidationConfigMirror {
+            enable: true,
+            layers: vec![
+                String::from("VK_LAYER_LUNARG_standard_validation"),
+            ],
+
+            instance_type: Some(String::from("DebugUtils")),
+            report_config: Some(DebugReportConfigMirror::default()),
+            utils_config : Some(DebugUtilsConfigMirror::default()),
+
+            print_instance_layers: false,
+        }
+    }
 }
 
 impl ConfigMirror for ValidationConfigMirror {
@@ -105,10 +123,23 @@ fn vk_raw2debug_instance_type(raw: &Option<String>) -> GsResult<DebugInstanceTyp
 }
 
 
-#[derive(Deserialize, Default)]
+#[derive(Deserialize)]
 pub(crate) struct DebugReportConfigMirror {
 
     flags: Vec<String>,
+}
+
+impl Default for DebugReportConfigMirror {
+
+    fn default() -> DebugReportConfigMirror {
+        DebugReportConfigMirror {
+            flags: vec![
+                String::from("Error"),
+                String::from("Warning"),
+                String::from("PerformanceWarning"),
+            ],
+        }
+    }
 }
 
 impl ConfigMirror for DebugReportConfigMirror {
@@ -161,12 +192,30 @@ fn vk_raw2debug_report_flag(raw: &String) -> GsResult<vk::DebugReportFlagsEXT> {
     Ok(flag)
 }
 
-#[derive(Deserialize, Default)]
+#[derive(Deserialize)]
 pub(crate) struct DebugUtilsConfigMirror {
 
     flags    : Vec<String>,
     severity : Vec<String>,
     types    : Vec<String>,
+}
+
+impl Default for DebugUtilsConfigMirror {
+
+    fn default() -> DebugUtilsConfigMirror {
+        DebugUtilsConfigMirror {
+            flags: Vec::new(),
+            severity: vec![
+                String::from("Warning"),
+                String::from("Error"),
+            ],
+            types: vec![
+                String::from("General"),
+                String::from("Performance"),
+                String::from("Validation"),
+            ],
+        }
+    }
 }
 
 impl ConfigMirror for DebugUtilsConfigMirror {

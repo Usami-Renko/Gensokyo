@@ -6,9 +6,22 @@ use gsvk::pipeline::config::DepthStencilConfig;
 use crate::config::engine::ConfigMirror;
 use crate::error::{ GsResult, GsError };
 
-#[derive(Deserialize, Default)]
+#[derive(Deserialize)]
 pub(crate) struct DepthStencilConfigMirror {
     prefer_depth_stencil_formats: Vec<String>,
+}
+
+impl Default for DepthStencilConfigMirror {
+
+    fn default() -> DepthStencilConfigMirror {
+        DepthStencilConfigMirror {
+            prefer_depth_stencil_formats: vec![
+                String::from("D32_SFLOAT"),
+                String::from("D32_SFLOAT_S8_UINT"),
+                String::from("D24_UNORM_S8_UINT"),
+            ],
+        }
+    }
 }
 
 impl ConfigMirror for DepthStencilConfigMirror {
