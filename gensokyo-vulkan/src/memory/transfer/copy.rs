@@ -23,14 +23,11 @@ impl DataCopyer {
 
         let transfer = GsLogicalDevice::transfer(device)?;
         let command = transfer.command()?;
-        let recorder = GsCmdRecorder::new_copy(device, command);
+        let recorder = GsCmdRecorder::create_copy(device, command);
 
         let _ = recorder.begin_record(vk::CommandBufferUsageFlags::ONE_TIME_SUBMIT)?;
 
-        let copyer = DataCopyer {
-            transfer, recorder,
-        };
-
+        let copyer = DataCopyer { transfer, recorder };
         Ok(copyer)
     }
 

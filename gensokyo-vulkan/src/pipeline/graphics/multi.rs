@@ -7,7 +7,7 @@ use crate::core::GsDevice;
 use crate::pipeline::shader::GsShaderModule;
 use crate::pipeline::shader::shaderc::{ GsShaderCompiler, ShaderCompilePrefab, ShadercConfiguration };
 use crate::pipeline::graphics::builder;
-use crate::pipeline::graphics::builder::{ PipelineDeriveState, GsPipelineCIFlags };
+use crate::pipeline::graphics::builder::{ PipelineDeriveState, PipelineCIFlags };
 use crate::pipeline::graphics::config::GfxPipelineConfig;
 use crate::pipeline::target::GsPipeline;
 
@@ -19,7 +19,7 @@ use crate::utils::phantom::Graphics;
 pub struct GfxMultiPipelineBuilder {
 
     device : GsDevice,
-    ci_flag: GsPipelineCIFlags,
+    ci_flag: PipelineCIFlags,
     configs: Vec<PipelineConfigTmp>,
     shaderc: GsShaderCompiler,
 }
@@ -31,11 +31,11 @@ struct PipelineConfigTmp {
 
 impl GfxMultiPipelineBuilder {
 
-    pub fn new(device: &GsDevice) -> VkResult<GfxMultiPipelineBuilder> {
+    pub fn create(device: &GsDevice) -> VkResult<GfxMultiPipelineBuilder> {
 
         let builder = GfxMultiPipelineBuilder {
             device : device.clone(),
-            ci_flag: GsPipelineCIFlags::default(),
+            ci_flag: PipelineCIFlags::default(),
             configs: vec![],
             shaderc: GsShaderCompiler::setup(ShaderCompilePrefab::Vulkan)?,
         };
@@ -43,7 +43,7 @@ impl GfxMultiPipelineBuilder {
         Ok(builder)
     }
 
-    pub fn with_flag(&mut self, flags: GsPipelineCIFlags) {
+    pub fn with_flag(&mut self, flags: PipelineCIFlags) {
         self.ci_flag |= flags;
     }
 
@@ -81,7 +81,7 @@ impl GfxMultiPipelineBuilder {
 
             pipeline_cis.push(pipeline_ci.content);
             layouts.push(pipeline_ci.pipeline_layout);
-            // Notice: keep `shader_ci` outlive for loop, or the pointer will be invalid.
+            // Notice: keep `shader_ci` outlive the loop, or the pointer will be invalid.
             _shader_cis.push(pipeline_ci.shader_cis);
         }
 
@@ -94,7 +94,7 @@ impl GfxMultiPipelineBuilder {
         let mut pipelines = Vec::with_capacity(self.configs.len());
         let device_cloned = self.device.clone();
         for (i, config) in self.configs.into_iter().enumerate() {
-            let pipeline = GsPipeline::new(device_cloned.clone(), handles[i], layouts[i].clone(), config.content.render_pass);
+            let pipeline = GsPipeline::new(device_cloned.clone(), handles[i], layouts[i], config.content.render_pass);
             pipelines.push(pipeline);
         }
 
@@ -102,7 +102,7 @@ impl GfxMultiPipelineBuilder {
     }
 
     pub fn reset(&mut self) {
-        self.ci_flag = GsPipelineCIFlags::default();
+        self.ci_flag = PipelineCIFlags::default();
         self.configs.clear();
     }
 

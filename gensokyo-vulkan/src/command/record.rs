@@ -37,7 +37,7 @@ impl<T> GsCmdRecorder<T>
     where
         T: GsVkCommandType + GsVkPipelineType {
 
-    pub fn new(device: &GsDevice, command: GsCommandBuffer, pipeline: &impl CmdPipelineAbs) -> GsCmdRecorder<T> {
+    pub fn create(device: &GsDevice, command: GsCommandBuffer, pipeline: &impl CmdPipelineAbs) -> GsCmdRecorder<T> {
 
         GsCmdRecorder {
             phantom_type: PhantomData,
@@ -52,7 +52,7 @@ impl<T> GsCmdRecorder<T>
 
 impl GsCmdRecorder<Transfer> {
 
-    pub fn new_copy(device: &GsDevice, buffer: GsCommandBuffer) -> GsCmdRecorder<Transfer> {
+    pub fn create_copy(device: &GsDevice, buffer: GsCommandBuffer) -> GsCmdRecorder<Transfer> {
 
         GsCmdRecorder {
             phantom_type: PhantomData,

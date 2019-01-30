@@ -4,7 +4,7 @@ use crate::image::traits::{ ImageInstance, ImageCopiable };
 use crate::image::utils::ImageCopyInfo;
 use crate::image::instance::desc::ImageInstanceInfoDesc;
 
-use crate::pipeline::pass::{ RenderAttachment, DepthStencil };
+use crate::pipeline::pass::{ RenderAttachmentCI, DepthStencil };
 use crate::types::format::GsFormat;
 
 pub struct GsDSAttachment {
@@ -22,17 +22,17 @@ pub struct IDepthStencilImg {
 
 impl ImageInstance<IDepthStencilImg> for GsDSAttachment {
 
-    fn new(idsi: IDepthStencilImg, entity: ImageEntity, desc: ImageInstanceInfoDesc) -> GsDSAttachment {
+    fn build(idsi: IDepthStencilImg, entity: ImageEntity, desc: ImageInstanceInfoDesc) -> GsDSAttachment {
         GsDSAttachment { idsi, entity, desc }
     }
 }
 
 impl GsDSAttachment {
 
-    pub fn attachment(&self) -> RenderAttachment<DepthStencil> {
+    pub fn attachment(&self) -> RenderAttachmentCI<DepthStencil> {
 
         let frame_view = DepthStencil(self.entity.view.clone());
-        RenderAttachment::setup(frame_view, self.idsi.format)
+        RenderAttachmentCI::create(frame_view, self.idsi.format)
     }
 }
 

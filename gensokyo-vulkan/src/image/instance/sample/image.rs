@@ -28,7 +28,7 @@ pub struct ISampleImg {
 
 impl ImageInstance<ISampleImg> for GsSampleImage {
 
-    fn new(isi: ISampleImg, entity: ImageEntity, desc: ImageInstanceInfoDesc) -> Self where Self: Sized {
+    fn build(isi: ISampleImg, entity: ImageEntity, desc: ImageInstanceInfoDesc) -> Self where Self: Sized {
         GsSampleImage { isi, entity, desc }
     }
 }

@@ -24,15 +24,20 @@ pub struct GsImage {
 
 impl GsImage {
 
-    fn new(device: &GsDevice, handle: vk::Image) -> GsImage {
+    #[inline(always)]
+    fn build(device: &GsDevice, image_ci: vk::ImageCreateInfo) -> VkResult<GsImage> {
+
+        let handle = unsafe {
+            device.logic.handle.create_image(&image_ci, None)
+                .or(Err(VkError::create("Image View")))?
+        };
 
         let requirement = unsafe {
             device.logic.handle.get_image_memory_requirements(handle)
         };
 
-        GsImage {
-            handle, requirement,
-        }
+        let image = GsImage { handle, requirement };
+        Ok(image)
     }
 
     pub fn destroy(&self, device: &GsDevice) {
@@ -79,13 +84,13 @@ impl MemoryDstEntity for GsImage {
 
 
 #[derive(Debug, Clone)]
-pub struct ImageDescInfo {
+pub struct ImageTgtCI {
 
-    pub property: ImagePropertyInfo,
-    pub specific: ImageSpecificInfo,
+    pub property: ImagePropertyCI,
+    pub specific: ImageSpecificCI,
 }
 
-impl ImageDescInfo {
+impl ImageTgtCI {
 
     pub fn build(&self, device: &GsDevice) -> VkResult<GsImage> {
 
@@ -107,18 +112,12 @@ impl ImageDescInfo {
             p_queue_family_indices  : self.specific.queue_family_indices.as_ptr(),
         };
 
-        let handle = unsafe {
-            device.logic.handle.create_image(&image_ci, None)
-                .or(Err(VkError::create("Image View")))?
-        };
-
-        let image = GsImage::new(device, handle);
-        Ok(image)
+        GsImage::build(device, image_ci)
     }
 }
 
 #[derive(Debug, Clone)]
-pub struct ImagePropertyInfo {
+pub struct ImagePropertyCI {
 
     /// `flags` describing additional parameters of the image.
     pub flags: vk::ImageCreateFlags,
@@ -141,7 +140,7 @@ pub struct ImagePropertyInfo {
 }
 
 #[derive(Debug, Clone)]
-pub struct ImageSpecificInfo {
+pub struct ImageSpecificCI {
 
     /// `dimension` describes the number of data elements in each dimension of the base level.
     pub dimension: vkDim3D,
@@ -157,11 +156,11 @@ pub struct ImageSpecificInfo {
     queue_family_indices: Vec<vkuint>,
 }
 
-impl Default for ImagePropertyInfo {
+impl Default for ImagePropertyCI {
 
-    fn default() -> ImagePropertyInfo {
+    fn default() -> ImagePropertyCI {
 
-        ImagePropertyInfo {
+        ImagePropertyCI {
             flags : vk::ImageCreateFlags::empty(),
             tiling: vk::ImageTiling::OPTIMAL,
             usages: vk::ImageUsageFlags::COLOR_ATTACHMENT,
@@ -174,7 +173,7 @@ impl Default for ImagePropertyInfo {
     }
 }
 
-impl ImageSpecificInfo {
+impl ImageSpecificCI {
 
     pub fn share_queue_families(&mut self, family_indices: Option<Vec<vkuint>>) {
 
@@ -188,11 +187,11 @@ impl ImageSpecificInfo {
     }
 }
 
-impl Default for ImageSpecificInfo {
+impl Default for ImageSpecificCI {
 
-    fn default() -> ImageSpecificInfo {
+    fn default() -> ImageSpecificCI {
 
-        ImageSpecificInfo {
+        ImageSpecificCI {
             format: GsFormat::UNDEFINED,
             dimension: vkDim3D {
                 width : 0,

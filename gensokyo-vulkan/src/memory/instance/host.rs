@@ -11,7 +11,7 @@ use crate::memory::utils::{ MemoryMapStatus, MemoryRange, MemoryMapAlias, Memory
 use crate::memory::target::GsMemory;
 use crate::memory::traits::{ GsMemoryAbstract, MemoryMappable };
 use crate::memory::filter::MemoryFilter;
-use crate::memory::instance::GsBufferMemoryAbs;
+use crate::memory::instance::BufferMemoryAbs;
 use crate::memory::transfer::MemoryDataDelegate;
 
 use crate::error::{ VkResult, VkError };
@@ -67,7 +67,7 @@ impl GsMemoryAbstract for GsHostMemory {
     }
 }
 
-impl GsBufferMemoryAbs for GsHostMemory {
+impl BufferMemoryAbs for GsHostMemory {
 
     fn to_upload_agency(&self, _: &GsDevice, _: &BufferAllocateInfos) -> VkResult<Box<dyn MemoryDataDelegate>> {
 

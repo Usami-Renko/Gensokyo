@@ -3,8 +3,8 @@ use ash::vk;
 
 use crate::core::GsDevice;
 
-use crate::image::barrier::GsImageBarrier;
-use crate::image::allocator::ImageAllotInfo;
+use crate::image::barrier::ImageBarrierCI;
+use crate::image::allocator::ImageAllotCI;
 use crate::image::instance::traits::ImageBarrierBundleAbs;
 
 use crate::memory::transfer::DataCopyer;
@@ -19,7 +19,7 @@ pub struct DSImageBarrierBundle {
 
 impl ImageBarrierBundleAbs for DSImageBarrierBundle {
 
-    fn make_barrier_transform(&mut self, _device: &GsDevice, copyer: &DataCopyer, infos: &mut Vec<ImageAllotInfo>) -> VkResult<()> {
+    fn make_barrier_transform(&mut self, _device: &GsDevice, copyer: &DataCopyer, infos: &mut Vec<ImageAllotCI>) -> VkResult<()> {
 
         let final_barriers = self.info_indices.iter()
             .map(|&index| self.final_barrier(&mut infos[index])).collect();
@@ -43,16 +43,16 @@ impl DSImageBarrierBundle {
         }
     }
 
-    fn final_barrier(&self, info: &mut ImageAllotInfo) -> GsImageBarrier {
+    fn final_barrier(&self, info: &mut ImageAllotCI) -> ImageBarrierCI {
 
         info.final_layout = vk::ImageLayout::DEPTH_STENCIL_ATTACHMENT_OPTIMAL;
 
-        GsImageBarrier::new(&info.image, info.view_desc.subrange)
+        ImageBarrierCI::new(&info.image, info.view_ci.subrange)
             .access_mask(
                 vk::AccessFlags::empty(),
                 vk::AccessFlags::DEPTH_STENCIL_ATTACHMENT_READ | vk::AccessFlags::DEPTH_STENCIL_ATTACHMENT_WRITE
             )
-            .layout(info.image_desc.property.initial_layout, info.final_layout)
+            .layout(info.image_ci.property.initial_layout, info.final_layout)
             .build()
     }
 }

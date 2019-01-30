@@ -1,7 +1,7 @@
 
 use crate::core::GsDevice;
 
-use crate::buffer::target::BufferDescInfo;
+use crate::buffer::target::BufferCI;
 use crate::buffer::allocator::types::BufferMemoryTypeAbs;
 
 use crate::memory::types::GsMemoryType;
@@ -14,7 +14,7 @@ use crate::types::vkbytes;
 #[derive(Default)]
 pub struct BufferAllocateInfos {
 
-    pub infos : Vec<BufferDescInfo>,
+    pub cis   : Vec<BufferCI>,
     pub spaces: Vec<vkbytes>,
 }
 
@@ -24,10 +24,10 @@ impl BufferAllocateInfos {
         Default::default()
     }
 
-    pub fn push(&mut self, space: vkbytes, desc_info: BufferDescInfo) {
+    pub fn push(&mut self, space: vkbytes, buffer_ci: BufferCI) {
 
         self.spaces.push(space);
-        self.infos.push(desc_info);
+        self.cis.push(buffer_ci);
     }
 }
 

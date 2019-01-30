@@ -11,11 +11,20 @@ use crate::types::vkuint;
 
 use std::ptr;
 
-#[derive(Default)]
 pub struct PipelineLayoutBuilder {
 
     descriptor_layouts: Vec<vk::DescriptorSetLayout>,
     push_constants    : Vec<vk::PushConstantRange>,
+}
+
+impl GsPipelineLayout {
+
+    pub fn new() -> PipelineLayoutBuilder {
+        PipelineLayoutBuilder {
+            descriptor_layouts: Vec::new(),
+            push_constants    : Vec::new(),
+        }
+    }
 }
 
 impl PipelineLayoutBuilder {

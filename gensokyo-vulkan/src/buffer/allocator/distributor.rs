@@ -45,7 +45,7 @@ impl<M> GsDistributeApi<IVertex, GsVertexBuffer, GsBufferRepository<M>> for GsBu
 
         let repo_index = index.assign_index;
         let buffer_block = self.gen_buffer_block(index.assign_index);
-        GsVertexBuffer::new(buffer_block, index.take_info(), repo_index)
+        GsVertexBuffer::build(buffer_block, index.take_info(), repo_index)
     }
 }
 
@@ -57,7 +57,7 @@ impl<M> GsDistributeApi<IIndices, GsIndexBuffer, GsBufferRepository<M>> for GsBu
 
         let repo_index = index.assign_index;
         let buffer_block = self.gen_buffer_block(index.assign_index);
-        GsIndexBuffer::new(buffer_block, index.take_info(), repo_index)
+        GsIndexBuffer::build(buffer_block, index.take_info(), repo_index)
     }
 }
 
@@ -67,7 +67,7 @@ impl GsDistributeApi<IUniform, GsUniformBuffer, GsBufferRepository<Host>> for Gs
 
         let repo_index = index.assign_index;
         let buffer_block = self.gen_buffer_block(index.assign_index);
-        GsUniformBuffer::new(buffer_block, index.take_info(), repo_index)
+        GsUniformBuffer::build(buffer_block, index.take_info(), repo_index)
     }
 }
 
@@ -79,7 +79,7 @@ impl<M> GsDistributeApi<IImgSrc, GsImgsrcBuffer, GsBufferRepository<M>> for GsBu
 
         let repo_index = index.assign_index;
         let buffer_block = self.gen_buffer_block(index.assign_index);
-        GsImgsrcBuffer::new(buffer_block, index.take_info(), repo_index)
+        GsImgsrcBuffer::build(buffer_block, index.take_info(), repo_index)
     }
 }
 

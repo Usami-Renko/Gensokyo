@@ -4,31 +4,31 @@ use ash::vk;
 use crate::core::GsDevice;
 
 use crate::image::target::GsImage;
-use crate::image::allocator::ImageAllotInfo;
+use crate::image::allocator::ImageAllotCI;
 use crate::memory::transfer::DataCopyer;
 
 use crate::error::VkResult;
 use crate::types::vkuint;
 
-pub trait ImageInfoAbstract<R>: Sized {
+pub trait ImageCIAbstract<R>: Sized {
 
     fn build(&self, device: &GsDevice) -> VkResult<GsImage>;
-    fn refactor(self, device: &GsDevice, image: GsImage) -> VkResult<(ImageAllotInfo, R)>;
+    fn refactor(self, device: &GsDevice, image: GsImage) -> VkResult<(ImageAllotCI, R)>;
 }
 
-pub trait GsImageDescAbs: Sized {
+pub trait ImageTgtCIAbs: Sized {
 
     // image property.
-    fn with_tiling(&mut self, tiling: vk::ImageTiling);
-    fn with_initial_layout(&mut self, layout: vk::ImageLayout);
-    fn with_samples(&mut self, count: vk::SampleCountFlags, mip_levels: vkuint, array_layers: vkuint);
-    fn with_share_queues(&mut self, queue_family_indices: Vec<vkuint>);
+    fn with_tiling(self, tiling: vk::ImageTiling) -> Self;
+    fn with_initial_layout(self, layout: vk::ImageLayout) -> Self;
+    fn with_samples(self, count: vk::SampleCountFlags, mip_levels: vkuint, array_layers: vkuint) -> Self;
+    fn with_share_queues(self, queue_family_indices: Vec<vkuint>) -> Self;
 }
 
-pub trait GsImageViewDescAbs: Sized {
+pub trait ImageViewCIAbs: Sized {
 
     // image view property.
-    fn with_mapping_component(&mut self, r: vk::ComponentSwizzle, g: vk::ComponentSwizzle, b: vk::ComponentSwizzle, a: vk::ComponentSwizzle);
+    fn with_mapping_component(self, r: vk::ComponentSwizzle, g: vk::ComponentSwizzle, b: vk::ComponentSwizzle, a: vk::ComponentSwizzle) -> Self;
 
     /// Select the set of mipmap levels and array layers to be accessible to the view.
     ///
@@ -39,11 +39,11 @@ pub trait GsImageViewDescAbs: Sized {
     /// base_array_layer is the first array layer accessible to the view.
     ///
     /// layer_count is the number of array layers (starting from baseArrayLayer) accessible to the view.
-    fn with_subrange(&mut self, base_mip_level: vkuint, level_count: vkuint, base_array_layer: vkuint, layer_count: vkuint);
+    fn with_subrange(self, base_mip_level: vkuint, level_count: vkuint, base_array_layer: vkuint, layer_count: vkuint) -> Self;
 }
 
 /// Image Barrier Bundle Abstract.
 pub trait ImageBarrierBundleAbs {
 
-    fn make_barrier_transform(&mut self, device: &GsDevice, copyer: &DataCopyer, infos: &mut Vec<ImageAllotInfo>) -> VkResult<()>;
+    fn make_barrier_transform(&mut self, device: &GsDevice, copyer: &DataCopyer, allot_cis: &mut Vec<ImageAllotCI>) -> VkResult<()>;
 }

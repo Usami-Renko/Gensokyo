@@ -12,11 +12,11 @@ use gsvk::core::GsDevice;
 use std::path::Path;
 
 // ------------------------------------------------------------------------------------
-pub struct GsglTFImporter<'a> {
-    pub(crate) device: &'a GsDevice,
+pub struct GsglTFImporter {
+    pub(crate) device: GsDevice,
 }
 
-impl<'a> GsglTFImporter<'a> {
+impl GsglTFImporter {
 
     /// Try to load a glTF file(read to memory) with its path, and return its model data if succeed.
     pub fn load(&self, path: impl AsRef<Path>) -> GsResult<(GsglTFEntity, GsglTFDataStorage)> {
@@ -25,7 +25,7 @@ impl<'a> GsglTFImporter<'a> {
             .map_err(|e| AssetsError::Gltf(GltfError::Reading(e)))?;
         let intermediate_data = IntermediateglTFData {
             doc, data_buffer, data_image,
-            limits: GsglTFPhyLimits::from(self.device),
+            limits: GsglTFPhyLimits::from(&self.device),
         };
 
         // Only support loading the default scene or first scene in gltf file.

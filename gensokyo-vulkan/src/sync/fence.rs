@@ -17,7 +17,7 @@ pub struct GsFence {
 
 impl GsFence {
 
-    pub fn setup(device: &GsDevice, is_sign: bool) -> VkResult<GsFence> {
+    pub fn create(device: &GsDevice, is_sign: bool) -> VkResult<GsFence> {
 
         let flags = if is_sign {
             vk::FenceCreateFlags::SIGNALED

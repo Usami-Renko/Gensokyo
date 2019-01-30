@@ -66,9 +66,9 @@ pub struct VulkanExample {
 
 impl VulkanExample {
 
-    pub fn new(loader: AssetsLoader) -> GsResult<VulkanExample> {
+    pub fn new(initializer: AssetInitializer) -> GsResult<VulkanExample> {
 
-        let screen_dimension = loader.screen_dimension();
+        let screen_dimension = initializer.screen_dimension();
 
         let mut camera = GsCameraFactory::config()
             .place_at(Point3::new(0.0, 0.0, 34.0))
@@ -87,37 +87,37 @@ impl VulkanExample {
         let rotations = RotationData::new_by_rng();
         let ubo_data_dynamic = UboDataDynamic::identity();
 
-        let (vertex_buffer, index_buffer, vertex_storage, ubo_view_buffer, ubo_instance_buffer, ubo_storage) = loader.assets(|kit| {
-            VulkanExample::buffers(kit, &ubo_data_dynamic)
-        })?;
+        let (vertex_buffer, index_buffer, vertex_storage, ubo_view_buffer, ubo_instance_buffer, ubo_storage) = {
+            VulkanExample::buffers(&initializer, &ubo_data_dynamic)
+        }?;
 
         let dynamic_alignment = ubo_instance_buffer.aligned_size();
 
         println!("minUniformBufferOffsetAlignment: {}", ubo_instance_buffer.require_dynamic_alignment());
         println!("dynamicAlignment: {}", dynamic_alignment);
 
-        let (depth_attachment, image_storage) = loader.assets(|kit| {
-            VulkanExample::image(kit, screen_dimension)
-        })?;
+        let (depth_attachment, image_storage) = {
+            VulkanExample::image(&initializer, screen_dimension)
+        }?;
 
-        let (ubo_set, desc_storage) = loader.assets(|kit| {
-            VulkanExample::ubo(kit, &ubo_view_buffer, &ubo_instance_buffer)
-        })?;
+        let (ubo_set, desc_storage) = {
+            VulkanExample::ubo(&initializer, &ubo_view_buffer, &ubo_instance_buffer)
+        }?;
 
-        let pipeline = loader.pipelines(|kit| {
-            VulkanExample::pipelines(kit, &ubo_set, &depth_attachment)
-        })?;
+        let pipeline = {
+            VulkanExample::pipelines(&initializer, &ubo_set, &depth_attachment)
+        }?;
 
-        let present_availables = loader.syncs(|kit| {
-            VulkanExample::sync_resources(kit, &pipeline)
-        })?;
+        let present_availables = {
+            VulkanExample::sync_resources(&initializer, &pipeline)
+        }?;
 
         let view_port = CmdViewportInfo::from(screen_dimension);
         let scissor = CmdScissorInfo::from(screen_dimension);
 
-        let (command_pool, command_buffers) = loader.commands(|kit| {
-            VulkanExample::commands(kit, &pipeline, &vertex_buffer, &index_buffer, &ubo_set, dynamic_alignment as _, &view_port, &scissor)
-        })?;
+        let (command_pool, command_buffers) = {
+            VulkanExample::commands(&initializer, &pipeline, &vertex_buffer, &index_buffer, &ubo_set, dynamic_alignment as _, &view_port, &scissor)
+        }?;
 
         let procedure = VulkanExample {
             ubo_view_data,
@@ -160,24 +160,24 @@ impl VulkanExample {
         Ok(())
     }
 
-    fn buffers(kit: AllocatorKit, ubo_instance_data: &UboDataDynamic) -> GsResult<(GsVertexBuffer, GsIndexBuffer, GsBufferRepository<Device>, GsUniformBuffer, GsUniformBuffer, GsBufferRepository<Host>)> {
+    fn buffers(initializer: &AssetInitializer, ubo_instance_data: &UboDataDynamic) -> GsResult<(GsVertexBuffer, GsIndexBuffer, GsBufferRepository<Device>, GsUniformBuffer, GsUniformBuffer, GsBufferRepository<Host>)> {
 
         // vertex, index and uniform buffer
-        let mut vertex_allocator = kit.buffer(BufferStorageType::DEVICE);
-        let mut ubo_allocator = kit.buffer(BufferStorageType::HOST);
+        let mut vertex_allocator = GsBufferAllocator::new(initializer, BufferStorageType::DEVICE);
+        let mut ubo_allocator = GsBufferAllocator::new(initializer, BufferStorageType::HOST);
 
-        let vertex_info = GsBufVertexInfo::new(data_size!(Vertex), VERTEX_DATA.len());
+        let vertex_info = GsVertexBuffer::new(data_size!(Vertex), VERTEX_DATA.len());
         let vertex_index = vertex_allocator.assign(vertex_info)?;
 
-        let index_info = GsBufIndicesInfo::new(INDEX_DATA.len());
+        let index_info = GsIndexBuffer::new(INDEX_DATA.len());
         let index_index = vertex_allocator.assign(index_info)?;
 
         // refer to `layout (set = 0, binding = 0) uniform UboView` in base.vert.
-        let ubo_view_info = GsBufUniformInfo::new(0, 1, data_size!(UboView));
+        let ubo_view_info = GsUniformBuffer::new(0, 1, data_size!(UboView));
         let ubo_view_index = ubo_allocator.assign(ubo_view_info)?;
 
         // refer to `layout (set = 0, binding = 1) uniform UboInstance` in base.vert.
-        let ubo_instance_info = GsBufUniformInfo::new_dyn(1, 1, data_size!(Matrix4F), OBJECT_INSTANCE);
+        let ubo_instance_info = GsUniformBuffer::new_dyn(1, 1, data_size!(Matrix4F), OBJECT_INSTANCE);
         let ubo_instance_index = ubo_allocator.assign(ubo_instance_info)?;
 
         let vertex_distributor = vertex_allocator.allocate()?;
@@ -203,14 +203,14 @@ impl VulkanExample {
         Ok((vertex_buffer, index_buffer, vertex_storage, ubo_view_buffer, ubo_instance_buffer, ubo_storage))
     }
 
-    fn ubo(kit: AllocatorKit, ubo_view_buffer: &GsUniformBuffer, ubo_instance_buffer: &GsUniformBuffer) -> GsResult<(DescriptorSet, GsDescriptorRepository)> {
+    fn ubo(initializer: &AssetInitializer, ubo_view_buffer: &GsUniformBuffer, ubo_instance_buffer: &GsUniformBuffer) -> GsResult<(DescriptorSet, GsDescriptorRepository)> {
 
         // descriptor
-        let mut descriptor_set_config = DescriptorSetConfig::init();
+        let mut descriptor_set_config = DescriptorSetConfig::new();
         descriptor_set_config.add_buffer_binding(ubo_view_buffer, GsPipelineStage::VERTEX);
         descriptor_set_config.add_buffer_binding(ubo_instance_buffer, GsPipelineStage::VERTEX);
 
-        let mut descriptor_allocator = kit.descriptor(vk::DescriptorPoolCreateFlags::empty());
+        let mut descriptor_allocator = GsDescriptorAllocator::new(initializer);
         let desc_index = descriptor_allocator.assign(descriptor_set_config);
 
         let descriptor_distributor = descriptor_allocator.allocate()?;
@@ -221,12 +221,12 @@ impl VulkanExample {
         Ok((ubo_set, desc_storage))
     }
 
-    fn image(kit: AllocatorKit, dimension: vkDim2D) -> GsResult<(GsDSAttachment, GsImageRepository<Device>)> {
+    fn image(initializer: &AssetInitializer, dimension: vkDim2D) -> GsResult<(GsDSAttachment, GsImageRepository<Device>)> {
 
         // depth attachment image
-        let mut image_allocator = kit.image(ImageStorageType::DEVICE);
+        let mut image_allocator = GsImageAllocator::new(initializer, ImageStorageType::DEVICE);
 
-        let depth_attachment_info = GsDSAttachmentInfo::new(dimension, DepthStencilImageFormat::Depth32Bit);
+        let depth_attachment_info = GsDSAttachment::new(dimension, DepthStencilImageFormat::Depth32Bit);
         let image_index = image_allocator.assign(depth_attachment_info)?;
 
         let image_distributor = image_allocator.allocate()?;
@@ -236,19 +236,19 @@ impl VulkanExample {
         Ok((depth_attachment, image_storage))
     }
 
-    fn pipelines(kit: PipelineKit, ubo_set: &DescriptorSet, depth_image: &GsDSAttachment) -> GsResult<GsPipeline<Graphics>> {
+    fn pipelines(initializer: &AssetInitializer, ubo_set: &DescriptorSet, depth_image: &GsDSAttachment) -> GsResult<GsPipeline<Graphics>> {
 
         // shaders
-        let vertex_shader = GsShaderInfo::from_source(GsPipelineStage::VERTEX, Path::new(VERTEX_SHADER_SOURCE_PATH), None, "[Vertex Shader]");
-        let fragment_shader = GsShaderInfo::from_source(GsPipelineStage::FRAGMENT, Path::new(FRAGMENT_SHADER_SOURCE_PATH), None, "[Fragment Shader]");
+        let vertex_shader = GsShaderCI::from_source(GsPipelineStage::VERTEX, Path::new(VERTEX_SHADER_SOURCE_PATH), None, "[Vertex Shader]");
+        let fragment_shader = GsShaderCI::from_source(GsPipelineStage::FRAGMENT, Path::new(FRAGMENT_SHADER_SOURCE_PATH), None, "[Fragment Shader]");
         let shader_infos = vec![vertex_shader, fragment_shader];
         let vertex_input_desc = Vertex::input_description();
 
         // pipeline
-        let mut render_pass_builder = kit.pass_builder();
+        let mut render_pass_builder = GsRenderPass::new(initializer);
         let first_subpass = render_pass_builder.new_subpass();
 
-        let color_attachment = kit.present_attachment()
+        let color_attachment = RenderAttachmentCI::<Present>::new(initializer)
             .op(vk::AttachmentLoadOp::CLEAR, vk::AttachmentStoreOp::STORE)
             .clear_value(DEFAULT_CLEAR_COLOR.clone());
         let depth_attachment = depth_image.attachment()
@@ -257,13 +257,13 @@ impl VulkanExample {
         render_pass_builder.add_attachment(color_attachment, first_subpass);
         render_pass_builder.add_attachment(depth_attachment, first_subpass);
 
-        let dependency0 = kit.subpass_dependency(SubpassStage::BeginExternal, SubpassStage::AtIndex(first_subpass))
+        let dependency0 = RenderDependencyCI::new(SubpassStage::BeginExternal, SubpassStage::AtIndex(first_subpass))
             .stage(vk::PipelineStageFlags::BOTTOM_OF_PIPE, vk::PipelineStageFlags::COLOR_ATTACHMENT_OUTPUT)
             .access(vk::AccessFlags::MEMORY_READ, vk::AccessFlags::COLOR_ATTACHMENT_READ | vk::AccessFlags::COLOR_ATTACHMENT_WRITE)
             .with_flags(vk::DependencyFlags::BY_REGION);
         render_pass_builder.add_dependency(dependency0);
 
-        let dependency1 = kit.subpass_dependency(SubpassStage::AtIndex(first_subpass), SubpassStage::EndExternal)
+        let dependency1 = RenderDependencyCI::new(SubpassStage::AtIndex(first_subpass), SubpassStage::EndExternal)
             .stage(vk::PipelineStageFlags::COLOR_ATTACHMENT_OUTPUT, vk::PipelineStageFlags::BOTTOM_OF_PIPE)
             .access(vk::AccessFlags::COLOR_ATTACHMENT_READ | vk::AccessFlags::COLOR_ATTACHMENT_WRITE, vk::AccessFlags::MEMORY_READ)
             .with_flags(vk::DependencyFlags::BY_REGION);
@@ -272,37 +272,42 @@ impl VulkanExample {
         let render_pass = render_pass_builder.build()?;
         let depth_stencil = GsDepthStencilState::setup(GsDepthStencilPrefab::EnableDepth);
 
-        let pipeline_config = kit.pipeline_config(shader_infos, vertex_input_desc, render_pass)
+        let pipeline_config = GfxPipelineConfig::new(shader_infos, vertex_input_desc, render_pass, initializer.screen_dimension())
             .with_depth_stencil(depth_stencil)
             .with_viewport(ViewportStateType::Dynamic { count: 1 })
             .with_descriptor_sets(&[ubo_set])
             .finish();
 
-        let mut pipeline_builder = kit.gfx_builder()?;
+        let mut pipeline_builder = GfxPipelineBuilder::new(initializer)?;
         let graphics_pipeline = pipeline_builder.build(pipeline_config)?;
 
         Ok(graphics_pipeline)
     }
 
-    fn sync_resources(kit: SyncKit, graphics_pipeline: &GsPipeline<Graphics>) -> GsResult<Vec<GsSemaphore>> {
+    fn sync_resources(initializer: &AssetInitializer, pipeline: &GsPipeline<Graphics>) -> GsResult<Vec<GsSemaphore>> {
 
         // sync
-        kit.multi_semaphores(graphics_pipeline.frame_count())
+        let mut present_availables = Vec::with_capacity(pipeline.frame_count());
+        for _ in 0..pipeline.frame_count() {
+            let semaphore = GsSemaphore::new(initializer)?;
+            present_availables.push(semaphore);
+        }
+        Ok(present_availables)
     }
 
-    fn commands(kit: CommandKit, graphics_pipeline: &GsPipeline<Graphics>, vertex_buffer: &GsVertexBuffer, index_buffer: &GsIndexBuffer, ubo_set: &DescriptorSet, dynamic_alignment: vkuint, view_port: &CmdViewportInfo, scissor: &CmdScissorInfo) -> GsResult<(GsCommandPool, Vec<GsCommandBuffer>)> {
+    fn commands(initializer: &AssetInitializer, pipeline: &GsPipeline<Graphics>, vertex_buffer: &GsVertexBuffer, index_buffer: &GsIndexBuffer, ubo_set: &DescriptorSet, dynamic_alignment: vkuint, view_port: &CmdViewportInfo, scissor: &CmdScissorInfo) -> GsResult<(GsCommandPool, Vec<GsCommandBuffer>)> {
 
-        let command_pool = kit.pool(DeviceQueueIdentifier::Graphics)?;
+        let command_pool = GsCommandPool::new(initializer, DeviceQueueIdentifier::Graphics)?;
         let mut command_buffers = vec![];
 
-        let command_buffer_count = graphics_pipeline.frame_count();
+        let command_buffer_count = pipeline.frame_count();
         let raw_commands = command_pool.allocate(CmdBufferUsage::UnitaryCommand, command_buffer_count)?;
 
         for (frame_index, command) in raw_commands.into_iter().enumerate() {
-            let mut recorder = kit.pipeline_recorder(graphics_pipeline, command);
+            let mut recorder = GsCmdRecorder::<Graphics>::new(initializer, pipeline, command);
 
             recorder.begin_record(vk::CommandBufferUsageFlags::SIMULTANEOUS_USE)?
-                .begin_render_pass(graphics_pipeline, frame_index)
+                .begin_render_pass(pipeline, frame_index)
                 .set_viewport(0, &[view_port.clone()])
                 .set_scissor(0, &[scissor.clone()])
                 .bind_pipeline()
@@ -346,19 +351,13 @@ impl GraphicsRoutine for VulkanExample {
         return Ok(&self.present_availables[image_index])
     }
 
-    fn reload_res(&mut self, loader: AssetsLoader) -> GsResult<()> {
+    fn reload_res(&mut self, initializer: AssetInitializer) -> GsResult<()> {
 
-        self.pipeline = loader.pipelines(|kit| {
-            VulkanExample::pipelines(kit, &self.ubo_set, &self.depth_attachment)
-        })?;
+        self.pipeline = VulkanExample::pipelines(&initializer, &self.ubo_set, &self.depth_attachment)?;
 
-        self.present_availables = loader.syncs(|kit| {
-            VulkanExample::sync_resources(kit, &self.pipeline)
-        })?;
+        self.present_availables = VulkanExample::sync_resources(&initializer, &self.pipeline)?;
 
-        let (command_pool, command_buffers) = loader.commands(|kit| {
-            VulkanExample::commands(kit, &self.pipeline, &self.vertex_buffer, &self.index_buffer, &self.ubo_set,  self.dynamic_alignment as _, &self.view_port, &self.scissor)
-        })?;
+        let (command_pool, command_buffers) = VulkanExample::commands(&initializer, &self.pipeline, &self.vertex_buffer, &self.index_buffer, &self.ubo_set,  self.dynamic_alignment as _, &self.view_port, &self.scissor)?;
         self.command_pool = command_pool;
         self.command_buffers = command_buffers;
 

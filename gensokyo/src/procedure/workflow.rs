@@ -2,10 +2,10 @@
 use gsvk::core::GsDevice;
 use gsvk::sync::{ GsFence, GsSemaphore };
 
-use crate::procedure::env::ProgramEnv;
+use crate::procedure::context::ProgramContext;
 use crate::procedure::chain::ChainResource;
-use crate::procedure::loader::AssetsLoader;
 use crate::procedure::loops::RoutineFlow;
+use crate::initialize::initializer::AssetInitializer;
 
 use crate::input::{ ActionNerve, SceneAction };
 use crate::error::GsResult;
@@ -32,7 +32,7 @@ pub trait GraphicsRoutine {
         Ok(())
     }
 
-    fn reload_res(&mut self, loader: AssetsLoader) -> GsResult<()>;
+    fn reload_res(&mut self, initializer: AssetInitializer) -> GsResult<()>;
 
     fn clean_routine(&mut self, _device: &GsDevice) {
         // Empty...
@@ -44,27 +44,24 @@ pub trait GraphicsRoutine {
 
 pub struct RoutineBuilder<'env> {
 
-    env: &'env ProgramEnv,
+    context: &'env ProgramContext,
     chain: ChainResource,
 }
 
 impl<'env> RoutineBuilder<'env> {
 
-    pub(super) fn new(env: &'env mut ProgramEnv) -> GsResult<RoutineBuilder<'env>> {
+    pub(super) fn new(context: &'env mut ProgramContext) -> GsResult<RoutineBuilder<'env>> {
 
-        let window = env.window()?;
-        let chain = ChainResource::new(env, window)?;
+        let window = context.window()?;
+        let chain = ChainResource::new(context, window)?;
 
-        let builder = RoutineBuilder {
-            env, chain,
-        };
-
+        let builder = RoutineBuilder { context, chain };
         Ok(builder)
     }
 
-    pub fn assets_loader(&self) -> AssetsLoader {
+    pub fn assets_loader(&self) -> AssetInitializer {
 
-        self.chain.assets_loader(&self.env.vulkan_env, &self.env.config.resources)
+        self.chain.assets_loader(&self.context.vulkan_context, &self.context.config.resources)
     }
 
     pub fn build<Routine>(self, routine: Routine) -> RoutineFlow<Routine>

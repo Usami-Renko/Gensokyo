@@ -62,6 +62,7 @@ impl RenderSubpass {
         }
     }
 
+    #[inline]
     pub(super) fn build(&self) -> vk::SubpassDescription {
 
         // Here p_resolve_attachments and p_depth_stencil_attachment may cause crash if use a empty vec pointer.

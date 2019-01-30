@@ -17,12 +17,14 @@ pub struct ImageLoader {
     config: ImageLoadConfig,
 }
 
-impl ImageLoader {
+impl From<ImageLoadConfig> for ImageLoader {
 
-    pub(crate) fn new(config: ImageLoadConfig) -> ImageLoader {
-
+    fn from(config: ImageLoadConfig) -> ImageLoader {
         ImageLoader { config }
     }
+}
+
+impl ImageLoader {
 
     pub fn load_2d(&self, path: &Path) -> GsResult<ImageStorageInfo> {
 

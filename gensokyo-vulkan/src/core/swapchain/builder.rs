@@ -11,8 +11,6 @@ use crate::core::swapchain::chain::{ GsSwapchain, SwapchainConfig };
 use crate::core::swapchain::support::SwapchainSupport;
 use crate::error::{ VkResult, VkError };
 
-use crate::image::{ GsImage, ImageViewDescInfo };
-
 use crate::types::{ vkuint, vklint, VK_TRUE, vkDim2D };
 
 use std::ptr;
@@ -28,10 +26,9 @@ pub struct SwapchainBuilder<'s> {
     acquire_image_time: vklint,
 }
 
-impl<'s> SwapchainBuilder<'s> {
+impl GsSwapchain {
 
-    pub fn init(config: &SwapchainConfig, device: &GsDevice, surface: &'s GsSurface)
-        -> VkResult<SwapchainBuilder<'s>> {
+    pub fn new<'s>(device: &GsDevice, config: &SwapchainConfig, surface: &'s GsSurface) -> VkResult<SwapchainBuilder<'s>> {
 
         let support = SwapchainSupport::query_support(surface, device.phys.handle, config)?;
         let image_share_info = sharing_mode(device);
@@ -48,6 +45,9 @@ impl<'s> SwapchainBuilder<'s> {
 
         Ok(builder)
     }
+}
+
+impl<'s> SwapchainBuilder<'s> {
 
     pub fn build(self, instance: &GsInstance, old_chain: Option<&GsChain>, window_dimension: &vkDim2D) -> VkResult<GsSwapchain> {
 
@@ -94,29 +94,9 @@ impl<'s> SwapchainBuilder<'s> {
                 .or(Err(VkError::create("Swapchain")))?
         };
 
-        let images: Vec<GsImage> = unsafe {
-            loader.get_swapchain_images(handle)
-                .or(Err(VkError::query("Swapchain Images")))?
-                .into_iter().map(GsImage::from)
-                .collect()
-        };
-
-        let view_desc = ImageViewDescInfo::new(
-            vk::ImageViewType::TYPE_2D,
-            vk::ImageAspectFlags::COLOR,
-        );
-
-        let mut views = vec![];
-        for image in images.iter() {
-            let view = view_desc.build_for_swapchain(&self.device, image, prefer_format.image_format)?;
-            views.push(view);
-        }
-
-        let swapchain = GsSwapchain::new(handle, loader, images, views, prefer_format.image_format, prefer_extent, self.acquire_image_time);
-        Ok(swapchain)
+        GsSwapchain::construct(handle, &self.device, loader, prefer_format.image_format, prefer_extent, self.acquire_image_time)
     }
 }
-
 
 struct SwapchainImageSharingInfo {
 
@@ -127,7 +107,7 @@ struct SwapchainImageSharingInfo {
 fn sharing_mode(device: &GsDevice) -> SwapchainImageSharingInfo {
 
     let graphics_queue = device.logic.queue_handle_by_identifier(DeviceQueueIdentifier::Graphics);
-    let present_queue = device.logic.queue_handle_by_identifier(DeviceQueueIdentifier::Present);
+    let present_queue  = device.logic.queue_handle_by_identifier(DeviceQueueIdentifier::Present);
 
     if graphics_queue.family_index == present_queue.family_index {
         SwapchainImageSharingInfo {

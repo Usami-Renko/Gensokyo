@@ -16,7 +16,7 @@ use gsma::{ define_input, offset_of, vk_format, vertex_rate, data_size };
 
 use std::path::{ Path, PathBuf };
 
-const MANIFEST_PATH: &str = "src/04.texture/gensokyo.toml";
+const MANIFEST_PATH: &str = "src/04.texture/Gensokyo.toml";
 const VERTEX_SHADER_SOURCE_PATH  : &str = "src/04.texture/texture.vert.glsl";
 const FRAGMENT_SHADER_SOURCE_PATH: &str = "src/04.texture/texture.frag.glsl";
 const TEXTURE_PATH: &str = "textures/texture.jpg";
@@ -64,33 +64,33 @@ struct TextureMappingProcedure {
 
 impl TextureMappingProcedure {
 
-    fn new(loader: AssetsLoader) -> GsResult<TextureMappingProcedure> {
+    fn new(initializer: AssetInitializer) -> GsResult<TextureMappingProcedure> {
 
         let vertex_data = VERTEX_DATA.to_vec();
 
-        let (vertex_buffer, buffer_storage) = loader.assets(|kit| {
-            TextureMappingProcedure::vertex_buffer(kit, &vertex_data)
-        })?;
+        let (vertex_buffer, buffer_storage) = {
+            TextureMappingProcedure::vertex_buffer(&initializer, &vertex_data)
+        }?;
 
-        let (sample_image, image_storage) = loader.assets(|kit| {
-            TextureMappingProcedure::image_sampler(kit)
-        })?;
+        let (sample_image, image_storage) = {
+            TextureMappingProcedure::image_sampler(&initializer)
+        }?;
 
-        let (sampler_set, desc_storage) = loader.assets(|kit| {
-            TextureMappingProcedure::descriptor(kit, &sample_image)
-        })?;
+        let (sampler_set, desc_storage) = {
+            TextureMappingProcedure::descriptor(&initializer, &sample_image)
+        }?;
 
-        let graphics_pipeline = loader.pipelines(|kit| {
-            TextureMappingProcedure::pipelines(kit, &sampler_set)
-        })?;
+        let graphics_pipeline = {
+            TextureMappingProcedure::pipelines(&initializer, &sampler_set)
+        }?;
 
-        let present_availables = loader.syncs(|kit| {
-            TextureMappingProcedure::sync_resources(kit, &graphics_pipeline)
-        })?;
+        let present_availables = {
+            TextureMappingProcedure::sync_resources(&initializer, &graphics_pipeline)
+        }?;
 
-        let (command_pool, command_buffers) = loader.commands(|kit| {
-            TextureMappingProcedure::commands(kit, &graphics_pipeline, &vertex_buffer, &sampler_set, &vertex_data)
-        })?;
+        let (command_pool, command_buffers) = {
+            TextureMappingProcedure::commands(&initializer, &graphics_pipeline, &vertex_buffer, &sampler_set, &vertex_data)
+        }?;
 
         let procedure = TextureMappingProcedure {
             vertex_data, buffer_storage, vertex_buffer,
@@ -103,11 +103,11 @@ impl TextureMappingProcedure {
         Ok(procedure)
     }
 
-    fn vertex_buffer(kit: AllocatorKit, vertex_data: &Vec<Vertex>) -> GsResult<(GsVertexBuffer, GsBufferRepository<Cached>)> {
+    fn vertex_buffer(initializer: &AssetInitializer, vertex_data: &Vec<Vertex>) -> GsResult<(GsVertexBuffer, GsBufferRepository<Cached>)> {
 
-        let mut buffer_allocator = kit.buffer(BufferStorageType::CACHED);
+        let mut buffer_allocator = GsBufferAllocator::new(initializer, BufferStorageType::CACHED);
 
-        let vertex_info = GsBufVertexInfo::new(data_size!(Vertex), vertex_data.len());
+        let vertex_info = GsVertexBuffer::new(data_size!(Vertex), vertex_data.len());
         let vertex_index = buffer_allocator.assign(vertex_info)?;
 
         let vertex_distributor = buffer_allocator.allocate()?;
@@ -122,14 +122,14 @@ impl TextureMappingProcedure {
         Ok((vertex_buffer, vertex_storage))
     }
 
-    fn image_sampler(kit: AllocatorKit) -> GsResult<(GsSampleImage, GsImageRepository<Device>)> {
+    fn image_sampler(initializer: &AssetInitializer) -> GsResult<(GsSampleImage, GsImageRepository<Device>)> {
 
-        let image_loader = kit.image_loader();
+        let image_loader = ImageLoader::new(initializer);
         let image_storage_info = image_loader.load_2d(Path::new(TEXTURE_PATH))?;
 
-        let image_info = GsSampleImgInfo::new(0, 1, image_storage_info, ImagePipelineStage::FragmentStage);
+        let image_info = GsSampleImage::new(0, 1, image_storage_info, ImagePipelineStage::FragmentStage);
 
-        let mut image_allocator = kit.image(ImageStorageType::DEVICE);
+        let mut image_allocator = GsImageAllocator::new(initializer, ImageStorageType::DEVICE);
         let image_index = image_allocator.assign(image_info)?;
 
         let image_distributor = image_allocator.allocate()?;
@@ -140,12 +140,12 @@ impl TextureMappingProcedure {
         Ok((sample_image, image_storage))
     }
 
-    fn descriptor(kit: AllocatorKit, sample_image: &GsSampleImage) -> GsResult<(DescriptorSet, GsDescriptorRepository)> {
+    fn descriptor(initializer: &AssetInitializer, sample_image: &GsSampleImage) -> GsResult<(DescriptorSet, GsDescriptorRepository)> {
 
-        let mut descriptor_set_config = DescriptorSetConfig::init();
+        let mut descriptor_set_config = DescriptorSetConfig::new();
         descriptor_set_config.add_image_binding(sample_image, GsPipelineStage::FRAGMENT);
 
-        let mut descriptor_allocator = kit.descriptor(vk::DescriptorPoolCreateFlags::empty());
+        let mut descriptor_allocator = GsDescriptorAllocator::new(initializer);
         let descriptor_index = descriptor_allocator.assign(descriptor_set_config);
 
         let descriptor_distributor = descriptor_allocator.allocate()?;
@@ -156,15 +156,15 @@ impl TextureMappingProcedure {
         Ok((sampler_set, descriptor_storage))
     }
 
-    fn pipelines(kit: PipelineKit, sampler_set: &DescriptorSet) -> GsResult<GsPipeline<Graphics>> {
+    fn pipelines(initializer: &AssetInitializer, sampler_set: &DescriptorSet) -> GsResult<GsPipeline<Graphics>> {
 
         // shaders
-        let vertex_shader = GsShaderInfo::from_source(
+        let vertex_shader = GsShaderCI::from_source(
             GsPipelineStage::VERTEX,
             Path::new(VERTEX_SHADER_SOURCE_PATH),
             None,
             "[Vertex Shader]");
-        let fragment_shader = GsShaderInfo::from_source(
+        let fragment_shader = GsShaderCI::from_source(
             GsPipelineStage::FRAGMENT,
             Path::new(FRAGMENT_SHADER_SOURCE_PATH),
             None,
@@ -173,19 +173,19 @@ impl TextureMappingProcedure {
         let vertex_input_desc = Vertex::desc();
 
         // pipeline
-        let mut render_pass_builder = kit.pass_builder();
+        let mut render_pass_builder = GsRenderPass::new(initializer);
         let first_subpass = render_pass_builder.new_subpass();
 
-        let color_attachment = kit.present_attachment();
+        let color_attachment = RenderAttachmentCI::<Present>::new(initializer);
         let _attachment_index = render_pass_builder.add_attachment(color_attachment, first_subpass);
 
-        let dependency0 = kit.subpass_dependency(SubpassStage::BeginExternal, SubpassStage::AtIndex(first_subpass))
+        let dependency0 = RenderDependencyCI::new(SubpassStage::BeginExternal, SubpassStage::AtIndex(first_subpass))
             .stage(vk::PipelineStageFlags::BOTTOM_OF_PIPE, vk::PipelineStageFlags::COLOR_ATTACHMENT_OUTPUT)
             .access(vk::AccessFlags::MEMORY_READ, vk::AccessFlags::COLOR_ATTACHMENT_READ | vk::AccessFlags::COLOR_ATTACHMENT_WRITE)
             .with_flags(vk::DependencyFlags::BY_REGION);
         render_pass_builder.add_dependency(dependency0);
 
-        let dependency1 = kit.subpass_dependency(SubpassStage::AtIndex(first_subpass), SubpassStage::EndExternal)
+        let dependency1 = RenderDependencyCI::new(SubpassStage::AtIndex(first_subpass), SubpassStage::EndExternal)
             .stage(vk::PipelineStageFlags::COLOR_ATTACHMENT_OUTPUT, vk::PipelineStageFlags::BOTTOM_OF_PIPE)
             .access(vk::AccessFlags::COLOR_ATTACHMENT_READ | vk::AccessFlags::COLOR_ATTACHMENT_WRITE, vk::AccessFlags::MEMORY_READ)
             .with_flags(vk::DependencyFlags::BY_REGION);
@@ -193,41 +193,40 @@ impl TextureMappingProcedure {
 
         let render_pass = render_pass_builder.build()?;
 
-        let pipeline_config = kit.pipeline_config(shader_infos, vertex_input_desc, render_pass)
+        let pipeline_config = GfxPipelineConfig::new(shader_infos, vertex_input_desc, render_pass, initializer.screen_dimension())
             .with_descriptor_sets(&[sampler_set])
             .finish();
 
-        let mut pipeline_builder = kit.gfx_builder()?;
+        let mut pipeline_builder = GfxPipelineBuilder::new(initializer)?;
         let graphics_pipeline = pipeline_builder.build(pipeline_config)?;
 
         Ok(graphics_pipeline)
     }
 
-    fn sync_resources(kit: SyncKit, graphics_pipeline: &GsPipeline<Graphics>) -> GsResult<Vec<GsSemaphore>> {
+    fn sync_resources(initializer: &AssetInitializer, pipeline: &GsPipeline<Graphics>) -> GsResult<Vec<GsSemaphore>> {
 
         // sync
-        let mut present_availables = vec![];
-        for _ in 0..graphics_pipeline.frame_count() {
-            let present_available = kit.semaphore()?;
-            present_availables.push(present_available);
+        let mut present_availables = Vec::with_capacity(pipeline.frame_count());
+        for _ in 0..pipeline.frame_count() {
+            let semaphore = GsSemaphore::new(initializer)?;
+            present_availables.push(semaphore);
         }
-
         Ok(present_availables)
     }
 
-    fn commands(kit: CommandKit, graphics_pipeline: &GsPipeline<Graphics>, vertex_buffer: &GsVertexBuffer, sampler_set: &DescriptorSet, vertex_data: &Vec<Vertex>) -> GsResult<(GsCommandPool, Vec<GsCommandBuffer>)> {
+    fn commands(initializer: &AssetInitializer, pipeline: &GsPipeline<Graphics>, vertex_buffer: &GsVertexBuffer, sampler_set: &DescriptorSet, vertex_data: &Vec<Vertex>) -> GsResult<(GsCommandPool, Vec<GsCommandBuffer>)> {
 
-        let command_pool = kit.pool(DeviceQueueIdentifier::Graphics)?;
+        let command_pool = GsCommandPool::new(initializer, DeviceQueueIdentifier::Graphics)?;
         let mut command_buffers = vec![];
 
-        let command_buffer_count = graphics_pipeline.frame_count();
+        let command_buffer_count = pipeline.frame_count();
         let raw_commands = command_pool.allocate(CmdBufferUsage::UnitaryCommand, command_buffer_count)?;
 
         for (frame_index, command) in raw_commands.into_iter().enumerate() {
-            let mut recorder = kit.pipeline_recorder(graphics_pipeline, command);
+            let mut recorder = GsCmdRecorder::<Graphics>::new(initializer, pipeline, command);
 
             recorder.begin_record(vk::CommandBufferUsageFlags::SIMULTANEOUS_USE)?
-                .begin_render_pass(graphics_pipeline, frame_index)
+                .begin_render_pass(pipeline, frame_index)
                 .bind_pipeline()
                 .bind_vertex_buffers(0, &[vertex_buffer])
                 .bind_descriptor_sets(0, &[sampler_set])
@@ -258,19 +257,13 @@ impl GraphicsRoutine for TextureMappingProcedure {
         return Ok(&self.present_availables[image_index])
     }
 
-    fn reload_res(&mut self, loader: AssetsLoader) -> GsResult<()> {
+    fn reload_res(&mut self, initializer: AssetInitializer) -> GsResult<()> {
 
-        self.graphics_pipeline = loader.pipelines(|kit| {
-            TextureMappingProcedure::pipelines(kit, &self.sampler_set)
-        })?;
+        self.graphics_pipeline = TextureMappingProcedure::pipelines(&initializer, &self.sampler_set)?;
 
-        self.present_availables = loader.syncs(|kit| {
-            TextureMappingProcedure::sync_resources(kit, &self.graphics_pipeline)
-        })?;
+        self.present_availables = TextureMappingProcedure::sync_resources(&initializer, &self.graphics_pipeline)?;
 
-        let (command_pool, command_buffers) = loader.commands(|kit| {
-            TextureMappingProcedure::commands(kit, &self.graphics_pipeline, &self.vertex_buffer, &self.sampler_set, &self.vertex_data)
-        })?;
+        let (command_pool, command_buffers) = TextureMappingProcedure::commands(&initializer, &self.graphics_pipeline, &self.vertex_buffer, &self.sampler_set, &self.vertex_data)?;
         self.command_pool = command_pool;
         self.command_buffers = command_buffers;
 
@@ -296,15 +289,15 @@ impl GraphicsRoutine for TextureMappingProcedure {
 fn main() {
 
     let manifest = PathBuf::from(MANIFEST_PATH);
-    let mut program_env = ProgramEnv::new(Some(manifest)).unwrap();
+    let mut program_context = ProgramContext::new(Some(manifest)).unwrap();
 
-    let builder = program_env.routine().unwrap();
+    let builder = program_context.routine().unwrap();
 
     let asset_loader = builder.assets_loader();
     let routine = TextureMappingProcedure::new(asset_loader).unwrap();
     let routine_flow = builder.build(routine);
 
-    match routine_flow.launch(program_env) {
+    match routine_flow.launch(program_context) {
         | Ok(_) => (),
         | Err(err) => {
             panic!("[Error] {}", err)

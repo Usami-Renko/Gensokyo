@@ -19,6 +19,7 @@ impl GsInputAssemblyState {
         }
     }
 
+    #[inline]
     pub(crate) fn ci(&self) -> vk::PipelineInputAssemblyStateCreateInfo {
 
         vk::PipelineInputAssemblyStateCreateInfo {

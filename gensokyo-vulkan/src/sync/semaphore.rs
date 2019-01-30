@@ -15,7 +15,7 @@ pub struct GsSemaphore {
 
 impl GsSemaphore {
 
-    pub fn setup(device: &GsDevice) -> VkResult<GsSemaphore> {
+    pub fn create(device: &GsDevice) -> VkResult<GsSemaphore> {
 
         let semaphore_ci = vk::SemaphoreCreateInfo {
             s_type: vk::StructureType::SEMAPHORE_CREATE_INFO,

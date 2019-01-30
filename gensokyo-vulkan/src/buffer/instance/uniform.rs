@@ -3,7 +3,7 @@ use ash::vk;
 
 use crate::core::GsDevice;
 use crate::buffer::entity::BufferBlock;
-use crate::buffer::instance::types::BufferInfoAbstract;
+use crate::buffer::instance::types::BufferCIAbstract;
 use crate::buffer::traits::{ BufferInstance, BufferCopiable, BufferCopyInfo };
 
 use crate::descriptor::DescriptorBufferBindableTarget;
@@ -18,7 +18,7 @@ use crate::types::{ vkuint, vkbytes };
 use crate::utils::memory::bound_to_alignment;
 
 #[derive(Debug, Clone)]
-pub struct GsBufUniformInfo {
+pub struct UniformBufferCI {
 
     usage: UniformUsage,
     binding: DescriptorBindingContent,
@@ -34,12 +34,12 @@ enum UniformUsage {
     Dynamic { slice_count: vkuint, slice_size: vkbytes },
 }
 
-impl GsBufUniformInfo {
+impl GsUniformBuffer {
 
     /// Prepare to create a Common Uniform Buffer.
-    pub fn new(binding: vkuint, descriptor_count: vkuint, element_size: vkbytes) -> GsBufUniformInfo {
+    pub fn new(binding: vkuint, descriptor_count: vkuint, element_size: vkbytes) -> UniformBufferCI {
 
-        GsBufUniformInfo {
+        UniformBufferCI {
             usage: UniformUsage::Common,
             binding: DescriptorBindingContent {
                 binding,
@@ -52,9 +52,9 @@ impl GsBufUniformInfo {
     }
 
     /// Prepare to create a Dynamic Uniform Buffer.
-    pub fn new_dyn(binding: vkuint, descriptor_count: vkuint, slice_size: vkbytes, slice_count: usize) -> GsBufUniformInfo {
+    pub fn new_dyn(binding: vkuint, descriptor_count: vkuint, slice_size: vkbytes, slice_count: usize) -> UniformBufferCI {
 
-        GsBufUniformInfo {
+        UniformBufferCI {
             usage: UniformUsage::Dynamic {
                 slice_count: slice_count as vkuint,
                 slice_size,
@@ -68,6 +68,9 @@ impl GsBufUniformInfo {
             alignment: 0, // alignment will be set when add it to allocator.
         }
     }
+}
+
+impl UniformBufferCI {
 
     fn set_alignment(&mut self, device: &GsDevice) {
         // query alignment from Vulkan.
@@ -75,7 +78,7 @@ impl GsBufUniformInfo {
     }
 }
 
-impl BufferInfoAbstract<IUniform> for GsBufUniformInfo {
+impl BufferCIAbstract<IUniform> for UniformBufferCI {
     const VK_FLAG: vk::BufferUsageFlags = vk::BufferUsageFlags::UNIFORM_BUFFER;
 
     fn estimate_size(&self) -> vkbytes {
@@ -127,7 +130,7 @@ pub struct GsUniformBuffer {
 impl BufferInstance for GsUniformBuffer {
     type InfoType = IUniform;
 
-    fn new(block: BufferBlock, info: Self::InfoType, repository_index: usize) -> Self {
+    fn build(block: BufferBlock, info: Self::InfoType, repository_index: usize) -> Self {
 
         GsUniformBuffer {
             iuniform: info,

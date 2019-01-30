@@ -14,7 +14,7 @@ use gsma::{ define_input, offset_of, vk_format, vertex_rate, data_size };
 
 use std::path::{ Path, PathBuf };
 
-const MANIFEST_PATH: &'static str = "src/01.triangle/gensokyo.toml";
+const MANIFEST_PATH: &'static str = "src/01.triangle/Gensokyo.toml";
 const VERTEX_SHADER_SPIRV_PATH  : &'static str = "src/01.triangle/triangle.vert.spv";
 const FRAGMENT_SHADER_SPIRV_PATH: &'static str = "src/01.triangle/triangle.frag.spv";
 
@@ -51,25 +51,25 @@ struct TriangleProcedure {
 
 impl TriangleProcedure {
 
-    fn new(loader: AssetsLoader) -> GsResult<TriangleProcedure> {
+    fn new(initializer: AssetInitializer) -> GsResult<TriangleProcedure> {
 
         let vertex_data = VERTEX_DATA.to_vec();
 
-        let (vertex_buffer, vertex_storage) = loader.assets(|kit| {
-            TriangleProcedure::assets(kit, &vertex_data)
-        })?;
+        let (vertex_buffer, vertex_storage) = {
+            TriangleProcedure::assets(&initializer, &vertex_data)
+        }?;
 
-        let graphics_pipeline = loader.pipelines(|kit| {
-            TriangleProcedure::pipelines(kit)
-        })?;
+        let graphics_pipeline = {
+            TriangleProcedure::pipelines(&initializer)
+        }?;
 
-        let present_availables = loader.syncs(|kit| {
-            TriangleProcedure::sync_resources(kit, &graphics_pipeline)
-        })?;
+        let present_availables = {
+            TriangleProcedure::sync_resources(&initializer, &graphics_pipeline)
+        }?;
 
-        let (command_pool, command_buffers) = loader.commands(|kit| {
-            TriangleProcedure::commands(kit, &graphics_pipeline, &vertex_buffer, &vertex_data)
-        })?;
+        let (command_pool, command_buffers) = {
+            TriangleProcedure::commands(&initializer, &graphics_pipeline, &vertex_buffer, &vertex_data)
+        }?;
 
         let procedure = TriangleProcedure {
             vertex_data, vertex_storage, vertex_buffer,
@@ -81,12 +81,12 @@ impl TriangleProcedure {
         Ok(procedure)
     }
 
-    fn assets(kit: AllocatorKit, vertex_data: &Vec<Vertex>) -> GsResult<(GsVertexBuffer, GsBufferRepository<Host>)> {
+    fn assets(initializer: &AssetInitializer, vertex_data: &Vec<Vertex>) -> GsResult<(GsVertexBuffer, GsBufferRepository<Host>)> {
 
         // vertex buffer
-        let mut vertex_allocator = kit.buffer(BufferStorageType::HOST);
+        let mut vertex_allocator = GsBufferAllocator::new(initializer, BufferStorageType::HOST);
 
-        let vertex_info = GsBufVertexInfo::new(data_size!(Vertex), vertex_data.len());
+        let vertex_info = GsVertexBuffer::new(data_size!(Vertex), vertex_data.len());
         let vertex_index = vertex_allocator.assign(vertex_info)?;
 
         let buffer_distributor = vertex_allocator.allocate()?;
@@ -101,14 +101,14 @@ impl TriangleProcedure {
         Ok((vertex_buffer, vertex_storage))
     }
 
-    fn pipelines(kit: PipelineKit) -> GsResult<GsPipeline<Graphics>> {
+    fn pipelines(initializer: &AssetInitializer) -> GsResult<GsPipeline<Graphics>> {
 
         // shaders
-        let vertex_shader = GsShaderInfo::from_spirv(
+        let vertex_shader = GsShaderCI::from_spirv(
             GsPipelineStage::VERTEX,
             Path::new(VERTEX_SHADER_SPIRV_PATH),
             None);
-        let fragment_shader = GsShaderInfo::from_spirv(
+        let fragment_shader = GsShaderCI::from_spirv(
             GsPipelineStage::FRAGMENT,
             Path::new(FRAGMENT_SHADER_SPIRV_PATH),
             None);
@@ -116,19 +116,19 @@ impl TriangleProcedure {
         let vertex_input_desc = Vertex::desc();
 
         // pipeline
-        let mut render_pass_builder = kit.pass_builder();
+        let mut render_pass_builder = GsRenderPass::new(initializer);
         let first_subpass = render_pass_builder.new_subpass();
 
-        let color_attachment = kit.present_attachment();
+        let color_attachment = RenderAttachmentCI::<Present>::new(initializer);
         let _attachment_index = render_pass_builder.add_attachment(color_attachment, first_subpass);
 
-        let dependency0 = kit.subpass_dependency(SubpassStage::BeginExternal, SubpassStage::AtIndex(first_subpass))
+        let dependency0 = RenderDependencyCI::new(SubpassStage::BeginExternal, SubpassStage::AtIndex(first_subpass))
             .stage(vk::PipelineStageFlags::BOTTOM_OF_PIPE, vk::PipelineStageFlags::COLOR_ATTACHMENT_OUTPUT)
             .access(vk::AccessFlags::MEMORY_READ, vk::AccessFlags::COLOR_ATTACHMENT_READ | vk::AccessFlags::COLOR_ATTACHMENT_WRITE)
             .with_flags(vk::DependencyFlags::BY_REGION);
         render_pass_builder.add_dependency(dependency0);
 
-        let dependency1 = kit.subpass_dependency(SubpassStage::AtIndex(first_subpass), SubpassStage::EndExternal)
+        let dependency1 = RenderDependencyCI::new(SubpassStage::AtIndex(first_subpass), SubpassStage::EndExternal)
             .stage(vk::PipelineStageFlags::COLOR_ATTACHMENT_OUTPUT, vk::PipelineStageFlags::BOTTOM_OF_PIPE)
             .access(vk::AccessFlags::COLOR_ATTACHMENT_READ | vk::AccessFlags::COLOR_ATTACHMENT_WRITE, vk::AccessFlags::MEMORY_READ)
             .with_flags(vk::DependencyFlags::BY_REGION);
@@ -136,40 +136,39 @@ impl TriangleProcedure {
 
         let render_pass = render_pass_builder.build()?;
 
-        let pipeline_config = kit.pipeline_config(shader_infos, vertex_input_desc, render_pass)
+        let pipeline_config = GfxPipelineConfig::new(shader_infos, vertex_input_desc, render_pass, initializer.screen_dimension())
             .finish();
 
-        let mut pipeline_builder = kit.gfx_builder()?;
+        let mut pipeline_builder = GfxPipelineBuilder::new(initializer)?;
         let graphics_pipeline = pipeline_builder.build(pipeline_config)?;
 
         Ok(graphics_pipeline)
     }
 
-    fn sync_resources(kit: SyncKit, graphics_pipeline: &GsPipeline<Graphics>) -> GsResult<Vec<GsSemaphore>> {
+    fn sync_resources(initializer: &AssetInitializer, pipeline: &GsPipeline<Graphics>) -> GsResult<Vec<GsSemaphore>> {
 
         // sync
-        let mut present_availables = vec![];
-        for _ in 0..graphics_pipeline.frame_count() {
-            let present_available = kit.semaphore()?;
-            present_availables.push(present_available);
+        let mut present_availables = Vec::with_capacity(pipeline.frame_count());
+        for _ in 0..pipeline.frame_count() {
+            let semaphore = GsSemaphore::new(initializer)?;
+            present_availables.push(semaphore);
         }
-
         Ok(present_availables)
     }
 
-    fn commands(kit: CommandKit, graphics_pipeline: &GsPipeline<Graphics>, vertex_buffer: &GsVertexBuffer, data: &Vec<Vertex>) -> GsResult<(GsCommandPool, Vec<GsCommandBuffer>)> {
+    fn commands(initializer: &AssetInitializer, pipeline: &GsPipeline<Graphics>, vertex_buffer: &GsVertexBuffer, data: &Vec<Vertex>) -> GsResult<(GsCommandPool, Vec<GsCommandBuffer>)> {
 
-        let command_pool = kit.pool(DeviceQueueIdentifier::Graphics)?;
+        let command_pool = GsCommandPool::new(initializer, DeviceQueueIdentifier::Graphics)?;
         let mut command_buffers = vec![];
 
-        let command_buffer_count = graphics_pipeline.frame_count();
+        let command_buffer_count = pipeline.frame_count();
         let raw_commands = command_pool.allocate(CmdBufferUsage::UnitaryCommand, command_buffer_count)?;
 
         for (frame_index, command) in raw_commands.into_iter().enumerate() {
-            let mut recorder = kit.pipeline_recorder(graphics_pipeline, command);
+            let mut recorder = GsCmdRecorder::<Graphics>::new(initializer, pipeline, command);
 
             recorder.begin_record(vk::CommandBufferUsageFlags::SIMULTANEOUS_USE)?
-                .begin_render_pass(graphics_pipeline, frame_index)
+                .begin_render_pass(pipeline, frame_index)
                 .bind_pipeline()
                 .bind_vertex_buffers(0, &[vertex_buffer])
                 .draw(data.len() as vkuint, 1, 0, 0)
@@ -199,19 +198,13 @@ impl GraphicsRoutine for TriangleProcedure {
         return Ok(&self.present_availables[image_index])
     }
 
-    fn reload_res(&mut self, loader: AssetsLoader) -> GsResult<()> {
+    fn reload_res(&mut self, initializer: AssetInitializer) -> GsResult<()> {
 
-        self.graphics_pipeline = loader.pipelines(|kit| {
-            TriangleProcedure::pipelines(kit)
-        })?;
+        self.graphics_pipeline = TriangleProcedure::pipelines(&initializer)?;
 
-        self.present_availables = loader.syncs(|kit| {
-            TriangleProcedure::sync_resources(kit, &self.graphics_pipeline)
-        })?;
+        self.present_availables = TriangleProcedure::sync_resources(&initializer, &self.graphics_pipeline)?;
 
-        let (command_pool, command_buffers) = loader.commands(|kit| {
-            TriangleProcedure::commands(kit, &self.graphics_pipeline, &self.vertex_buffer, &self.vertex_data)
-        })?;
+        let (command_pool, command_buffers) = TriangleProcedure::commands(&initializer, &self.graphics_pipeline, &self.vertex_buffer, &self.vertex_data)?;
         self.command_pool = command_pool;
         self.command_buffers = command_buffers;
 
@@ -233,15 +226,15 @@ fn main() {
     // TODO: handle unwrap().
 
     let manifest = PathBuf::from(MANIFEST_PATH);
-    let mut program_env = ProgramEnv::new(Some(manifest)).unwrap();
+    let mut program_context = ProgramContext::new(Some(manifest)).unwrap();
 
-    let builder = program_env.routine().unwrap();
+    let builder = program_context.routine().unwrap();
 
     let asset_loader = builder.assets_loader();
     let routine = TriangleProcedure::new(asset_loader).unwrap();
     let routine_flow = builder.build(routine);
 
-    match routine_flow.launch(program_env) {
+    match routine_flow.launch(program_context) {
         | Ok(_) => (),
         | Err(err) => {
             panic!("[Error] {}", err)

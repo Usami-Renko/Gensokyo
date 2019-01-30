@@ -17,7 +17,7 @@ use nalgebra::{ Matrix4, Vector3 };
 
 use std::path::{ Path, PathBuf };
 
-const MANIFEST_PATH: &str = "src/03.uniform/gensokyo.toml";
+const MANIFEST_PATH: &str = "src/03.uniform/Gensokyo.toml";
 const VERTEX_SHADER_SOURCE_PATH  : &str = "src/03.uniform/uniform.vert.glsl";
 const FRAGMENT_SHADER_SOURCE_PATH: &str = "src/03.uniform/uniform.frag.glsl";
 
@@ -63,7 +63,7 @@ struct UniformBufferProcedure {
 
 impl UniformBufferProcedure {
 
-    fn new(loader: AssetsLoader) -> GsResult<UniformBufferProcedure> {
+    fn new(initializer: AssetInitializer) -> GsResult<UniformBufferProcedure> {
 
         let vertex_data = VERTEX_DATA.to_vec();
         let ubo_data = vec![
@@ -72,25 +72,25 @@ impl UniformBufferProcedure {
             },
         ];
 
-        let (vertex_buffer, ubo_buffer, buffer_storage) = loader.assets(|kit| {
-            UniformBufferProcedure::buffers(kit, &vertex_data, &ubo_data)
-        })?;
+        let (vertex_buffer, ubo_buffer, buffer_storage) = {
+            UniformBufferProcedure::buffers(&initializer, &vertex_data, &ubo_data)
+        }?;
 
-        let (ubo_set, desc_storage) = loader.assets(|kit| {
-            UniformBufferProcedure::descriptor(kit, &ubo_buffer)
-        })?;
+        let (ubo_set, desc_storage) = {
+            UniformBufferProcedure::descriptor(&initializer, &ubo_buffer)
+        }?;
 
-        let graphics_pipeline = loader.pipelines(|kit| {
-            UniformBufferProcedure::pipelines(kit, &ubo_set)
-        })?;
+        let graphics_pipeline = {
+            UniformBufferProcedure::pipelines(&initializer, &ubo_set)
+        }?;
 
-        let present_availables = loader.syncs(|kit| {
-            UniformBufferProcedure::sync_resources(kit, &graphics_pipeline)
-        })?;
+        let present_availables = {
+            UniformBufferProcedure::sync_resources(&initializer, &graphics_pipeline)
+        }?;
 
-        let (command_pool, command_buffers) = loader.commands(|kit| {
-            UniformBufferProcedure::commands(kit, &graphics_pipeline, &vertex_buffer, &ubo_set, &vertex_data)
-        })?;
+        let (command_pool, command_buffers) = {
+            UniformBufferProcedure::commands(&initializer, &graphics_pipeline, &vertex_buffer, &ubo_set, &vertex_data)
+        }?;
 
         let procedure = UniformBufferProcedure {
             vertex_data, buffer_storage, vertex_buffer,
@@ -103,15 +103,15 @@ impl UniformBufferProcedure {
         Ok(procedure)
     }
 
-    fn buffers(kit: AllocatorKit, vertex_data: &Vec<Vertex>, uniform_data: &Vec<UboObject>) -> GsResult<(GsVertexBuffer, GsUniformBuffer, GsBufferRepository<Host>)> {
+    fn buffers(initializer: &AssetInitializer, vertex_data: &Vec<Vertex>, uniform_data: &Vec<UboObject>) -> GsResult<(GsVertexBuffer, GsUniformBuffer, GsBufferRepository<Host>)> {
 
         // vertex and uniform buffer
-        let mut buffer_allocator = kit.buffer(BufferStorageType::HOST);
+        let mut buffer_allocator = GsBufferAllocator::new(initializer, BufferStorageType::HOST);
 
-        let vertex_info = GsBufVertexInfo::new(data_size!(Vertex), vertex_data.len());
+        let vertex_info = GsVertexBuffer::new(data_size!(Vertex), vertex_data.len());
         let vertex_index = buffer_allocator.assign(vertex_info)?;
 
-        let uniform_info = GsBufUniformInfo::new(0, 1, data_size!(UboObject));
+        let uniform_info = GsUniformBuffer::new(0, 1, data_size!(UboObject));
         let uniform_index = buffer_allocator.assign(uniform_info)?;
 
         let buffer_distributor = buffer_allocator.allocate()?;
@@ -129,13 +129,13 @@ impl UniformBufferProcedure {
         Ok((vertex_buffer, uniform_buffer, buffer_storage))
     }
 
-    fn descriptor(kit: AllocatorKit, ubo_buffer: &GsUniformBuffer) -> GsResult<(DescriptorSet, GsDescriptorRepository)> {
+    fn descriptor(initializer: &AssetInitializer, ubo_buffer: &GsUniformBuffer) -> GsResult<(DescriptorSet, GsDescriptorRepository)> {
 
         // descriptor
-        let mut descriptor_set_config = DescriptorSetConfig::init();
+        let mut descriptor_set_config = DescriptorSetConfig::new();
         descriptor_set_config.add_buffer_binding(ubo_buffer, GsPipelineStage::VERTEX);
 
-        let mut descriptor_allocator = kit.descriptor(vk::DescriptorPoolCreateFlags::empty());
+        let mut descriptor_allocator = GsDescriptorAllocator::new(initializer);
         let descriptor_index = descriptor_allocator.assign(descriptor_set_config);
 
         let descriptor_distributor = descriptor_allocator.allocate()?;
@@ -145,15 +145,15 @@ impl UniformBufferProcedure {
         Ok((uniform_descriptor_set, descriptor_repository))
     }
 
-    fn pipelines(kit: PipelineKit, descriptor_set: &DescriptorSet) -> GsResult<GsPipeline<Graphics>> {
+    fn pipelines(initializer: &AssetInitializer, descriptor_set: &DescriptorSet) -> GsResult<GsPipeline<Graphics>> {
 
         // shaders
-        let vertex_shader = GsShaderInfo::from_source(
+        let vertex_shader = GsShaderCI::from_source(
             GsPipelineStage::VERTEX,
             Path::new(VERTEX_SHADER_SOURCE_PATH),
             None,
             "[Vertex Shader]");
-        let fragment_shader = GsShaderInfo::from_source(
+        let fragment_shader = GsShaderCI::from_source(
             GsPipelineStage::FRAGMENT,
             Path::new(FRAGMENT_SHADER_SOURCE_PATH),
             None,
@@ -162,19 +162,19 @@ impl UniformBufferProcedure {
         let vertex_input_desc = Vertex::desc();
 
         // pipeline
-        let mut render_pass_builder = kit.pass_builder();
+        let mut render_pass_builder = GsRenderPass::new(initializer);
         let first_subpass = render_pass_builder.new_subpass();
 
-        let color_attachment = kit.present_attachment();
+        let color_attachment = RenderAttachmentCI::<Present>::new(initializer);
         let _attachment_index = render_pass_builder.add_attachment(color_attachment, first_subpass);
 
-        let dependency0 = kit.subpass_dependency(SubpassStage::BeginExternal, SubpassStage::AtIndex(first_subpass))
+        let dependency0 = RenderDependencyCI::new(SubpassStage::BeginExternal, SubpassStage::AtIndex(first_subpass))
             .stage(vk::PipelineStageFlags::BOTTOM_OF_PIPE, vk::PipelineStageFlags::COLOR_ATTACHMENT_OUTPUT)
             .access(vk::AccessFlags::MEMORY_READ, vk::AccessFlags::COLOR_ATTACHMENT_READ | vk::AccessFlags::COLOR_ATTACHMENT_WRITE)
             .with_flags(vk::DependencyFlags::BY_REGION);
         render_pass_builder.add_dependency(dependency0);
 
-        let dependency1 = kit.subpass_dependency(SubpassStage::AtIndex(first_subpass), SubpassStage::EndExternal)
+        let dependency1 = RenderDependencyCI::new(SubpassStage::AtIndex(first_subpass), SubpassStage::EndExternal)
             .stage(vk::PipelineStageFlags::COLOR_ATTACHMENT_OUTPUT, vk::PipelineStageFlags::BOTTOM_OF_PIPE)
             .access(vk::AccessFlags::COLOR_ATTACHMENT_READ | vk::AccessFlags::COLOR_ATTACHMENT_WRITE, vk::AccessFlags::MEMORY_READ)
             .with_flags(vk::DependencyFlags::BY_REGION);
@@ -182,41 +182,40 @@ impl UniformBufferProcedure {
 
         let render_pass = render_pass_builder.build()?;
 
-        let pipeline_config = kit.pipeline_config(shader_infos, vertex_input_desc, render_pass)
+        let pipeline_config = GfxPipelineConfig::new(shader_infos, vertex_input_desc, render_pass, initializer.screen_dimension())
             .with_descriptor_sets(&[descriptor_set])
             .finish();
 
-        let mut pipeline_builder = kit.gfx_builder()?;
+        let mut pipeline_builder = GfxPipelineBuilder::new(initializer)?;
         let graphics_pipeline = pipeline_builder.build(pipeline_config)?;
 
         Ok(graphics_pipeline)
     }
 
-    fn sync_resources(kit: SyncKit, graphics_pipeline: &GsPipeline<Graphics>) -> GsResult<Vec<GsSemaphore>> {
+    fn sync_resources(initializer: &AssetInitializer, pipeline: &GsPipeline<Graphics>) -> GsResult<Vec<GsSemaphore>> {
 
         // sync
-        let mut present_availables = vec![];
-        for _ in 0..graphics_pipeline.frame_count() {
-            let present_available = kit.semaphore()?;
-            present_availables.push(present_available);
+        let mut present_availables = Vec::with_capacity(pipeline.frame_count());
+        for _ in 0..pipeline.frame_count() {
+            let semaphore = GsSemaphore::new(initializer)?;
+            present_availables.push(semaphore);
         }
-
         Ok(present_availables)
     }
 
-    fn commands(kit: CommandKit, graphics_pipeline: &GsPipeline<Graphics>, vertex_buffer: &GsVertexBuffer, desc_set: &DescriptorSet, vertex_data: &Vec<Vertex>) -> GsResult<(GsCommandPool, Vec<GsCommandBuffer>)> {
+    fn commands(initializer: &AssetInitializer, pipeline: &GsPipeline<Graphics>, vertex_buffer: &GsVertexBuffer, desc_set: &DescriptorSet, vertex_data: &Vec<Vertex>) -> GsResult<(GsCommandPool, Vec<GsCommandBuffer>)> {
 
-        let command_pool = kit.pool(DeviceQueueIdentifier::Graphics)?;
+        let command_pool = GsCommandPool::new(initializer, DeviceQueueIdentifier::Graphics)?;
         let mut command_buffers = vec![];
 
-        let command_buffer_count = graphics_pipeline.frame_count();
+        let command_buffer_count = pipeline.frame_count();
         let raw_commands = command_pool.allocate(CmdBufferUsage::UnitaryCommand, command_buffer_count)?;
 
         for (frame_index, command) in raw_commands.into_iter().enumerate() {
-            let mut recorder = kit.pipeline_recorder(graphics_pipeline, command);
+            let mut recorder = GsCmdRecorder::<Graphics>::new(initializer, pipeline, command);
 
             recorder.begin_record(vk::CommandBufferUsageFlags::SIMULTANEOUS_USE)?
-                .begin_render_pass(graphics_pipeline, frame_index)
+                .begin_render_pass(pipeline, frame_index)
                 .bind_pipeline()
                 .bind_vertex_buffers(0, &[vertex_buffer])
                 .bind_descriptor_sets(0, &[desc_set])
@@ -248,19 +247,13 @@ impl GraphicsRoutine for UniformBufferProcedure {
         return Ok(&self.present_availables[image_index])
     }
 
-    fn reload_res(&mut self, loader: AssetsLoader) -> GsResult<()> {
+    fn reload_res(&mut self, initializer: AssetInitializer) -> GsResult<()> {
 
-        self.graphics_pipeline = loader.pipelines(|kit| {
-            UniformBufferProcedure::pipelines(kit, &self.ubo_set)
-        })?;
+        self.graphics_pipeline = UniformBufferProcedure::pipelines(&initializer, &self.ubo_set)?;
 
-        self.present_availables = loader.syncs(|kit| {
-            UniformBufferProcedure::sync_resources(kit, &self.graphics_pipeline)
-        })?;
+        self.present_availables = UniformBufferProcedure::sync_resources(&initializer, &self.graphics_pipeline)?;
 
-        let (command_pool, command_buffers) = loader.commands(|kit| {
-            UniformBufferProcedure::commands(kit, &self.graphics_pipeline, &self.vertex_buffer, &self.ubo_set, &self.vertex_data)
-        })?;
+        let (command_pool, command_buffers) = UniformBufferProcedure::commands(&initializer, &self.graphics_pipeline, &self.vertex_buffer, &self.ubo_set, &self.vertex_data)?;
         self.command_pool = command_pool;
         self.command_buffers = command_buffers;
 
@@ -279,16 +272,17 @@ impl GraphicsRoutine for UniformBufferProcedure {
 
 fn main() {
 
-    let manifest = PathBuf::from(MANIFEST_PATH);
-    let mut program_env = ProgramEnv::new(Some(manifest)).unwrap();
 
-    let builder = program_env.routine().unwrap();
+    let manifest = PathBuf::from(MANIFEST_PATH);
+    let mut program_context = ProgramContext::new(Some(manifest)).unwrap();
+
+    let builder = program_context.routine().unwrap();
 
     let asset_loader = builder.assets_loader();
     let routine = UniformBufferProcedure::new(asset_loader).unwrap();
     let routine_flow = builder.build(routine);
 
-    match routine_flow.launch(program_env) {
+    match routine_flow.launch(program_context) {
         | Ok(_) => (),
         | Err(err) => {
             panic!("[Error] {}", err)

@@ -21,7 +21,7 @@ pub struct GsRenderPass {
 
 impl GsRenderPass {
 
-    pub(crate) fn new(handle: vk::RenderPass, framebuffers: Vec<GsFramebuffer>, dimension: vkDim2D, clear_values: Vec<vk::ClearValue>) -> GsRenderPass {
+    pub(crate) fn build(handle: vk::RenderPass, framebuffers: Vec<GsFramebuffer>, dimension: vkDim2D, clear_values: Vec<vk::ClearValue>) -> GsRenderPass {
 
         GsRenderPass {
             handle,

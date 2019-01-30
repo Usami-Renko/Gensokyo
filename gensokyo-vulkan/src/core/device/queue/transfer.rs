@@ -54,7 +54,7 @@ impl GsTransferQueue {
             device: device.clone(),
             command_buffers: vec![],
             // make sign to false, since the fence will be reset whenever transfer start.
-            fence: GsFence::setup(device, false)?,
+            fence: GsFence::create(device, false)?,
             transfer_wait_time: self.transfer_wait_time,
         };
         Ok(transfer)

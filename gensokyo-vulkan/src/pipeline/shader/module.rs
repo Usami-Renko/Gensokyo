@@ -16,7 +16,7 @@ use std::fs::File;
 use std::io::Read;
 use std::ptr;
 
-pub struct GsShaderInfo {
+pub struct GsShaderCI {
 
     stage: GsPipelineStage,
     path : PathBuf,
@@ -33,16 +33,16 @@ enum ShaderSourcePattern {
     SprivCode,
 }
 
-impl GsShaderInfo {
+impl GsShaderCI {
 
-    pub fn from_source(stage: GsPipelineStage, source_path: impl AsRef<Path>, main_func: Option<&str>, tag_name: &str) -> GsShaderInfo {
+    pub fn from_source(stage: GsPipelineStage, source_path: impl AsRef<Path>, main_func: Option<&str>, tag_name: &str) -> GsShaderCI {
 
         let path = PathBuf::from(source_path.as_ref());
         let main = main_func
             .and_then(|m| Some(m.to_owned()))
             .unwrap_or(String::from("main"));
 
-        GsShaderInfo {
+        GsShaderCI {
             stage, path, main,
             pattern : ShaderSourcePattern::SourceCode,
             tag_name: Some(tag_name.to_owned()),
@@ -50,14 +50,14 @@ impl GsShaderInfo {
         }
     }
 
-    pub fn from_spirv(stage: GsPipelineStage, spirv_path: impl AsRef<Path>, main_func: Option<&str>) -> GsShaderInfo {
+    pub fn from_spirv(stage: GsPipelineStage, spirv_path: impl AsRef<Path>, main_func: Option<&str>) -> GsShaderCI {
 
         let path = PathBuf::from(spirv_path.as_ref());
         let main = main_func
             .and_then(|m| Some(m.to_owned()))
             .unwrap_or(String::from("main"));
 
-        GsShaderInfo {
+        GsShaderCI {
             stage, path, main,
             pattern : ShaderSourcePattern::SprivCode,
             tag_name: None,

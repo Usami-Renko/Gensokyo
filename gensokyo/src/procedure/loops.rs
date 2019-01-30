@@ -1,5 +1,5 @@
 
-use crate::procedure::env::{ ProgramEnv, VulkanEnv, WindowEnv };
+use crate::procedure::context::{ ProgramContext, VulkanContext, WindowContext };
 use crate::procedure::chain::ChainResource;
 use crate::procedure::workflow::GraphicsRoutine;
 
@@ -31,14 +31,14 @@ impl<Routine> RoutineFlow<Routine>
         }
     }
 
-    pub fn launch(mut self, env: ProgramEnv) -> GsResult<()> {
+    pub fn launch(mut self, context: ProgramContext) -> GsResult<()> {
 
-        let (window_env, vulkan_env, config) = env.take();
-        let device = &vulkan_env.device;
+        let (window_context, vulkan_context, config) = context.take();
+        let device = &vulkan_context.device;
 
         self.routine.ready(device)?;
 
-        self.main_loop(window_env, &vulkan_env, config)?;
+        self.main_loop(window_context, &vulkan_context, config)?;
 
         self.routine.closure(device)?;
         self.wait_device_idle(device)?;
@@ -48,15 +48,15 @@ impl<Routine> RoutineFlow<Routine>
         // free the program specific resource.
         drop(self);
         // and then free vulkan environment resource.
-        vulkan_env.destroy();
+        vulkan_context.destroy();
 
         Ok(())
     }
 
-    fn main_loop(&mut self, window_env: WindowEnv, vulkan_env: &VulkanEnv, config: EngineConfig) -> GsResult<()> {
+    fn main_loop(&mut self, window_context: WindowContext, vulkan_context: &VulkanContext, config: EngineConfig) -> GsResult<()> {
 
-        let device = &vulkan_env.device;
-        let mut window = window_env;
+        let device = &vulkan_context.device;
+        let mut window = window_context;
 
         let mut actioner = ActionNerve::new();
         let mut fps_timer = GsFpsTimer::new();
@@ -88,9 +88,9 @@ impl<Routine> RoutineFlow<Routine>
                 | SceneReaction::SwapchainRecreate => {
                     self.wait_device_idle(device)?;
                     self.routine.clean_resources(device)?;
-                    self.chain.reload(&vulkan_env, &config.core.swapchain)?;
+                    self.chain.reload(&vulkan_context, &config.core.swapchain)?;
 
-                    let asset_loader = self.chain.assets_loader(&vulkan_env, &config.resources);
+                    let asset_loader = self.chain.assets_loader(&vulkan_context, &config.resources);
                     self.routine.reload_res(asset_loader)?;
                 },
                 | SceneReaction::Terminate => {

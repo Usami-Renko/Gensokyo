@@ -28,10 +28,7 @@ impl GsSurface {
 
         let loader = ash::extensions::khr::Surface::new(&instance.entry, &instance.handle);
 
-        let surface = GsSurface {
-            handle, loader,
-        };
-
+        let surface = GsSurface { handle, loader };
         Ok(surface)
     }
 

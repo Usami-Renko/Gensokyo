@@ -6,7 +6,7 @@ use crate::core::GsDevice;
 
 use crate::pipeline::target::GsPipeline;
 use crate::pipeline::graphics::config::GfxPipelineConfig;
-use crate::pipeline::shader::{ GsShaderModule, GsShaderInfo };
+use crate::pipeline::shader::{ GsShaderModule, GsShaderCI };
 use crate::pipeline::shader::shaderc::{ GsShaderCompiler, ShaderCompilePrefab, ShadercConfiguration };
 
 use crate::utils::phantom::Graphics;
@@ -20,23 +20,23 @@ use std::ptr;
 pub struct GfxPipelineBuilder {
 
     device : GsDevice,
-    ci_flag: GsPipelineCIFlags,
+    ci_flag: PipelineCIFlags,
     shaderc: GsShaderCompiler,
 }
 
 impl GfxPipelineBuilder {
 
-    pub fn new(device: &GsDevice) -> VkResult<GfxPipelineBuilder> {
+    pub fn create(device: &GsDevice) -> VkResult<GfxPipelineBuilder> {
 
         let builder = GfxPipelineBuilder {
             device : device.clone(),
-            ci_flag: GsPipelineCIFlags::default(),
+            ci_flag: PipelineCIFlags::default(),
             shaderc: GsShaderCompiler::setup(ShaderCompilePrefab::Vulkan)?,
         };
         Ok(builder)
     }
 
-    pub fn with_flag(&mut self, flags: GsPipelineCIFlags) {
+    pub fn with_flag(&mut self, flags: PipelineCIFlags) {
         self.ci_flag |= flags;
     }
 
@@ -52,8 +52,7 @@ impl GfxPipelineBuilder {
         // compile shader.
         let shader_modules = compile_shaders(&self.device, &mut self.shaderc, &config.shaders)?;
         // generate create info.
-        let derive_state = PipelineDeriveState::Independence;
-        let pipeline_ci = pipeline_ci(&self.device, &self.ci_flag, &shader_modules, &config, &derive_state)?;
+        let pipeline_ci = pipeline_ci(&self.device, &self.ci_flag, &shader_modules, &config, &PipelineDeriveState::Independence)?;
 
         // build pipeline.
         let handles = unsafe {
@@ -96,50 +95,50 @@ impl PipelineDeriveState {
 // ------------------------------------------------------------------------------------------
 
 // ------------------------------------------------------------------------------------------
-pub struct GsPipelineCIFlags(vk::PipelineCreateFlags);
+pub struct PipelineCIFlags(vk::PipelineCreateFlags);
 
-impl GsPipelineCIFlags {
-    pub const DISABLE_OPTIMIZATION: GsPipelineCIFlags = GsPipelineCIFlags(vk::PipelineCreateFlags::DISABLE_OPTIMIZATION);
-    pub const DEFER_COMPILE_NV: GsPipelineCIFlags = GsPipelineCIFlags(vk::PipelineCreateFlags::DEFER_COMPILE_NV);
-    pub const VIEW_INDEX_FROM_DEVICE_INDEX: GsPipelineCIFlags = GsPipelineCIFlags(vk::PipelineCreateFlags::VIEW_INDEX_FROM_DEVICE_INDEX);
-    pub const DISPATCH_BASE: GsPipelineCIFlags = GsPipelineCIFlags(vk::PipelineCreateFlags::DISPATCH_BASE);
+impl PipelineCIFlags {
+    pub const DISABLE_OPTIMIZATION: PipelineCIFlags = PipelineCIFlags(vk::PipelineCreateFlags::DISABLE_OPTIMIZATION);
+    pub const DEFER_COMPILE_NV: PipelineCIFlags = PipelineCIFlags(vk::PipelineCreateFlags::DEFER_COMPILE_NV);
+    pub const VIEW_INDEX_FROM_DEVICE_INDEX: PipelineCIFlags = PipelineCIFlags(vk::PipelineCreateFlags::VIEW_INDEX_FROM_DEVICE_INDEX);
+    pub const DISPATCH_BASE: PipelineCIFlags = PipelineCIFlags(vk::PipelineCreateFlags::DISPATCH_BASE);
 
-    pub(super) fn combine_derive(&self, derive: &PipelineDeriveState) -> GsPipelineCIFlags {
-        GsPipelineCIFlags(self.0 | derive.flag())
+    pub(super) fn combine_derive(&self, derive: &PipelineDeriveState) -> PipelineCIFlags {
+        PipelineCIFlags(self.0 | derive.flag())
     }
 }
 
-impl Default for GsPipelineCIFlags {
+impl Default for PipelineCIFlags {
 
-    fn default() -> GsPipelineCIFlags {
-        GsPipelineCIFlags(vk::PipelineCreateFlags::empty())
+    fn default() -> PipelineCIFlags {
+        PipelineCIFlags(vk::PipelineCreateFlags::empty())
     }
 }
 
-impl BitAnd for GsPipelineCIFlags {
+impl BitAnd for PipelineCIFlags {
     type Output = Self;
 
     fn bitand(self, rhs: Self) -> Self {
-        GsPipelineCIFlags(self.0 & rhs.0)
+        PipelineCIFlags(self.0 & rhs.0)
     }
 }
 
-impl BitAndAssign for GsPipelineCIFlags {
+impl BitAndAssign for PipelineCIFlags {
 
     fn bitand_assign(&mut self, rhs: Self) {
         self.0 &= rhs.0
     }
 }
 
-impl BitOr for GsPipelineCIFlags {
+impl BitOr for PipelineCIFlags {
     type Output = Self;
 
     fn bitor(self, rhs: Self) -> Self {
-        GsPipelineCIFlags(self.0 | rhs.0)
+        PipelineCIFlags(self.0 | rhs.0)
     }
 }
 
-impl BitOrAssign for GsPipelineCIFlags {
+impl BitOrAssign for PipelineCIFlags {
 
     fn bitor_assign(&mut self, rhs: Self) {
         self.0 |= rhs.0;
@@ -156,7 +155,7 @@ pub(super) struct GfxPipelineCI {
     pub pipeline_layout: vk::PipelineLayout,
 }
 
-pub(super) fn compile_shaders(device: &GsDevice, compiler: &mut GsShaderCompiler, shaders: &[GsShaderInfo]) -> VkResult<Vec<GsShaderModule>> {
+pub(super) fn compile_shaders(device: &GsDevice, compiler: &mut GsShaderCompiler, shaders: &[GsShaderCI]) -> VkResult<Vec<GsShaderModule>> {
 
     let mut shader_modules = Vec::with_capacity(shaders.len());
     for shader in shaders.iter() {
@@ -176,7 +175,7 @@ pub(super) fn destroy_modules(device: &GsDevice, modules: &[GsShaderModule]) {
 
 // this function must be inline, or the ptr may be lost.
 #[inline(always)]
-pub(super) fn pipeline_ci(device: &GsDevice, flag: &GsPipelineCIFlags, shader_modules: &[GsShaderModule], config: &GfxPipelineConfig, derive_state: &PipelineDeriveState) -> VkResult<GfxPipelineCI> {
+pub(super) fn pipeline_ci(device: &GsDevice, flag: &PipelineCIFlags, shader_modules: &[GsShaderModule], config: &GfxPipelineConfig, derive_state: &PipelineDeriveState) -> VkResult<GfxPipelineCI> {
 
     let ci_flag = flag.combine_derive(&derive_state);
 

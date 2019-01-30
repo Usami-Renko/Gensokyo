@@ -8,13 +8,13 @@ use crate::types::vkuint;
 
 use std::ptr;
 
-pub struct GsImageBarrier(vk::ImageMemoryBarrier);
+pub struct ImageBarrierCI(vk::ImageMemoryBarrier);
 
-impl GsImageBarrier {
+impl ImageBarrierCI {
 
     pub fn new(image: &GsImage, subrange: vk::ImageSubresourceRange) -> ImageBarrierBuilder {
 
-        let mut barrier = GsImageBarrier::default();
+        let mut barrier = ImageBarrierCI::default();
         barrier.0.image = image.handle;
         barrier.0.subresource_range = subrange;
 
@@ -22,9 +22,9 @@ impl GsImageBarrier {
     }
 }
 
-impl Default for GsImageBarrier {
+impl Default for ImageBarrierCI {
 
-    fn default() -> GsImageBarrier {
+    fn default() -> ImageBarrierCI {
 
         let barrier = vk::ImageMemoryBarrier {
             s_type: vk::StructureType::IMAGE_MEMORY_BARRIER,
@@ -39,15 +39,15 @@ impl Default for GsImageBarrier {
             subresource_range: Default::default(),
         };
 
-        GsImageBarrier(barrier)
+        ImageBarrierCI(barrier)
     }
 }
 
-pub struct ImageBarrierBuilder(GsImageBarrier);
+pub struct ImageBarrierBuilder(ImageBarrierCI);
 
 impl ImageBarrierBuilder {
 
-    pub fn build(self) -> GsImageBarrier {
+    pub fn build(self) -> ImageBarrierCI {
         self.0
     }
 
@@ -73,7 +73,7 @@ impl ImageBarrierBuilder {
     }
 }
 
-impl IntoVKBarrier for GsImageBarrier {
+impl IntoVKBarrier for ImageBarrierCI {
     type BarrierType = vk::ImageMemoryBarrier;
 
     fn into_barrier(self) -> Self::BarrierType {

@@ -4,7 +4,7 @@ use ash::version::DeviceV1_0;
 
 use crate::command::record::{ GsCmdRecorder, GsVkCommandType };
 use crate::command::traits::IntoVKBarrier;
-use crate::image::GsImageBarrier;
+use crate::image::ImageBarrierCI;
 use crate::utils::phantom::Transfer;
 
 impl GsVkCommandType for Transfer {
@@ -21,7 +21,7 @@ pub trait GsCmdCopyApi {
 
     fn copy_img2img(&self,src_handle: vk::Image, src_layout: vk::ImageLayout, dst_handle: vk::Image, dst_layout: vk::ImageLayout, regions: &[vk::ImageCopy]) -> &Self;
 
-    fn image_pipeline_barrier(&self, src_stage: vk::PipelineStageFlags, dst_stage: vk::PipelineStageFlags, dependencies: vk::DependencyFlags, image_barriers: Vec<GsImageBarrier>) -> &Self;
+    fn image_pipeline_barrier(&self, src_stage: vk::PipelineStageFlags, dst_stage: vk::PipelineStageFlags, dependencies: vk::DependencyFlags, image_barriers: Vec<ImageBarrierCI>) -> &Self;
 }
 
 impl GsCmdCopyApi for GsCmdRecorder<Transfer> {
@@ -50,7 +50,7 @@ impl GsCmdCopyApi for GsCmdRecorder<Transfer> {
         } self
     }
 
-    fn image_pipeline_barrier(&self, src_stage: vk::PipelineStageFlags, dst_stage: vk::PipelineStageFlags, dependencies: vk::DependencyFlags, image_barriers: Vec<GsImageBarrier>) -> &Self {
+    fn image_pipeline_barrier(&self, src_stage: vk::PipelineStageFlags, dst_stage: vk::PipelineStageFlags, dependencies: vk::DependencyFlags, image_barriers: Vec<ImageBarrierCI>) -> &Self {
 
         let barriers: Vec<vk::ImageMemoryBarrier> = image_barriers.into_iter()
             .map(|b| b.into_barrier()).collect();

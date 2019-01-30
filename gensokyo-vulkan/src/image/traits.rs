@@ -12,7 +12,7 @@ pub trait ImageHandleEntity: Sized {
 
 pub trait ImageInstance<I>: ImageCopiable {
 
-    fn new(img: I, entity: ImageEntity, desc: ImageInstanceInfoDesc) -> Self where Self: Sized;
+    fn build(img: I, entity: ImageEntity, desc: ImageInstanceInfoDesc) -> Self where Self: Sized;
 }
 
 pub trait ImageCopiable: Sized {

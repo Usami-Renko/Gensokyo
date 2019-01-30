@@ -3,13 +3,13 @@ use ash::vk;
 
 use crate::core::GsDevice;
 
-use crate::image::target::{ GsImage, ImageDescInfo };
-use crate::image::view::ImageViewDescInfo;
+use crate::image::target::{ GsImage, ImageTgtCI };
+use crate::image::view::ImageViewCI;
 use crate::image::enums::ImageInstanceType;
 use crate::image::traits::ImageCopiable;
 use crate::image::utils::ImageCopyInfo;
 use crate::image::storage::ImageStorageInfo;
-use crate::image::instance::traits::{ ImageInfoAbstract, ImageBarrierBundleAbs };
+use crate::image::instance::traits::{ ImageCIAbstract, ImageBarrierBundleAbs };
 use crate::image::instance::desc::ImageInstanceInfoDesc;
 use crate::image::instance::sample::SampleImageBarrierBundle;
 use crate::image::instance::depth::DSImageBarrierBundle;
@@ -37,24 +37,24 @@ pub struct GsImageAllocator<M>
 
     device  : GsDevice,
 
-    image_infos: Vec<ImageAllotInfo>,
+    image_infos: Vec<ImageAllotCI>,
 
     memory_filter: MemoryFilter,
 }
 
 impl<M, I, R> GsAllocatorApi<I, R, GsImageDistributor<M>> for GsImageAllocator<M>
     where
-        I: ImageInfoAbstract<R>,
+        I: ImageCIAbstract<R>,
         M: ImageMemoryTypeAbs {
 
     type AssignResult = VkResult<GsAssignIndex<R>>;
 
-    fn assign(&mut self, info: I) -> Self::AssignResult {
+    fn assign(&mut self, ci: I) -> Self::AssignResult {
 
-        let image = info.build(&self.device)?;
+        let image = ci.build(&self.device)?;
         self.memory_filter.filter(&image)?;
 
-        let (image_info, message) = info.refactor(&self.device, image)?;
+        let (image_info, message) = ci.refactor(&self.device, image)?;
         let dst_index = GsAssignIndex {
             convey_info: message,
             assign_index: self.image_infos.len(),
@@ -66,9 +66,7 @@ impl<M, I, R> GsAllocatorApi<I, R, GsImageDistributor<M>> for GsImageAllocator<M
 
     fn reset(&mut self) {
 
-        for image_info in self.image_infos.iter() {
-            image_info.destroy(&self.device);
-        }
+        self.image_infos.iter().for_each(|ci| ci.destroy(&self.device));
         self.image_infos.clear();
         self.memory_filter.reset();
     }
@@ -122,7 +120,7 @@ impl<M> GsImageAllocator<M>
     where
         M: ImageMemoryTypeAbs {
 
-    pub fn new(device: &GsDevice, storage_type: M) -> GsImageAllocator<M> {
+    pub fn create(device: &GsDevice, storage_type: M) -> GsImageAllocator<M> {
 
         GsImageAllocator {
             phantom_type: PhantomData,
@@ -138,13 +136,13 @@ impl<M> GsImageAllocator<M>
 }
 
 
-pub struct ImageAllotInfo {
+pub struct ImageAllotCI {
 
     pub typ: ImageInstanceType,
 
     pub image: GsImage,
-    pub image_desc: ImageDescInfo,
-    pub view_desc : ImageViewDescInfo,
+    pub image_ci: ImageTgtCI,
+    pub view_ci : ImageViewCI,
 
     pub storage: ImageStorageInfo,
     pub space  : vkbytes,
@@ -152,14 +150,14 @@ pub struct ImageAllotInfo {
     pub final_layout: vk::ImageLayout,
 }
 
-impl ImageAllotInfo {
+impl ImageAllotCI {
 
-    pub fn new(typ: ImageInstanceType, storage: ImageStorageInfo, image: GsImage, image_desc: ImageDescInfo, view_desc: ImageViewDescInfo) -> ImageAllotInfo {
+    pub fn new(typ: ImageInstanceType, storage: ImageStorageInfo, image: GsImage, image_ci: ImageTgtCI, view_ci: ImageViewCI) -> ImageAllotCI {
 
         let space = image.alignment_size();
 
-        ImageAllotInfo {
-            typ, image, image_desc, view_desc, storage, space,
+        ImageAllotCI {
+            typ, image, image_ci, view_ci, storage, space,
             final_layout: vk::ImageLayout::UNDEFINED,
         }
     }
@@ -169,7 +167,7 @@ impl ImageAllotInfo {
         ImageInstanceInfoDesc {
             current_layout : self.final_layout,
             dimension      : self.storage.dimension,
-            subrange: self.view_desc.subrange.clone(),
+            subrange: self.view_ci.subrange.clone(),
         }
     }
 
@@ -179,19 +177,19 @@ impl ImageAllotInfo {
     }
 }
 
-impl ImageCopiable for ImageAllotInfo {
+impl ImageCopiable for ImageAllotCI {
 
     fn copy_info(&self) -> ImageCopyInfo {
 
         use crate::image::utils::image_subrange_to_layers;
         // The layout parameter is the destination layout after data copy.
         // This value should be vk::TransferDstOptimal.
-        let subrange_layers = image_subrange_to_layers(&self.view_desc.subrange);
+        let subrange_layers = image_subrange_to_layers(&self.view_ci.subrange);
         ImageCopyInfo::new(&self.image, subrange_layers, self.final_layout, self.storage.dimension)
     }
 }
 
-fn collect_barrier_bundle(image_infos: &[ImageAllotInfo]) -> Vec<Box<dyn ImageBarrierBundleAbs>> {
+fn collect_barrier_bundle(image_infos: &[ImageAllotCI]) -> Vec<Box<dyn ImageBarrierBundleAbs>> {
 
     let mut barrier_indices: HashMap<ImageInstanceType, Vec<usize>, _> = HashMap::new();
 

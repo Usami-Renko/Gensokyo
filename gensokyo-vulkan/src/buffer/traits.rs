@@ -11,7 +11,7 @@ use crate::types::vkbytes;
 pub trait BufferInstance: BufferCopiable {
     type InfoType;
 
-    fn new(block: BufferBlock, info: Self::InfoType, repository_index: usize) -> Self;
+    fn build(block: BufferBlock, info: Self::InfoType, repository_index: usize) -> Self;
 
     fn acquire_write_ptr(&self, agency: &mut Box<dyn MemoryDataDelegate>) -> VkResult<MemoryWritePtr>;
 }

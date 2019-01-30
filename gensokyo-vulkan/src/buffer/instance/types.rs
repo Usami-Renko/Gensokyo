@@ -5,7 +5,7 @@ use crate::core::GsDevice;
 use crate::memory::types::GsMemoryType;
 use crate::types::vkbytes;
 
-pub trait BufferInfoAbstract<I>: Sized {
+pub trait BufferCIAbstract<I>: Sized {
     const VK_FLAG: vk::BufferUsageFlags;
 
     fn check_storage_validity(memory_type: GsMemoryType) -> bool {

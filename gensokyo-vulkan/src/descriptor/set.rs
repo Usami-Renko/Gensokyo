@@ -3,7 +3,7 @@ use ash::vk;
 
 use crate::core::GsDevice;
 
-use crate::descriptor::layout::{ GsDescriptorSetLayout, DescriptorSetLayoutInfo };
+use crate::descriptor::layout::{ GsDescriptorSetLayout, DescriptorSetLayoutCI };
 use crate::descriptor::entity::DescriptorSetEntity;
 use crate::descriptor::binding::DescriptorBindingInfo;
 use crate::descriptor::binding::{ DescriptorBufferBindableTarget, DescriptorImageBindableTarget };
@@ -49,7 +49,7 @@ pub struct DescriptorSetConfig {
 
 impl DescriptorSetConfig {
 
-    pub fn init() -> DescriptorSetConfig {
+    pub fn new() -> DescriptorSetConfig {
         DescriptorSetConfig::default()
     }
 
@@ -71,9 +71,9 @@ impl DescriptorSetConfig {
         self.stage_flags.push(stage.0);
     }
 
-    pub fn to_layout_info(&self) -> DescriptorSetLayoutInfo {
+    pub fn to_layout_ci(&self) -> DescriptorSetLayoutCI {
 
-        let mut layout_info = DescriptorSetLayoutInfo::setup(self.layout_flags);
+        let mut layout_info = GsDescriptorSetLayout::new(self.layout_flags);
         for (i, info) in self.bindings.iter().enumerate() {
             layout_info.add_binding(info, self.stage_flags[i]);
         }

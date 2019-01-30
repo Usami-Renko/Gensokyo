@@ -12,7 +12,7 @@ use crate::memory::utils::{ MemoryMapStatus, MemoryRange, MemoryMapAlias, Memory
 use crate::memory::traits::{ GsMemoryAbstract, MemoryMappable };
 use crate::memory::filter::MemoryFilter;
 use crate::memory::transfer::DataCopyer;
-use crate::memory::instance::GsBufferMemoryAbs;
+use crate::memory::instance::BufferMemoryAbs;
 use crate::memory::transfer::MemoryDataDelegate;
 
 use crate::error::{ VkResult, VkError };
@@ -63,7 +63,7 @@ impl GsMemoryAbstract for GsStagingMemory {
     }
 }
 
-impl GsBufferMemoryAbs for GsStagingMemory {
+impl BufferMemoryAbs for GsStagingMemory {
 
     fn to_upload_agency(&self, _: &GsDevice, _: &BufferAllocateInfos) -> VkResult<Box<dyn MemoryDataDelegate>> {
 
@@ -153,9 +153,9 @@ impl UploadStagingResource {
 
         // generate buffers
         let mut buffers = vec![];
-        for buffer_desc in allocate_infos.infos.iter() {
+        for buffer_ci in allocate_infos.cis.iter() {
 
-            let buffer = buffer_desc.build(device, Staging, None)?;
+            let buffer = buffer_ci.build(device, Staging)?;
             memory_filter.filter(&buffer)?;
             buffers.push(buffer);
         }

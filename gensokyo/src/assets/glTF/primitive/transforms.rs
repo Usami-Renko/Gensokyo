@@ -3,7 +3,7 @@ use crate::assets::glTF::levels::GsglTFNodeEntity;
 use crate::assets::error::GltfError;
 use crate::utils::types::Matrix4F;
 
-use gsvk::buffer::instance::{ GsUniformBuffer, GsBufUniformInfo };
+use gsvk::buffer::instance::{ GsUniformBuffer, UniformBufferCI };
 use gsvk::memory::transfer::GsBufferDataUploader;
 use gsvk::types::{ vkuint, vkbytes };
 use gsvk::error::VkResult;
@@ -38,9 +38,9 @@ impl GsglTFNodesData {
         Ok(nodes_data)
     }
 
-    pub fn uniform_info(&self, uniform_binding: vkuint) -> GsBufUniformInfo {
+    pub fn uniform_info(&self, uniform_binding: vkuint) -> UniformBufferCI {
 
-        GsBufUniformInfo::new_dyn(uniform_binding, 1, self.element_size, self.content.data_length())
+        GsUniformBuffer::new_dyn(uniform_binding, 1, self.element_size, self.content.data_length())
     }
 
     pub fn data_content_mut(&mut self) -> &mut Box<dyn GNProperties> {

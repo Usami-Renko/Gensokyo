@@ -9,21 +9,24 @@ use crate::error::{ VkResult, VkError };
 
 use std::ptr;
 
-pub struct DescriptorSetLayoutInfo {
+pub struct DescriptorSetLayoutCI {
 
     flags   : vk::DescriptorSetLayoutCreateFlags,
     bindings: Vec<vk::DescriptorSetLayoutBinding>,
 }
 
-impl DescriptorSetLayoutInfo {
+impl GsDescriptorSetLayout {
 
     // TODO: Add configuration for vk::DescriptorSetLayoutCreateFlags.
-    pub fn setup(flags: vk::DescriptorSetLayoutCreateFlags) -> DescriptorSetLayoutInfo {
-        DescriptorSetLayoutInfo {
+    pub fn new(flags: vk::DescriptorSetLayoutCreateFlags) -> DescriptorSetLayoutCI {
+        DescriptorSetLayoutCI {
             flags,
             bindings: vec![],
         }
     }
+}
+
+impl DescriptorSetLayoutCI {
 
     pub fn add_binding(&mut self, info: &Box<DescriptorBindingInfo>, stages: vk::ShaderStageFlags) -> usize {
 

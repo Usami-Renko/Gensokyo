@@ -1,8 +1,8 @@
 
 use crate::core::GsDevice;
 
-use crate::buffer::target::{ GsBuffer, BufferDescInfo };
-use crate::buffer::instance::types::BufferInfoAbstract;
+use crate::buffer::target::GsBuffer;
+use crate::buffer::instance::types::BufferCIAbstract;
 use crate::memory::{ MemoryFilter, MemoryDstEntity };
 use crate::error::{ VkResult, VkError };
 
@@ -34,7 +34,7 @@ pub struct GsBufferAllocator<M>
 
 impl<M, I, R> GsAllocatorApi<I, R, GsBufferDistributor<M>> for GsBufferAllocator<M>
     where
-        I: BufferInfoAbstract<R>,
+        I: BufferCIAbstract<R>,
         M: BufferMemoryTypeAbs {
 
     type AssignResult = VkResult<GsAssignIndex<R>>;
@@ -49,8 +49,8 @@ impl<M, I, R> GsAllocatorApi<I, R, GsBufferDistributor<M>> for GsBufferAllocator
         let mut info = info; // make it mutable.
         info.check_limits(&self.device);
 
-        let buffer_description = BufferDescInfo::new(info.estimate_size(), I::VK_FLAG);
-        let buffer = buffer_description.build(&self.device, self.storage_type, None)?;
+        let buffer_ci = GsBuffer::new(info.estimate_size(), I::VK_FLAG);
+        let buffer = buffer_ci.build(&self.device, self.storage_type)?;
         self.memory_filter.filter(&buffer)?;
 
         let dst_index = GsAssignIndex {
@@ -63,16 +63,14 @@ impl<M, I, R> GsAllocatorApi<I, R, GsBufferDistributor<M>> for GsBufferAllocator
 
         self.spaces.push(alignment_space);
         self.buffers.push(buffer);
-        self.allot_infos.push(alignment_space, buffer_description);
+        self.allot_infos.push(alignment_space, buffer_ci);
 
         Ok(dst_index)
     }
 
     fn reset(&mut self) {
 
-        for buffer in self.buffers.iter() {
-            buffer.destroy(&self.device);
-        }
+        self.buffers.iter().for_each(|b| b.destroy(&self.device));
         self.buffers.clear();
         self.spaces.clear();
         self.memory_filter.reset();
@@ -122,7 +120,7 @@ impl<M> GsBufferAllocator<M>
     where
         M: BufferMemoryTypeAbs {
 
-    pub fn new(device: &GsDevice, storage_type: M) -> GsBufferAllocator<M> {
+    pub fn create(device: &GsDevice, storage_type: M) -> GsBufferAllocator<M> {
 
         GsBufferAllocator {
             phantom_type: PhantomData,

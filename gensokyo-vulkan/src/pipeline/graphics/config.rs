@@ -2,7 +2,7 @@
 use ash::vk;
 
 use crate::pipeline::{
-    shader::{ GsShaderInfo, VertexInputDescription },
+    shader::{ GsShaderCI, VertexInputDescription },
     state::PipelineStates,
     state::vertex_input::GsVertexInputState,
     state::input_assembly::GsInputAssemblyState,
@@ -13,7 +13,7 @@ use crate::pipeline::{
     state::blend::GsBlendState,
     state::tessellation::GsTessellationState,
     pass::GsRenderPass,
-    layout::{ PipelineLayoutBuilder, GsPushConstantRange },
+    layout::{ GsPipelineLayout, PipelineLayoutBuilder, GsPushConstantRange },
 };
 
 use crate::types::vkDim2D;
@@ -22,7 +22,7 @@ use crate::descriptor::DescriptorSet;
 // ------------------------------------------------------------------------------------------
 pub struct GfxPipelineConfig {
 
-    pub(super) shaders: Vec<GsShaderInfo>,
+    pub(super) shaders: Vec<GsShaderCI>,
     pub(super) states: PipelineStates,
     pub(super) render_pass: GsRenderPass,
 
@@ -31,23 +31,23 @@ pub struct GfxPipelineConfig {
 
 impl GfxPipelineConfig {
 
-    pub fn new(shaders: impl Into<Vec<GsShaderInfo>>, input: VertexInputDescription, render_pass: GsRenderPass, dimension: vkDim2D) -> GfxPipelineConfig {
+    pub fn new(shaders: impl Into<Vec<GsShaderCI>>, input: VertexInputDescription, render_pass: GsRenderPass, dimension: vkDim2D) -> GfxPipelineConfig {
 
         GfxPipelineConfig {
             shaders : shaders.into(),
             states  : PipelineStates::setup(input, dimension),
 
             render_pass,
-            layout_builder: PipelineLayoutBuilder::default(),
+            layout_builder: GsPipelineLayout::new(),
         }
     }
 
-    pub fn reset_shader(&mut self, shaders: Vec<GsShaderInfo>) -> &mut GfxPipelineConfig {
+    pub fn reset_shader(&mut self, shaders: Vec<GsShaderCI>) -> &mut GfxPipelineConfig {
         self.shaders = shaders;
         self
     }
 
-    pub fn with_shader(mut self, shaders: Vec<GsShaderInfo>) -> GfxPipelineConfig {
+    pub fn with_shader(mut self, shaders: Vec<GsShaderCI>) -> GfxPipelineConfig {
         self.reset_shader(shaders);
         self
     }

@@ -2,7 +2,7 @@
 use crate::assets::glTF::data::IntermediateglTFData;
 use crate::assets::error::GltfError;
 
-use gsvk::buffer::instance::{ GsBufIndicesInfo, GsIndexBuffer };
+use gsvk::buffer::instance::{ GsIndexBuffer, IndicesBufferCI };
 use gsvk::memory::transfer::GsBufferDataUploader;
 use gsvk::types::vkuint;
 use gsvk::error::VkResult;
@@ -34,10 +34,10 @@ impl GsglTFIndicesData {
         Ok(extend_count)
     }
 
-    pub fn indices_info(&self) -> Option<GsBufIndicesInfo> {
+    pub fn indices_info(&self) -> Option<IndicesBufferCI> {
 
         if self.is_contain_indices() {
-            Some(GsBufIndicesInfo::new(self.data.len() as _))
+            Some(GsIndexBuffer::new(self.data.len() as _))
         } else {
             None
         }

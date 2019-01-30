@@ -6,7 +6,7 @@ mod config;
 mod input;
 mod assets;
 mod procedure;
-mod toolkit;
+mod initialize;
 mod utils;
 mod error;
 

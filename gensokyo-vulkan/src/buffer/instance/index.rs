@@ -2,7 +2,7 @@
 use ash::vk;
 
 use crate::buffer::entity::BufferBlock;
-use crate::buffer::instance::types::BufferInfoAbstract;
+use crate::buffer::instance::types::BufferCIAbstract;
 use crate::buffer::traits::{ BufferInstance, BufferCopiable, BufferCopyInfo };
 
 use crate::memory::transfer::MemoryDataDelegate;
@@ -14,28 +14,20 @@ use crate::types::{ vkuint, vkbytes };
 use std::mem;
 
 #[derive(Debug, Clone)]
-pub struct GsBufIndicesInfo {
+pub struct IndicesBufferCI {
 
     indices_count: vkuint,
     indices_type: vk::IndexType,
 }
 
-impl GsBufIndicesInfo {
-
-    pub fn new(indices_count: usize) -> GsBufIndicesInfo {
-
-        GsBufIndicesInfo {
-            indices_count: indices_count as vkuint,
-            indices_type: vk::IndexType::UINT32,
-        }
-    }
+impl IndicesBufferCI {
 
     pub fn set_indices_type(&mut self, typ: vk::IndexType) {
         self.indices_type = typ;
     }
 }
 
-impl BufferInfoAbstract<IIndices> for GsBufIndicesInfo {
+impl BufferCIAbstract<IIndices> for IndicesBufferCI {
     const VK_FLAG: vk::BufferUsageFlags = vk::BufferUsageFlags::INDEX_BUFFER;
 
     fn estimate_size(&self) -> vkbytes {
@@ -52,7 +44,7 @@ impl BufferInfoAbstract<IIndices> for GsBufIndicesInfo {
     fn into_index(self) -> IIndices {
 
         IIndices {
-            indices_type: self.indices_type,
+            indices_type : self.indices_type,
             indices_count: self.indices_count,
         }
     }
@@ -76,7 +68,7 @@ pub struct GsIndexBuffer {
 impl BufferInstance for GsIndexBuffer {
     type InfoType = IIndices;
 
-    fn new(block: BufferBlock, info: Self::InfoType, repository_index: usize) -> Self {
+    fn build(block: BufferBlock, info: Self::InfoType, repository_index: usize) -> Self {
 
         GsIndexBuffer {
             indices_count: info.indices_count,
@@ -98,6 +90,14 @@ impl BufferCopiable for GsIndexBuffer {
 }
 
 impl GsIndexBuffer {
+
+    pub fn new(indices_count: usize) -> IndicesBufferCI {
+
+        IndicesBufferCI {
+            indices_count: indices_count as vkuint,
+            indices_type: vk::IndexType::UINT32,
+        }
+    }
 
     pub(crate) fn render_info(&self) -> (vk::Buffer, vk::IndexType) {
         (self.block.handle, self.indices_type)

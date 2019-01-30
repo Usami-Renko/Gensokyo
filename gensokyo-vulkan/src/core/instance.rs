@@ -120,7 +120,7 @@ impl GsInstance {
 
 /// Convenient function to get the names of required vulkan layers.
 ///
-/// Return an vector of CString if succeeds, or an error explan the detail.
+/// Return an vector of CString if succeeds, or an error explain the detail.
 fn required_layers(entry: &ash::Entry, validation: &ValidationConfig) -> VkResult<Vec<CString>> {
 
     // required validation layer name if need  ---------------------------

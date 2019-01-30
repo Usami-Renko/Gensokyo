@@ -4,7 +4,7 @@ use crate::core::GsDevice;
 use crate::image::entity::ImageEntity;
 use crate::image::view::GsImageView;
 use crate::image::traits::ImageInstance;
-use crate::image::allocator::ImageAllotInfo;
+use crate::image::allocator::ImageAllotCI;
 use crate::image::allocator::types::ImageMemoryTypeAbs;
 use crate::image::repository::GsImageRepository;
 
@@ -24,7 +24,7 @@ pub struct GsImageDistributor<M>
     memory: GsImageMemory,
 
     views: Vec<GsImageView>,
-    image_infos: Vec<ImageAllotInfo>,
+    image_allot_cis: Vec<ImageAllotCI>,
 }
 
 impl<M, R, T> GsDistributeApi<R, T, GsImageRepository<M>> for GsImageDistributor<M>
@@ -35,11 +35,11 @@ impl<M, R, T> GsDistributeApi<R, T, GsImageRepository<M>> for GsImageDistributor
     fn acquire(&self, index: GsAssignIndex<R>) -> T {
 
         let image_index = index.assign_index;
-        let image_info = &self.image_infos[image_index];
-        let image_entity = ImageEntity::new(&image_info.image, &self.views[image_index]);
-        let desc = self.image_infos[image_index].gen_desc();
+        let image_allot_ci = &self.image_allot_cis[image_index];
+        let image_entity = ImageEntity::new(&image_allot_ci.image, &self.views[image_index]);
+        let desc = self.image_allot_cis[image_index].gen_desc();
 
-        T::new(index.take_info(), image_entity, desc)
+        T::build(index.take_info(), image_entity, desc)
     }
 }
 
@@ -49,7 +49,7 @@ impl<M> GsDistIntoRepository<GsImageRepository<M>> for GsImageDistributor<M>
 
     fn into_repository(self) -> GsImageRepository<M> {
 
-        let images = self.image_infos.into_iter()
+        let images = self.image_allot_cis.into_iter()
             .map(|info| info.image).collect();
 
         GsImageRepository::store(self.phantom_type, self.device, images, self.views, self.memory)
@@ -60,19 +60,16 @@ impl<M> GsImageDistributor<M>
     where
         M: ImageMemoryTypeAbs {
 
-    pub(super) fn new(phantom_type: PhantomData<M>, device: GsDevice, image_infos: Vec<ImageAllotInfo>, memory: GsImageMemory) -> VkResult<GsImageDistributor<M>> {
+    pub(super) fn new(phantom_type: PhantomData<M>, device: GsDevice, image_allot_cis: Vec<ImageAllotCI>, memory: GsImageMemory) -> VkResult<GsImageDistributor<M>> {
 
-        let mut views = Vec::with_capacity(image_infos.len());
-        for info in image_infos.iter() {
+        let mut views = Vec::with_capacity(image_allot_cis.len());
+        for info in image_allot_cis.iter() {
 
-            let view = info.view_desc.build(&device, &info.image, &info.image_desc.specific)?;
+            let view = info.view_ci.build(&device, &info.image, &info.image_ci.specific)?;
             views.push(view);
         }
 
-        let distributor = GsImageDistributor {
-            phantom_type, device, memory, image_infos, views,
-        };
-
+        let distributor = GsImageDistributor { phantom_type, device, memory, image_allot_cis, views };
         Ok(distributor)
     }
 }

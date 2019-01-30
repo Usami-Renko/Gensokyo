@@ -1,10 +1,10 @@
 
-pub use self::target::{ GsImage, ImageDescInfo , ImagePropertyInfo, ImageSpecificInfo };
-pub use self::view::{ GsImageView, ImageViewDescInfo };
+pub use self::target::{ GsImage, ImageTgtCI , ImagePropertyCI, ImageSpecificCI };
+pub use self::view::{ GsImageView, ImageViewCI };
 pub use self::traits::{ ImageInstance, ImageCopiable };
 pub use self::enums::{ ImagePipelineStage, DepthStencilImageFormat };
 pub use self::sampler::{ GsSampler, GsSamplerCI };
-pub use self::barrier::GsImageBarrier;
+pub use self::barrier::ImageBarrierCI;
 pub use self::entity::ImageEntity;
 pub use self::repository::GsImageRepository;
 

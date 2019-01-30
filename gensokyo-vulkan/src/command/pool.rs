@@ -20,8 +20,7 @@ pub struct GsCommandPool {
 impl GsCommandPool {
 
     // TODO: Add configuration for vk::CommandPoolCreateFlags.
-    pub fn setup(device: &GsDevice, queue: DeviceQueueIdentifier, flags: vk::CommandPoolCreateFlags)
-        -> VkResult<GsCommandPool> {
+    pub fn create(device: &GsDevice, queue: DeviceQueueIdentifier, flags: vk::CommandPoolCreateFlags) -> VkResult<GsCommandPool> {
 
         let queue = device.logic.queue_handle_by_identifier(queue);
 

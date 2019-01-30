@@ -8,7 +8,7 @@ use crate::memory::target::GsMemory;
 use crate::memory::utils::MemoryWritePtr;
 use crate::memory::traits::{ GsMemoryAbstract, MemoryMappable };
 use crate::memory::filter::MemoryFilter;
-use crate::memory::instance::traits::{ GsImageMemoryAbs, GsBufferMemoryAbs };
+use crate::memory::instance::traits::{ ImageMemoryAbs, BufferMemoryAbs };
 use crate::memory::instance::staging::UploadStagingResource;
 use crate::memory::transfer::MemoryDataDelegate;
 
@@ -43,7 +43,7 @@ impl GsMemoryAbstract for GsCachedMemory {
     }
 }
 
-impl GsBufferMemoryAbs for GsCachedMemory {
+impl BufferMemoryAbs for GsCachedMemory {
 
     fn to_upload_agency(&self, device: &GsDevice, allot_infos: &BufferAllocateInfos) -> VkResult<Box<dyn MemoryDataDelegate>> {
 
@@ -57,7 +57,7 @@ impl GsBufferMemoryAbs for GsCachedMemory {
     }
 }
 
-impl GsImageMemoryAbs for GsCachedMemory {}
+impl ImageMemoryAbs for GsCachedMemory {}
 
 
 pub struct CachedDataAgency {

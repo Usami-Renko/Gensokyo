@@ -53,9 +53,9 @@ pub struct DepthProcedure {
 
 impl DepthProcedure {
 
-    pub fn new(loader: AssetsLoader) -> GsResult<DepthProcedure> {
+    pub fn new(initializer: AssetInitializer) -> GsResult<DepthProcedure> {
 
-        let screen_dimension = loader.screen_dimension();
+        let screen_dimension = initializer.screen_dimension();
 
         let camera = GsCameraFactory::config()
             .place_at(Point3::new(0.0, 0.0, 2.5))
@@ -80,29 +80,29 @@ impl DepthProcedure {
             },
         ];
 
-        let (vertex_buffer, index_buffer, ubo_buffer, buffer_storage) = loader.assets(|kit| {
-            DepthProcedure::buffers(kit, &vertex_data, &index_data, &ubo_data)
-        })?;
+        let (vertex_buffer, index_buffer, ubo_buffer, buffer_storage) = {
+            DepthProcedure::buffers(&initializer, &vertex_data, &index_data, &ubo_data)
+        }?;
 
-        let (depth_attachment, image_storage) = loader.assets(|kit| {
-            DepthProcedure::image(kit, screen_dimension)
-        })?;
+        let (depth_attachment, image_storage) = {
+            DepthProcedure::image(&initializer, screen_dimension)
+        }?;
 
-        let (ubo_set, desc_storage) = loader.assets(|kit| {
-            DepthProcedure::ubo(kit, &ubo_buffer)
-        })?;
+        let (ubo_set, desc_storage) = {
+            DepthProcedure::ubo(&initializer, &ubo_buffer)
+        }?;
 
-        let pipeline = loader.pipelines(|kit| {
-            DepthProcedure::pipelines(kit, &ubo_set, &depth_attachment)
-        })?;
+        let pipeline = {
+            DepthProcedure::pipelines(&initializer, &ubo_set, &depth_attachment)
+        }?;
 
-        let present_availables = loader.syncs(|kit| {
-            DepthProcedure::sync_resources(kit, &pipeline)
-        })?;
+        let present_availables = {
+            DepthProcedure::sync_resources(&initializer, &pipeline)
+        }?;
 
-        let (command_pool, command_buffers) = loader.commands(|kit| {
-            DepthProcedure::commands(kit, &pipeline, &vertex_buffer, &index_buffer, &ubo_set, index_data.len())
-        })?;
+        let (command_pool, command_buffers) = {
+            DepthProcedure::commands(&initializer, &pipeline, &vertex_buffer, &index_buffer, &ubo_set, index_data.len())
+        }?;
 
         let procedure = DepthProcedure {
             index_data, ubo_data,
@@ -129,18 +129,18 @@ impl DepthProcedure {
         Ok(())
     }
 
-    fn buffers(kit: AllocatorKit, vertex_data: &Vec<Vertex>, index_data: &Vec<vkuint>, ubo_data: &Vec<UboObject>) -> GsResult<(GsVertexBuffer, GsIndexBuffer, GsUniformBuffer, GsBufferRepository<Host>)> {
+    fn buffers(initializer: &AssetInitializer, vertex_data: &Vec<Vertex>, index_data: &Vec<vkuint>, ubo_data: &Vec<UboObject>) -> GsResult<(GsVertexBuffer, GsIndexBuffer, GsUniformBuffer, GsBufferRepository<Host>)> {
 
         // vertex, index and uniform buffer
-        let mut buffer_allocator = kit.buffer(BufferStorageType::HOST);
+        let mut buffer_allocator = GsBufferAllocator::new(initializer, BufferStorageType::HOST);
 
-        let vertex_info = GsBufVertexInfo::new(data_size!(Vertex), vertex_data.len());
+        let vertex_info = GsVertexBuffer::new(data_size!(Vertex), vertex_data.len());
         let vertex_index = buffer_allocator.assign(vertex_info)?;
 
-        let index_info = GsBufIndicesInfo::new(index_data.len());
+        let index_info = GsIndexBuffer::new(index_data.len());
         let index_index = buffer_allocator.assign(index_info)?;
 
-        let ubo_info = GsBufUniformInfo::new(0, 1, data_size!(UboObject));
+        let ubo_info = GsUniformBuffer::new(0, 1, data_size!(UboObject));
         let ubo_index = buffer_allocator.assign(ubo_info)?;
 
         let buffer_distributor = buffer_allocator.allocate()?;
@@ -159,12 +159,12 @@ impl DepthProcedure {
         Ok((vertex_buffer, index_buffer, ubo_buffer, buffer_storage))
     }
 
-    fn image(kit: AllocatorKit, dimension: vkDim2D) -> GsResult<(GsDSAttachment, GsImageRepository<Device>)> {
+    fn image(initializer: &AssetInitializer, dimension: vkDim2D) -> GsResult<(GsDSAttachment, GsImageRepository<Device>)> {
 
         // depth attachment image
-        let mut image_allocator = kit.image(ImageStorageType::DEVICE);
+        let mut image_allocator = GsImageAllocator::new(initializer, ImageStorageType::DEVICE);
 
-        let depth_attachment_info = GsDSAttachmentInfo::new(dimension, DepthStencilImageFormat::Depth32Bit);
+        let depth_attachment_info = GsDSAttachment::new(dimension, DepthStencilImageFormat::Depth32Bit);
         let image_index = image_allocator.assign(depth_attachment_info)?;
 
         let image_distributor = image_allocator.allocate()?;
@@ -174,13 +174,13 @@ impl DepthProcedure {
         Ok((depth_attachment, image_storage))
     }
 
-    fn ubo(kit: AllocatorKit, ubo_buffer: &GsUniformBuffer) -> GsResult<(DescriptorSet, GsDescriptorRepository)> {
+    fn ubo(initializer: &AssetInitializer, ubo_buffer: &GsUniformBuffer) -> GsResult<(DescriptorSet, GsDescriptorRepository)> {
 
         // descriptor
-        let mut descriptor_set_config = DescriptorSetConfig::init();
+        let mut descriptor_set_config = DescriptorSetConfig::new();
         descriptor_set_config.add_buffer_binding(ubo_buffer, GsPipelineStage::VERTEX);
 
-        let mut descriptor_allocator = kit.descriptor(vk::DescriptorPoolCreateFlags::empty());
+        let mut descriptor_allocator = GsDescriptorAllocator::new(initializer);
         let desc_index = descriptor_allocator.assign(descriptor_set_config);
 
         let descriptor_distributor = descriptor_allocator.allocate()?;
@@ -191,15 +191,15 @@ impl DepthProcedure {
         Ok((ubo_set, desc_storage))
     }
 
-    fn pipelines(kit: PipelineKit, ubo_set: &DescriptorSet, depth_image: &GsDSAttachment) -> GsResult<GsPipeline<Graphics>> {
+    fn pipelines(initializer: &AssetInitializer, ubo_set: &DescriptorSet, depth_image: &GsDSAttachment) -> GsResult<GsPipeline<Graphics>> {
 
         // shaders
-        let vertex_shader = GsShaderInfo::from_source(
+        let vertex_shader = GsShaderCI::from_source(
             GsPipelineStage::VERTEX,
             Path::new(VERTEX_SHADER_SOURCE_PATH),
             None,
             "[Vertex Shader]");
-        let fragment_shader = GsShaderInfo::from_source(
+        let fragment_shader = GsShaderCI::from_source(
             GsPipelineStage::FRAGMENT,
             Path::new(FRAGMENT_SHADER_SOURCE_PATH),
             None,
@@ -208,22 +208,22 @@ impl DepthProcedure {
         let vertex_input_desc = Vertex::desc();
 
         // pipeline
-        let mut render_pass_builder = kit.pass_builder();
+        let mut render_pass_builder = GsRenderPass::new(initializer);
         let first_subpass = render_pass_builder.new_subpass();
 
-        let color_attachment = kit.present_attachment();
+        let color_attachment = RenderAttachmentCI::<Present>::new(initializer);
         let depth_attachment = depth_image.attachment();
 
         render_pass_builder.add_attachment(color_attachment, first_subpass);
         render_pass_builder.add_attachment(depth_attachment, first_subpass);
 
-        let dependency0 = kit.subpass_dependency(SubpassStage::BeginExternal, SubpassStage::AtIndex(first_subpass))
+        let dependency0 = RenderDependencyCI::new(SubpassStage::BeginExternal, SubpassStage::AtIndex(first_subpass))
             .stage(vk::PipelineStageFlags::BOTTOM_OF_PIPE, vk::PipelineStageFlags::COLOR_ATTACHMENT_OUTPUT)
             .access(vk::AccessFlags::MEMORY_READ, vk::AccessFlags::COLOR_ATTACHMENT_READ | vk::AccessFlags::COLOR_ATTACHMENT_WRITE)
             .with_flags(vk::DependencyFlags::BY_REGION);
         render_pass_builder.add_dependency(dependency0);
 
-        let dependency1 = kit.subpass_dependency(SubpassStage::AtIndex(first_subpass), SubpassStage::EndExternal)
+        let dependency1 = RenderDependencyCI::new(SubpassStage::AtIndex(first_subpass), SubpassStage::EndExternal)
             .stage(vk::PipelineStageFlags::COLOR_ATTACHMENT_OUTPUT, vk::PipelineStageFlags::BOTTOM_OF_PIPE)
             .access(vk::AccessFlags::COLOR_ATTACHMENT_READ | vk::AccessFlags::COLOR_ATTACHMENT_WRITE, vk::AccessFlags::MEMORY_READ)
             .with_flags(vk::DependencyFlags::BY_REGION);
@@ -232,42 +232,41 @@ impl DepthProcedure {
         let render_pass = render_pass_builder.build()?;
         let depth_stencil = GsDepthStencilState::setup(GsDepthStencilPrefab::EnableDepth);
 
-        let pipeline_config = kit.pipeline_config(shader_infos, vertex_input_desc, render_pass)
+        let pipeline_config = GfxPipelineConfig::new(shader_infos, vertex_input_desc, render_pass, initializer.screen_dimension())
             .with_depth_stencil(depth_stencil)
             .with_descriptor_sets(&[ubo_set])
             .finish();
 
-        let mut pipeline_builder = kit.gfx_builder()?;
+        let mut pipeline_builder = GfxPipelineBuilder::new(initializer)?;
         let graphics_pipeline = pipeline_builder.build(pipeline_config)?;
 
         Ok(graphics_pipeline)
     }
 
-    fn sync_resources(kit: SyncKit, graphics_pipeline: &GsPipeline<Graphics>) -> GsResult<Vec<GsSemaphore>> {
+    fn sync_resources(initializer: &AssetInitializer, pipeline: &GsPipeline<Graphics>) -> GsResult<Vec<GsSemaphore>> {
 
         // sync
-        let mut present_availables = vec![];
-        for _ in 0..graphics_pipeline.frame_count() {
-            let present_available = kit.semaphore()?;
-            present_availables.push(present_available);
+        let mut present_availables = Vec::with_capacity(pipeline.frame_count());
+        for _ in 0..pipeline.frame_count() {
+            let semaphore = GsSemaphore::new(initializer)?;
+            present_availables.push(semaphore);
         }
-
         Ok(present_availables)
     }
 
-    fn commands(kit: CommandKit, graphics_pipeline: &GsPipeline<Graphics>, vertex_buffer: &GsVertexBuffer, index_buffer: &GsIndexBuffer, ubo_set: &DescriptorSet, index_count: usize) -> GsResult<(GsCommandPool, Vec<GsCommandBuffer>)> {
+    fn commands(initializer: &AssetInitializer, pipeline: &GsPipeline<Graphics>, vertex_buffer: &GsVertexBuffer, index_buffer: &GsIndexBuffer, ubo_set: &DescriptorSet, index_count: usize) -> GsResult<(GsCommandPool, Vec<GsCommandBuffer>)> {
 
-        let command_pool = kit.pool(DeviceQueueIdentifier::Graphics)?;
+        let command_pool = GsCommandPool::new(initializer, DeviceQueueIdentifier::Graphics)?;
         let mut command_buffers = vec![];
 
-        let command_buffer_count = graphics_pipeline.frame_count();
+        let command_buffer_count = pipeline.frame_count();
         let raw_commands = command_pool.allocate(CmdBufferUsage::UnitaryCommand, command_buffer_count)?;
 
         for (frame_index, command) in raw_commands.into_iter().enumerate() {
-            let mut recorder = kit.pipeline_recorder(graphics_pipeline, command);
+            let mut recorder = GsCmdRecorder::<Graphics>::new(initializer, pipeline, command);
 
             recorder.begin_record(vk::CommandBufferUsageFlags::SIMULTANEOUS_USE)?
-                .begin_render_pass(graphics_pipeline, frame_index)
+                .begin_render_pass(pipeline, frame_index)
                 .bind_pipeline()
                 .bind_vertex_buffers(0, &[vertex_buffer])
                 .bind_index_buffer(index_buffer, 0)
@@ -301,19 +300,13 @@ impl GraphicsRoutine for DepthProcedure {
         return Ok(&self.present_availables[image_index])
     }
 
-    fn reload_res(&mut self, loader: AssetsLoader) -> GsResult<()> {
+    fn reload_res(&mut self, initializer: AssetInitializer) -> GsResult<()> {
 
-        self.pipeline = loader.pipelines(|kit| {
-            DepthProcedure::pipelines(kit, &self.ubo_set, &self.depth_attachment)
-        })?;
+        self.pipeline = DepthProcedure::pipelines(&initializer, &self.ubo_set, &self.depth_attachment)?;
 
-        self.present_availables = loader.syncs(|kit| {
-            DepthProcedure::sync_resources(kit, &self.pipeline)
-        })?;
+        self.present_availables = DepthProcedure::sync_resources(&initializer, &self.pipeline)?;
 
-        let (command_pool, command_buffers) = loader.commands(|kit| {
-            DepthProcedure::commands(kit, &self.pipeline, &self.vertex_buffer, &self.index_buffer, &self.ubo_set, self.index_data.len())
-        })?;
+        let (command_pool, command_buffers) = DepthProcedure::commands(&initializer, &self.pipeline, &self.vertex_buffer, &self.index_buffer, &self.ubo_set, self.index_data.len())?;
         self.command_pool = command_pool;
         self.command_buffers = command_buffers;
 

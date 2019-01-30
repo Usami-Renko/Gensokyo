@@ -20,6 +20,7 @@ impl GsTessellationState {
         GsTessellationState { points_count }
     }
 
+    #[inline]
     pub(crate) fn ci(&self) -> vk::PipelineTessellationStateCreateInfo {
 
         vk::PipelineTessellationStateCreateInfo {

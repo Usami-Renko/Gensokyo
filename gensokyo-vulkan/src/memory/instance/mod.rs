@@ -5,7 +5,7 @@ pub use self::device::GsDeviceMemory;
 pub use self::staging::GsStagingMemory;
 
 pub use self::staging::UploadStagingResource;
-pub use self::traits::{ GsBufferMemory, GsImageMemory, GsBufferMemoryAbs };
+pub use self::traits::{ GsBufferMemory, GsImageMemory, BufferMemoryAbs };
 
 mod traits;
 mod host;

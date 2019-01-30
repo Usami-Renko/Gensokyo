@@ -1,8 +1,8 @@
 
 use crate::config::resources::ResourceConfig;
 
-use crate::procedure::env::{ ProgramEnv, VulkanEnv };
-use crate::procedure::loader::AssetsLoader;
+use crate::procedure::context::{ ProgramContext, VulkanContext };
+use crate::initialize::initializer::AssetInitializer;
 
 use gsvk::core::GsDevice;
 use gsvk::core::device::DeviceQueueIdentifier;
@@ -30,12 +30,12 @@ pub(super) struct ChainResource {
 
 impl ChainResource {
 
-    pub fn new(env: &ProgramEnv, window: winit::Window) -> GsResult<ChainResource> {
+    pub fn new(context: &ProgramContext, window: winit::Window) -> GsResult<ChainResource> {
 
-        let swapchain = env.vulkan_env.new_chain(&env.config.core.swapchain, None, &window)?;
-        let frame_in_flights = env.config.core.swapchain.image_count as usize;
+        let swapchain = context.vulkan_context.new_chain(&context.config.core.swapchain, None, &window)?;
+        let frame_in_flights = context.config.core.swapchain.image_count as usize;
 
-        let (image_awaits, sync_fences) = create_syncs(&env.vulkan_env.device, frame_in_flights)?;
+        let (image_awaits, sync_fences) = create_syncs(&context.vulkan_context.device, frame_in_flights)?;
 
         let chain = ChainResource {
             window, swapchain, frame_in_flights, image_awaits, sync_fences,
@@ -45,9 +45,9 @@ impl ChainResource {
         Ok(chain)
     }
 
-    pub fn assets_loader(&self, env: &VulkanEnv, config: &ResourceConfig) -> AssetsLoader {
+    pub fn assets_loader(&self, vulkan: &VulkanContext, config: &ResourceConfig) -> AssetInitializer {
 
-        AssetsLoader::new(&env, config, &self.swapchain)
+        AssetInitializer::create(&vulkan.device, &self.swapchain, config)
     }
 
     pub fn acquire_next_image(&self) -> GsResult<AcquireImageInfo> {
@@ -88,13 +88,13 @@ impl ChainResource {
         self.current_frame = (self.current_frame + 1) % self.frame_in_flights;
     }
 
-    pub fn reload(&mut self, env: &VulkanEnv, config: &SwapchainConfig) -> GsResult<()> {
+    pub fn reload(&mut self, vulkan: &VulkanContext, config: &SwapchainConfig) -> GsResult<()> {
 
-        let new_chain = env.new_chain(config, Some(&self.swapchain), &self.window)?;
-        self.destroy(&env.device);
+        let new_chain = vulkan.new_chain(config, Some(&self.swapchain), &self.window)?;
+        self.destroy(&vulkan.device);
 
         self.swapchain = new_chain;
-        self.recreate_syncs(&env.device)?;
+        self.recreate_syncs(&vulkan.device)?;
 
         Ok(())
     }
@@ -124,8 +124,8 @@ fn create_syncs(device: &GsDevice, frame_in_flights: usize) -> GsResult<(Vec<GsS
     let mut sync_fences = vec![];
 
     for _ in 0..frame_in_flights {
-        let image_await = GsSemaphore::setup(device)?;
-        let sync_fence = GsFence::setup(device, true)?;
+        let image_await = GsSemaphore::create(device)?;
+        let sync_fence = GsFence::create(device, true)?;
 
         image_awaits.push(image_await);
         sync_fences.push(sync_fence);

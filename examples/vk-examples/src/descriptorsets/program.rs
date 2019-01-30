@@ -57,9 +57,9 @@ pub struct VulkanExample {
 
 impl VulkanExample {
 
-    pub fn new(loader: AssetsLoader) -> GsResult<VulkanExample> {
+    pub fn new(initializer: AssetInitializer) -> GsResult<VulkanExample> {
 
-        let screen_dimension = loader.screen_dimension();
+        let screen_dimension = initializer.screen_dimension();
 
         let mut camera = GsCameraFactory::config()
             .place_at(Point3::new(0.0, 0.0, 2.5))
@@ -89,26 +89,26 @@ impl VulkanExample {
             ],
         ];
 
-        let (model_entity, model_repository, ubo_buffers, ubo_storage) = loader.assets(|kit| {
-            VulkanExample::load_model(kit, &ubo_data)
-        })?;
+        let (model_entity, model_repository, ubo_buffers, ubo_storage) = {
+            VulkanExample::load_model(&initializer, &ubo_data)
+        }?;
 
-        let (sample_images, depth_attachment, image_storage) = loader.assets(|kit| {
-            VulkanExample::image(kit, screen_dimension)
-        })?;
+        let (sample_images, depth_attachment, image_storage) = {
+            VulkanExample::image(&initializer, screen_dimension)
+        }?;
 
-        let (ubo_sets, desc_storage) = loader.assets(|kit| {
-            VulkanExample::ubo(kit, &model_entity, &sample_images, &ubo_buffers)
-        })?;
+        let (ubo_sets, desc_storage) = {
+            VulkanExample::ubo(&initializer, &model_entity, &sample_images, &ubo_buffers)
+        }?;
 
         let push_consts = model_entity.pushconst_description(GsPipelineStage::VERTEX);
-        let pipeline = loader.pipelines(|kit| {
-            VulkanExample::pipelines(kit, push_consts, &[&ubo_sets[0], &ubo_sets[1]], &depth_attachment)
-        })?;
+        let pipeline = {
+            VulkanExample::pipelines(&initializer, push_consts, &[&ubo_sets[0], &ubo_sets[1]], &depth_attachment)
+        }?;
 
-        let present_availables = loader.syncs(|kit| {
-            VulkanExample::sync_resources(kit, &pipeline)
-        })?;
+        let present_availables = {
+            VulkanExample::sync_resources(&initializer, &pipeline)
+        }?;
 
         let cubes = CubeResources {
             matrices  : ubo_data,
@@ -117,9 +117,9 @@ impl VulkanExample {
             ubo_buffer: ubo_buffers,
         };
 
-        let (command_pool, command_buffers) = loader.commands(|kit| {
-            VulkanExample::commands(kit, &pipeline, &model_entity, &cubes, &view_port, &scissor)
-        })?;
+        let (command_pool, command_buffers) = {
+            VulkanExample::commands(&initializer, &pipeline, &model_entity, &cubes, &view_port, &scissor)
+        }?;
 
         let procedure = VulkanExample {
             model_entity, cubes,
@@ -150,20 +150,20 @@ impl VulkanExample {
         Ok(())
     }
 
-    fn load_model(kit: AllocatorKit, ubo_data: &[Vec<UBOMatrices>; 2]) -> GsResult<(GsglTFEntity, GsBufferRepository<Device>, [GsUniformBuffer; 2], GsBufferRepository<Host>)> {
+    fn load_model(initializer: &AssetInitializer, ubo_data: &[Vec<UBOMatrices>; 2]) -> GsResult<(GsglTFEntity, GsBufferRepository<Device>, [GsUniformBuffer; 2], GsBufferRepository<Host>)> {
 
-        let mut model_allocator = kit.buffer(BufferStorageType::DEVICE);
-        let mut ubo_allocator = kit.buffer(BufferStorageType::HOST);
+        let mut model_allocator = GsBufferAllocator::new(initializer, BufferStorageType::DEVICE);
+        let mut ubo_allocator = GsBufferAllocator::new(initializer, BufferStorageType::HOST);
 
         // allocate uniform data buffer.
         // refer to `layout (set = 0, binding = 0) uniform UBO` in cube.vert.
-        let ubo_matrix_info1 = GsBufUniformInfo::new(0, 1, data_size!(UBOMatrices));
+        let ubo_matrix_info1 = GsUniformBuffer::new(0, 1, data_size!(UBOMatrices));
         let ubo_matrix_info2 = ubo_matrix_info1.clone();
         let ubo_matrix_index1 = ubo_allocator.assign(ubo_matrix_info1)?; // ubo buffer for cube 0
         let ubo_matrix_index2 = ubo_allocator.assign(ubo_matrix_info2)?; // ubo buffer for cube 1
 
         // allocate model data buffer.
-        let gltf_importer = kit.gltf_loader();
+        let gltf_importer = GsglTFImporter::new(initializer);
         let (mut model_entity, model_data) = gltf_importer.load(Path::new(MODEL_PATH))?;
 
         let model_vertex_index = model_allocator.assign_v2(&model_data.vertex_allot_delegate())?;
@@ -193,19 +193,19 @@ impl VulkanExample {
         Ok((model_entity, model_repository, [cube0_ubo, cube1_ubo], ubo_repository))
     }
 
-    fn ubo(kit: AllocatorKit, model: &GsglTFEntity, textures: &[GsSampleImage; 2], ubo_buffers: &[GsUniformBuffer; 2]) -> GsResult<([DescriptorSet; 2], GsDescriptorRepository)> {
+    fn ubo(initializer: &AssetInitializer, model: &GsglTFEntity, textures: &[GsSampleImage; 2], ubo_buffers: &[GsUniformBuffer; 2]) -> GsResult<([DescriptorSet; 2], GsDescriptorRepository)> {
 
-        let mut descriptor_allocator = kit.descriptor(vk::DescriptorPoolCreateFlags::empty());
+        let mut descriptor_allocator = GsDescriptorAllocator::new(initializer);
 
         // descriptor set for first cube.
-        let mut descriptor_set_config = DescriptorSetConfig::init();
+        let mut descriptor_set_config = DescriptorSetConfig::new();
         descriptor_set_config.add_buffer_binding(&ubo_buffers[0], GsPipelineStage::VERTEX); // binding 0
         descriptor_set_config.add_buffer_binding(model, GsPipelineStage::VERTEX); // binding 1
         descriptor_set_config.add_image_binding(&textures[0], GsPipelineStage::FRAGMENT); // binding 2
         let cube0_desc_index = descriptor_allocator.assign(descriptor_set_config);
 
         // descriptor set for second cube.
-        let mut descriptor_set_config = DescriptorSetConfig::init();
+        let mut descriptor_set_config = DescriptorSetConfig::new();
         descriptor_set_config.add_buffer_binding(&ubo_buffers[1], GsPipelineStage::VERTEX); // binding 0
         descriptor_set_config.add_buffer_binding(model, GsPipelineStage::VERTEX); // binding 1
         descriptor_set_config.add_image_binding(&textures[1], GsPipelineStage::FRAGMENT); // binding 2
@@ -221,21 +221,21 @@ impl VulkanExample {
         Ok(([cube0_ubo_set, cube1_ubo_set], desc_storage))
     }
 
-    fn image(kit: AllocatorKit, dimension: vkDim2D) -> GsResult<([GsSampleImage; 2], GsDSAttachment, GsImageRepository<Device>)> {
+    fn image(initializer: &AssetInitializer, dimension: vkDim2D) -> GsResult<([GsSampleImage; 2], GsDSAttachment, GsImageRepository<Device>)> {
 
-        let mut image_allocator = kit.image(ImageStorageType::DEVICE);
+        let mut image_allocator = GsImageAllocator::new(initializer, ImageStorageType::DEVICE);
 
         // Depth Attachment
-        let depth_attachment_info = GsDSAttachmentInfo::new(dimension, DepthStencilImageFormat::Depth32Bit);
+        let depth_attachment_info = GsDSAttachment::new(dimension, DepthStencilImageFormat::Depth32Bit);
         let depth_image_index = image_allocator.assign(depth_attachment_info)?;
 
         // Combined Sample Image
-        let image_loader = kit.image_loader();
+        let image_loader = ImageLoader::new(initializer);
         let image_storage1 = image_loader.load_2d(Path::new(TEXTURE1_PATH))?; // texture 1 for cube 1
         let image_storage2 = image_loader.load_2d(Path::new(TEXTURE2_PATH))?; // texture 2 for cube 2
         // refer to `layout (set = 0, binding = 2) sampler2D samplerColorMap` in cube.frag. Accessible from the fragment shader only.
-        let image_info1 = GsSampleImgInfo::new(2, 1, image_storage1, ImagePipelineStage::FragmentStage);
-        let image_info2 = GsSampleImgInfo::new(2, 1, image_storage2, ImagePipelineStage::FragmentStage);
+        let image_info1 = GsSampleImage::new(2, 1, image_storage1, ImagePipelineStage::FragmentStage);
+        let image_info2 = GsSampleImage::new(2, 1, image_storage2, ImagePipelineStage::FragmentStage);
         let sample_image_index1 = image_allocator.assign(image_info1)?;
         let sample_image_index2 = image_allocator.assign(image_info2)?;
 
@@ -250,19 +250,19 @@ impl VulkanExample {
         Ok(([sample_image1, sample_image2], depth_attachment, image_storage))
     }
 
-    fn pipelines(kit: PipelineKit, push_consts: GsPushConstantRange, ubo_sets: &[&DescriptorSet; 2], depth_image: &GsDSAttachment) -> GsResult<GsPipeline<Graphics>> {
+    fn pipelines(initializer: &AssetInitializer, push_consts: GsPushConstantRange, ubo_sets: &[&DescriptorSet; 2], depth_image: &GsDSAttachment) -> GsResult<GsPipeline<Graphics>> {
 
         // shaders
-        let vertex_shader = GsShaderInfo::from_source(GsPipelineStage::VERTEX, Path::new(VERTEX_SHADER_SOURCE_PATH), None, "[Vertex Shader]");
-        let fragment_shader = GsShaderInfo::from_source(GsPipelineStage::FRAGMENT, Path::new(FRAGMENT_SHADER_SOURCE_PATH), None, "[Fragment Shader]");
+        let vertex_shader = GsShaderCI::from_source(GsPipelineStage::VERTEX, Path::new(VERTEX_SHADER_SOURCE_PATH), None, "[Vertex Shader]");
+        let fragment_shader = GsShaderCI::from_source(GsPipelineStage::FRAGMENT, Path::new(FRAGMENT_SHADER_SOURCE_PATH), None, "[Fragment Shader]");
         let shader_infos = vec![vertex_shader, fragment_shader];
         let vertex_input_desc = Vertex::input_description();
 
         // pipeline
-        let mut render_pass_builder = kit.pass_builder();
+        let mut render_pass_builder = GsRenderPass::new(initializer);
         let first_subpass = render_pass_builder.new_subpass();
 
-        let color_attachment = kit.present_attachment()
+        let color_attachment = RenderAttachmentCI::<Present>::new(initializer)
             .op(vk::AttachmentLoadOp::CLEAR, vk::AttachmentStoreOp::STORE)
             .clear_value(DEFAULT_CLEAR_COLOR.clone());
         let depth_attachment = depth_image.attachment()
@@ -271,13 +271,13 @@ impl VulkanExample {
         render_pass_builder.add_attachment(color_attachment, first_subpass);
         render_pass_builder.add_attachment(depth_attachment, first_subpass);
 
-        let dependency0 = kit.subpass_dependency(SubpassStage::BeginExternal, SubpassStage::AtIndex(first_subpass))
+        let dependency0 = RenderDependencyCI::new(SubpassStage::BeginExternal, SubpassStage::AtIndex(first_subpass))
             .stage(vk::PipelineStageFlags::BOTTOM_OF_PIPE, vk::PipelineStageFlags::COLOR_ATTACHMENT_OUTPUT)
             .access(vk::AccessFlags::MEMORY_READ, vk::AccessFlags::COLOR_ATTACHMENT_READ | vk::AccessFlags::COLOR_ATTACHMENT_WRITE)
             .with_flags(vk::DependencyFlags::BY_REGION);
         render_pass_builder.add_dependency(dependency0);
 
-        let dependency1 = kit.subpass_dependency(SubpassStage::AtIndex(first_subpass), SubpassStage::EndExternal)
+        let dependency1 = RenderDependencyCI::new(SubpassStage::AtIndex(first_subpass), SubpassStage::EndExternal)
             .stage(vk::PipelineStageFlags::COLOR_ATTACHMENT_OUTPUT, vk::PipelineStageFlags::BOTTOM_OF_PIPE)
             .access(vk::AccessFlags::COLOR_ATTACHMENT_READ | vk::AccessFlags::COLOR_ATTACHMENT_WRITE, vk::AccessFlags::MEMORY_READ)
             .with_flags(vk::DependencyFlags::BY_REGION);
@@ -286,38 +286,43 @@ impl VulkanExample {
         let render_pass = render_pass_builder.build()?;
         let depth_stencil = GsDepthStencilState::setup(GsDepthStencilPrefab::EnableDepth);
 
-        let pipeline_config = kit.pipeline_config(shader_infos, vertex_input_desc, render_pass)
+        let pipeline_config = GfxPipelineConfig::new(shader_infos, vertex_input_desc, render_pass, initializer.screen_dimension())
             .with_depth_stencil(depth_stencil)
             .with_viewport(ViewportStateType::Dynamic { count: 1 })
             .with_descriptor_sets(ubo_sets)
             .with_push_constants(vec![push_consts])
             .finish();
 
-        let mut pipeline_builder = kit.gfx_builder()?;
+        let mut pipeline_builder = GfxPipelineBuilder::new(initializer)?;
         let graphics_pipeline = pipeline_builder.build(pipeline_config)?;
 
         Ok(graphics_pipeline)
     }
 
-    fn sync_resources(kit: SyncKit, graphics_pipeline: &GsPipeline<Graphics>) -> GsResult<Vec<GsSemaphore>> {
+    fn sync_resources(initializer: &AssetInitializer, pipeline: &GsPipeline<Graphics>) -> GsResult<Vec<GsSemaphore>> {
 
         // sync
-        kit.multi_semaphores(graphics_pipeline.frame_count())
+        let mut present_availables = Vec::with_capacity(pipeline.frame_count());
+        for _ in 0..pipeline.frame_count() {
+            let semaphore = GsSemaphore::new(initializer)?;
+            present_availables.push(semaphore);
+        }
+        Ok(present_availables)
     }
 
-    fn commands(kit: CommandKit, graphics_pipeline: &GsPipeline<Graphics>, model_entity: &GsglTFEntity, cubes: &CubeResources, view_port: &CmdViewportInfo, scissor: &CmdScissorInfo) -> GsResult<(GsCommandPool, Vec<GsCommandBuffer>)> {
+    fn commands(initializer: &AssetInitializer, pipeline: &GsPipeline<Graphics>, model_entity: &GsglTFEntity, cubes: &CubeResources, view_port: &CmdViewportInfo, scissor: &CmdScissorInfo) -> GsResult<(GsCommandPool, Vec<GsCommandBuffer>)> {
 
-        let command_pool = kit.pool(DeviceQueueIdentifier::Graphics)?;
+        let command_pool = GsCommandPool::new(initializer, DeviceQueueIdentifier::Graphics)?;
         let mut command_buffers = vec![];
 
-        let command_buffer_count = graphics_pipeline.frame_count();
+        let command_buffer_count = pipeline.frame_count();
         let raw_commands = command_pool.allocate(CmdBufferUsage::UnitaryCommand, command_buffer_count)?;
 
         for (frame_index, command) in raw_commands.into_iter().enumerate() {
-            let mut recorder = kit.pipeline_recorder(graphics_pipeline, command);
+            let mut recorder = GsCmdRecorder::<Graphics>::new(initializer, pipeline, command);
 
             recorder.begin_record(vk::CommandBufferUsageFlags::SIMULTANEOUS_USE)?
-                .begin_render_pass(graphics_pipeline, frame_index)
+                .begin_render_pass(pipeline, frame_index)
                 .set_viewport(0, &[view_port.clone()])
                 .set_scissor(0, &[scissor.clone()])
                 .bind_pipeline();
@@ -370,22 +375,16 @@ impl GraphicsRoutine for VulkanExample {
         return Ok(&self.present_availables[image_index])
     }
 
-    fn reload_res(&mut self, loader: AssetsLoader) -> GsResult<()> {
+    fn reload_res(&mut self, initializer: AssetInitializer) -> GsResult<()> {
 
         let ubo_sets = &[&self.cubes.ubo_set[0], &self.cubes.ubo_set[1]];
         let push_consts = self.model_entity.pushconst_description(GsPipelineStage::VERTEX);
 
-        self.pipeline = loader.pipelines(|kit| {
-            VulkanExample::pipelines(kit, push_consts, ubo_sets, &self.depth_attachment)
-        })?;
+        self.pipeline = VulkanExample::pipelines(&initializer, push_consts, ubo_sets, &self.depth_attachment)?;
 
-        self.present_availables = loader.syncs(|kit| {
-            VulkanExample::sync_resources(kit, &self.pipeline)
-        })?;
+        self.present_availables = VulkanExample::sync_resources(&initializer, &self.pipeline)?;
 
-        let (command_pool, command_buffers) = loader.commands(|kit| {
-            VulkanExample::commands(kit, &self.pipeline, &self.model_entity, &self.cubes, &self.view_port, &self.scissor)
-        })?;
+        let (command_pool, command_buffers) = VulkanExample::commands(&initializer, &self.pipeline, &self.model_entity, &self.cubes, &self.view_port, &self.scissor)?;
         self.command_pool = command_pool;
         self.command_buffers = command_buffers;
 

@@ -3,7 +3,7 @@ use crate::assets::glTF::data::IntermediateglTFData;
 use crate::utils::types::{ Point3F, Point2F, Vector3F, Vector4F };
 use crate::assets::error::GltfError;
 
-use gsvk::buffer::instance::{ GsVertexBuffer, GsBufVertexInfo };
+use gsvk::buffer::instance::{ GsVertexBuffer, VertexBufferCI };
 use gsvk::memory::transfer::GsBufferDataUploader;
 use gsvk::types::vkbytes;
 use gsvk::error::VkResult;
@@ -43,9 +43,9 @@ impl GsglTFAttributesData {
         (self.content.data_length() as vkbytes) * self.vertex_size
     }
 
-    pub fn vertex_info(&self) -> GsBufVertexInfo {
+    pub fn vertex_info(&self) -> VertexBufferCI {
 
-        GsBufVertexInfo::new(self.vertex_size, self.content.data_length())
+        GsVertexBuffer::new(self.vertex_size, self.content.data_length())
     }
 
     pub fn data_content(&self) -> &Box<dyn GPAttributes> {

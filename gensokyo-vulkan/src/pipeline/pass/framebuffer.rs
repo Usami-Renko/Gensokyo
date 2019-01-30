@@ -17,6 +17,14 @@ pub struct GsFramebuffer {
 
 impl GsFramebuffer {
 
+    pub fn new(extent: vkDim2D, layers: vkuint) -> FramebufferBuilder {
+
+        FramebufferBuilder {
+            attachments: Vec::new(),
+            extent, layers,
+        }
+    }
+
     pub fn destroy(&self, device: &GsDevice) {
         unsafe {
             device.logic.handle.destroy_framebuffer(self.handle, None);
@@ -34,14 +42,6 @@ pub struct FramebufferBuilder {
 }
 
 impl FramebufferBuilder {
-
-    pub fn new(extent: vkDim2D, layers: vkuint) -> FramebufferBuilder {
-
-        FramebufferBuilder {
-            attachments: vec![],
-            extent, layers,
-        }
-    }
 
     pub fn build(self, device: &GsDevice, render_pass: vk::RenderPass) -> VkResult<GsFramebuffer> {
 

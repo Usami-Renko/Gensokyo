@@ -6,10 +6,10 @@ use crate::core::GsDevice;
 use crate::core::swapchain::GsChain;
 
 use crate::pipeline::pass::render::GsRenderPass;
-use crate::pipeline::pass::attachment::{ RenderAttachment, RenderAttType, AttachmentView };
+use crate::pipeline::pass::attachment::{ RenderAttachmentCI, RenderAttType, AttachmentView };
 use crate::pipeline::pass::subpass::{ RenderSubpass, AttachmentRawType };
-use crate::pipeline::pass::dependency::RenderDependency;
-use crate::pipeline::pass::framebuffer::FramebufferBuilder;
+use crate::pipeline::pass::dependency::RenderDependencyCI;
+use crate::pipeline::pass::framebuffer::GsFramebuffer;
 
 use crate::error::{ VkResult, VkError };
 use crate::types::vkuint;
@@ -26,12 +26,12 @@ pub struct RenderPassBuilder {
     clear_values: Vec<vk::ClearValue>,
 
     subpasses   : Vec<RenderSubpass>,
-    dependencies: Vec<RenderDependency>,
+    dependencies: Vec<RenderDependencyCI>,
 }
 
-impl RenderPassBuilder {
+impl GsRenderPass {
 
-    pub fn new(device: &GsDevice, chain: &GsChain) -> RenderPassBuilder {
+    pub fn builder(device: &GsDevice, chain: &GsChain) -> RenderPassBuilder {
 
         RenderPassBuilder {
             device: device.clone(),
@@ -44,6 +44,9 @@ impl RenderPassBuilder {
             dependencies: vec!(),
         }
     }
+}
+
+impl RenderPassBuilder {
 
     /// create a new subpass in the RenderPass, return the index of the subpass.
     pub fn new_subpass(&mut self) -> vkuint {
@@ -58,7 +61,7 @@ impl RenderPassBuilder {
     }
 
     /// create a attachment and set its reference to subpass.
-    pub fn add_attachment<A>(&mut self, attachment: RenderAttachment<A>, subpass_index: vkuint)
+    pub fn add_attachment<A>(&mut self, attachment: RenderAttachmentCI<A>, subpass_index: vkuint)
         where
             A: RenderAttType {
 
@@ -87,7 +90,7 @@ impl RenderPassBuilder {
         self.clear_values.push(clear_value);
     }
 
-    pub fn add_dependency(&mut self, dependency: RenderDependency) {
+    pub fn add_dependency(&mut self, dependency: RenderDependencyCI) {
         self.dependencies.push(dependency);
     }
 
@@ -122,7 +125,7 @@ impl RenderPassBuilder {
         let mut framebuffers = Vec::with_capacity(framebuffer_count);
 
         for i in 0..framebuffer_count {
-            let mut builder = FramebufferBuilder::new(self.chain.dimension(), 1);
+            let mut builder = GsFramebuffer::new(self.chain.dimension(), 1);
 
             for frame_view in self.frame_views.iter() {
                 match frame_view {
@@ -136,7 +139,7 @@ impl RenderPassBuilder {
         }
         // ------------------------------------------------------------
 
-        let render_pass = GsRenderPass::new(handle, framebuffers, self.chain.dimension(), self.clear_values);
+        let render_pass = GsRenderPass::build(handle, framebuffers, self.chain.dimension(), self.clear_values);
         Ok(render_pass)
     }
 }

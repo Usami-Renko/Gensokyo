@@ -7,7 +7,7 @@ use crate::core::GsDevice;
 use crate::pipeline::target::{ GsPipelineSet, PipelineIndex };
 use crate::pipeline::shader::shaderc::{ GsShaderCompiler, ShaderCompilePrefab, ShadercConfiguration };
 use crate::pipeline::graphics::builder;
-use crate::pipeline::graphics::builder::{ PipelineDeriveState, GsPipelineCIFlags };
+use crate::pipeline::graphics::builder::{ PipelineDeriveState, PipelineCIFlags };
 use crate::pipeline::graphics::config::GfxPipelineConfig;
 
 use crate::error::{ VkResult, VkError };
@@ -18,7 +18,7 @@ use crate::utils::phantom::Graphics;
 pub struct GfxPipelineSetBuilder {
 
     device : GsDevice,
-    ci_flag: GsPipelineCIFlags,
+    ci_flag: PipelineCIFlags,
     shaderc: GsShaderCompiler,
 
     template: GfxPipelineConfig,
@@ -30,13 +30,13 @@ pub struct GfxPipelineSetBuilder {
 
 impl GfxPipelineSetBuilder {
 
-    pub fn new(device: &GsDevice, template: GfxPipelineConfig) -> VkResult<GfxPipelineSetBuilder> {
+    pub fn create(device: &GsDevice, template: GfxPipelineConfig) -> VkResult<GfxPipelineSetBuilder> {
 
         let layout = template.layout_builder.build(device)?;
 
         let builder = GfxPipelineSetBuilder {
             device : device.clone(),
-            ci_flag: GsPipelineCIFlags::default(),
+            ci_flag: PipelineCIFlags::default(),
             shaderc: GsShaderCompiler::setup(ShaderCompilePrefab::Vulkan)?,
             template, layout,
             pipelines: vec![],
@@ -45,7 +45,7 @@ impl GfxPipelineSetBuilder {
         Ok(builder)
     }
 
-    pub fn with_flag(&mut self, flags: GsPipelineCIFlags) {
+    pub fn with_flag(&mut self, flags: PipelineCIFlags) {
         self.ci_flag |= flags;
     }
 

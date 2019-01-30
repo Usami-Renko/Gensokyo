@@ -1,8 +1,8 @@
 
-pub use self::imgsrc::{ GsImgsrcBuffer, IImgSrc, GsBufImgsrcInfo };
-pub use self::index::{ GsIndexBuffer, IIndices, GsBufIndicesInfo };
-pub use self::uniform::{ GsUniformBuffer, IUniform, GsBufUniformInfo };
-pub use self::vertex::{ GsVertexBuffer, IVertex, GsBufVertexInfo };
+pub use self::imgsrc::{ GsImgsrcBuffer, IImgSrc, ImgSrcBufferCI };
+pub use self::index::{ GsIndexBuffer, IIndices, IndicesBufferCI };
+pub use self::uniform::{ GsUniformBuffer, IUniform, UniformBufferCI };
+pub use self::vertex::{ GsVertexBuffer, IVertex, VertexBufferCI };
 
 pub mod types;
 

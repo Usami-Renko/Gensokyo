@@ -16,23 +16,26 @@ use crate::types::vkuint;
 use std::ptr;
 
 #[derive(Default)]
-pub struct DescriptorPoolInfo {
+pub struct DescriptorPoolCI {
 
     flags     : vk::DescriptorPoolCreateFlags,
     pool_sizes: Vec<vk::DescriptorPoolSize>,
     max_sets  : vkuint,
 }
 
-impl DescriptorPoolInfo {
+impl GsDescriptorPool {
 
     // TODO: Add configuration for vk::DescriptorPoolCreateFlags.
-    pub fn new(flags: vk::DescriptorPoolCreateFlags) -> DescriptorPoolInfo {
+    pub fn new(flags: vk::DescriptorPoolCreateFlags) -> DescriptorPoolCI {
 
-        DescriptorPoolInfo {
+        DescriptorPoolCI {
             flags,
             ..Default::default()
         }
     }
+}
+
+impl DescriptorPoolCI {
 
     #[allow(dead_code)]
     pub fn set_pool_size_max(&mut self, max_size: vkuint) {

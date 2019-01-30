@@ -7,7 +7,7 @@ use crate::core::GsDevice;
 use crate::core::device::DeviceQueueIdentifier;
 use crate::error::{ VkResult, VkError };
 
-use crate::image::{ GsImage, GsImageView };
+use crate::image::{ GsImage, GsImageView, ImageViewCI };
 use crate::sync::{ GsFence, GsSemaphore };
 
 use crate::types::{ vkuint, vklint, vkDim2D };
@@ -43,10 +43,32 @@ pub struct GsSwapchain {
 
 impl GsSwapchain {
 
-    pub(crate) fn new(handle: vk::SwapchainKHR, loader: ash::extensions::khr::Swapchain, images: Vec<GsImage>, views: Vec<GsImageView>, format: GsFormat, extent: vkDim2D, image_acquire_time: vklint) -> GsSwapchain {
+    pub(crate) fn construct(handle: vk::SwapchainKHR, device: &GsDevice, loader: ash::extensions::khr::Swapchain, format: GsFormat, extent: vkDim2D, image_acquire_time: vklint) -> VkResult<GsSwapchain> {
 
-        let image_count = views.len();
-        GsSwapchain { handle, loader, images, views, format, extent, image_count, image_acquire_time }
+        let images: Vec<GsImage> = unsafe {
+            loader.get_swapchain_images(handle)
+                .or(Err(VkError::query("Swapchain Images")))?
+                .into_iter().map(GsImage::from)
+                .collect()
+        };
+
+        let view_ci = ImageViewCI::new(
+            vk::ImageViewType::TYPE_2D,
+            vk::ImageAspectFlags::COLOR,
+        );
+
+        let image_count = images.len();
+        let mut views = Vec::with_capacity(image_count);
+
+        for image in images.iter() {
+            let view = view_ci.build_for_swapchain(&device, image, format)?;
+            views.push(view);
+        }
+
+        let result = GsSwapchain {
+            handle, loader, images, views, format, extent, image_count, image_acquire_time
+        };
+        Ok(result)
     }
 
     /// Acquire an available presentable image to use, and retrieve the index of that image.
@@ -123,8 +145,7 @@ impl GsSwapchain {
     pub fn destroy(&self, device: &GsDevice) {
 
         // destroy all the presentable images created by this swapchain.
-        self.views.iter()
-            .for_each(|v| v.destroy(device));
+        self.views.iter().for_each(|v| v.destroy(device));
 
         // destroy the swapchain itself.
         unsafe {

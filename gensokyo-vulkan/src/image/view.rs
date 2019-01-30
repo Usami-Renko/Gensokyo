@@ -3,7 +3,7 @@ use ash::vk;
 use ash::version::DeviceV1_0;
 
 use crate::core::GsDevice;
-use crate::image::target::{ GsImage, ImageSpecificInfo };
+use crate::image::target::{ GsImage, ImageSpecificCI };
 use crate::error::{ VkResult, VkError };
 use crate::types::format::GsFormat;
 
@@ -29,7 +29,7 @@ impl GsImageView {
 }
 
 #[derive(Debug, Clone)]
-pub struct ImageViewDescInfo {
+pub struct ImageViewCI {
 
     /// `view_type` specifies the type of the image view.
     pub view_type: vk::ImageViewType,
@@ -39,11 +39,11 @@ pub struct ImageViewDescInfo {
     pub subrange: vk::ImageSubresourceRange,
 }
 
-impl ImageViewDescInfo {
+impl ImageViewCI {
 
-    pub fn new(view_type: vk::ImageViewType, aspect_mask: vk::ImageAspectFlags) -> ImageViewDescInfo {
+    pub fn new(view_type: vk::ImageViewType, aspect_mask: vk::ImageAspectFlags) -> ImageViewCI {
 
-        ImageViewDescInfo {
+        ImageViewCI {
             view_type,
             subrange: vk::ImageSubresourceRange {
                 // aspect_mask specifies which aspect(s) of the image are included in the view
@@ -57,7 +57,7 @@ impl ImageViewDescInfo {
         }
     }
 
-    pub fn build(&self, device: &GsDevice, image: &GsImage, specific: &ImageSpecificInfo) -> VkResult<GsImageView> {
+    pub fn build(&self, device: &GsDevice, image: &GsImage, specific: &ImageSpecificCI) -> VkResult<GsImageView> {
 
         let image_view_ci = vk::ImageViewCreateInfo {
             s_type     : vk::StructureType::IMAGE_VIEW_CREATE_INFO,
@@ -82,17 +82,17 @@ impl ImageViewDescInfo {
 
     pub(crate) fn build_for_swapchain(&self, device: &GsDevice, image: &GsImage, format: GsFormat) -> VkResult<GsImageView> {
 
-        let mut specific = ImageSpecificInfo::default();
+        let mut specific = ImageSpecificCI::default();
         specific.format = format;
         self.build(device, image, &specific)
     }
 }
 
-impl Default for ImageViewDescInfo {
+impl Default for ImageViewCI {
 
-    fn default() -> ImageViewDescInfo {
+    fn default() -> ImageViewCI {
 
-        ImageViewDescInfo {
+        ImageViewCI {
             view_type : vk::ImageViewType::TYPE_2D,
             components: vk::ComponentMapping {
                 r: vk::ComponentSwizzle::IDENTITY,

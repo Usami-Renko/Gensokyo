@@ -20,15 +20,29 @@ pub struct GsBuffer {
 
 impl GsBuffer {
 
-    fn new(device: &GsDevice, handle: vk::Buffer) -> GsBuffer {
+    pub fn new(estimate_size: vkbytes, usage: vk::BufferUsageFlags) -> BufferCI {
+
+        BufferCI {
+            estimate_size, usage,
+            flags: vk::BufferCreateFlags::empty(),
+            sharing_queue_families: None,
+        }
+    }
+
+    #[inline(always)]
+    fn build(device: &GsDevice, buffer_ci: vk::BufferCreateInfo) -> VkResult<GsBuffer> {
+
+        let handle = unsafe {
+            device.logic.handle.create_buffer(&buffer_ci, None)
+                .or(Err(VkError::create("vk::Buffer")))?
+        };
 
         let requirement = unsafe {
             device.logic.handle.get_buffer_memory_requirements(handle)
         };
 
-        GsBuffer {
-            handle, requirement,
-        }
+        let buffer = GsBuffer { handle, requirement };
+        Ok(buffer)
     }
 
     pub fn destroy(&self, device: &GsDevice) {
@@ -53,56 +67,53 @@ impl MemoryDstEntity for GsBuffer {
 }
 
 #[derive(Debug, Clone, Default)]
-pub struct BufferDescInfo {
+pub struct BufferCI {
 
     flags: vk::BufferCreateFlags,
     usage: vk::BufferUsageFlags,
     estimate_size: vkbytes,
+
+    sharing_queue_families: Option<Vec<vkuint>>,
 }
 
-impl BufferDescInfo {
+impl BufferCI {
 
-    pub fn new(estimate_size: vkbytes, usage: vk::BufferUsageFlags) -> BufferDescInfo {
+    // TODO: Add configuration for vk::BufferCreateFlags.
+    pub fn with_flag(mut self, flags: vk::BufferCreateFlags) -> BufferCI {
 
-        BufferDescInfo {
-            estimate_size, usage,
-            ..Default::default()
-        }
+        self.flags = flags;
+        self
+    }
+
+    pub fn with_share_queue_families(mut self, families: Vec<vkuint>) -> BufferCI {
+
+        self.sharing_queue_families = Some(families);
+        self
     }
 
     /// Generate a vk::buffer object.
     ///
     /// If the buffer is accessed by one queue family, set sharing_queue_families to None,
     /// or set it the queue family indices to share accessing.
-    pub fn build(&self, device: &GsDevice, memory_abs: impl BufferMemoryTypeAbs, sharing_queue_families: Option<Vec<vkuint>>) -> VkResult<GsBuffer> {
+    pub fn build(&self, device: &GsDevice, memory_abs: impl BufferMemoryTypeAbs) -> VkResult<GsBuffer> {
 
-        let (sharing_mode, indices) = match sharing_queue_families {
-            | Some(families) => (vk::SharingMode::CONCURRENT, families),
-            | None           => (vk::SharingMode::EXCLUSIVE, vec![]),
+        let mut buffer_ci = vk::BufferCreateInfo {
+            s_type                   : vk::StructureType::BUFFER_CREATE_INFO,
+            p_next                   : ptr::null(),
+            flags                    : self.flags,
+            size                     : self.estimate_size,
+            usage                    : memory_abs.complement_usage(self.usage),
+            sharing_mode             : vk::SharingMode::EXCLUSIVE,
+            queue_family_index_count : 0,
+            p_queue_family_indices   : ptr::null(),
         };
 
-        let buffer_ci = vk::BufferCreateInfo {
-            s_type: vk::StructureType::BUFFER_CREATE_INFO,
-            p_next: ptr::null(),
-            // TODO: Add configuration for vk::BufferCreateFlags.
-            flags: self.flags,
-            size : self.estimate_size,
-            usage: memory_abs.complement_usage(self.usage),
-            sharing_mode,
-            queue_family_index_count: indices.len() as _,
-            p_queue_family_indices  : indices.as_ptr(),
+        if let Some(ref families) = self.sharing_queue_families {
+            buffer_ci.sharing_mode = vk::SharingMode::CONCURRENT;
+            buffer_ci.queue_family_index_count = families.len() as _;
+            buffer_ci.p_queue_family_indices = families.as_ptr();
         };
 
-        let handle = unsafe {
-            device.logic.handle.create_buffer(&buffer_ci, None)
-                .or(Err(VkError::create("vk::Buffer")))?
-        };
-
-        let buffer = GsBuffer::new(device, handle);
-        Ok(buffer)
-    }
-
-    pub fn with_flag(&mut self, flags: vk::BufferCreateFlags) {
-        self.flags = flags;
+        GsBuffer::build(device, buffer_ci)
     }
 }
