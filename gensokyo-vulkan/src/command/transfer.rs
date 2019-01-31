@@ -11,7 +11,7 @@ impl GsVkCommandType for Transfer {
     // Empty...
 }
 
-pub trait GsCmdCopyApi {
+pub trait GsCmdTransferApi {
 
     fn copy_buf2buf(&self, src_buffer_handle: vk::Buffer, dst_buffer_handle: vk::Buffer, regions: &[vk::BufferCopy]) -> &Self;
 
@@ -22,9 +22,11 @@ pub trait GsCmdCopyApi {
     fn copy_img2img(&self,src_handle: vk::Image, src_layout: vk::ImageLayout, dst_handle: vk::Image, dst_layout: vk::ImageLayout, regions: &[vk::ImageCopy]) -> &Self;
 
     fn image_pipeline_barrier(&self, src_stage: vk::PipelineStageFlags, dst_stage: vk::PipelineStageFlags, dependencies: vk::DependencyFlags, image_barriers: Vec<ImageBarrierCI>) -> &Self;
+
+    fn blit_image(&self, src_handle: vk::Image, src_layout: vk::ImageLayout, dst_handle: vk::Image, dst_layout: vk::ImageLayout, regions: &[vk::ImageBlit], filter: vk::Filter) -> &Self;
 }
 
-impl GsCmdCopyApi for GsCmdRecorder<Transfer> {
+impl GsCmdTransferApi for GsCmdRecorder<Transfer> {
 
     fn copy_buf2buf(&self, src_buffer_handle: vk::Buffer, dst_buffer_handle: vk::Buffer, regions: &[vk::BufferCopy]) -> &Self {
         unsafe {
@@ -57,6 +59,13 @@ impl GsCmdCopyApi for GsCmdRecorder<Transfer> {
 
         unsafe {
             self.device.logic.handle.cmd_pipeline_barrier(self.cmd_handle, src_stage, dst_stage, dependencies, &[], &[], &barriers);
+        } self
+    }
+
+    fn blit_image(&self, src_handle: vk::Image, src_layout: vk::ImageLayout, dst_handle: vk::Image, dst_layout: vk::ImageLayout, regions: &[vk::ImageBlit], filter: vk::Filter) -> &Self {
+
+        unsafe {
+            self.device.logic.handle.cmd_blit_image(self.cmd_handle, src_handle, src_layout, dst_handle, dst_layout, regions, filter);
         } self
     }
 }

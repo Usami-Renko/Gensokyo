@@ -84,7 +84,7 @@ impl BufferInstance for GsIndexBuffer {
 
 impl BufferCopiable for GsIndexBuffer {
 
-    fn copy_info(&self) -> BufferCopyInfo {
+    fn copy_whole(&self) -> BufferCopyInfo {
         BufferCopyInfo::new(&self.block, 0, self.block.size)
     }
 }

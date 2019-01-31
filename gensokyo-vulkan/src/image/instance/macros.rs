@@ -43,17 +43,11 @@ macro_rules! impl_image_desc_info_abs {
                 self
             }
 
-            fn with_subrange(mut self, base_mip_level: vkuint, level_count: vkuint, base_array_layer: vkuint, layer_count: vkuint) -> $ImageInstanceInfo {
+            fn with_subrange(mut self, value: ImageSubRange) -> $ImageInstanceInfo {
 
-                self.view_ci.subrange = vk::ImageSubresourceRange {
-                    aspect_mask: self.view_ci.subrange.aspect_mask,
-                    base_mip_level, level_count, base_array_layer, layer_count,
-                };
-
+                self.view_ci.subrange = value;
                 self
             }
         }
-
-
     };
 }

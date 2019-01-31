@@ -49,7 +49,7 @@ impl BufferHandleEntity for BufferBlock {
 
 impl BufferCopiable for BufferBlock {
 
-    fn copy_info(&self) -> BufferCopyInfo {
+    fn copy_whole(&self) -> BufferCopyInfo {
 
         BufferCopyInfo::new(self, 0, self.size)
     }

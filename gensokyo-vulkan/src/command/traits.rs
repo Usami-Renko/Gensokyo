@@ -3,7 +3,7 @@ use ash::vk;
 
 use crate::pipeline::pass::GsRenderPass;
 
-pub trait IntoVKBarrier {
+pub trait IntoVKBarrier: Sized {
     type BarrierType;
 
     fn into_barrier(self) -> Self::BarrierType;

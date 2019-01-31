@@ -3,7 +3,7 @@ use ash::vk;
 
 use crate::core::GsDevice;
 
-use crate::buffer::{ GsBuffer, BufferBlock };
+use crate::buffer::{ GsBuffer, BufferBlock, BufferCopiable };
 use crate::buffer::allocator::BufferAllocateInfos;
 
 use crate::memory::target::GsMemory;
@@ -225,7 +225,7 @@ impl UploadStagingResource {
 
         let mut data_copyer = DataCopyer::new(device)?;
         for (src, dst) in self.src_blocks.iter().zip(self.dst_blocks.iter()) {
-            data_copyer.copy_buffer_to_buffer(src, dst);
+            data_copyer.copy_buffer_to_buffer(src.copy_whole(), dst.copy_whole());
         }
 
         data_copyer.done()?;

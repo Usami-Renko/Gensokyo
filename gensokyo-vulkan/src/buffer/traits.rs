@@ -18,7 +18,7 @@ pub trait BufferInstance: BufferCopiable {
 
 pub trait BufferCopiable: Sized {
 
-    fn copy_info(&self) -> BufferCopyInfo;
+    fn copy_whole(&self) -> BufferCopyInfo;
 }
 
 pub trait BufferHandleEntity: Sized {

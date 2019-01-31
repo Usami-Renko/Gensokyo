@@ -1,12 +1,13 @@
 
 pub use self::target::{ GsImage, ImageTgtCI , ImagePropertyCI, ImageSpecificCI };
-pub use self::view::{ GsImageView, ImageViewCI };
+pub use self::view::{ GsImageView, ImageViewCI, ImageSubRange };
 pub use self::traits::{ ImageInstance, ImageCopiable };
 pub use self::enums::{ ImagePipelineStage, DepthStencilImageFormat };
 pub use self::sampler::{ GsSampler, GsSamplerCI };
 pub use self::barrier::ImageBarrierCI;
 pub use self::entity::ImageEntity;
 pub use self::repository::GsImageRepository;
+pub use self::utils::ImageCopyInfo;
 
 mod target;
 mod view;

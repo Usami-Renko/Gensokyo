@@ -5,9 +5,14 @@ use ash::vk;
 use crate::config::engine::ConfigMirror;
 use crate::error::{ GsResult, GsError };
 
-use gsvk::core::physical::PhysicalConfig;
-use gsvk::core::physical::DeviceExtensionType;
-use gsvk::core::physical::{ PhysicalExtensionConfig, PhysicalQueueFamilyConfig, PhysicalFeatureConfig, PhysicalPropertiesConfig };
+use gsvk::core::physical::{ PhysicalConfig, DeviceExtensionType };
+use gsvk::core::physical::{
+    PhysicalExtensionConfig,
+    PhysicalQueueFamilyConfig,
+    PhysicalFeatureConfig,
+    PhysicalPropertiesConfig,
+    PhysicalFormatsConfig
+};
 
 #[derive(Deserialize)]
 pub(crate) struct PhysicalConfigMirror {
@@ -16,21 +21,27 @@ pub(crate) struct PhysicalConfigMirror {
     capabilities : Vec<String>,
     features     : Vec<String>,
     devices      : Vec<String>,
+    formats      : Vec<String>,
 }
 
 impl Default for PhysicalConfigMirror {
 
     fn default() -> PhysicalConfigMirror {
         PhysicalConfigMirror {
-            extensions  : vec![
+            extensions: vec![
                 String::from("VK_KHR_swapchain"),
             ],
             capabilities: Vec::new(),
-            features    : Vec::new(),
-            devices     : vec![
+            features: Vec::new(),
+            devices: vec![
                 String::from("CPU"),
                 String::from("IntegratedGPU"),
                 String::from("DiscreteGPU"),
+            ],
+            formats: vec![
+                String::from("B8G8R8A8_UNORM"),
+                String::from("D32_SFLOAT"),
+                String::from("R8G8B8A8_UNORM"),
             ],
         }
     }
@@ -41,12 +52,12 @@ impl ConfigMirror for PhysicalConfigMirror {
 
     fn into_config(self) -> GsResult<Self::ConfigType> {
 
-        let mut require_extensions = vec![];
+        let mut require_extensions = Vec::with_capacity(self.extensions.len());
         for raw_extension in self.extensions.iter() {
             require_extensions.push(vk_raw2device_extension(raw_extension)?);
         }
 
-        let mut require_capabilities = vec![];
+        let mut require_capabilities = Vec::with_capacity(self.capabilities.len());
         for raw_capability in self.capabilities.iter() {
             require_capabilities.push(vk_raw2queue_capability(raw_capability)?);
         }
@@ -57,16 +68,23 @@ impl ConfigMirror for PhysicalConfigMirror {
             vk_string_to_physical_feature(raw_feature, &mut require_features);
         }
 
-        let mut require_device_types = vec![];
+        let mut require_device_types = Vec::with_capacity(self.devices.len());
         for raw_device_type in self.devices.iter() {
             require_device_types.push(vk_raw2device_type(raw_device_type)?);
         }
 
+        use gsvk::utils::format::vk_string_to_format;
+        let mut query_formats = Vec::with_capacity(self.formats.len());
+        for raw_format in self.formats.iter() {
+            query_formats.push(vk_string_to_format(raw_format));
+        }
+
         let config = PhysicalConfig {
-            extension    : PhysicalExtensionConfig { require_extensions },
+            extension    : PhysicalExtensionConfig   { require_extensions },
             queue_family : PhysicalQueueFamilyConfig { require_capabilities },
-            features     : PhysicalFeatureConfig { require_features },
-            properties   : PhysicalPropertiesConfig { require_device_types },
+            features     : PhysicalFeatureConfig     { require_features },
+            properties   : PhysicalPropertiesConfig  { require_device_types },
+            formats      : PhysicalFormatsConfig     { query_formats },
         };
 
         Ok(config)
@@ -135,6 +153,22 @@ impl ConfigMirror for PhysicalConfigMirror {
                 }
             } else {
                 return Err(GsError::config("[core.physical.device_types]"))
+            }
+        }
+
+        if let Some(v) = toml.get("query_formats") {
+            if let Some(formats) = v.as_array() {
+                if formats.len() > 0 {
+                    self.formats.clear();
+
+                    for (i, query_format) in formats.iter().enumerate() {
+                        let value = query_format.as_str()
+                            .ok_or(GsError::config(format!("query_format #{}", i)))?;
+                        self.formats.push(value.to_owned());
+                    }
+                }
+            } else {
+                return Err(GsError::config("[core.physical.query_formats]"))
             }
         }
 

@@ -1,8 +1,8 @@
 
 use ash::vk;
 
-use crate::image::traits::ImageHandleEntity;
-use crate::types::vkDim3D;
+use crate::image::view::ImageSubRange;
+use crate::types::{ vkuint, vkDim3D };
 
 pub struct ImageCopyInfo {
 
@@ -15,27 +15,34 @@ pub struct ImageCopyInfo {
     /// `extent` is the dimension of image, if the image is as the data destination, or `extent` will be ignored.
     pub(crate) extent: vkDim3D,
     /// `sub_resource` is the subresources of the image used for the source or destination image data.
-    pub(crate) sub_resource_layers: vk::ImageSubresourceLayers,
+    pub(crate) sub_resource_layers: ImageCopySubrange,
 }
 
-impl ImageCopyInfo {
+pub struct ImageCopySubrange(pub(crate) vk::ImageSubresourceLayers);
 
-    pub fn new(image: &impl ImageHandleEntity, subrange_layers: vk::ImageSubresourceLayers, layout: vk::ImageLayout, dimension: vkDim3D) -> ImageCopyInfo {
+impl ImageCopySubrange {
 
-        ImageCopyInfo {
-            handle: image.handle(),
-            layout,
-            extent: dimension,
-            sub_resource_layers: subrange_layers,
-        }
+    // indicate to copy the base mip level.
+    pub fn base_copy(r#for: &ImageSubRange) -> ImageCopySubrange {
+
+        let value = vk::ImageSubresourceLayers {
+            aspect_mask      : r#for.0.aspect_mask,
+            mip_level        : 0, // the base mip-level is 0.
+            base_array_layer : 0, // TODO: array level is not cover yet.
+            layer_count      : 1,
+        };
+        ImageCopySubrange(value)
     }
-}
 
-pub fn image_subrange_to_layers(subrange: &vk::ImageSubresourceRange) -> vk::ImageSubresourceLayers {
-    vk::ImageSubresourceLayers {
-        aspect_mask      : subrange.aspect_mask,
-        mip_level        : subrange.base_mip_level,
-        base_array_layer : subrange.base_array_layer,
-        layer_count      : subrange.layer_count,
+    // indicate to copy mipmap at level `mipmap_level`.
+    pub fn copy(r#for: &ImageSubRange, mipmap_level: vkuint) -> ImageCopySubrange {
+
+        let value = vk::ImageSubresourceLayers {
+            aspect_mask      : r#for.0.aspect_mask,
+            mip_level        : mipmap_level,
+            base_array_layer : 0, // TODO: array level is not cover yet.
+            layer_count      : 1,
+        };
+        ImageCopySubrange(value)
     }
 }

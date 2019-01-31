@@ -2,6 +2,7 @@
 use ash::vk;
 
 use crate::image::target::GsImage;
+use crate::image::view::ImageSubRange;
 use crate::command::IntoVKBarrier;
 
 use crate::types::vkuint;
@@ -12,11 +13,11 @@ pub struct ImageBarrierCI(vk::ImageMemoryBarrier);
 
 impl ImageBarrierCI {
 
-    pub fn new(image: &GsImage, subrange: vk::ImageSubresourceRange) -> ImageBarrierBuilder {
+    pub fn new(image: &GsImage, subrange: ImageSubRange) -> ImageBarrierBuilder {
 
         let mut barrier = ImageBarrierCI::default();
         barrier.0.image = image.handle;
-        barrier.0.subresource_range = subrange;
+        barrier.0.subresource_range = subrange.0;
 
         ImageBarrierBuilder(barrier)
     }

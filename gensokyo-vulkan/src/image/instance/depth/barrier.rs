@@ -8,10 +8,10 @@ use crate::image::allocator::ImageAllotCI;
 use crate::image::instance::traits::ImageBarrierBundleAbs;
 
 use crate::memory::transfer::DataCopyer;
-use crate::command::GsCmdCopyApi;
+use crate::command::GsCmdTransferApi;
 use crate::error::VkResult;
 
-//  Depth Stencil Image Barrier Bundle
+//  Depth Stencil Image Barrier Bundle.
 pub struct DSImageBarrierBundle {
 
     info_indices: Vec<usize>,
@@ -45,14 +45,13 @@ impl DSImageBarrierBundle {
 
     fn final_barrier(&self, info: &mut ImageAllotCI) -> ImageBarrierCI {
 
-        info.final_layout = vk::ImageLayout::DEPTH_STENCIL_ATTACHMENT_OPTIMAL;
+        let barrier = ImageBarrierCI::new(&info.image, info.view_ci.subrange.clone())
+            .access_mask(vk::AccessFlags::empty(), vk::AccessFlags::DEPTH_STENCIL_ATTACHMENT_READ | vk::AccessFlags::DEPTH_STENCIL_ATTACHMENT_WRITE)
+            .layout(info.image_ci.property.initial_layout, vk::ImageLayout::DEPTH_STENCIL_ATTACHMENT_OPTIMAL)
+            .build();
 
-        ImageBarrierCI::new(&info.image, info.view_ci.subrange)
-            .access_mask(
-                vk::AccessFlags::empty(),
-                vk::AccessFlags::DEPTH_STENCIL_ATTACHMENT_READ | vk::AccessFlags::DEPTH_STENCIL_ATTACHMENT_WRITE
-            )
-            .layout(info.image_ci.property.initial_layout, info.final_layout)
-            .build()
+        info.current_layout = vk::ImageLayout::DEPTH_STENCIL_ATTACHMENT_OPTIMAL;
+
+        barrier
     }
 }

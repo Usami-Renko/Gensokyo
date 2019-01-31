@@ -1,7 +1,7 @@
 
 use crate::image::entity::ImageEntity;
 use crate::image::traits::{ ImageInstance, ImageCopiable };
-use crate::image::utils::ImageCopyInfo;
+use crate::image::utils::{ ImageCopyInfo, ImageCopySubrange };
 use crate::image::instance::desc::ImageInstanceInfoDesc;
 
 use crate::pipeline::pass::{ RenderAttachmentCI, DepthStencil };
@@ -45,11 +45,13 @@ impl IDepthStencilImg {
 
 impl ImageCopiable for GsDSAttachment {
 
-    fn copy_info(&self) -> ImageCopyInfo {
+    fn copy_range(&self, subrange: ImageCopySubrange) -> ImageCopyInfo {
 
-        use crate::image::utils::image_subrange_to_layers;
-        let subrange_layers = image_subrange_to_layers(&self.desc.subrange);
-
-        ImageCopyInfo::new(&self.entity, subrange_layers, self.desc.current_layout, self.desc.dimension)
+        ImageCopyInfo {
+            handle: self.entity.image,
+            layout: self.desc.current_layout,
+            extent: self.desc.dimension,
+            sub_resource_layers: subrange,
+        }
     }
 }

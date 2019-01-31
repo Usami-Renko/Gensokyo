@@ -4,6 +4,7 @@ use ash::vk;
 use crate::core::GsDevice;
 
 use crate::image::target::GsImage;
+use crate::image::view::ImageSubRange;
 use crate::image::allocator::ImageAllotCI;
 use crate::memory::transfer::DataCopyer;
 
@@ -12,6 +13,7 @@ use crate::types::vkuint;
 
 pub trait ImageCIAbstract<R>: Sized {
 
+    fn check_physical_support(&self, device: &GsDevice) -> VkResult<()>;
     fn build(&self, device: &GsDevice) -> VkResult<GsImage>;
     fn refactor(self, device: &GsDevice, image: GsImage) -> VkResult<(ImageAllotCI, R)>;
 }
@@ -32,6 +34,8 @@ pub trait ImageViewCIAbs: Sized {
 
     /// Select the set of mipmap levels and array layers to be accessible to the view.
     ///
+    /// aspect_mask is a bitmask of vk::ImageAspectFlagBits specifying which aspect(s) of the image are included in the view.
+    ///
     /// base_mip_level is the first mipmap level accessible to the view.
     ///
     /// level_count is the number of mipmap levels (starting from base_mip_level) accessible to the view.
@@ -39,7 +43,7 @@ pub trait ImageViewCIAbs: Sized {
     /// base_array_layer is the first array layer accessible to the view.
     ///
     /// layer_count is the number of array layers (starting from baseArrayLayer) accessible to the view.
-    fn with_subrange(self, base_mip_level: vkuint, level_count: vkuint, base_array_layer: vkuint, layer_count: vkuint) -> Self;
+    fn with_subrange(self, value: ImageSubRange) -> Self;
 }
 
 /// Image Barrier Bundle Abstract.

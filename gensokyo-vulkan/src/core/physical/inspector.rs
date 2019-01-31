@@ -11,6 +11,7 @@ use crate::core::physical::family::PhysicalQueueFamilies;
 use crate::core::physical::features::PhysicalFeatures;
 use crate::core::physical::memory::PhysicalMemory;
 use crate::core::physical::property::PhysicalProperties;
+use crate::core::physical::formats::PhysicalFormats;
 
 use crate::error::{ VkResult, VkError };
 
@@ -68,10 +69,11 @@ impl PhysicalInspector {
             }
 
             let memory = PhysicalMemory::query(instance, physical_device);
+            let formats = PhysicalFormats::query(instance, physical_device, &self.config.formats);
 
             let physical = GsPhysicalDevice {
                 handle: physical_device,
-                properties, families, features, extensions, memory,
+                properties, families, features, extensions, memory, formats,
             };
 
             optimal_device = Some(physical);

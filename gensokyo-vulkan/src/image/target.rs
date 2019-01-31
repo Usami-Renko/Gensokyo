@@ -5,6 +5,7 @@ use ash::version::DeviceV1_0;
 use crate::core::GsDevice;
 
 use crate::image::traits::ImageHandleEntity;
+use crate::image::instance::sample::MipmapMethod;
 use crate::memory::MemoryDstEntity;
 
 use crate::error::{ VkResult, VkError };
@@ -137,6 +138,8 @@ pub struct ImagePropertyCI {
     pub array_layers: vkuint,
     /// `initial_layout` specifies the initial vk::ImageLayout of all image subresources of the image.
     pub initial_layout: vk::ImageLayout,
+    /// `mipmap` specifies how the program generate mipmap for the image.
+    pub mipmap: MipmapMethod,
 }
 
 #[derive(Debug, Clone)]
@@ -169,6 +172,7 @@ impl Default for ImagePropertyCI {
             mip_levels  : 1,
             array_layers: 1,
             initial_layout: vk::ImageLayout::UNDEFINED,
+            mipmap: MipmapMethod::Disable,
         }
     }
 }

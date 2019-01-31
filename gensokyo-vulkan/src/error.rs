@@ -56,8 +56,10 @@ impl VkError {
         VkError::from(VkErrorKind::StrConvert { target })
     }
 
-    pub(crate) fn other(description: &'static str) -> VkError {
-        VkError::from(VkErrorKind::Other { description })
+    pub(crate) fn other(description: impl AsRef<str>) -> VkError {
+        VkError::from(VkErrorKind::Other {
+            description: description.as_ref().to_string()
+        })
     }
 }
 
@@ -114,7 +116,7 @@ pub enum VkErrorKind {
     Path { path: PathBuf },
     /// Other errors.
     #[fail(display = "{}", description)]
-    Other { description: &'static str },
+    Other { description: String },
 }
 
 impl VkErrorKind {

@@ -4,14 +4,14 @@ use ash::vk;
 use crate::core::GsDevice;
 
 use crate::image::target::{ GsImage, ImageTgtCI, ImagePropertyCI, ImageSpecificCI };
-use crate::image::view::ImageViewCI;
+use crate::image::view::{ ImageViewCI, ImageSubRange };
 use crate::image::storage::{ ImageStorageInfo, ImageSource };
 use crate::image::enums::{ ImageInstanceType, DepthStencilImageFormat };
 use crate::image::instance::depth::{ GsDSAttachment, IDepthStencilImg };
 use crate::image::instance::traits::{ ImageCIAbstract, ImageTgtCIAbs, ImageViewCIAbs };
 use crate::image::allocator::ImageAllotCI;
 
-use crate::error::VkResult;
+use crate::error::{ VkResult, VkError };
 use crate::types::{ vkuint, vkDim2D, vkDim3D };
 
 /// Depth Stencil Attachment Create Info.
@@ -46,6 +46,27 @@ impl GsDSAttachment {
 }
 
 impl ImageCIAbstract<IDepthStencilImg> for DSAttachmentCI {
+
+    fn check_physical_support(&self, device: &GsDevice) -> VkResult<()> {
+
+        let is_depth_support = match self.image_ci.property.tiling {
+            | vk::ImageTiling::LINEAR => {
+                device.phys.formats.query_format_linear(self.image_ci.specific.format, vk::FormatFeatureFlags::DEPTH_STENCIL_ATTACHMENT)?
+            },
+            | vk::ImageTiling::OPTIMAL => {
+                device.phys.formats.query_format_optimal(self.image_ci.specific.format, vk::FormatFeatureFlags::DEPTH_STENCIL_ATTACHMENT)?
+            },
+            | _ => {
+                unreachable!("vk::ImageTiling should be LINEAR or OPTIMAL.")
+            },
+        };
+
+        if is_depth_support {
+            Ok(())
+        } else {
+            Err(VkError::other(format!("vk::Format: {:?} is not support for DepthStencil Attachment", self.image_ci.specific.format)))
+        }
+    }
 
     fn build(&self, device: &GsDevice) -> VkResult<GsImage> {
         self.image_ci.build(device)

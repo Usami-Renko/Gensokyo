@@ -3,6 +3,7 @@ use crate::core::physical::extension::PhysicalExtensionConfig;
 use crate::core::physical::family::PhysicalQueueFamilyConfig;
 use crate::core::physical::features::PhysicalFeatureConfig;
 use crate::core::physical::property::PhysicalPropertiesConfig;
+use crate::core::physical::formats::PhysicalFormatsConfig;
 
 pub(crate) trait PhysicalInspectProperty {
     type ConfigType;
@@ -18,4 +19,5 @@ pub struct PhysicalConfig {
     pub queue_family : PhysicalQueueFamilyConfig,
     pub features     : PhysicalFeatureConfig,
     pub properties   : PhysicalPropertiesConfig,
+    pub formats      : PhysicalFormatsConfig,
 }

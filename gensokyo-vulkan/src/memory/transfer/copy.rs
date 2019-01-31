@@ -5,9 +5,9 @@ use crate::core::GsDevice;
 use crate::core::device::GsLogicalDevice;
 use crate::core::device::queue::GsTransfer;
 
-use crate::buffer::BufferCopiable;
-use crate::image::ImageCopiable;
-use crate::command::{ GsCmdRecorder, GsCmdCopyApi };
+use crate::buffer::BufferCopyInfo;
+use crate::image::ImageCopyInfo;
+use crate::command::{ GsCmdRecorder, GsCmdTransferApi };
 use crate::error::VkResult;
 use crate::utils::phantom::Transfer;
 
@@ -19,6 +19,7 @@ pub struct DataCopyer {
 
 impl DataCopyer {
 
+    // Implement TryFrom instead of this new func.
     pub fn new(device: &GsDevice) -> VkResult<DataCopyer> {
 
         let transfer = GsLogicalDevice::transfer(device)?;
@@ -32,10 +33,7 @@ impl DataCopyer {
     }
 
     // TODO: Currently only support copy the whole buffer to another buffer.
-    pub fn copy_buffer_to_buffer(&self, src: &impl BufferCopiable, dst: &impl BufferCopiable) -> &DataCopyer {
-
-        let src = src.copy_info();
-        let dst = dst.copy_info();
+    pub fn copy_buffer_to_buffer(&self, src: BufferCopyInfo, dst: BufferCopyInfo) -> &DataCopyer {
 
         // TODO: Only support one region.
         let copy_region = [
@@ -53,10 +51,7 @@ impl DataCopyer {
     }
 
     // TODO: Currently only support copy the whole buffer to the image.
-    pub fn copy_buffer_to_image(&self, src: &impl BufferCopiable, dst: &impl ImageCopiable) -> &DataCopyer {
-
-        let src = src.copy_info();
-        let dst = dst.copy_info();
+    pub fn copy_buffer_to_image(&self, src: BufferCopyInfo, dst: ImageCopyInfo) -> &DataCopyer {
 
         // TODO: Only support one region.
         let copy_regions = [
@@ -67,7 +62,7 @@ impl DataCopyer {
                 // Specifying 0 for both indicates that the pixels are simply tightly packed.
                 buffer_row_length  : 0,
                 buffer_image_height: 0,
-                image_subresource: dst.sub_resource_layers,
+                image_subresource: dst.sub_resource_layers.0,
                 // imageOffset selects the initial x, y, z offsets in texels of the sub-region of the source or destination image data.
                 image_offset: vk::Offset3D { x: 0, y: 0, z: 0 },
                 // imageExtent is the size in texels of the image to copy in width, height and depth.
@@ -81,17 +76,14 @@ impl DataCopyer {
     }
 
     // TODO: Currently only support copy the whole image data to buffer.
-    pub fn copy_image_to_buffer(&self, src: &impl ImageCopiable, dst: &impl BufferCopiable) -> &DataCopyer {
-
-        let src = src.copy_info();
-        let dst = dst.copy_info();
+    pub fn copy_image_to_buffer(&self, src: ImageCopyInfo, dst: BufferCopyInfo) -> &DataCopyer {
 
         let copy_regions = [
             vk::BufferImageCopy {
                 buffer_offset: 0,
                 buffer_row_length  : 0,
                 buffer_image_height: 0,
-                image_subresource: src.sub_resource_layers,
+                image_subresource: src.sub_resource_layers.0,
                 image_offset: vk::Offset3D { x:0, y: 0, z: 0 },
                 image_extent: src.extent,
             },
@@ -103,17 +95,14 @@ impl DataCopyer {
     }
 
     // TODO: Currently only support copy the whole image data to another image.
-    pub fn copy_image(&self, src: &impl ImageCopiable, dst: &impl ImageCopiable) -> &DataCopyer {
-
-        let src = src.copy_info();
-        let dst = dst.copy_info();
+    pub fn copy_image(&self, src: ImageCopyInfo, dst: ImageCopyInfo) -> &DataCopyer {
 
         let copy_regions = [
             vk::ImageCopy {
                 src_offset: vk::Offset3D { x: 0, y: 0, z: 0 },
                 dst_offset: vk::Offset3D { x: 0, y: 0, z: 0 },
-                src_subresource: src.sub_resource_layers,
-                dst_subresource: dst.sub_resource_layers,
+                src_subresource: src.sub_resource_layers.0,
+                dst_subresource: dst.sub_resource_layers.0,
                 extent: src.extent,
             },
         ];
@@ -132,6 +121,7 @@ impl DataCopyer {
         Ok(())
     }
 
+    #[inline]
     pub fn recorder(&self) -> &GsCmdRecorder<Transfer> {
         &self.recorder
     }

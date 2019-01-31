@@ -204,6 +204,7 @@ impl VulkanExample {
         // refer to `layout (binding = 1) uniform sampler2D samplerColor` in texture.frag.
         let mut sample_image_info = GsSampleImage::new(1, 1, image_storage, ImagePipelineStage::FragmentStage);
         sample_image_info.reset_sampler(sampler_ci);
+        sample_image_info.set_mipmap(MipmapMethod::StepBlit); // tell engine to generate mipmap in runtime.
         let sample_image_index = image_allocator.assign(sample_image_info)?;
 
         let image_distributor = image_allocator.allocate()?;

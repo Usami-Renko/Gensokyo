@@ -59,6 +59,7 @@ pub(super) fn manifest_toml() -> Value {
 //        features           = []
 //        extensions         = ["VK_KHR_swapchain"]
 //        queue_capabilities = []
+//        query_formats      = ["B8G8R8A8_UNORM"]
 //
 //        [core.swapchain]
 //        image_count = 2
@@ -146,6 +147,7 @@ pub(super) fn manifest_toml() -> Value {
 //    features           = [] // not cover here.
 //    extensions         = ["VK_KHR_swapchain"]
 //    queue_capabilities = ["Graphics", "Compute", "Transfer", "SparseBinding", "Protected"]
+//    query_formats      = ["B8G8R8A8_UNORM"]
 //
 //    [core.swapchain]
 //    image_count = 2

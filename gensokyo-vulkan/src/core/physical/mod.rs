@@ -7,6 +7,7 @@ pub use self::features::PhysicalFeatureConfig;
 pub use self::property::PhysicalPropertiesConfig;
 pub use self::family::PhysicalQueueFamilyConfig;
 pub use self::extension::{ PhysicalExtensionConfig, DeviceExtensionType };
+pub use self::formats::PhysicalFormatsConfig;
 
 mod inspector;
 mod target;
@@ -16,5 +17,6 @@ mod property;
 mod memory;
 mod family;
 mod extension;
+mod formats;
 
 mod config;

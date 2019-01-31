@@ -7,7 +7,7 @@ use crate::image::target::{ GsImage, ImageTgtCI };
 use crate::image::view::ImageViewCI;
 use crate::image::enums::ImageInstanceType;
 use crate::image::traits::ImageCopiable;
-use crate::image::utils::ImageCopyInfo;
+use crate::image::utils::{ ImageCopyInfo, ImageCopySubrange };
 use crate::image::storage::ImageStorageInfo;
 use crate::image::instance::traits::{ ImageCIAbstract, ImageBarrierBundleAbs };
 use crate::image::instance::desc::ImageInstanceInfoDesc;
@@ -51,9 +51,17 @@ impl<M, I, R> GsAllocatorApi<I, R, GsImageDistributor<M>> for GsImageAllocator<M
 
     fn assign(&mut self, ci: I) -> Self::AssignResult {
 
+        // confirm if the physical device support image requirement.
+        // TODO: Add option to disable check in release mode.
+        ci.check_physical_support(&self.device)?;
+        // generate vk::Image.
         let image = ci.build(&self.device)?;
+
+        // check memory support.
         self.memory_filter.filter(&image)?;
 
+        // `image_info` contains the message about memory allocation.
+        // `message` contains the information used after allocation about the image itself.
         let (image_info, message) = ci.refactor(&self.device, image)?;
         let dst_index = GsAssignIndex {
             convey_info: message,
@@ -76,43 +84,43 @@ impl<M> GsAllotIntoDistributor<GsImageDistributor<M>> for GsImageAllocator<M>
     where
         M: ImageMemoryTypeAbs {
 
-    fn allocate(self) -> VkResult<GsImageDistributor<M>> {
+    fn allocate(mut self) -> VkResult<GsImageDistributor<M>> {
 
-        let mut allocator = self; // make self mutable.
-
-        if allocator.image_infos.is_empty() {
+        // confirm there are images awaiting to be allocated.
+        if self.image_infos.is_empty() {
             return Err(VkError::other("There must be images appended to allocator before allocate memory."))
         }
 
         // 1.select memory type for image.
-        let total_space = allocator.image_infos.iter()
+        let total_space = self.image_infos.iter()
             .fold(0, |sum, image_info| {
                 sum + image_info.space
             });
 
         // 2.allocate memory.
-        let memory = allocator.storage_type.allot_memory(&allocator.device, total_space, &allocator.memory_filter)?;
+        let memory = self.storage_type
+            .allot_memory(&self.device, total_space, &self.memory_filter)?;
 
         // 3.bind image to memory.
         let mut offset = 0;
-        for image_info in allocator.image_infos.iter() {
-            memory.bind_to_image(&allocator.device, &image_info.image, offset)?;
+        for image_info in self.image_infos.iter() {
+            memory.bind_to_image(&self.device, &image_info.image, offset)?;
             offset += image_info.space;
         }
 
-        // 4.record image barrier transitions(copy data if needed).
-        let mut copyer = DataCopyer::new(&allocator.device)?;
+        // 4.record image barrier transitions(copy data, generate mipmap...etc, if needed).
+        let mut copyer = DataCopyer::new(&self.device)?;
 
-        let mut barrier_bundles = collect_barrier_bundle(&allocator.image_infos);
+        let mut barrier_bundles = collect_barrier_bundle(&self.image_infos);
         for bundle in barrier_bundles.iter_mut() {
-            bundle.make_barrier_transform(&allocator.device, &copyer, &mut allocator.image_infos)?;
+            bundle.make_barrier_transform(&self.device, &copyer, &mut self.image_infos)?;
         }
 
         // 5.execute image barrier transition.
         copyer.done()?;
 
         // final done.
-        GsImageDistributor::new(allocator.phantom_type, allocator.device, allocator.image_infos, memory)
+        GsImageDistributor::new(self.phantom_type, self.device, self.image_infos, memory)
     }
 }
 
@@ -147,7 +155,10 @@ pub struct ImageAllotCI {
     pub storage: ImageStorageInfo,
     pub space  : vkbytes,
 
-    pub final_layout: vk::ImageLayout,
+    // the layout of the image base mip-level that the program operate on.
+    pub current_layout: vk::ImageLayout,
+    // the current access flags for the image.
+    pub current_access: vk::AccessFlags,
 }
 
 impl ImageAllotCI {
@@ -155,17 +166,16 @@ impl ImageAllotCI {
     pub fn new(typ: ImageInstanceType, storage: ImageStorageInfo, image: GsImage, image_ci: ImageTgtCI, view_ci: ImageViewCI) -> ImageAllotCI {
 
         let space = image.alignment_size();
+        let current_layout = image_ci.property.initial_layout;
+        let current_access = vk::AccessFlags::empty();
 
-        ImageAllotCI {
-            typ, image, image_ci, view_ci, storage, space,
-            final_layout: vk::ImageLayout::UNDEFINED,
-        }
+        ImageAllotCI { typ, image, image_ci, view_ci, storage, space, current_layout, current_access }
     }
 
     pub fn gen_desc(&self) -> ImageInstanceInfoDesc {
 
         ImageInstanceInfoDesc {
-            current_layout : self.final_layout,
+            current_layout : self.current_layout,
             dimension      : self.storage.dimension,
             subrange: self.view_ci.subrange.clone(),
         }
@@ -179,13 +189,16 @@ impl ImageAllotCI {
 
 impl ImageCopiable for ImageAllotCI {
 
-    fn copy_info(&self) -> ImageCopyInfo {
+    fn copy_range(&self, subrange: ImageCopySubrange) -> ImageCopyInfo {
 
-        use crate::image::utils::image_subrange_to_layers;
         // The layout parameter is the destination layout after data copy.
         // This value should be vk::TransferDstOptimal.
-        let subrange_layers = image_subrange_to_layers(&self.view_ci.subrange);
-        ImageCopyInfo::new(&self.image, subrange_layers, self.final_layout, self.storage.dimension)
+        ImageCopyInfo {
+            handle: self.image.handle,
+            layout: self.current_layout,
+            extent: self.storage.dimension,
+            sub_resource_layers: subrange,
+        }
     }
 }
 
@@ -215,12 +228,12 @@ fn collect_barrier_bundle(image_infos: &[ImageAllotCI]) -> Vec<Box<dyn ImageBarr
 
             match image_type {
                 | ImageInstanceType::SampleImage { stage } => {
-                    let bundle = Box::new(SampleImageBarrierBundle::new(stage, indices));
-                    bundle as Box<dyn ImageBarrierBundleAbs>
+                    let bundle = SampleImageBarrierBundle::new(stage, indices);
+                    Box::new(bundle) as Box<dyn ImageBarrierBundleAbs>
                 },
                 | ImageInstanceType::DepthStencilAttachment => {
-                    let bundle = Box::new(DSImageBarrierBundle::new(indices));
-                    bundle as Box<dyn ImageBarrierBundleAbs>
+                    let bundle = DSImageBarrierBundle::new(indices);
+                    Box::new(bundle) as Box<dyn ImageBarrierBundleAbs>
                 },
                 | ImageInstanceType::DepthStencilImage { format: _, stage: _ } => {
                     unimplemented!()
