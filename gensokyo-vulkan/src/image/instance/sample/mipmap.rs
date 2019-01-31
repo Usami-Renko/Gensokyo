@@ -146,4 +146,3 @@ pub(super) fn blit_dst_barrier(info: &mut ImageAllotCI, subrange: ImageSubRange)
 
     barrier
 }
-

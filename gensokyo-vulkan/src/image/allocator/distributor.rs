@@ -4,6 +4,7 @@ use crate::core::GsDevice;
 use crate::image::entity::ImageEntity;
 use crate::image::view::GsImageView;
 use crate::image::traits::ImageInstance;
+use crate::image::sampler::GsSampler;
 use crate::image::allocator::ImageAllotCI;
 use crate::image::allocator::types::ImageMemoryTypeAbs;
 use crate::image::repository::GsImageRepository;
@@ -13,6 +14,7 @@ use crate::error::VkResult;
 use crate::utils::allot::{ GsAssignIndex, GsDistributeApi, GsDistIntoRepository };
 
 use std::marker::PhantomData;
+use std::collections::HashSet;
 
 pub struct GsImageDistributor<M>
     where
@@ -24,6 +26,7 @@ pub struct GsImageDistributor<M>
     memory: GsImageMemory,
 
     views: Vec<GsImageView>,
+    samplers: HashSet<GsSampler>,
     image_allot_cis: Vec<ImageAllotCI>,
 }
 
@@ -52,7 +55,7 @@ impl<M> GsDistIntoRepository<GsImageRepository<M>> for GsImageDistributor<M>
         let images = self.image_allot_cis.into_iter()
             .map(|info| info.image).collect();
 
-        GsImageRepository::store(self.phantom_type, self.device, images, self.views, self.memory)
+        GsImageRepository::store(self.phantom_type, self.device, images, self.views, self.samplers, self.memory)
     }
 }
 
@@ -60,7 +63,7 @@ impl<M> GsImageDistributor<M>
     where
         M: ImageMemoryTypeAbs {
 
-    pub(super) fn new(phantom_type: PhantomData<M>, device: GsDevice, image_allot_cis: Vec<ImageAllotCI>, memory: GsImageMemory) -> VkResult<GsImageDistributor<M>> {
+    pub(super) fn new(phantom_type: PhantomData<M>, device: GsDevice, image_allot_cis: Vec<ImageAllotCI>, samplers: HashSet<GsSampler>, memory: GsImageMemory) -> VkResult<GsImageDistributor<M>> {
 
         let mut views = Vec::with_capacity(image_allot_cis.len());
         for info in image_allot_cis.iter() {
@@ -69,7 +72,8 @@ impl<M> GsImageDistributor<M>
             views.push(view);
         }
 
-        let distributor = GsImageDistributor { phantom_type, device, memory, image_allot_cis, views };
+        let distributor = GsImageDistributor { phantom_type, device, memory, image_allot_cis, samplers, views };
         Ok(distributor)
     }
 }
+

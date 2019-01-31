@@ -465,12 +465,6 @@ impl GraphicsRoutine for VulkanExample {
         Ok(())
     }
 
-    fn clean_routine(&mut self, device: &GsDevice) {
-
-        // Remember to destroy sample image manually.
-        self.ubo.texture.destroy(device);
-    }
-
     fn react_input(&mut self, inputer: &ActionNerve, delta_time: f32) -> SceneAction {
 
         if inputer.is_key_active() || inputer.is_mouse_active() {

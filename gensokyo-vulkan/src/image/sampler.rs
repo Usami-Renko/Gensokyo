@@ -8,12 +8,21 @@ use crate::types::{ vkfloat, VK_TRUE, VK_FALSE };
 
 use std::ptr;
 
+#[derive(Debug, Clone, Hash, Eq, PartialEq)]
 pub struct GsSampler {
 
     pub(crate) handle: vk::Sampler,
 }
 
 impl GsSampler {
+    
+    pub fn construct(device: &GsDevice) -> SamplerCIBuilder {
+        
+        SamplerCIBuilder {
+            device: device.clone(),
+            ci: SamplerCI::default(),
+        }
+    }
 
     pub fn destroy(&self, device: &GsDevice) {
         unsafe {
@@ -23,26 +32,12 @@ impl GsSampler {
 }
 
 #[derive(Debug, Clone)]
-pub struct GsSamplerCI(vk::SamplerCreateInfo);
+pub(crate) struct SamplerCI(pub(super) vk::SamplerCreateInfo);
 
-pub struct SamplerCIBuilder(vk::SamplerCreateInfo);
-
-impl GsSamplerCI {
-
-    pub fn new() -> SamplerCIBuilder {
-        SamplerCIBuilder::default()
-    }
-
-    pub(crate) fn build(&self, device: &GsDevice) -> VkResult<GsSampler> {
-
-        let handle = unsafe {
-            device.logic.handle.create_sampler(&self.0, None)
-                .or(Err(VkError::create("Sampler")))?
-        };
-
-        let sampler = GsSampler { handle };
-        Ok(sampler)
-    }
+pub struct SamplerCIBuilder {
+    
+    device: GsDevice,
+    ci: SamplerCI,
 }
 
 impl SamplerCIBuilder {
@@ -52,8 +47,8 @@ impl SamplerCIBuilder {
     /// `min` specifies the minification filter to apply to lookups.
     pub fn filter(mut self, mag: vk::Filter, min: vk::Filter) -> SamplerCIBuilder {
 
-        self.0.mag_filter = mag;
-        self.0.min_filter = min;
+        self.ci.0.mag_filter = mag;
+        self.ci.0.min_filter = min;
         self
     }
 
@@ -62,10 +57,10 @@ impl SamplerCIBuilder {
     /// `u`, `v` and `w` specifies the addressing mode for outside [0..1] range for U, V, W coordinate.
     pub fn mipmap(mut self, mode: vk::SamplerMipmapMode, u: vk::SamplerAddressMode, v: vk::SamplerAddressMode, w: vk::SamplerAddressMode) -> SamplerCIBuilder {
 
-        self.0.mipmap_mode = mode;
-        self.0.address_mode_u = u;
-        self.0.address_mode_v = v;
-        self.0.address_mode_w = w;
+        self.ci.0.mipmap_mode = mode;
+        self.ci.0.address_mode_u = u;
+        self.ci.0.address_mode_v = v;
+        self.ci.0.address_mode_w = w;
 
         self
     }
@@ -77,9 +72,9 @@ impl SamplerCIBuilder {
     /// `max` used to clamp the maximum computed LOD value, as described in the Level-of-Detail Operation section.
     pub fn lod(mut self, mip_bias: vkfloat, min: vkfloat, max: vkfloat) -> SamplerCIBuilder {
 
-        self.0.mip_lod_bias = mip_bias;
-        self.0.min_lod = min;
-        self.0.max_lod = max;
+        self.ci.0.mip_lod_bias = mip_bias;
+        self.ci.0.min_lod = min;
+        self.ci.0.max_lod = max;
 
         self
     }
@@ -92,10 +87,10 @@ impl SamplerCIBuilder {
     pub fn anisotropy(mut self, max: Option<vkfloat>) -> SamplerCIBuilder {
 
         if let Some(max) = max {
-            self.0.anisotropy_enable = VK_TRUE;
-            self.0.max_anisotropy = max;
+            self.ci.0.anisotropy_enable = VK_TRUE;
+            self.ci.0.max_anisotropy = max;
         } else {
-            self.0.anisotropy_enable = VK_FALSE;
+            self.ci.0.anisotropy_enable = VK_FALSE;
         }
 
         self
@@ -110,10 +105,10 @@ impl SamplerCIBuilder {
     pub fn compare_op(mut self, op: Option<vk::CompareOp>) -> SamplerCIBuilder {
 
         if let Some(op) = op  {
-            self.0.compare_enable = VK_TRUE;
-            self.0.compare_op = op;
+            self.ci.0.compare_enable = VK_TRUE;
+            self.ci.0.compare_op = op;
         } else {
-            self.0.compare_enable = VK_FALSE;
+            self.ci.0.compare_enable = VK_FALSE;
         }
 
         self
@@ -122,7 +117,7 @@ impl SamplerCIBuilder {
     /// `border_color` specifies the predefined border color to use.
     pub fn border_color(mut self, color: vk::BorderColor) -> SamplerCIBuilder {
 
-        self.0.border_color = color;
+        self.ci.0.border_color = color;
         self
     }
 
@@ -135,22 +130,40 @@ impl SamplerCIBuilder {
     pub fn unnormalize_coordinates_enable(mut self, enable: bool) -> SamplerCIBuilder {
 
         if enable {
-            self.0.unnormalized_coordinates = VK_TRUE;
+            self.ci.0.unnormalized_coordinates = VK_TRUE;
         } else {
-            self.0.unnormalized_coordinates = VK_FALSE;
+            self.ci.0.unnormalized_coordinates = VK_FALSE;
         }
 
         self
     }
 
-    pub fn build(self) -> GsSamplerCI {
-        GsSamplerCI(self.0)
+    pub fn build(self) -> VkResult<GsSampler> {
+        self.ci.build(&self.device)
+    }
+
+    pub(crate) fn take(self) -> SamplerCI {
+        self.ci
     }
 }
 
-impl Default for SamplerCIBuilder {
+impl SamplerCI {
 
-    fn default() -> SamplerCIBuilder {
+    pub(crate) fn build(self, device: &GsDevice) -> VkResult<GsSampler> {
+
+        let handle = unsafe {
+            device.logic.handle.create_sampler(&self.0, None)
+                .or(Err(VkError::create("Sampler")))?
+        };
+
+        let sampler = GsSampler { handle };
+        Ok(sampler)
+    }
+}
+
+impl Default for SamplerCI {
+
+    fn default() -> SamplerCI {
 
         let sampler_ci = vk::SamplerCreateInfo {
             s_type            : vk::StructureType::SAMPLER_CREATE_INFO,
@@ -174,6 +187,6 @@ impl Default for SamplerCIBuilder {
             unnormalized_coordinates : VK_FALSE,
         };
 
-        SamplerCIBuilder(sampler_ci)
+        SamplerCI(sampler_ci)
     }
 }

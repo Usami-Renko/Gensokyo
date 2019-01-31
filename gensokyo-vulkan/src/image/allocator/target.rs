@@ -7,12 +7,14 @@ use crate::image::target::{ GsImage, ImageTgtCI };
 use crate::image::view::ImageViewCI;
 use crate::image::enums::ImageInstanceType;
 use crate::image::traits::ImageCopiable;
+use crate::image::sampler::GsSampler;
 use crate::image::utils::{ ImageCopyInfo, ImageCopySubrange };
 use crate::image::storage::ImageStorageInfo;
 use crate::image::instance::traits::{ ImageCIAbstract, ImageBarrierBundleAbs };
 use crate::image::instance::desc::ImageInstanceInfoDesc;
 use crate::image::instance::sample::SampleImageBarrierBundle;
 use crate::image::instance::depth::DSImageBarrierBundle;
+use crate::image::instance::traits::IImageConveyor;
 use crate::image::allocator::types::ImageMemoryTypeAbs;
 use crate::image::allocator::distributor::GsImageDistributor;
 
@@ -23,7 +25,7 @@ use crate::error::{ VkResult, VkError };
 use crate::utils::allot::{ GsAssignIndex, GsAllocatorApi, GsAllotIntoDistributor };
 use crate::types::vkbytes;
 
-use std::collections::HashMap;
+use std::collections::{ HashMap, HashSet };
 use std::marker::PhantomData;
 
 // TODO: Currently not support multi imageview for an image.
@@ -38,6 +40,7 @@ pub struct GsImageAllocator<M>
     device  : GsDevice,
 
     image_infos: Vec<ImageAllotCI>,
+    samplers: HashSet<GsSampler>,
 
     memory_filter: MemoryFilter,
 }
@@ -45,7 +48,8 @@ pub struct GsImageAllocator<M>
 impl<M, I, R> GsAllocatorApi<I, R, GsImageDistributor<M>> for GsImageAllocator<M>
     where
         I: ImageCIAbstract<R>,
-        M: ImageMemoryTypeAbs {
+        M: ImageMemoryTypeAbs,
+        R: IImageConveyor {
 
     type AssignResult = VkResult<GsAssignIndex<R>>;
 
@@ -63,12 +67,18 @@ impl<M, I, R> GsAllocatorApi<I, R, GsImageDistributor<M>> for GsImageAllocator<M
         // `image_info` contains the message about memory allocation.
         // `message` contains the information used after allocation about the image itself.
         let (image_info, message) = ci.refactor(&self.device, image)?;
+
+        if let Some(sampler) = message.sampler() {
+            self.samplers.insert(sampler);
+        }
+
         let dst_index = GsAssignIndex {
             convey_info: message,
             assign_index: self.image_infos.len(),
         };
 
         self.image_infos.push(image_info);
+
         Ok(dst_index)
     }
 
@@ -120,7 +130,7 @@ impl<M> GsAllotIntoDistributor<GsImageDistributor<M>> for GsImageAllocator<M>
         copyer.done()?;
 
         // final done.
-        GsImageDistributor::new(self.phantom_type, self.device, self.image_infos, memory)
+        GsImageDistributor::new(self.phantom_type, self.device, self.image_infos, self.samplers, memory)
     }
 }
 
@@ -136,7 +146,8 @@ impl<M> GsImageAllocator<M>
 
             device  : device.clone(),
 
-            image_infos: vec![],
+            image_infos: Vec::new(),
+            samplers   : HashSet::new(),
 
             memory_filter: MemoryFilter::new(device, storage_type.memory_type()),
         }

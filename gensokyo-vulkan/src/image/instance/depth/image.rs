@@ -2,7 +2,9 @@
 use crate::image::entity::ImageEntity;
 use crate::image::traits::{ ImageInstance, ImageCopiable };
 use crate::image::utils::{ ImageCopyInfo, ImageCopySubrange };
+use crate::image::sampler::GsSampler;
 use crate::image::instance::desc::ImageInstanceInfoDesc;
+use crate::image::instance::traits::IImageConveyor;
 
 use crate::pipeline::pass::{ RenderAttachmentCI, DepthStencil };
 use crate::types::format::GsFormat;
@@ -24,6 +26,10 @@ impl ImageInstance<IDepthStencilImg> for GsDSAttachment {
 
     fn build(idsi: IDepthStencilImg, entity: ImageEntity, desc: ImageInstanceInfoDesc) -> GsDSAttachment {
         GsDSAttachment { idsi, entity, desc }
+    }
+
+    fn sampler(&self) -> Option<&GsSampler> {
+        None
     }
 }
 
@@ -53,5 +59,12 @@ impl ImageCopiable for GsDSAttachment {
             extent: self.desc.dimension,
             sub_resource_layers: subrange,
         }
+    }
+}
+
+impl IImageConveyor for IDepthStencilImg {
+
+    fn sampler(&self) -> Option<GsSampler> {
+        None
     }
 }

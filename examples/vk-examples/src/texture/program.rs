@@ -42,6 +42,7 @@ pub struct VulkanExample {
     #[allow(dead_code)]
     desc_storage: GsDescriptorRepository,
 
+    #[allow(dead_code)]
     sample_image: GsSampleImage,
     depth_attachment: GsDSAttachment,
     #[allow(dead_code)]
@@ -193,18 +194,17 @@ impl VulkanExample {
 
         // combine sample image.
         let image_storage = ImageLoader::new(initializer).load_2d(Path::new(TEXTURE_PATH))?;
-        let sampler_ci = GsSamplerCI::new()
+        let sampler = GsSampler::new(initializer)
             .filter(vk::Filter::LINEAR, vk::Filter::LINEAR)
             .mipmap(vk::SamplerMipmapMode::LINEAR, vk::SamplerAddressMode::REPEAT, vk::SamplerAddressMode::REPEAT, vk::SamplerAddressMode::REPEAT)
             .anisotropy(Some(16.0))
             .lod(0.0, 0.0, 1.0)
             .compare_op(None)
-            .border_color(vk::BorderColor::FLOAT_OPAQUE_WHITE)
-            .build();
+            .border_color(vk::BorderColor::FLOAT_OPAQUE_WHITE);
         // refer to `layout (binding = 1) uniform sampler2D samplerColor` in texture.frag.
         let mut sample_image_info = GsSampleImage::new(1, 1, image_storage, ImagePipelineStage::FragmentStage);
-        sample_image_info.reset_sampler(sampler_ci);
-        sample_image_info.set_mipmap(MipmapMethod::StepBlit); // tell engine to generate mipmap in runtime.
+        sample_image_info.reset_sampler(sampler);
+        //sample_image_info.set_mipmap(MipmapMethod::StepBlit); // tell engine to generate mipmap automatically in runtime.
         let sample_image_index = image_allocator.assign(sample_image_info)?;
 
         let image_distributor = image_allocator.allocate()?;
@@ -353,11 +353,6 @@ impl GraphicsRoutine for VulkanExample {
         self.command_buffers = command_buffers;
 
         Ok(())
-    }
-
-    fn clean_routine(&mut self, device: &GsDevice) {
-
-        self.sample_image.destroy(device);
     }
 
     fn react_input(&mut self, inputer: &ActionNerve, delta_time: f32) -> SceneAction {

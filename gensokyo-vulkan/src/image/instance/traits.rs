@@ -4,6 +4,7 @@ use ash::vk;
 use crate::core::GsDevice;
 
 use crate::image::target::GsImage;
+use crate::image::sampler::GsSampler;
 use crate::image::view::ImageSubRange;
 use crate::image::allocator::ImageAllotCI;
 use crate::memory::transfer::DataCopyer;
@@ -50,4 +51,9 @@ pub trait ImageViewCIAbs: Sized {
 pub trait ImageBarrierBundleAbs {
 
     fn make_barrier_transform(&mut self, device: &GsDevice, copyer: &DataCopyer, allot_cis: &mut Vec<ImageAllotCI>) -> VkResult<()>;
+}
+
+pub trait IImageConveyor {
+
+    fn sampler(&self) -> Option<GsSampler>;
 }

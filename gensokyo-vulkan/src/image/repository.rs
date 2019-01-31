@@ -3,10 +3,12 @@ use crate::core::GsDevice;
 
 use crate::memory::instance::GsImageMemory;
 use crate::image::target::GsImage;
+use crate::image::sampler::GsSampler;
 use crate::image::view::GsImageView;
 use crate::image::allocator::types::ImageMemoryTypeAbs;
 
 use std::marker::PhantomData;
+use std::collections::HashSet;
 
 pub struct GsImageRepository<M>
     where
@@ -15,8 +17,11 @@ pub struct GsImageRepository<M>
     phantom_type: PhantomData<M>,
 
     device : GsDevice,
-    images : Vec<GsImage>,
-    views  : Vec<GsImageView>,
+
+    images  : Vec<GsImage>,
+    views   : Vec<GsImageView>,
+    samplers: HashSet<GsSampler>,
+
     memory : GsImageMemory,
 }
 
@@ -24,12 +29,12 @@ impl<M> GsImageRepository<M>
     where
         M: ImageMemoryTypeAbs {
 
-    pub(crate) fn store(_: PhantomData<M>, device: GsDevice, images: Vec<GsImage>, views: Vec<GsImageView>, memory: GsImageMemory)
+    pub(crate) fn store(_: PhantomData<M>, device: GsDevice, images: Vec<GsImage>, views: Vec<GsImageView>, samplers: HashSet<GsSampler>, memory: GsImageMemory)
         -> GsImageRepository<M> {
 
         GsImageRepository {
             phantom_type: PhantomData,
-            device, images, views, memory,
+            device, images, views, samplers, memory,
         }
     }
 }
@@ -42,6 +47,7 @@ impl<M> Drop for GsImageRepository<M>
 
         self.images.iter().for_each(|image| image.destroy(&self.device));
         self.views.iter().for_each(|view| view.destroy(&self.device));
+        self.samplers.iter().for_each(|sampler| sampler.destroy(&self.device));
 
         self.memory.destroy(&self.device);
     }

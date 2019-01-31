@@ -8,6 +8,7 @@ use crate::image::traits::{ ImageInstance, ImageCopiable };
 use crate::image::sampler::GsSampler;
 use crate::image::utils::{ ImageCopyInfo, ImageCopySubrange };
 use crate::image::instance::desc::ImageInstanceInfoDesc;
+use crate::image::instance::traits::IImageConveyor;
 
 use crate::descriptor::{ DescriptorImageBindingInfo, DescriptorImageBindableTarget };
 use crate::descriptor::DescriptorBindingContent;
@@ -30,6 +31,10 @@ impl ImageInstance<ISampleImg> for GsSampleImage {
 
     fn build(isi: ISampleImg, entity: ImageEntity, desc: ImageInstanceInfoDesc) -> Self where Self: Sized {
         GsSampleImage { isi, entity, desc }
+    }
+
+    fn sampler(&self) -> Option<&GsSampler> {
+        Some(&self.isi.sampler)
     }
 }
 
@@ -70,5 +75,12 @@ impl ImageCopiable for GsSampleImage {
             extent: self.desc.dimension,
             sub_resource_layers: subrange,
         }
+    }
+}
+
+impl IImageConveyor for ISampleImg {
+
+    fn sampler(&self) -> Option<GsSampler> {
+        Some(self.sampler.clone())
     }
 }

@@ -52,6 +52,7 @@ struct TextureMappingProcedure {
     sampler_set   : DescriptorSet,
     #[allow(dead_code)]
     image_storage : GsImageRepository<Device>,
+    #[allow(dead_code)]
     sample_image  : GsSampleImage,
 
     graphics_pipeline: GsPipeline<Graphics>,
@@ -258,7 +259,6 @@ impl GraphicsRoutine for TextureMappingProcedure {
     }
 
     fn reload_res(&mut self, initializer: AssetInitializer) -> GsResult<()> {
-
         self.graphics_pipeline = TextureMappingProcedure::pipelines(&initializer, &self.sampler_set)?;
 
         self.present_availables = TextureMappingProcedure::sync_resources(&initializer, &self.graphics_pipeline)?;
@@ -268,12 +268,6 @@ impl GraphicsRoutine for TextureMappingProcedure {
         self.command_buffers = command_buffers;
 
         Ok(())
-    }
-
-    fn clean_routine(&mut self, device: &GsDevice) {
-
-        // Sample image is need to destroy explicitly.
-        self.sample_image.destroy(device);
     }
 
     fn react_input(&mut self, inputer: &ActionNerve, _: f32) -> SceneAction {
