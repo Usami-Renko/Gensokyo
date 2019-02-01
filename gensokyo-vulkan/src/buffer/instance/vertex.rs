@@ -3,7 +3,7 @@ use ash::vk;
 
 use crate::buffer::entity::BufferBlock;
 use crate::buffer::traits::{ BufferInstance, BufferCopiable, BufferCopyInfo };
-use crate::buffer::instance::types::BufferCIAbstract;
+use crate::buffer::instance::types::BufferCIApi;
 
 use crate::memory::transfer::MemoryDataDelegate;
 use crate::memory::MemoryWritePtr;
@@ -18,7 +18,7 @@ pub struct VertexBufferCI {
     vertex_count: usize,
 }
 
-impl BufferCIAbstract for VertexBufferCI {
+impl BufferCIApi for VertexBufferCI {
     type IConveyor = IVertex;
 
     const VK_FLAG: vk::BufferUsageFlags = vk::BufferUsageFlags::VERTEX_BUFFER;

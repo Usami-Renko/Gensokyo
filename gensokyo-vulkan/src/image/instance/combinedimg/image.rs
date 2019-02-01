@@ -1,8 +1,6 @@
 
 use ash::vk;
 
-use crate::core::GsDevice;
-
 use crate::image::entity::ImageEntity;
 use crate::image::traits::{ ImageInstance, ImageCopiable };
 use crate::image::utils::{ ImageCopyInfo, ImageCopySubrange };
@@ -22,6 +20,8 @@ pub struct GsCombinedImgSampler {
 
 pub struct ICombinedImg {
 
+    // no need to destroy sampler manually.
+    // it will automatically destroy by GsImageRepository.
     sampler: GsSampler,
 }
 
@@ -29,13 +29,6 @@ impl ImageInstance<ICombinedImg> for GsCombinedImgSampler {
 
     fn build(isi: ICombinedImg, entity: ImageEntity, desc: ImageInstanceInfoDesc) -> Self where Self: Sized {
         GsCombinedImgSampler { isi, entity, desc }
-    }
-}
-
-impl GsCombinedImgSampler {
-
-    pub fn destroy(&self, device: &GsDevice) {
-        self.isi.sampler.destroy(device);
     }
 }
 

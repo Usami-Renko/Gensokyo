@@ -6,6 +6,7 @@ use crate::types::format::GsFormat;
 pub enum ImageInstanceType {
 
     CombinedImageSampler { stage: ImagePipelineStage },
+    SampledImage { stage: ImagePipelineStage },
     DepthStencilAttachment,
     DepthStencilImage { format: GsFormat, stage: ImagePipelineStage },
 }

@@ -16,11 +16,11 @@ pub struct GsSampler {
 
 impl GsSampler {
 
-    pub(crate) fn destroy(&self, device: &GsDevice) {
-        unsafe {
-            device.logic.handle.destroy_sampler(self.handle, None);
-        }
-    }
+    // pub(crate) fn destroy(&self, device: &GsDevice) {
+    //     unsafe {
+    //         device.logic.handle.destroy_sampler(self.handle, None);
+    //     }
+    // }
 
     pub(crate) fn mirror(&self) -> GsSamplerMirror {
         GsSamplerMirror(self.handle.clone())

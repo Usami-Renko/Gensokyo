@@ -252,6 +252,10 @@ fn collect_barrier_bundle(image_infos: &[ImageAllotCI]) -> Vec<Box<dyn ImageBarr
                     let bundle = SampleImageBarrierBundle::new(stage, indices);
                     Box::new(bundle) as Box<dyn ImageBarrierBundleAbs>
                 },
+                | ImageInstanceType::SampledImage { stage } => {
+                    let bundle = SampleImageBarrierBundle::new(stage, indices);
+                    Box::new(bundle) as Box<dyn ImageBarrierBundleAbs>
+                },
                 | ImageInstanceType::DepthStencilAttachment => {
                     let bundle = DSImageBarrierBundle::new(indices);
                     Box::new(bundle) as Box<dyn ImageBarrierBundleAbs>

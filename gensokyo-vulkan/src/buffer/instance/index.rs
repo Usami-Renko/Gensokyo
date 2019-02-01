@@ -2,7 +2,7 @@
 use ash::vk;
 
 use crate::buffer::entity::BufferBlock;
-use crate::buffer::instance::types::BufferCIAbstract;
+use crate::buffer::instance::types::BufferCIApi;
 use crate::buffer::traits::{ BufferInstance, BufferCopiable, BufferCopyInfo };
 
 use crate::memory::transfer::MemoryDataDelegate;
@@ -27,7 +27,7 @@ impl IndicesBufferCI {
     }
 }
 
-impl BufferCIAbstract for IndicesBufferCI {
+impl BufferCIApi for IndicesBufferCI {
     type IConveyor = IIndices;
 
     const VK_FLAG: vk::BufferUsageFlags = vk::BufferUsageFlags::INDEX_BUFFER;

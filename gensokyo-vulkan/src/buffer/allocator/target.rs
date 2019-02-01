@@ -2,7 +2,7 @@
 use crate::core::GsDevice;
 
 use crate::buffer::target::GsBuffer;
-use crate::buffer::instance::types::BufferCIAbstract;
+use crate::buffer::instance::types::BufferCIApi;
 use crate::memory::{ MemoryFilter, MemoryDstEntity };
 use crate::error::{ VkResult, VkError };
 
@@ -34,7 +34,7 @@ pub struct GsBufferAllocator<M>
 
 impl<M, I> GsAllocatorApi<I, GsBufferDistributor<M>> for GsBufferAllocator<M>
     where
-        I: BufferCIAbstract,
+        I: BufferCIApi,
         M: BufferMemoryTypeAbs {
 
     type AssignResult = VkResult<GsAssignIndex<I::IConveyor>>;

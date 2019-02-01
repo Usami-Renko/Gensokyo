@@ -1,23 +1,27 @@
 
 use ash::vk;
 
-use crate::image::target::{ ImageTgtCI, ImagePropertyCI, ImageSpecificCI };
-use crate::image::view::ImageViewCI;
-use crate::image::enums::ImagePipelineStage;
+use crate::core::GsDevice;
+
+use crate::image::target::GsImage;
+use crate::image::instance::base::GsBackendImage;
+use crate::image::mipmap::MipmapMethod;
+use crate::image::enums::{ ImageInstanceType, ImagePipelineStage };
 use crate::image::storage::ImageStorageInfo;
-use crate::image::instance::sampledimg::image::GsSampledImage;
+use crate::image::instance::traits::ImageCISpecificApi;
+use crate::image::instance::api::ImageCIInheritApi;
+use crate::image::instance::sampledimg::image::{ GsSampledImage, ISampledImg };
+use crate::image::allocator::ImageAllotCI;
 
 use crate::descriptor::{ DescriptorBindingContent, GsDescriptorType, ImageDescriptorType };
 
+use crate::error::VkResult;
 use crate::types::vkuint;
 
 pub struct SampledImageCI {
 
     pipeline_stage: ImagePipelineStage,
-    image_ci: ImageTgtCI,
-    view_ci : ImageViewCI,
-
-    storage: ImageStorageInfo,
+    backend: GsBackendImage,
 
     binding: DescriptorBindingContent,
 }
@@ -26,24 +30,49 @@ impl GsSampledImage {
 
     pub fn new(binding: vkuint, count: vkuint, storage: ImageStorageInfo, pipeline_stage: ImagePipelineStage) -> SampledImageCI {
 
-        let mut property = ImagePropertyCI::default();
-        property.image_type = vk::ImageType::TYPE_2D;
-        property.tiling     = vk::ImageTiling::OPTIMAL;
-        property.usages     = vk::ImageUsageFlags::SAMPLED | vk::ImageUsageFlags::TRANSFER_DST;
-        //property.mipmap     =
+        let mut backend = GsBackendImage::from(storage);
+        backend.image_ci.property.image_type = vk::ImageType::TYPE_2D;
+        backend.image_ci.property.tiling     = vk::ImageTiling::OPTIMAL;
+        backend.image_ci.property.usages     = vk::ImageUsageFlags::SAMPLED | vk::ImageUsageFlags::TRANSFER_DST;
+        backend.image_ci.property.mipmap     = MipmapMethod::Disable;
 
-        let mut specific = ImageSpecificCI::default();
-        specific.format    = storage.format;
-        specific.dimension = storage.dimension;
+        let binding = DescriptorBindingContent {
+            binding, count,
+            descriptor_type: GsDescriptorType::Image(ImageDescriptorType::SampledImage),
+        };
 
-        SampledImageCI {
-            pipeline_stage, storage,
-            image_ci: ImageTgtCI { property, specific },
-            view_ci : ImageViewCI::new(vk::ImageViewType::TYPE_2D, vk::ImageAspectFlags::COLOR),
-            binding : DescriptorBindingContent {
-                binding, count,
-                descriptor_type: GsDescriptorType::Image(ImageDescriptorType::SampledImage),
-            },
-        }
+        SampledImageCI { pipeline_stage, backend, binding }
+    }
+}
+
+impl ImageCISpecificApi for SampledImageCI {
+    type IConveyor = ISampledImg;
+
+    fn check_physical_support(&self, device: &GsDevice) -> VkResult<()> {
+
+        self.backend.check_mipmap_support(device)
+    }
+
+    fn refactor(self, _device: &GsDevice, image: GsImage) -> VkResult<(ImageAllotCI, Self::IConveyor)> {
+
+        let isi = ISampledImg::new(self.binding);
+
+        let allot_cis = ImageAllotCI::new(
+            ImageInstanceType::SampledImage { stage: self.pipeline_stage },
+            image, self.backend,
+        );
+
+        Ok((allot_cis, isi))
+    }
+}
+
+impl ImageCIInheritApi for SampledImageCI {
+
+    fn backend(&self) -> &GsBackendImage {
+        &self.backend
+    }
+
+    fn backend_mut(&mut self) -> &mut GsBackendImage {
+        &mut self.backend
     }
 }

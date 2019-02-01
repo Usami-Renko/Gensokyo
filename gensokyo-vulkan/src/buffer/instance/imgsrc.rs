@@ -3,7 +3,7 @@ use ash::vk;
 
 use crate::buffer::entity::BufferBlock;
 use crate::buffer::traits::{ BufferInstance, BufferCopiable, BufferCopyInfo };
-use crate::buffer::instance::types::BufferCIAbstract;
+use crate::buffer::instance::types::BufferCIApi;
 
 use crate::memory::transfer::MemoryDataDelegate;
 use crate::memory::MemoryWritePtr;
@@ -16,7 +16,7 @@ pub struct ImgSrcBufferCI {
     estimate_size: vkbytes,
 }
 
-impl BufferCIAbstract for ImgSrcBufferCI {
+impl BufferCIApi for ImgSrcBufferCI {
     type IConveyor = IImgSrc;
 
     const VK_FLAG: vk::BufferUsageFlags = vk::BufferUsageFlags::TRANSFER_SRC;

@@ -6,7 +6,8 @@ use crate::core::GsDevice;
 use crate::image::target::GsImage;
 use crate::image::enums::{ ImageInstanceType, ImagePipelineStage };
 use crate::image::storage::ImageStorageInfo;
-use crate::image::instance::base::{ GsBackendImage, MipmapMethod };
+use crate::image::instance::base::GsBackendImage;
+use crate::image::mipmap::MipmapMethod;
 use crate::image::instance::traits::ImageCISpecificApi;
 use crate::image::instance::combinedimg::image::{ GsCombinedImgSampler, ICombinedImg };
 use crate::image::instance::api::ImageCIInheritApi;
@@ -15,7 +16,7 @@ use crate::image::allocator::ImageAllotCI;
 
 use crate::descriptor::{ DescriptorBindingContent, GsDescriptorType, ImageDescriptorType };
 
-use crate::error::{ VkResult, VkError };
+use crate::error::VkResult;
 use crate::types::vkuint;
 
 /// Combined Image Sampler Create Info.
@@ -59,11 +60,7 @@ impl ImageCISpecificApi for CombinedImgSamplerCI {
 
     fn check_physical_support(&self, device: &GsDevice) -> VkResult<()> {
 
-        if self.backend.image_ci.property.mipmap.is_support_by_device(device, &self.backend.image_ci)? {
-            Ok(())
-        } else {
-            Err(VkError::other(format!("vk::Format: {:?} is not support for mipmap generation", self.backend.image_ci.specific.format)))
-        }
+        self.backend.check_mipmap_support(device)
     }
 
     fn refactor(self, device: &GsDevice, image: GsImage) -> VkResult<(ImageAllotCI, Self::IConveyor)> {

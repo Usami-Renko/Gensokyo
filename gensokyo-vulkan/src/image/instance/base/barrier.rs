@@ -13,7 +13,7 @@ use crate::image::barrier::ImageBarrierCI;
 use crate::image::storage::ImageSource;
 use crate::image::enums::ImagePipelineStage;
 use crate::image::instance::traits::ImageBarrierBundleAbs;
-use crate::image::instance::base::MipmapMethod;
+use crate::image::mipmap::MipmapMethod;
 use crate::image::traits::ImageCopiable;
 use crate::image::view::ImageSubRange;
 use crate::image::utils::ImageCopySubrange;
@@ -174,7 +174,7 @@ impl SampleImageBarrierBundle {
 
     fn generate_mipmaps(&self, copyer: &DataCopyer, infos: &mut Vec<ImageAllotCI>) {
 
-        use crate::image::instance::base::mipmap;
+        use crate::image::mipmap;
         use std::collections::HashSet;
 
         let recorder = copyer.recorder();

@@ -3,7 +3,7 @@ use ash::vk;
 
 use crate::core::GsDevice;
 use crate::buffer::entity::BufferBlock;
-use crate::buffer::instance::types::BufferCIAbstract;
+use crate::buffer::instance::types::BufferCIApi;
 use crate::buffer::traits::{ BufferInstance, BufferCopiable, BufferCopyInfo };
 
 use crate::descriptor::DescriptorBufferBindableTarget;
@@ -78,7 +78,7 @@ impl UniformBufferCI {
     }
 }
 
-impl BufferCIAbstract for UniformBufferCI {
+impl BufferCIApi for UniformBufferCI {
     type IConveyor = IUniform;
 
     const VK_FLAG: vk::BufferUsageFlags = vk::BufferUsageFlags::UNIFORM_BUFFER;

@@ -4,7 +4,8 @@ use ash::vk;
 use crate::core::GsDevice;
 
 use crate::image::target::GsImage;
-use crate::image::instance::base::{ GsBackendImage, MipmapMethod };
+use crate::image::instance::base::GsBackendImage;
+use crate::image::mipmap::MipmapMethod;
 use crate::image::instance::traits::{ ImageCIApi, ImageCICommonApi, ImageCISpecificApi };
 use crate::image::instance::traits::{ ImageTgtCIApi, ImageViewCIApi };
 use crate::image::view::ImageSubRange;

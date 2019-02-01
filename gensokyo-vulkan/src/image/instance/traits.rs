@@ -6,7 +6,7 @@ use crate::core::GsDevice;
 use crate::image::target::GsImage;
 use crate::image::instance::sampler::GsSamplerMirror;
 use crate::image::view::ImageSubRange;
-use crate::image::instance::base::MipmapMethod;
+use crate::image::mipmap::MipmapMethod;
 use crate::image::allocator::ImageAllotCI;
 use crate::memory::transfer::DataCopyer;
 

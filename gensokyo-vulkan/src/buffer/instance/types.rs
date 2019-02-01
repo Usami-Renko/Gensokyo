@@ -5,7 +5,7 @@ use crate::core::GsDevice;
 use crate::memory::types::GsMemoryType;
 use crate::types::vkbytes;
 
-pub trait BufferCIAbstract: Sized {
+pub trait BufferCIApi: Sized {
     type IConveyor;
 
     const VK_FLAG: vk::BufferUsageFlags;

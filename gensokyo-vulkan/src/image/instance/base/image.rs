@@ -7,9 +7,9 @@ use crate::image::target::{ GsImage, ImageTgtCI, ImagePropertyCI, ImageSpecificC
 use crate::image::view::{ ImageViewCI, ImageSubRange };
 use crate::image::storage::ImageStorageInfo;
 use crate::image::instance::traits::{ ImageCICommonApi, ImageTgtCIApi, ImageViewCIApi };
-use crate::image::instance::base::mipmap::MipmapMethod;
+use crate::image::mipmap::MipmapMethod;
 
-use crate::error::VkResult;
+use crate::error::{ VkResult, VkError };
 use crate::types::vkuint;
 
 pub struct GsBackendImage {
@@ -106,5 +106,17 @@ impl ImageViewCIApi for GsBackendImage {
 
     fn set_subrange(&mut self, value: ImageSubRange) {
         self.view_ci.subrange = value;
+    }
+}
+
+impl GsBackendImage {
+
+    pub fn check_mipmap_support(&self, device: &GsDevice) -> VkResult<()> {
+
+        if self.image_ci.property.mipmap.is_support_by_device(device, &self.image_ci)? {
+            Ok(())
+        } else {
+            Err(VkError::other(format!("vk::Format: {:?} is not support for mipmap generation", self.image_ci.specific.format)))
+        }
     }
 }
