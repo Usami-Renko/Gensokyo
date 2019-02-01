@@ -3,7 +3,7 @@ use ash::vk;
 
 use crate::image::entity::ImageEntity;
 use crate::image::utils::{ ImageCopyInfo, ImageCopySubrange };
-use crate::image::instance::desc::ImageInstanceInfoDesc;
+use crate::image::instance::traits::ImageInstanceInfoDesc;
 
 pub trait ImageHandleEntity: Sized {
 

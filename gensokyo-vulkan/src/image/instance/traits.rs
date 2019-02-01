@@ -6,32 +6,45 @@ use crate::core::GsDevice;
 use crate::image::target::GsImage;
 use crate::image::instance::sampler::GsSamplerMirror;
 use crate::image::view::ImageSubRange;
+use crate::image::instance::base::MipmapMethod;
 use crate::image::allocator::ImageAllotCI;
 use crate::memory::transfer::DataCopyer;
 
 use crate::error::VkResult;
-use crate::types::vkuint;
+use crate::types::{ vkuint, vkDim3D };
 
-pub trait ImageCIAbstract<R>: Sized {
+pub trait ImageCIApi: ImageCICommonApi + ImageCISpecificApi {}
+
+pub trait ImageCICommonApi: ImageTgtCIApi + ImageViewCIApi {
+
+    fn set_mipmap(&mut self, method: MipmapMethod);
+
+    fn estimate_mip_levels(&self) -> vkuint;
+
+    fn build(&self, device: &GsDevice) -> VkResult<GsImage>;
+}
+
+pub trait ImageCISpecificApi: Sized {
+    type IConveyor: IImageConveyor;
 
     fn check_physical_support(&self, device: &GsDevice) -> VkResult<()>;
-    fn build(&self, device: &GsDevice) -> VkResult<GsImage>;
-    fn refactor(self, device: &GsDevice, image: GsImage) -> VkResult<(ImageAllotCI, R)>;
+
+    fn refactor(self, device: &GsDevice, image: GsImage) -> VkResult<(ImageAllotCI, Self::IConveyor)>;
 }
 
-pub trait ImageTgtCIAbs: Sized {
+pub trait ImageTgtCIApi: Sized {
 
     // image property.
-    fn with_tiling(self, tiling: vk::ImageTiling) -> Self;
-    fn with_initial_layout(self, layout: vk::ImageLayout) -> Self;
-    fn with_samples(self, count: vk::SampleCountFlags, mip_levels: vkuint, array_layers: vkuint) -> Self;
-    fn with_share_queues(self, queue_family_indices: Vec<vkuint>) -> Self;
+    fn set_tiling(&mut self, tiling: vk::ImageTiling);
+    fn set_initial_layout(&mut self, layout: vk::ImageLayout);
+    fn set_samples(&mut self, count: vk::SampleCountFlags, mip_levels: vkuint, array_layers: vkuint);
+    fn set_share_queues(&mut self, queue_family_indices: Vec<vkuint>);
 }
 
-pub trait ImageViewCIAbs: Sized {
+pub trait ImageViewCIApi: Sized {
 
     // image view property.
-    fn with_mapping_component(self, r: vk::ComponentSwizzle, g: vk::ComponentSwizzle, b: vk::ComponentSwizzle, a: vk::ComponentSwizzle) -> Self;
+    fn set_mapping_component(&mut self, r: vk::ComponentSwizzle, g: vk::ComponentSwizzle, b: vk::ComponentSwizzle, a: vk::ComponentSwizzle);
 
     /// Select the set of mipmap levels and array layers to be accessible to the view.
     ///
@@ -44,7 +57,7 @@ pub trait ImageViewCIAbs: Sized {
     /// base_array_layer is the first array layer accessible to the view.
     ///
     /// layer_count is the number of array layers (starting from baseArrayLayer) accessible to the view.
-    fn with_subrange(self, value: ImageSubRange) -> Self;
+    fn set_subrange(&mut self, value: ImageSubRange);
 }
 
 /// Image Barrier Bundle Abstract.
@@ -56,4 +69,12 @@ pub trait ImageBarrierBundleAbs {
 pub trait IImageConveyor {
 
     fn sampler_mirror(&self) -> Option<GsSamplerMirror>;
+}
+
+#[derive(Debug, Default)]
+pub struct ImageInstanceInfoDesc {
+
+    pub current_layout: vk::ImageLayout,
+    pub dimension: vkDim3D,
+    pub subrange: ImageSubRange,
 }

@@ -78,7 +78,9 @@ impl UniformBufferCI {
     }
 }
 
-impl BufferCIAbstract<IUniform> for UniformBufferCI {
+impl BufferCIAbstract for UniformBufferCI {
+    type IConveyor = IUniform;
+
     const VK_FLAG: vk::BufferUsageFlags = vk::BufferUsageFlags::UNIFORM_BUFFER;
 
     fn estimate_size(&self) -> vkbytes {

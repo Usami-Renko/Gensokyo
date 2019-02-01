@@ -57,11 +57,6 @@ impl ImageViewCI {
         }
     }
 
-    pub fn with_subrange(mut self, value: ImageSubRange) -> ImageViewCI {
-        self.subrange = value;
-        self
-    }
-
     pub fn build(&self, device: &GsDevice, image: &GsImage, specific: &ImageSpecificCI) -> VkResult<GsImageView> {
 
         let image_view_ci = vk::ImageViewCreateInfo {

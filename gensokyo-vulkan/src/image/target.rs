@@ -5,7 +5,7 @@ use ash::version::DeviceV1_0;
 use crate::core::GsDevice;
 
 use crate::image::traits::ImageHandleEntity;
-use crate::image::instance::combinedimg::MipmapMethod;
+use crate::image::instance::base::MipmapMethod;
 use crate::memory::MemoryDstEntity;
 
 use crate::error::{ VkResult, VkError };

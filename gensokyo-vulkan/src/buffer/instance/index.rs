@@ -27,7 +27,9 @@ impl IndicesBufferCI {
     }
 }
 
-impl BufferCIAbstract<IIndices> for IndicesBufferCI {
+impl BufferCIAbstract for IndicesBufferCI {
+    type IConveyor = IIndices;
+
     const VK_FLAG: vk::BufferUsageFlags = vk::BufferUsageFlags::INDEX_BUFFER;
 
     fn estimate_size(&self) -> vkbytes {

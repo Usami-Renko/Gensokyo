@@ -68,7 +68,7 @@ impl<M> GsImageDistributor<M>
         let mut views = Vec::with_capacity(image_allot_cis.len());
         for info in image_allot_cis.iter() {
 
-            let view = info.view_ci.build(&device, &info.image, &info.image_ci.specific)?;
+            let view = info.backend.view_ci.build(&device, &info.image, &info.backend.image_ci.specific)?;
             views.push(view);
         }
 

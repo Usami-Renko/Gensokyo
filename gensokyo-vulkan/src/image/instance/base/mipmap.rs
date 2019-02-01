@@ -25,7 +25,7 @@ pub enum MipmapMethod {
 
 impl MipmapMethod {
 
-    pub(super) fn is_support_by_device(&self, device: &GsDevice, image_ci: &ImageTgtCI) -> VkResult<bool> {
+    pub(crate) fn is_support_by_device(&self, device: &GsDevice, image_ci: &ImageTgtCI) -> VkResult<bool> {
 
         match self {
             | MipmapMethod::Disable => Ok(true),
@@ -68,12 +68,12 @@ pub(super) struct MipmapBlitInfo {
 
 pub(super) fn blit_info(image_info: &mut ImageAllotCI, round: vkuint) -> MipmapBlitInfo {
 
-    let image_dimension = &image_info.image_ci.specific.dimension;
+    let image_dimension = &image_info.backend.image_ci.specific.dimension;
 
     // image blit command.
     let image_blit = vk::ImageBlit {
         src_subresource: vk::ImageSubresourceLayers {
-            aspect_mask: image_info.view_ci.subrange.0.aspect_mask,
+            aspect_mask: image_info.backend.view_ci.subrange.0.aspect_mask,
             mip_level  : round - 1,
             base_array_layer: 0, // TODO: the base layer and layer count are not taken into account yet.
             layer_count     : 1,
@@ -87,7 +87,7 @@ pub(super) fn blit_info(image_info: &mut ImageAllotCI, round: vkuint) -> MipmapB
             },
         ],
         dst_subresource: vk::ImageSubresourceLayers {
-            aspect_mask: image_info.view_ci.subrange.0.aspect_mask,
+            aspect_mask: image_info.backend.view_ci.subrange.0.aspect_mask,
             mip_level  : round,
             base_array_layer: 0,
             layer_count     : 1,

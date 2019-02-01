@@ -3,7 +3,8 @@ pub use crate::image::allocator::GsImageAllocator;
 pub use crate::image::allocator::GsImageDistributor;
 pub use crate::image::GsImageRepository;
 
-pub use crate::image::instance::combinedimg::{ GsCombinedImgSampler, ICombinedImg, MipmapMethod };
+//pub use crate::image::instance::base::MipmapMethod;
+pub use crate::image::instance::combinedimg::{ GsCombinedImgSampler, ICombinedImg };
 pub use crate::image::instance::depth::{ GsDSAttachment, IDepthStencilImg };
 pub use crate::image::instance::sampler::GsSampler;
 

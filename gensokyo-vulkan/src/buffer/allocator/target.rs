@@ -32,12 +32,12 @@ pub struct GsBufferAllocator<M>
     memory_filter: MemoryFilter,
 }
 
-impl<M, I, R> GsAllocatorApi<I, R, GsBufferDistributor<M>> for GsBufferAllocator<M>
+impl<M, I> GsAllocatorApi<I, GsBufferDistributor<M>> for GsBufferAllocator<M>
     where
-        I: BufferCIAbstract<R>,
+        I: BufferCIAbstract,
         M: BufferMemoryTypeAbs {
 
-    type AssignResult = VkResult<GsAssignIndex<R>>;
+    type AssignResult = VkResult<GsAssignIndex<I::IConveyor>>;
 
     fn assign(&mut self, info: I) -> Self::AssignResult {
 

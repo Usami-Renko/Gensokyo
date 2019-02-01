@@ -18,7 +18,9 @@ pub struct VertexBufferCI {
     vertex_count: usize,
 }
 
-impl BufferCIAbstract<IVertex> for VertexBufferCI {
+impl BufferCIAbstract for VertexBufferCI {
+    type IConveyor = IVertex;
+
     const VK_FLAG: vk::BufferUsageFlags = vk::BufferUsageFlags::VERTEX_BUFFER;
 
     fn estimate_size(&self) -> vkbytes {

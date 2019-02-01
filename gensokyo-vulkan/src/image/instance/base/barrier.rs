@@ -13,7 +13,7 @@ use crate::image::barrier::ImageBarrierCI;
 use crate::image::storage::ImageSource;
 use crate::image::enums::ImagePipelineStage;
 use crate::image::instance::traits::ImageBarrierBundleAbs;
-use crate::image::instance::combinedimg::mipmap::MipmapMethod;
+use crate::image::instance::base::MipmapMethod;
 use crate::image::traits::ImageCopiable;
 use crate::image::view::ImageSubRange;
 use crate::image::utils::ImageCopySubrange;
@@ -98,7 +98,7 @@ impl SampleImageBarrierBundle {
 
         for (&info_index, img_block) in self.info_indices.iter().zip(img_data_blocks.iter()) {
 
-            match infos[info_index].storage.source {
+            match infos[info_index].backend.storage.source {
                 | ImageSource::UploadData(ref source) => {
                     uploader.upload(img_block, &source.data)?;
                 },
@@ -123,7 +123,7 @@ impl SampleImageBarrierBundle {
             let image_info = &mut infos[index];
             // copy to the base mip level of image.
             // TODO: Consider the base layer and layer count.
-            let base_mip_level = image_info.view_ci.subrange.clone()
+            let base_mip_level = image_info.backend.view_ci.subrange.clone()
                 .with_mip_level(0, 1); // base mip level is at 0.
 
             transfer_dst_barrier(image_info, base_mip_level)
@@ -140,7 +140,7 @@ impl SampleImageBarrierBundle {
         // copy buffer to base mipmap level image.
         for (i, &index) in self.info_indices.iter().enumerate() {
             // copy to the base mip level.
-            let copy_dst_range = ImageCopySubrange::base_copy(&infos[index].view_ci.subrange);
+            let copy_dst_range = ImageCopySubrange::base_copy(&infos[index].backend.view_ci.subrange);
             // copy the whole buffer to the base mip level of image.
             copyer.copy_buffer_to_image(src_blocks[i].copy_whole(), infos[index].copy_range(copy_dst_range));
         }
@@ -149,11 +149,11 @@ impl SampleImageBarrierBundle {
         let transfer_src_barriers: Vec<ImageBarrierCI> = self.info_indices.iter().filter_map(|&index| {
 
             let image_info = &mut infos[index];
-            match image_info.image_ci.property.mipmap {
+            match image_info.backend.image_ci.property.mipmap {
                 | MipmapMethod::Disable => None,
                 | MipmapMethod::StepBlit
                 | MipmapMethod::BaseLevelBlit => {
-                    let base_mip_level = image_info.view_ci.subrange.clone()
+                    let base_mip_level = image_info.backend.view_ci.subrange.clone()
                         .with_mip_level(0, 1); // base mip level is at 0.
 
                     let barrier = transfer_src_barrier(image_info, base_mip_level);
@@ -174,7 +174,7 @@ impl SampleImageBarrierBundle {
 
     fn generate_mipmaps(&self, copyer: &DataCopyer, infos: &mut Vec<ImageAllotCI>) {
 
-        use crate::image::instance::combinedimg::mipmap;
+        use crate::image::instance::base::mipmap;
         use std::collections::HashSet;
 
         let recorder = copyer.recorder();
@@ -195,11 +195,11 @@ impl SampleImageBarrierBundle {
 
                 let image_info = &mut infos[index];
 
-                match image_info.image_ci.property.mipmap {
+                match image_info.backend.image_ci.property.mipmap {
                     | MipmapMethod::StepBlit => {
 
                         // barrier before image blit.
-                        let subrange = image_info.view_ci.subrange.clone()
+                        let subrange = image_info.backend.view_ci.subrange.clone()
                             .with_mip_level(current_level, 1);
 
                         let prepare_barrier = mipmap::blit_src_barrier(image_info, subrange.clone());
@@ -221,7 +221,7 @@ impl SampleImageBarrierBundle {
                     },
                 };
 
-                if image_info.image_ci.property.mip_levels == current_level + 1 {
+                if image_info.backend.image_ci.property.mip_levels == current_level + 1 {
                     indices_remove.push(index);
                 }
             });
@@ -270,8 +270,8 @@ impl SampleImageBarrierBundle {
             let image_info = &mut infos[index];
             // make all mip levels readable in shader.
             // TODO: Consider the base layer and layer count.
-            let all_mip_levels = image_info.view_ci.subrange.clone()
-                .with_mip_level(0, image_info.image_ci.property.mip_levels);
+            let all_mip_levels = image_info.backend.view_ci.subrange.clone()
+                .with_mip_level(0, image_info.backend.image_ci.property.mip_levels);
 
             shader_read_barrier(image_info, all_mip_levels)
 
@@ -317,7 +317,7 @@ fn transfer_src_barrier(info: &mut ImageAllotCI, subrange: ImageSubRange) -> Ima
 /// return the image barrier used to make image prepare the be sampled from shader.
 fn shader_read_barrier(info: &mut ImageAllotCI, subrange: ImageSubRange) -> ImageBarrierCI {
 
-    match info.image_ci.property.mipmap {
+    match info.backend.image_ci.property.mipmap {
         | MipmapMethod::Disable => {
             debug_assert_eq!(info.current_access, vk::AccessFlags::TRANSFER_WRITE);
             debug_assert_eq!(info.current_layout, vk::ImageLayout::TRANSFER_DST_OPTIMAL);

@@ -14,7 +14,7 @@ impl<I> GsAssignIndex<I> {
     }
 }
 
-pub trait GsAllocatorApi<I, R, D>: GsAllotIntoDistributor<D> + Sized {
+pub trait GsAllocatorApi<I, D>: GsAllotIntoDistributor<D> + Sized {
     type AssignResult;
 
     fn assign(&mut self, info: I) -> Self::AssignResult;

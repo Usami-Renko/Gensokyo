@@ -3,19 +3,16 @@ use ash::vk;
 
 use crate::core::GsDevice;
 
-use crate::image::target::{ GsImage, ImageTgtCI };
-use crate::image::view::ImageViewCI;
+use crate::image::target::GsImage;
 use crate::image::enums::ImageInstanceType;
 use crate::image::traits::ImageCopiable;
 use crate::image::utils::{ ImageCopyInfo, ImageCopySubrange };
-use crate::image::storage::ImageStorageInfo;
-use crate::image::instance::traits::{ ImageCIAbstract, ImageBarrierBundleAbs };
-use crate::image::instance::desc::ImageInstanceInfoDesc;
-use crate::image::instance::combinedimg::SampleImageBarrierBundle;
+use crate::image::instance::base::{ GsBackendImage, SampleImageBarrierBundle };
+use crate::image::instance::traits::{ ImageCIApi, ImageCISpecificApi, ImageBarrierBundleAbs };
+use crate::image::instance::traits::{ IImageConveyor, ImageInstanceInfoDesc };
 use crate::image::instance::sampler::{ GsSampler, SamplerCI };
 use crate::image::instance::depth::DSImageBarrierBundle;
 use crate::image::instance::sampler::GsSamplerMirror;
-use crate::image::instance::traits::IImageConveyor;
 use crate::image::allocator::types::ImageMemoryTypeAbs;
 use crate::image::allocator::distributor::GsImageDistributor;
 
@@ -46,13 +43,12 @@ pub struct GsImageAllocator<M>
     memory_filter: MemoryFilter,
 }
 
-impl<M, I, R> GsAllocatorApi<I, R, GsImageDistributor<M>> for GsImageAllocator<M>
+impl<M, I> GsAllocatorApi<I, GsImageDistributor<M>> for GsImageAllocator<M>
     where
-        I: ImageCIAbstract<R>,
-        M: ImageMemoryTypeAbs,
-        R: IImageConveyor {
+        I: ImageCIApi + ImageCISpecificApi,
+        M: ImageMemoryTypeAbs {
 
-    type AssignResult = VkResult<GsAssignIndex<R>>;
+    type AssignResult = VkResult<GsAssignIndex<<I as ImageCISpecificApi>::IConveyor>>;
 
     fn assign(&mut self, ci: I) -> Self::AssignResult {
 
@@ -84,7 +80,7 @@ impl<M, I, R> GsAllocatorApi<I, R, GsImageDistributor<M>> for GsImageAllocator<M
     }
 }
 
-impl<M> GsAllocatorApi<SamplerCI, (), GsImageDistributor<M>> for GsImageAllocator<M>
+impl<M> GsAllocatorApi<SamplerCI, GsImageDistributor<M>> for GsImageAllocator<M>
     where
         M: ImageMemoryTypeAbs {
 
@@ -173,13 +169,11 @@ impl<M> GsImageAllocator<M>
 
 pub struct ImageAllotCI {
 
+    pub backend: GsBackendImage,
+
     pub typ: ImageInstanceType,
 
     pub image: GsImage,
-    pub image_ci: ImageTgtCI,
-    pub view_ci : ImageViewCI,
-
-    pub storage: ImageStorageInfo,
     pub space  : vkbytes,
 
     // the layout of the image base mip-level that the program operate on.
@@ -190,21 +184,21 @@ pub struct ImageAllotCI {
 
 impl ImageAllotCI {
 
-    pub fn new(typ: ImageInstanceType, storage: ImageStorageInfo, image: GsImage, image_ci: ImageTgtCI, view_ci: ImageViewCI) -> ImageAllotCI {
+    pub fn new(typ: ImageInstanceType, image: GsImage, backend: GsBackendImage) -> ImageAllotCI {
 
         let space = image.alignment_size();
-        let current_layout = image_ci.property.initial_layout;
+        let current_layout = backend.image_ci.property.initial_layout;
         let current_access = vk::AccessFlags::empty();
 
-        ImageAllotCI { typ, image, image_ci, view_ci, storage, space, current_layout, current_access }
+        ImageAllotCI { backend, typ, image, space, current_layout, current_access }
     }
 
     pub fn gen_desc(&self) -> ImageInstanceInfoDesc {
 
         ImageInstanceInfoDesc {
             current_layout : self.current_layout,
-            dimension      : self.storage.dimension,
-            subrange: self.view_ci.subrange.clone(),
+            dimension      : self.backend.storage.dimension,
+            subrange       : self.backend.view_ci.subrange.clone(),
         }
     }
 
@@ -223,7 +217,7 @@ impl ImageCopiable for ImageAllotCI {
         ImageCopyInfo {
             handle: self.image.handle,
             layout: self.current_layout,
-            extent: self.storage.dimension,
+            extent: self.backend.storage.dimension,
             sub_resource_layers: subrange,
         }
     }
@@ -254,7 +248,7 @@ fn collect_barrier_bundle(image_infos: &[ImageAllotCI]) -> Vec<Box<dyn ImageBarr
         .map(|(image_type, indices)| {
 
             match image_type {
-                | ImageInstanceType::SampleImage { stage } => {
+                | ImageInstanceType::CombinedImageSampler { stage } => {
                     let bundle = SampleImageBarrierBundle::new(stage, indices);
                     Box::new(bundle) as Box<dyn ImageBarrierBundleAbs>
                 },

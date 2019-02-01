@@ -24,7 +24,7 @@ pub struct GsDescriptorAllocator {
     update_sets: Vec<usize>,
 }
 
-impl GsAllocatorApi<DescriptorSetConfig, IDescriptorSet, GsDescriptorDistributor> for GsDescriptorAllocator {
+impl GsAllocatorApi<DescriptorSetConfig, GsDescriptorDistributor> for GsDescriptorAllocator {
     type AssignResult = GsAssignIndex<IDescriptorSet>;
 
     fn assign(&mut self, config: DescriptorSetConfig) -> Self::AssignResult {

@@ -5,7 +5,9 @@ use crate::core::GsDevice;
 use crate::memory::types::GsMemoryType;
 use crate::types::vkbytes;
 
-pub trait BufferCIAbstract<I>: Sized {
+pub trait BufferCIAbstract: Sized {
+    type IConveyor;
+
     const VK_FLAG: vk::BufferUsageFlags;
 
     fn check_storage_validity(memory_type: GsMemoryType) -> bool {
@@ -14,7 +16,7 @@ pub trait BufferCIAbstract<I>: Sized {
 
     fn estimate_size(&self) -> vkbytes;
 
-    fn into_index(self) -> I;
+    fn into_index(self) -> Self::IConveyor;
 
     fn check_limits(&mut self, _device: &GsDevice) {
         // Default implementation is empty.

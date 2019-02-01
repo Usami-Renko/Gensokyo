@@ -7,8 +7,7 @@ use crate::image::entity::ImageEntity;
 use crate::image::traits::{ ImageInstance, ImageCopiable };
 use crate::image::utils::{ ImageCopyInfo, ImageCopySubrange };
 use crate::image::instance::sampler::{ GsSampler, GsSamplerMirror };
-use crate::image::instance::desc::ImageInstanceInfoDesc;
-use crate::image::instance::traits::IImageConveyor;
+use crate::image::instance::traits::{ IImageConveyor, ImageInstanceInfoDesc };
 
 use crate::descriptor::{ DescriptorImageBindingInfo, DescriptorImageBindableTarget };
 

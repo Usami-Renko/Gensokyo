@@ -45,9 +45,9 @@ impl DSImageBarrierBundle {
 
     fn final_barrier(&self, info: &mut ImageAllotCI) -> ImageBarrierCI {
 
-        let barrier = ImageBarrierCI::new(&info.image, info.view_ci.subrange.clone())
+        let barrier = ImageBarrierCI::new(&info.image, info.backend.view_ci.subrange.clone())
             .access_mask(vk::AccessFlags::empty(), vk::AccessFlags::DEPTH_STENCIL_ATTACHMENT_READ | vk::AccessFlags::DEPTH_STENCIL_ATTACHMENT_WRITE)
-            .layout(info.image_ci.property.initial_layout, vk::ImageLayout::DEPTH_STENCIL_ATTACHMENT_OPTIMAL)
+            .layout(info.backend.image_ci.property.initial_layout, vk::ImageLayout::DEPTH_STENCIL_ATTACHMENT_OPTIMAL)
             .build();
 
         info.current_layout = vk::ImageLayout::DEPTH_STENCIL_ATTACHMENT_OPTIMAL;

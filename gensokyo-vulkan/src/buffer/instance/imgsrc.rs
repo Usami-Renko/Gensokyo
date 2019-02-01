@@ -16,7 +16,9 @@ pub struct ImgSrcBufferCI {
     estimate_size: vkbytes,
 }
 
-impl BufferCIAbstract<IImgSrc> for ImgSrcBufferCI {
+impl BufferCIAbstract for ImgSrcBufferCI {
+    type IConveyor = IImgSrc;
+
     const VK_FLAG: vk::BufferUsageFlags = vk::BufferUsageFlags::TRANSFER_SRC;
 
     fn estimate_size(&self) -> vkbytes {

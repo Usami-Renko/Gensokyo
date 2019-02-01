@@ -5,7 +5,7 @@ use crate::types::format::GsFormat;
 #[derive(Debug, Clone, Eq, PartialEq, Hash)]
 pub enum ImageInstanceType {
 
-    SampleImage { stage: ImagePipelineStage },
+    CombinedImageSampler { stage: ImagePipelineStage },
     DepthStencilAttachment,
     DepthStencilImage { format: GsFormat, stage: ImagePipelineStage },
 }
