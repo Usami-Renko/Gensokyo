@@ -1,11 +1,12 @@
 
 use crate::core::GsDevice;
 
-use crate::memory::instance::GsImageMemory;
 use crate::image::target::GsImage;
-use crate::image::sampler::GsSampler;
 use crate::image::view::GsImageView;
+use crate::image::instance::sampler::GsSamplerMirror;
 use crate::image::allocator::types::ImageMemoryTypeAbs;
+
+use crate::memory::instance::GsImageMemory;
 
 use std::marker::PhantomData;
 use std::collections::HashSet;
@@ -20,7 +21,7 @@ pub struct GsImageRepository<M>
 
     images  : Vec<GsImage>,
     views   : Vec<GsImageView>,
-    samplers: HashSet<GsSampler>,
+    samplers: HashSet<GsSamplerMirror>,
 
     memory : GsImageMemory,
 }
@@ -29,7 +30,7 @@ impl<M> GsImageRepository<M>
     where
         M: ImageMemoryTypeAbs {
 
-    pub(crate) fn store(_: PhantomData<M>, device: GsDevice, images: Vec<GsImage>, views: Vec<GsImageView>, samplers: HashSet<GsSampler>, memory: GsImageMemory)
+    pub(crate) fn store(_: PhantomData<M>, device: GsDevice, images: Vec<GsImage>, views: Vec<GsImageView>, samplers: HashSet<GsSamplerMirror>, memory: GsImageMemory)
         -> GsImageRepository<M> {
 
         GsImageRepository {

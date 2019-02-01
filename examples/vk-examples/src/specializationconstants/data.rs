@@ -22,7 +22,7 @@ pub struct ModelResource {
 
 pub struct UniformResource {
 
-    pub texture   : GsSampleImage,
+    pub texture   : GsCombinedImgSampler,
     pub ubo_vs    : Vec<UBOVS>,
     pub ubo_set   : DescriptorSet,
     pub ubo_buffer: GsUniformBuffer,

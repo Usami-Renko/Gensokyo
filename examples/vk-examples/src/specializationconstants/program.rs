@@ -173,7 +173,7 @@ impl VulkanExample {
         Ok((model_entity, model_repository, ubo_buffer, ubo_repository))
     }
 
-    fn ubo(initializer: &AssetInitializer, model: &GsglTFEntity, texture: &GsSampleImage, ubo_buffer: &GsUniformBuffer) -> GsResult<(DescriptorSet, GsDescriptorRepository)> {
+    fn ubo(initializer: &AssetInitializer, model: &GsglTFEntity, texture: &GsCombinedImgSampler, ubo_buffer: &GsUniformBuffer) -> GsResult<(DescriptorSet, GsDescriptorRepository)> {
 
         let mut descriptor_allocator = GsDescriptorAllocator::new(initializer);
 
@@ -192,7 +192,7 @@ impl VulkanExample {
         Ok((ubo_set, desc_storage))
     }
 
-    fn image(initializer: &AssetInitializer, dimension: vkDim2D) -> GsResult<(GsSampleImage, GsDSAttachment, GsImageRepository<Device>)> {
+    fn image(initializer: &AssetInitializer, dimension: vkDim2D) -> GsResult<(GsCombinedImgSampler, GsDSAttachment, GsImageRepository<Device>)> {
 
         let mut image_allocator = GsImageAllocator::new(initializer, ImageStorageType::DEVICE);
 
@@ -203,7 +203,7 @@ impl VulkanExample {
         // Combined Sample Image
         let image_storage = ImageLoader::new(initializer).load_2d(Path::new(TEXTURE_PATH))?; // texture.
         // refer to `layout (set = 0, binding = 2) sampler2D samplerColorMap` in uber.frag. Accessible from the fragment shader only.
-        let image_info = GsSampleImage::new(2, 1, image_storage, ImagePipelineStage::FragmentStage);
+        let image_info = GsCombinedImgSampler::new(2, 1, image_storage, ImagePipelineStage::FragmentStage);
         let sample_image_index = image_allocator.assign(image_info)?;
 
         let image_distributor = image_allocator.allocate()?;

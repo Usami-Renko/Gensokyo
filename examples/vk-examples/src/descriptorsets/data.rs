@@ -11,7 +11,7 @@ use nalgebra::{ Point3, Vector2, Vector3, Matrix4 };
 
 pub struct CubeResources {
     pub matrices: [Vec<UBOMatrices>; 2],
-    pub texture : [GsSampleImage; 2],
+    pub texture : [GsCombinedImgSampler; 2],
     pub ubo_set : [DescriptorSet; 2],
     pub ubo_buffer: [GsUniformBuffer; 2],
 }

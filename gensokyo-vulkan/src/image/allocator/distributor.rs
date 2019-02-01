@@ -4,9 +4,9 @@ use crate::core::GsDevice;
 use crate::image::entity::ImageEntity;
 use crate::image::view::GsImageView;
 use crate::image::traits::ImageInstance;
-use crate::image::sampler::GsSampler;
 use crate::image::allocator::ImageAllotCI;
 use crate::image::allocator::types::ImageMemoryTypeAbs;
+use crate::image::instance::sampler::GsSamplerMirror;
 use crate::image::repository::GsImageRepository;
 
 use crate::memory::instance::GsImageMemory;
@@ -26,7 +26,7 @@ pub struct GsImageDistributor<M>
     memory: GsImageMemory,
 
     views: Vec<GsImageView>,
-    samplers: HashSet<GsSampler>,
+    samplers: HashSet<GsSamplerMirror>,
     image_allot_cis: Vec<ImageAllotCI>,
 }
 
@@ -63,7 +63,7 @@ impl<M> GsImageDistributor<M>
     where
         M: ImageMemoryTypeAbs {
 
-    pub(super) fn new(phantom_type: PhantomData<M>, device: GsDevice, image_allot_cis: Vec<ImageAllotCI>, samplers: HashSet<GsSampler>, memory: GsImageMemory) -> VkResult<GsImageDistributor<M>> {
+    pub(super) fn new(phantom_type: PhantomData<M>, device: GsDevice, image_allot_cis: Vec<ImageAllotCI>, samplers: HashSet<GsSamplerMirror>, memory: GsImageMemory) -> VkResult<GsImageDistributor<M>> {
 
         let mut views = Vec::with_capacity(image_allot_cis.len());
         for info in image_allot_cis.iter() {

@@ -42,10 +42,6 @@ impl GsAllocatorApi<DescriptorSetConfig, IDescriptorSet, GsDescriptorDistributor
 
         dst_index
     }
-
-    fn reset(&mut self) {
-        self.set_configs.clear();
-    }
 }
 
 impl GsAllotIntoDistributor<GsDescriptorDistributor> for GsDescriptorAllocator {
@@ -74,6 +70,10 @@ impl GsAllotIntoDistributor<GsDescriptorDistributor> for GsDescriptorAllocator {
 
         let repository = GsDescriptorDistributor::new(self.device, pool, sets, self.set_configs, self.update_sets);
         Ok(repository)
+    }
+
+    fn reset(&mut self) {
+        self.set_configs.clear();
     }
 }
 

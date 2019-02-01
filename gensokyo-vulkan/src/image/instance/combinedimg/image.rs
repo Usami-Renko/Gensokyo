@@ -5,59 +5,54 @@ use crate::core::GsDevice;
 
 use crate::image::entity::ImageEntity;
 use crate::image::traits::{ ImageInstance, ImageCopiable };
-use crate::image::sampler::GsSampler;
 use crate::image::utils::{ ImageCopyInfo, ImageCopySubrange };
+use crate::image::instance::sampler::{ GsSampler, GsSamplerMirror };
 use crate::image::instance::desc::ImageInstanceInfoDesc;
 use crate::image::instance::traits::IImageConveyor;
 
 use crate::descriptor::{ DescriptorImageBindingInfo, DescriptorImageBindableTarget };
-use crate::descriptor::DescriptorBindingContent;
 
-pub struct GsSampleImage {
+/// Wrapper class of Combined Image Sampler in Vulkan.
+pub struct GsCombinedImgSampler {
 
-    isi: ISampleImg,
+    isi: ICombinedImg,
 
     entity: ImageEntity,
     desc: ImageInstanceInfoDesc,
 }
 
-pub struct ISampleImg {
+pub struct ICombinedImg {
 
     sampler: GsSampler,
-    binding: DescriptorBindingContent,
 }
 
-impl ImageInstance<ISampleImg> for GsSampleImage {
+impl ImageInstance<ICombinedImg> for GsCombinedImgSampler {
 
-    fn build(isi: ISampleImg, entity: ImageEntity, desc: ImageInstanceInfoDesc) -> Self where Self: Sized {
-        GsSampleImage { isi, entity, desc }
-    }
-
-    fn sampler(&self) -> Option<&GsSampler> {
-        Some(&self.isi.sampler)
+    fn build(isi: ICombinedImg, entity: ImageEntity, desc: ImageInstanceInfoDesc) -> Self where Self: Sized {
+        GsCombinedImgSampler { isi, entity, desc }
     }
 }
 
-impl GsSampleImage {
+impl GsCombinedImgSampler {
 
     pub fn destroy(&self, device: &GsDevice) {
         self.isi.sampler.destroy(device);
     }
 }
 
-impl ISampleImg {
+impl ICombinedImg {
 
-    pub(super) fn new(sampler: GsSampler, binding: DescriptorBindingContent) -> ISampleImg {
-        ISampleImg { sampler, binding }
+    pub(super) fn new(sampler: GsSampler) -> ICombinedImg {
+        ICombinedImg { sampler }
     }
 }
 
-impl DescriptorImageBindableTarget for GsSampleImage {
+impl DescriptorImageBindableTarget for GsCombinedImgSampler {
 
     fn binding_info(&self) -> DescriptorImageBindingInfo {
 
         DescriptorImageBindingInfo {
-            content        : self.isi.binding.clone(),
+            content        : self.isi.sampler.binding.clone(),
             sampler_handle : self.isi.sampler.handle,
             dst_layout     : vk::ImageLayout::SHADER_READ_ONLY_OPTIMAL,
             view_handle    : self.entity.view,
@@ -65,7 +60,7 @@ impl DescriptorImageBindableTarget for GsSampleImage {
     }
 }
 
-impl ImageCopiable for GsSampleImage {
+impl ImageCopiable for GsCombinedImgSampler {
 
     fn copy_range(&self, subrange: ImageCopySubrange) -> ImageCopyInfo {
 
@@ -78,9 +73,9 @@ impl ImageCopiable for GsSampleImage {
     }
 }
 
-impl IImageConveyor for ISampleImg {
+impl IImageConveyor for ICombinedImg {
 
-    fn sampler(&self) -> Option<GsSampler> {
-        Some(self.sampler.clone())
+    fn sampler_mirror(&self) -> Option<GsSamplerMirror> {
+        Some(self.sampler.mirror())
     }
 }

@@ -2,7 +2,6 @@
 use ash::vk;
 
 use crate::image::entity::ImageEntity;
-use crate::image::sampler::GsSampler;
 use crate::image::utils::{ ImageCopyInfo, ImageCopySubrange };
 use crate::image::instance::desc::ImageInstanceInfoDesc;
 
@@ -14,8 +13,6 @@ pub trait ImageHandleEntity: Sized {
 pub trait ImageInstance<I>: ImageCopiable {
 
     fn build(img: I, entity: ImageEntity, desc: ImageInstanceInfoDesc) -> Self where Self: Sized;
-
-    fn sampler(&self) -> Option<&GsSampler>;
 }
 
 pub trait ImageCopiable: Sized {

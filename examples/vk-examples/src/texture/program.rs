@@ -43,7 +43,7 @@ pub struct VulkanExample {
     desc_storage: GsDescriptorRepository,
 
     #[allow(dead_code)]
-    sample_image: GsSampleImage,
+    sample_image: GsCombinedImgSampler,
     depth_attachment: GsDSAttachment,
     #[allow(dead_code)]
     image_storage   : GsImageRepository<Device>,
@@ -184,7 +184,7 @@ impl VulkanExample {
         Ok((vertex_buffer, index_buffer, vertex_storage, ubo_buffer, ubo_storage))
     }
 
-    fn image(initializer: &AssetInitializer, dimension: vkDim2D) -> GsResult<(GsDSAttachment, GsSampleImage, GsImageRepository<Device>)> {
+    fn image(initializer: &AssetInitializer, dimension: vkDim2D) -> GsResult<(GsDSAttachment, GsCombinedImgSampler, GsImageRepository<Device>)> {
 
         // depth attachment image.
         let mut image_allocator = GsImageAllocator::new(initializer, ImageStorageType::DEVICE);
@@ -194,7 +194,8 @@ impl VulkanExample {
 
         // combine sample image.
         let image_storage = ImageLoader::new(initializer).load_2d(Path::new(TEXTURE_PATH))?;
-        let sampler = GsSampler::new(initializer)
+
+        let sampler = GsSampler::new()
             .filter(vk::Filter::LINEAR, vk::Filter::LINEAR)
             .mipmap(vk::SamplerMipmapMode::LINEAR, vk::SamplerAddressMode::REPEAT, vk::SamplerAddressMode::REPEAT, vk::SamplerAddressMode::REPEAT)
             .anisotropy(Some(16.0))
@@ -202,9 +203,10 @@ impl VulkanExample {
             .compare_op(None)
             .border_color(vk::BorderColor::FLOAT_OPAQUE_WHITE);
         // refer to `layout (binding = 1) uniform sampler2D samplerColor` in texture.frag.
-        let mut sample_image_info = GsSampleImage::new(1, 1, image_storage, ImagePipelineStage::FragmentStage);
+        let mut sample_image_info = GsCombinedImgSampler::new(1, 1, image_storage, ImagePipelineStage::FragmentStage);
         sample_image_info.reset_sampler(sampler);
-        //sample_image_info.set_mipmap(MipmapMethod::StepBlit); // tell engine to generate mipmap automatically in runtime.
+        sample_image_info.set_mipmap(MipmapMethod::StepBlit); // tell engine to generate mipmap automatically in runtime.
+
         let sample_image_index = image_allocator.assign(sample_image_info)?;
 
         let image_distributor = image_allocator.allocate()?;
@@ -217,7 +219,7 @@ impl VulkanExample {
         Ok((depth_attachment, sample_image, image_storage))
     }
 
-    fn ubo(initializer: &AssetInitializer, ubo_buffer: &GsUniformBuffer, sample_image: &GsSampleImage) -> GsResult<(DescriptorSet, GsDescriptorRepository)> {
+    fn ubo(initializer: &AssetInitializer, ubo_buffer: &GsUniformBuffer, sample_image: &GsCombinedImgSampler) -> GsResult<(DescriptorSet, GsDescriptorRepository)> {
 
         // descriptor
         let mut descriptor_set_config = DescriptorSetConfig::new();

@@ -67,14 +67,6 @@ impl<M, I, R> GsAllocatorApi<I, R, GsBufferDistributor<M>> for GsBufferAllocator
 
         Ok(dst_index)
     }
-
-    fn reset(&mut self) {
-
-        self.buffers.iter().for_each(|b| b.destroy(&self.device));
-        self.buffers.clear();
-        self.spaces.clear();
-        self.memory_filter.reset();
-    }
 }
 
 impl<M> GsAllotIntoDistributor<GsBufferDistributor<M>> for GsBufferAllocator<M>
@@ -114,6 +106,14 @@ impl<M> GsAllotIntoDistributor<GsBufferDistributor<M>> for GsBufferAllocator<M>
 
         Ok(distributor)
     }
+
+    fn reset(&mut self) {
+
+        self.buffers.iter().for_each(|b| b.destroy(&self.device));
+        self.buffers.clear();
+        self.spaces.clear();
+        self.memory_filter.reset();
+    }
 }
 
 impl<M> GsBufferAllocator<M>
@@ -145,8 +145,8 @@ impl<M> GsBufferAllocator<M>
 
 pub trait GsBufferAllocatable<M, R>
     where
-        M: BufferMemoryTypeAbs,
-        Self: Sized {
+        Self: Sized,
+        M: BufferMemoryTypeAbs {
 
     fn allot_func(&self) -> Box<dyn Fn(&Self, &mut GsBufferAllocator<M>) -> VkResult<R>>;
 }

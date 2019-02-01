@@ -5,36 +5,34 @@ use crate::core::GsDevice;
 
 use crate::image::target::{ GsImage, ImageTgtCI, ImagePropertyCI, ImageSpecificCI };
 use crate::image::view::{ ImageViewCI, ImageSubRange };
-use crate::image::sampler::{ SamplerCI, SamplerCIBuilder };
 use crate::image::enums::{ ImageInstanceType, ImagePipelineStage };
 use crate::image::storage::ImageStorageInfo;
 use crate::image::instance::traits::{ ImageCIAbstract, ImageTgtCIAbs, ImageViewCIAbs };
-use crate::image::instance::sample::image::{ GsSampleImage, ISampleImg };
-use crate::image::instance::sample::mipmap::MipmapMethod;
+use crate::image::instance::combinedimg::image::{ GsCombinedImgSampler, ICombinedImg };
+use crate::image::instance::combinedimg::mipmap::MipmapMethod;
+use crate::image::instance::sampler::{ GsSampler, SamplerCI };
 use crate::image::allocator::ImageAllotCI;
 
 use crate::descriptor::{ DescriptorBindingContent, GsDescriptorType, ImageDescriptorType };
 
 use crate::error::{ VkResult, VkError };
-use crate::types::{ vkuint, vkfloat };
+use crate::types::vkuint;
 
-
-/// Sample Image Create Info.
-pub struct SampleImageCI {
+/// Combined Image Sampler Create Info.
+pub struct CombinedImgSamplerCI {
 
     pipeline_stage: ImagePipelineStage,
     image_ci: ImageTgtCI,
     view_ci : ImageViewCI,
 
     sampler_ci: SamplerCI,
-    binding: DescriptorBindingContent,
 
     storage: ImageStorageInfo,
 }
 
-impl GsSampleImage {
+impl GsCombinedImgSampler {
 
-    pub fn new(binding: vkuint, count: vkuint, storage: ImageStorageInfo, pipeline_stage: ImagePipelineStage) -> SampleImageCI {
+    pub fn new(binding: vkuint, count: vkuint, storage: ImageStorageInfo, pipeline_stage: ImagePipelineStage) -> CombinedImgSamplerCI {
 
         let mut property = ImagePropertyCI::default();
         property.image_type = vk::ImageType::TYPE_2D;
@@ -46,24 +44,21 @@ impl GsSampleImage {
         specific.format    = storage.format;
         specific.dimension = storage.dimension;
 
-        SampleImageCI {
-            pipeline_stage, storage,
+        let mut sampler_ci = GsSampler::new();
+        sampler_ci.reset_binding(DescriptorBindingContent {
+            binding, count,
+            descriptor_type: GsDescriptorType::Image(ImageDescriptorType::CombinedImageSampler),
+        });
+
+        CombinedImgSamplerCI {
+            pipeline_stage, storage, sampler_ci,
             image_ci: ImageTgtCI { property, specific },
             view_ci : ImageViewCI::new(vk::ImageViewType::TYPE_2D, vk::ImageAspectFlags::COLOR),
-            sampler_ci: SamplerCI::default(),
-            binding: DescriptorBindingContent {
-                binding, count,
-                descriptor_type: GsDescriptorType::Image(ImageDescriptorType::CombinedImageSampler)
-            },
         }
     }
 }
 
-impl SampleImageCI {
-
-    pub fn reset_sampler(&mut self, builder: SamplerCIBuilder) {
-        self.sampler_ci = builder.take();
-    }
+impl CombinedImgSamplerCI {
 
     pub fn set_mipmap(&mut self, method: MipmapMethod) {
         self.image_ci.property.mipmap = method;
@@ -72,7 +67,6 @@ impl SampleImageCI {
             | MipmapMethod::Disable => {
                 self.image_ci.property.usages = vk::ImageUsageFlags::SAMPLED | vk::ImageUsageFlags::TRANSFER_DST;
                 self.image_ci.property.mip_levels = 1;
-                self.sampler_ci.0.max_lod = 0.0;
                 self.view_ci.subrange.0.base_mip_level = 0;
                 self.view_ci.subrange.0.level_count    = 1;
             },
@@ -82,11 +76,14 @@ impl SampleImageCI {
 
                 self.image_ci.property.usages = vk::ImageUsageFlags::SAMPLED | vk::ImageUsageFlags::TRANSFER_SRC | vk::ImageUsageFlags::TRANSFER_DST;
                 self.image_ci.property.mip_levels = mip_level;
-                self.sampler_ci.0.max_lod = mip_level as vkfloat;
                 self.view_ci.subrange.0.base_mip_level = 0;
                 self.view_ci.subrange.0.level_count    = mip_level;
             },
         }
+    }
+
+    pub fn reset_sampler(&mut self, sampler_ci: SamplerCI) {
+        self.sampler_ci.reset_ci(sampler_ci);
     }
 
     pub fn estimate_mip_levels(&self) -> vkuint {
@@ -97,7 +94,7 @@ impl SampleImageCI {
     }
 }
 
-impl ImageCIAbstract<ISampleImg> for SampleImageCI {
+impl ImageCIAbstract<ICombinedImg> for CombinedImgSamplerCI {
 
     fn check_physical_support(&self, device: &GsDevice) -> VkResult<()> {
 
@@ -112,10 +109,10 @@ impl ImageCIAbstract<ISampleImg> for SampleImageCI {
         self.image_ci.build(device)
     }
 
-    fn refactor(self, device: &GsDevice, image: GsImage) -> VkResult<(ImageAllotCI, ISampleImg)> {
+    fn refactor(self, device: &GsDevice, image: GsImage) -> VkResult<(ImageAllotCI, ICombinedImg)> {
 
         let sampler = self.sampler_ci.build(device)?;
-        let isi = ISampleImg::new(sampler, self.binding);
+        let isi = ICombinedImg::new(sampler);
 
         let allot_cis = ImageAllotCI::new(
             ImageInstanceType::SampleImage { stage: self.pipeline_stage },
@@ -126,4 +123,4 @@ impl ImageCIAbstract<ISampleImg> for SampleImageCI {
     }
 }
 
-impl_image_desc_info_abs!(SampleImageCI);
+impl_image_desc_info_abs!(CombinedImgSamplerCI);

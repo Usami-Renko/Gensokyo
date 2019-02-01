@@ -53,7 +53,7 @@ struct TextureMappingProcedure {
     #[allow(dead_code)]
     image_storage : GsImageRepository<Device>,
     #[allow(dead_code)]
-    sample_image  : GsSampleImage,
+    sample_image  : GsCombinedImgSampler,
 
     graphics_pipeline: GsPipeline<Graphics>,
 
@@ -123,12 +123,12 @@ impl TextureMappingProcedure {
         Ok((vertex_buffer, vertex_storage))
     }
 
-    fn image_sampler(initializer: &AssetInitializer) -> GsResult<(GsSampleImage, GsImageRepository<Device>)> {
+    fn image_sampler(initializer: &AssetInitializer) -> GsResult<(GsCombinedImgSampler, GsImageRepository<Device>)> {
 
         let image_loader = ImageLoader::new(initializer);
         let image_storage_info = image_loader.load_2d(Path::new(TEXTURE_PATH))?;
 
-        let image_info = GsSampleImage::new(0, 1, image_storage_info, ImagePipelineStage::FragmentStage);
+        let image_info = GsCombinedImgSampler::new(0, 1, image_storage_info, ImagePipelineStage::FragmentStage);
 
         let mut image_allocator = GsImageAllocator::new(initializer, ImageStorageType::DEVICE);
         let image_index = image_allocator.assign(image_info)?;
@@ -141,7 +141,7 @@ impl TextureMappingProcedure {
         Ok((sample_image, image_storage))
     }
 
-    fn descriptor(initializer: &AssetInitializer, sample_image: &GsSampleImage) -> GsResult<(DescriptorSet, GsDescriptorRepository)> {
+    fn descriptor(initializer: &AssetInitializer, sample_image: &GsCombinedImgSampler) -> GsResult<(DescriptorSet, GsDescriptorRepository)> {
 
         let mut descriptor_set_config = DescriptorSetConfig::new();
         descriptor_set_config.add_image_binding(sample_image, GsPipelineStage::FRAGMENT);

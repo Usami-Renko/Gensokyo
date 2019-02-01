@@ -193,7 +193,7 @@ impl VulkanExample {
         Ok((model_entity, model_repository, [cube0_ubo, cube1_ubo], ubo_repository))
     }
 
-    fn ubo(initializer: &AssetInitializer, model: &GsglTFEntity, textures: &[GsSampleImage; 2], ubo_buffers: &[GsUniformBuffer; 2]) -> GsResult<([DescriptorSet; 2], GsDescriptorRepository)> {
+    fn ubo(initializer: &AssetInitializer, model: &GsglTFEntity, textures: &[GsCombinedImgSampler; 2], ubo_buffers: &[GsUniformBuffer; 2]) -> GsResult<([DescriptorSet; 2], GsDescriptorRepository)> {
 
         let mut descriptor_allocator = GsDescriptorAllocator::new(initializer);
 
@@ -221,7 +221,7 @@ impl VulkanExample {
         Ok(([cube0_ubo_set, cube1_ubo_set], desc_storage))
     }
 
-    fn image(initializer: &AssetInitializer, dimension: vkDim2D) -> GsResult<([GsSampleImage; 2], GsDSAttachment, GsImageRepository<Device>)> {
+    fn image(initializer: &AssetInitializer, dimension: vkDim2D) -> GsResult<([GsCombinedImgSampler; 2], GsDSAttachment, GsImageRepository<Device>)> {
 
         let mut image_allocator = GsImageAllocator::new(initializer, ImageStorageType::DEVICE);
 
@@ -234,8 +234,8 @@ impl VulkanExample {
         let image_storage1 = image_loader.load_2d(Path::new(TEXTURE1_PATH))?; // texture 1 for cube 1
         let image_storage2 = image_loader.load_2d(Path::new(TEXTURE2_PATH))?; // texture 2 for cube 2
         // refer to `layout (set = 0, binding = 2) sampler2D samplerColorMap` in cube.frag. Accessible from the fragment shader only.
-        let image_info1 = GsSampleImage::new(2, 1, image_storage1, ImagePipelineStage::FragmentStage);
-        let image_info2 = GsSampleImage::new(2, 1, image_storage2, ImagePipelineStage::FragmentStage);
+        let image_info1 = GsCombinedImgSampler::new(2, 1, image_storage1, ImagePipelineStage::FragmentStage);
+        let image_info2 = GsCombinedImgSampler::new(2, 1, image_storage2, ImagePipelineStage::FragmentStage);
         let sample_image_index1 = image_allocator.assign(image_info1)?;
         let sample_image_index2 = image_allocator.assign(image_info2)?;
 

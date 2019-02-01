@@ -4,7 +4,7 @@ use ash::vk;
 use crate::core::GsDevice;
 
 use crate::image::target::GsImage;
-use crate::image::sampler::GsSampler;
+use crate::image::instance::sampler::GsSamplerMirror;
 use crate::image::view::ImageSubRange;
 use crate::image::allocator::ImageAllotCI;
 use crate::memory::transfer::DataCopyer;
@@ -55,5 +55,5 @@ pub trait ImageBarrierBundleAbs {
 
 pub trait IImageConveyor {
 
-    fn sampler(&self) -> Option<GsSampler>;
+    fn sampler_mirror(&self) -> Option<GsSamplerMirror>;
 }

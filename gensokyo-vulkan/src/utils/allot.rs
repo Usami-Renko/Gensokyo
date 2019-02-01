@@ -18,12 +18,12 @@ pub trait GsAllocatorApi<I, R, D>: GsAllotIntoDistributor<D> + Sized {
     type AssignResult;
 
     fn assign(&mut self, info: I) -> Self::AssignResult;
-    fn reset(&mut self);
 }
 
 pub trait GsAllotIntoDistributor<D> {
 
     fn allocate(self) -> VkResult<D>;
+    fn reset(&mut self);
 }
 
 pub trait GsDistributeApi<R, T, S>: GsDistIntoRepository<S> + Sized {

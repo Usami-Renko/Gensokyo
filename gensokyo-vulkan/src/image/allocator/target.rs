@@ -7,13 +7,14 @@ use crate::image::target::{ GsImage, ImageTgtCI };
 use crate::image::view::ImageViewCI;
 use crate::image::enums::ImageInstanceType;
 use crate::image::traits::ImageCopiable;
-use crate::image::sampler::GsSampler;
 use crate::image::utils::{ ImageCopyInfo, ImageCopySubrange };
 use crate::image::storage::ImageStorageInfo;
 use crate::image::instance::traits::{ ImageCIAbstract, ImageBarrierBundleAbs };
 use crate::image::instance::desc::ImageInstanceInfoDesc;
-use crate::image::instance::sample::SampleImageBarrierBundle;
+use crate::image::instance::combinedimg::SampleImageBarrierBundle;
+use crate::image::instance::sampler::{ GsSampler, SamplerCI };
 use crate::image::instance::depth::DSImageBarrierBundle;
+use crate::image::instance::sampler::GsSamplerMirror;
 use crate::image::instance::traits::IImageConveyor;
 use crate::image::allocator::types::ImageMemoryTypeAbs;
 use crate::image::allocator::distributor::GsImageDistributor;
@@ -37,10 +38,10 @@ pub struct GsImageAllocator<M>
     phantom_type: PhantomData<M>,
     storage_type: M,
 
-    device  : GsDevice,
+    device: GsDevice,
 
     image_infos: Vec<ImageAllotCI>,
-    samplers: HashSet<GsSampler>,
+    samplers: HashSet<GsSamplerMirror>,
 
     memory_filter: MemoryFilter,
 }
@@ -68,7 +69,7 @@ impl<M, I, R> GsAllocatorApi<I, R, GsImageDistributor<M>> for GsImageAllocator<M
         // `message` contains the information used after allocation about the image itself.
         let (image_info, message) = ci.refactor(&self.device, image)?;
 
-        if let Some(sampler) = message.sampler() {
+        if let Some(sampler) = message.sampler_mirror() {
             self.samplers.insert(sampler);
         }
 
@@ -81,12 +82,20 @@ impl<M, I, R> GsAllocatorApi<I, R, GsImageDistributor<M>> for GsImageAllocator<M
 
         Ok(dst_index)
     }
+}
 
-    fn reset(&mut self) {
+impl<M> GsAllocatorApi<SamplerCI, (), GsImageDistributor<M>> for GsImageAllocator<M>
+    where
+        M: ImageMemoryTypeAbs {
 
-        self.image_infos.iter().for_each(|ci| ci.destroy(&self.device));
-        self.image_infos.clear();
-        self.memory_filter.reset();
+    type AssignResult = VkResult<GsSampler>;
+
+    fn assign(&mut self, ci: SamplerCI) -> Self::AssignResult {
+
+        let sampler = ci.build(&self.device)?;
+        self.samplers.insert(sampler.mirror());
+
+        Ok(sampler)
     }
 }
 
@@ -131,6 +140,13 @@ impl<M> GsAllotIntoDistributor<GsImageDistributor<M>> for GsImageAllocator<M>
 
         // final done.
         GsImageDistributor::new(self.phantom_type, self.device, self.image_infos, self.samplers, memory)
+    }
+
+    fn reset(&mut self) {
+
+        self.image_infos.iter().for_each(|ci| ci.destroy(&self.device));
+        self.image_infos.clear();
+        self.memory_filter.reset();
     }
 }
 

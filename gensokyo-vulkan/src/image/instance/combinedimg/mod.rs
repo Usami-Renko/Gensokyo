@@ -1,6 +1,6 @@
 
-pub use self::image::{ GsSampleImage, ISampleImg };
-pub use self::ci::SampleImageCI;
+pub use self::image::{ GsCombinedImgSampler, ICombinedImg };
+pub use self::ci::CombinedImgSamplerCI;
 pub use self::barrier::SampleImageBarrierBundle;
 pub use self::mipmap::MipmapMethod;
 

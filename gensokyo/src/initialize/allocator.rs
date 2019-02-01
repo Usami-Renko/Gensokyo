@@ -6,7 +6,6 @@ use gsvk::image::allocator::GsImageAllocator;
 use gsvk::image::allocator::types::ImageMemoryTypeAbs;
 
 use gsvk::descriptor::allocator::GsDescriptorAllocator;
-use gsvk::image::{ GsSampler, SamplerCIBuilder };
 
 use crate::assets::glTF::importer::GsglTFImporter;
 use crate::assets::io::ImageLoader;
@@ -50,12 +49,5 @@ impl FromInitializer for GsglTFImporter {
 
     fn new(initializer: &AssetInitializer) -> GsglTFImporter {
         GsglTFImporter { device: initializer.device.clone() }
-    }
-}
-
-impl FromInitializer<SamplerCIBuilder> for GsSampler {
-
-    fn new(initializer: &AssetInitializer) -> SamplerCIBuilder {
-        GsSampler::construct(&initializer.device)
     }
 }
