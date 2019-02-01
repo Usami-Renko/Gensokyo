@@ -16,4 +16,4 @@ pub use crate::image::MipmapMethod;
 pub use crate::image::ImagePipelineStage;
 pub use crate::image::DepthStencilImageFormat;
 
-pub use crate::image::instance::traits::ImageCICommonApi;
+pub use crate::image::instance::traits::{ ImageCICommonApi, ImageTgtCIApi, ImageViewCIApi };

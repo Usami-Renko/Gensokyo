@@ -147,7 +147,7 @@ impl VulkanExample {
         let mut ubo_allocator = GsBufferAllocator::new(initializer, BufferStorageType::HOST);
 
         // allocate uniform data buffer.
-        // refer to `layout (binding = 0) uniform UBO` in pbr.frag.
+        // refer to `layout (binding = 0) uniform UBO` in pbr.frag.glsl.
         let ubo_vertex_info = GsUniformBuffer::new(0, 1, data_size!(UBOVS));
         let ubo_vertex_index = ubo_allocator.assign(ubo_vertex_info)?;
 

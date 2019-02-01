@@ -113,10 +113,10 @@ impl GsBackendImage {
 
     pub fn check_mipmap_support(&self, device: &GsDevice) -> VkResult<()> {
 
-        if self.image_ci.property.mipmap.is_support_by_device(device, &self.image_ci)? {
-            Ok(())
-        } else {
-            Err(VkError::other(format!("vk::Format: {:?} is not support for mipmap generation", self.image_ci.specific.format)))
+        if self.image_ci.property.mipmap.is_support_by_device(device, &self.image_ci)? == false {
+            return Err(VkError::other(format!("vk::Format: {:?} is not support for mipmap generation", self.image_ci.specific.format)))
         }
+
+        Ok(())
     }
 }

@@ -7,7 +7,6 @@ use crate::core::GsDevice;
 use crate::descriptor::DescriptorBindingContent;
 use crate::descriptor::{ DescriptorImageBindingInfo, DescriptorImageBindableTarget };
 
-
 pub struct GsSampler {
 
     pub(crate) handle : vk::Sampler,

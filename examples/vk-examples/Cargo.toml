@@ -49,6 +49,12 @@ name = "texture"
 path = "src/texture/main.rs"
 # -----------------------------------------------------
 
+#  Advanced -------------------------------------------
+[[bin]]
+name = "texturemipmapgen"
+path = "src/texturemipmapgen/main.rs"
+# -----------------------------------------------------
+
 # Physically Based Rendering --------------------------
 [[bin]]
 name = "pbrbasic"

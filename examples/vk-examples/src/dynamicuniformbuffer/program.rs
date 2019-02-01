@@ -172,11 +172,11 @@ impl VulkanExample {
         let index_info = GsIndexBuffer::new(INDEX_DATA.len());
         let index_index = vertex_allocator.assign(index_info)?;
 
-        // refer to `layout (set = 0, binding = 0) uniform UboView` in base.vert.
+        // refer to `layout (set = 0, binding = 0) uniform UboView` in base.vert.gls,.
         let ubo_view_info = GsUniformBuffer::new(0, 1, data_size!(UboView));
         let ubo_view_index = ubo_allocator.assign(ubo_view_info)?;
 
-        // refer to `layout (set = 0, binding = 1) uniform UboInstance` in base.vert.
+        // refer to `layout (set = 0, binding = 1) uniform UboInstance` in base.vert.glsl.
         let ubo_instance_info = GsUniformBuffer::new_dyn(1, 1, data_size!(Matrix4F), OBJECT_INSTANCE);
         let ubo_instance_index = ubo_allocator.assign(ubo_instance_info)?;
 

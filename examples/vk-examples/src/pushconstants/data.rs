@@ -53,7 +53,7 @@ pub struct UBOVS {
     pub y_correction: Matrix4<f32>,
 }
 
-/// The data structure of push constant block define in lights.vert
+/// The data structure of push constant block define in lights.vert.glsl
 #[derive(Clone, Serialize)]
 #[repr(C)]
 pub struct PushConstants {

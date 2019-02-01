@@ -131,13 +131,14 @@ impl VulkanExample {
 
         Ok(())
     }
+
     fn load_model(initializer: &AssetInitializer, ubo_data: &Vec<UBOVS>) -> GsResult<(GsglTFEntity, GsBufferRepository<Device>, GsUniformBuffer, GsBufferRepository<Host>)> {
 
         let mut model_allocator = GsBufferAllocator::new(initializer, BufferStorageType::DEVICE);
         let mut ubo_allocator = GsBufferAllocator::new(initializer, BufferStorageType::HOST);
 
         // allocate uniform data buffer.
-        // refer to `layout (binding = 0) uniform UBO` in phong.vert, toon.vert or wireframe.vert.
+        // refer to `layout (binding = 0) uniform UBO` in phong.vert.glsl, toon.vert.glsl or wireframe.vert.glsl.
         let ubo_vertex_info = GsUniformBuffer::new(0, 1, data_size!(UBOVS));
         let ubo_vertex_index = ubo_allocator.assign(ubo_vertex_info)?;
 

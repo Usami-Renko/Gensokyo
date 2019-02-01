@@ -195,10 +195,10 @@ impl VulkanExample {
         let mut ubo_allocator = GsBufferAllocator::new(initializer, BufferStorageType::HOST);
 
         // allocate uniform data buffer.
-        // refer to `layout (binding = 0) uniform UBO` in pbr.frag.
+        // refer to `layout (binding = 0) uniform UBO` in pbr.frag.glsl.
         let ubo_matrix_info = GsUniformBuffer::new(0, 1, data_size!(UBOMatrices));
         let ubo_matrix_index = ubo_allocator.assign(ubo_matrix_info)?;
-        // refer to `layout (binding = 1) uniform UBOShared` in pbr.frag.
+        // refer to `layout (binding = 1) uniform UBOShared` in pbr.frag.glsl.
         let ubo_params_info = GsUniformBuffer::new(1, 1, data_size!(UboParams));
         let ubo_params_index = ubo_allocator.assign(ubo_params_info)?;
 
@@ -215,9 +215,9 @@ impl VulkanExample {
     fn push_constants() -> GsResult<Vec<GsPushConstantRange>> {
 
         let ranges = vec![
-            // refer to `layout(push_constant) uniform PushConsts` in pbr.vert.
+            // refer to `layout(push_constant) uniform PushConsts` in pbr.vert.glsl.
             GsPushConstantRange::new(GsPipelineStage::VERTEX, 0, data_size!(Vector3F)),
-            // refer to `layout(push_constant) uniform PushConsts` in pbr.frag.
+            // refer to `layout(push_constant) uniform PushConsts` in pbr.frag.glsl.
             GsPushConstantRange::new(GsPipelineStage::FRAGMENT, data_size!(Vector3F), data_size!(MaterialPushBlock)),
         ];
 
@@ -372,7 +372,7 @@ impl VulkanExample {
         for y in 0..GRID_DIM {
             for x in 0..GRID_DIM {
 
-                // upload push constant in pbr.vert.
+                // upload push constant in pbr.vert.glsl.
                 let pos = ObjPosPushBlock {
                     pos: [((x as f32) - (GRID_DIM as f32 / 2.0)) * 2.5, 0.0, 0.0],
                 };
@@ -380,7 +380,7 @@ impl VulkanExample {
                 let pos_size = data_size!(pos_data, u8);
                 recorder.push_constants(GsPipelineStage::VERTEX, 0, &pos_data);
 
-                // upload push constant in pbr.frag.
+                // upload push constant in pbr.frag.glsl.
                 mat.metallic  = nalgebra::clamp(x as f32 / (GRID_DIM - 1) as f32,  0.1, 1.0);
                 mat.roughness = nalgebra::clamp(y as f32 / (GRID_DIM - 1) as f32, 0.05, 1.0);
 

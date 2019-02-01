@@ -140,7 +140,7 @@ impl VulkanExample {
         let index_info = GsIndexBuffer::new(INDEX_DATA.len());
         let index_index = vertex_allocator.assign(index_info)?;
 
-        // refer to `layout (binding = 0) uniform UBO` in triangle.vert.
+        // refer to `layout (binding = 0) uniform UBO` in triangle.vert.glsl.
         let ubo_info = GsUniformBuffer::new(0, 1, data_size!(UboObject));
         let ubo_index = ubo_allocator.assign(ubo_info)?;
 

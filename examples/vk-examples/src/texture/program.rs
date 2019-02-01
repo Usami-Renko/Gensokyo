@@ -158,7 +158,7 @@ impl VulkanExample {
         let index_info = GsIndexBuffer::new(INDEX_DATA.len());
         let index_index = vertex_allocator.assign(index_info)?;
 
-        // refer to `layout (binding = 0) uniform UBO` in texture.vert.
+        // refer to `layout (binding = 0) uniform UBO` in texture.vert.glsl.
         let ubo_info = GsUniformBuffer::new(0, 1, data_size!(UBOVS));
         let ubo_index = ubo_allocator.assign(ubo_info)?;
 
@@ -192,7 +192,7 @@ impl VulkanExample {
         let depth_attachment_info = GsDSAttachment::new(dimension, DepthStencilImageFormat::Depth32Bit);
         let depth_image_index = image_allocator.assign(depth_attachment_info)?;
 
-        // combine sample image.
+        // combined image sampler.
         let image_storage = ImageLoader::new(initializer).load_2d(Path::new(TEXTURE_PATH))?;
 
         let sampler = GsSampler::new()
@@ -202,7 +202,7 @@ impl VulkanExample {
             .lod(0.0, 0.0, 1.0)
             .compare_op(None)
             .border_color(vk::BorderColor::FLOAT_OPAQUE_WHITE);
-        // refer to `layout (binding = 1) uniform sampler2D samplerColor` in texture.frag.
+        // refer to `layout (binding = 1) uniform sampler2D samplerColor` in texture.frag.glsl.
         let mut sample_image_info = GsCombinedImgSampler::new(1, 1, image_storage, ImagePipelineStage::FragmentStage);
         sample_image_info.reset_sampler(sampler);
         sample_image_info.set_mipmap(MipmapMethod::StepBlit); // tell engine to generate mipmap automatically in runtime.

@@ -10,6 +10,7 @@ use crate::descriptor::{ DescriptorBindingContent, GsDescriptorType, ImageDescri
 use crate::types::{ vkuint, vkfloat, VK_TRUE, VK_FALSE };
 use crate::error::{ VkResult, VkError };
 
+#[derive(Debug, Clone)]
 pub struct SamplerCI {
 
     binding: Option<DescriptorBindingContent>,

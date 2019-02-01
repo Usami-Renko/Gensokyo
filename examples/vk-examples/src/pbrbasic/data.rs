@@ -60,13 +60,13 @@ pub struct UboParams {
     lights: [Vector4<f32>; 4],
 }
 
-/// The data structure of push constant block define in pbr.vert
+/// The data structure of push constant block define in pbr.vert.glsl
 #[derive(Default, Clone, Serialize)]
 pub struct ObjPosPushBlock {
     pub pos: [f32; 3],
 }
 
-/// The data structure of push constant block defined in pbr.frag.
+/// The data structure of push constant block defined in pbr.frag.glsl.
 #[derive(Default, Clone, Serialize)]
 pub struct MaterialPushBlock {
 
