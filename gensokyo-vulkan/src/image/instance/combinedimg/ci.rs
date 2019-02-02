@@ -14,7 +14,8 @@ use crate::image::instance::api::ImageCIInheritApi;
 use crate::image::instance::sampler::{ GsSampler, SamplerCI };
 use crate::image::allocator::ImageAllotCI;
 
-use crate::descriptor::{ DescriptorBindingContent, GsDescriptorType, ImageDescriptorType };
+use crate::descriptor::binding::DescriptorMeta;
+use crate::descriptor::{ GsDescriptorType, ImageDescriptorType };
 
 use crate::error::VkResult;
 use crate::types::vkuint;
@@ -30,7 +31,7 @@ pub struct CombinedImgSamplerCI {
 
 impl GsCombinedImgSampler {
 
-    pub fn new(binding: vkuint, count: vkuint, storage: ImageStorageInfo, pipeline_stage: ImagePipelineStage) -> CombinedImgSamplerCI {
+    pub fn new(binding: vkuint, storage: ImageStorageInfo, pipeline_stage: ImagePipelineStage) -> CombinedImgSamplerCI {
 
         let mut backend = GsBackendImage::from(storage);
         backend.image_ci.property.image_type = vk::ImageType::TYPE_2D;
@@ -39,8 +40,8 @@ impl GsCombinedImgSampler {
         backend.image_ci.property.mipmap = MipmapMethod::Disable; // default to disable mipmap generation.
 
         let mut sampler_ci = GsSampler::new();
-        sampler_ci.reset_binding(DescriptorBindingContent {
-            binding, count,
+        sampler_ci.reset_descriptor(DescriptorMeta {
+            binding,
             descriptor_type: GsDescriptorType::Image(ImageDescriptorType::CombinedImageSampler),
         });
 

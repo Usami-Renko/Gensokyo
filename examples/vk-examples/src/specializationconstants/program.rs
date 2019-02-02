@@ -140,7 +140,7 @@ impl VulkanExample {
 
         // allocate uniform data buffer.
         // refer to `layout (set = 0, binding = 0) uniform UBO` in uber.vert.glsl.
-        let ubo_matrix_info = GsUniformBuffer::new(0, 1, data_size!(UBOVS));
+        let ubo_matrix_info = GsUniformBuffer::new(0, data_size!(UBOVS));
         let ubo_matrix_index1 = ubo_allocator.assign(ubo_matrix_info)?;
 
         // allocate model data buffer.
@@ -203,7 +203,7 @@ impl VulkanExample {
         // Combined Sample Image
         let image_storage = ImageLoader::new(initializer).load_2d(Path::new(TEXTURE_PATH))?; // texture.
         // refer to `layout (set = 0, binding = 2) sampler2D samplerColorMap` in uber.frag.glsl. Accessible from the fragment shader only.
-        let image_info = GsCombinedImgSampler::new(2, 1, image_storage, ImagePipelineStage::FragmentStage);
+        let image_info = GsCombinedImgSampler::new(2, image_storage, ImagePipelineStage::FragmentStage);
         let sample_image_index = image_allocator.assign(image_info)?;
 
         let image_distributor = image_allocator.allocate()?;

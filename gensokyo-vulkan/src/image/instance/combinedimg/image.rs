@@ -7,7 +7,7 @@ use crate::image::utils::{ ImageCopyInfo, ImageCopySubrange };
 use crate::image::instance::sampler::{ GsSampler, GsSamplerMirror };
 use crate::image::instance::traits::{ IImageConveyor, ImageInstanceInfoDesc };
 
-use crate::descriptor::{ DescriptorImageBindingInfo, DescriptorImageBindableTarget };
+use crate::descriptor::binding::{ DescriptorBindingImgInfo, DescriptorBindingImgTgt };
 
 /// Wrapper class of Combined Image Sampler in Vulkan.
 pub struct GsCombinedImgSampler {
@@ -39,12 +39,12 @@ impl ICombinedImg {
     }
 }
 
-impl DescriptorImageBindableTarget for GsCombinedImgSampler {
+impl DescriptorBindingImgTgt for GsCombinedImgSampler {
 
-    fn binding_info(&self) -> DescriptorImageBindingInfo {
+    fn binding_info(&self) -> DescriptorBindingImgInfo {
 
-        DescriptorImageBindingInfo {
-            content        : self.isi.sampler.binding.clone(),
+        DescriptorBindingImgInfo {
+            meta           : self.isi.sampler.descriptor.clone(),
             sampler_handle : self.isi.sampler.handle,
             dst_layout     : vk::ImageLayout::SHADER_READ_ONLY_OPTIMAL,
             view_handle    : self.entity.view,

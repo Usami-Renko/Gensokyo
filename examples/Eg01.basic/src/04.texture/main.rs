@@ -128,7 +128,7 @@ impl TextureMappingProcedure {
         let image_loader = ImageLoader::new(initializer);
         let image_storage_info = image_loader.load_2d(Path::new(TEXTURE_PATH))?;
 
-        let image_info = GsCombinedImgSampler::new(0, 1, image_storage_info, ImagePipelineStage::FragmentStage);
+        let image_info = GsCombinedImgSampler::new(0, image_storage_info, ImagePipelineStage::FragmentStage);
 
         let mut image_allocator = GsImageAllocator::new(initializer, ImageStorageType::DEVICE);
         let image_index = image_allocator.assign(image_info)?;

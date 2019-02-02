@@ -7,8 +7,8 @@ use crate::image::utils::{ ImageCopyInfo, ImageCopySubrange };
 use crate::image::instance::sampler::GsSamplerMirror;
 use crate::image::instance::traits::{ IImageConveyor, ImageInstanceInfoDesc };
 
-use crate::descriptor::DescriptorBindingContent;
-use crate::descriptor::{ DescriptorImageBindingInfo, DescriptorImageBindableTarget };
+use crate::descriptor::binding::DescriptorMeta;
+use crate::descriptor::binding::{ DescriptorBindingImgInfo, DescriptorBindingImgTgt };
 
 /// Wrapper class of Sampled Image in Vulkan.
 pub struct GsSampledImage {
@@ -21,7 +21,7 @@ pub struct GsSampledImage {
 
 pub struct ISampledImg {
 
-    binding: DescriptorBindingContent,
+    descriptor: DescriptorMeta,
 }
 
 impl ImageInstance<ISampledImg> for GsSampledImage {
@@ -31,12 +31,12 @@ impl ImageInstance<ISampledImg> for GsSampledImage {
     }
 }
 
-impl DescriptorImageBindableTarget for GsSampledImage {
+impl DescriptorBindingImgTgt for GsSampledImage {
 
-    fn binding_info(&self) -> DescriptorImageBindingInfo {
+    fn binding_info(&self) -> DescriptorBindingImgInfo {
 
-        DescriptorImageBindingInfo {
-            content        : self.isi.binding.clone(),
+        DescriptorBindingImgInfo {
+            meta           : self.isi.descriptor.clone(),
             sampler_handle : vk::Sampler::null(),
             dst_layout     : vk::ImageLayout::SHADER_READ_ONLY_OPTIMAL,
             view_handle    : self.entity.view,
@@ -66,7 +66,7 @@ impl IImageConveyor for ISampledImg {
 
 impl ISampledImg {
 
-    pub(super) fn new(binding: DescriptorBindingContent) -> ISampledImg {
-        ISampledImg { binding }
+    pub(super) fn new(descriptor: DescriptorMeta) -> ISampledImg {
+        ISampledImg { descriptor }
     }
 }

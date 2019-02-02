@@ -215,7 +215,7 @@ impl GsCmdGraphicsApi for GsCmdRecorder<Graphics> {
 
     fn bind_descriptor_sets(&self, first_set: vkuint, sets: &[&DescriptorSet]) -> &Self {
 
-        let handles = collect_handle!(sets, entity);
+        let handles = collect_handle!(sets);
         unsafe {
             self.device.logic.handle.cmd_bind_descriptor_sets(self.cmd_handle, Graphics::BIND_POINT, self.pipeline_layout, first_set, &handles, &[]);
         } self
@@ -223,7 +223,7 @@ impl GsCmdGraphicsApi for GsCmdRecorder<Graphics> {
 
     fn bind_descriptor_sets_dynamic(&self, first_set: vkuint, sets: &[&DescriptorSet], dynamics: &[vkuint]) -> &Self {
 
-        let handles = collect_handle!(sets, entity);
+        let handles = collect_handle!(sets);
         unsafe {
             self.device.logic.handle.cmd_bind_descriptor_sets(self.cmd_handle, Graphics::BIND_POINT, self.pipeline_layout, first_set, &handles, dynamics);
         } self

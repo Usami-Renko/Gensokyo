@@ -157,7 +157,7 @@ impl VulkanExample {
 
         // allocate uniform data buffer.
         // refer to `layout (set = 0, binding = 0) uniform UBO` in cube.vert.
-        let ubo_matrix_info1 = GsUniformBuffer::new(0, 1, data_size!(UBOMatrices));
+        let ubo_matrix_info1 = GsUniformBuffer::new(0, data_size!(UBOMatrices));
         let ubo_matrix_info2 = ubo_matrix_info1.clone();
         let ubo_matrix_index1 = ubo_allocator.assign(ubo_matrix_info1)?; // ubo buffer for cube 0
         let ubo_matrix_index2 = ubo_allocator.assign(ubo_matrix_info2)?; // ubo buffer for cube 1
@@ -234,8 +234,8 @@ impl VulkanExample {
         let image_storage1 = image_loader.load_2d(Path::new(TEXTURE1_PATH))?; // texture 1 for cube 1
         let image_storage2 = image_loader.load_2d(Path::new(TEXTURE2_PATH))?; // texture 2 for cube 2
         // refer to `layout (set = 0, binding = 2) sampler2D samplerColorMap` in cube.frag.glsl. Accessible from the fragment shader only.
-        let image_info1 = GsCombinedImgSampler::new(2, 1, image_storage1, ImagePipelineStage::FragmentStage);
-        let image_info2 = GsCombinedImgSampler::new(2, 1, image_storage2, ImagePipelineStage::FragmentStage);
+        let image_info1 = GsCombinedImgSampler::new(2, image_storage1, ImagePipelineStage::FragmentStage);
+        let image_info2 = GsCombinedImgSampler::new(2, image_storage2, ImagePipelineStage::FragmentStage);
         let sample_image_index1 = image_allocator.assign(image_info1)?;
         let sample_image_index2 = image_allocator.assign(image_info2)?;
 

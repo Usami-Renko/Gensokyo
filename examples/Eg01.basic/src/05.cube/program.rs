@@ -131,7 +131,7 @@ impl CubeProcedure {
         let index_info = GsIndexBuffer::new(index_data.len());
         let index_index = buffer_allocator.assign(index_info)?;
         
-        let ubo_info = GsUniformBuffer::new(0, 1, data_size!(UboObject));
+        let ubo_info = GsUniformBuffer::new(0, data_size!(UboObject));
         let ubo_index = buffer_allocator.assign(ubo_info)?;
 
         let buffer_distributor = buffer_allocator.allocate()?;

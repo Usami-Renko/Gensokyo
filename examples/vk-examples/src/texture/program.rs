@@ -159,7 +159,7 @@ impl VulkanExample {
         let index_index = vertex_allocator.assign(index_info)?;
 
         // refer to `layout (binding = 0) uniform UBO` in texture.vert.glsl.
-        let ubo_info = GsUniformBuffer::new(0, 1, data_size!(UBOVS));
+        let ubo_info = GsUniformBuffer::new(0, data_size!(UBOVS));
         let ubo_index = ubo_allocator.assign(ubo_info)?;
 
         let vertex_distributor = vertex_allocator.allocate()?;
@@ -203,7 +203,7 @@ impl VulkanExample {
             .compare_op(None)
             .border_color(vk::BorderColor::FLOAT_OPAQUE_WHITE);
         // refer to `layout (binding = 1) uniform sampler2D samplerColor` in texture.frag.glsl.
-        let mut sample_image_info = GsCombinedImgSampler::new(1, 1, image_storage, ImagePipelineStage::FragmentStage);
+        let mut sample_image_info = GsCombinedImgSampler::new(1, image_storage, ImagePipelineStage::FragmentStage);
         sample_image_info.reset_sampler(sampler);
         sample_image_info.set_mipmap(MipmapMethod::StepBlit); // tell engine to generate mipmap automatically in runtime.
 

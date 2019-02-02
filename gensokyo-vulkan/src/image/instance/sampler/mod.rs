@@ -4,3 +4,4 @@ pub use self::ci::SamplerCI;
 
 mod ci;
 mod sampler;
+mod array;

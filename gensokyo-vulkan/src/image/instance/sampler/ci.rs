@@ -6,14 +6,16 @@ use crate::core::GsDevice;
 
 use crate::image::instance::sampler::sampler::GsSampler;
 
-use crate::descriptor::{ DescriptorBindingContent, GsDescriptorType, ImageDescriptorType };
+use crate::descriptor::binding::DescriptorMeta;
+use crate::descriptor::{ GsDescriptorType, ImageDescriptorType };
+
 use crate::types::{ vkuint, vkfloat, VK_TRUE, VK_FALSE };
 use crate::error::{ VkResult, VkError };
 
 #[derive(Debug, Clone)]
 pub struct SamplerCI {
 
-    binding: Option<DescriptorBindingContent>,
+    descriptor: Option<DescriptorMeta>,
     ci: vk::SamplerCreateInfo,
 }
 
@@ -22,20 +24,20 @@ impl GsSampler {
     pub fn new() -> SamplerCI {
 
         SamplerCI {
-            binding: None,
+            descriptor: None,
             ..SamplerCI::inner_default()
         }
     }
 
-    pub fn new_descriptor(binding: vkuint, count: vkuint) -> SamplerCI {
+    pub fn new_descriptor(binding: vkuint) -> SamplerCI {
 
-        let binding = DescriptorBindingContent {
-            binding, count,
+        let descriptor = DescriptorMeta {
+            binding,
             descriptor_type: GsDescriptorType::Image(ImageDescriptorType::Sampler),
         };
         
         SamplerCI {
-            binding: Some(binding),
+            descriptor: Some(descriptor),
             ..SamplerCI::inner_default()
         }
     }
@@ -48,7 +50,7 @@ impl SamplerCI {
         use std::ptr;
 
         SamplerCI {
-            binding: None,
+            descriptor: None,
             ci: vk::SamplerCreateInfo {
                 s_type            : vk::StructureType::SAMPLER_CREATE_INFO,
                 p_next            : ptr::null(),
@@ -75,7 +77,7 @@ impl SamplerCI {
 
     pub(crate) fn build(self, device: &GsDevice) -> VkResult<GsSampler> {
 
-        let binding = self.binding
+        let descriptor = self.descriptor
             .ok_or(VkError::other("Descriptor binding must be set before creating vk::Sampler."))?;
 
         let handle = unsafe {
@@ -83,12 +85,12 @@ impl SamplerCI {
                 .or(Err(VkError::create("Sampler")))?
         };
 
-        let sampler = GsSampler { handle, binding };
+        let sampler = GsSampler { handle, descriptor };
         Ok(sampler)
     }
 
-    pub(crate) fn reset_binding(&mut self, binding: DescriptorBindingContent) {
-        self.binding = Some(binding);
+    pub(crate) fn reset_descriptor(&mut self, descriptor: DescriptorMeta) {
+        self.descriptor = Some(descriptor);
     }
 
     pub(crate) fn reset_ci(&mut self, sampler_ci: SamplerCI) {

@@ -4,7 +4,7 @@ use ash::version::DeviceV1_0;
 
 use crate::core::GsDevice;
 
-use crate::descriptor::binding::DescriptorBindingInfo;
+use crate::descriptor::binding::DescriptorBindingCI;
 use crate::error::{ VkResult, VkError };
 
 use std::ptr;
@@ -17,29 +17,28 @@ pub struct DescriptorSetLayoutCI {
 
 impl GsDescriptorSetLayout {
 
-    // TODO: Add configuration for vk::DescriptorSetLayoutCreateFlags.
-    pub fn new(flags: vk::DescriptorSetLayoutCreateFlags) -> DescriptorSetLayoutCI {
+    pub fn new(binding_count: usize) -> DescriptorSetLayoutCI {
         DescriptorSetLayoutCI {
-            flags,
-            bindings: vec![],
+            flags: vk::DescriptorSetLayoutCreateFlags::empty(),
+            bindings: Vec::with_capacity(binding_count),
         }
     }
 }
 
 impl DescriptorSetLayoutCI {
 
-    pub fn add_binding(&mut self, info: &Box<DescriptorBindingInfo>, stages: vk::ShaderStageFlags) -> usize {
+    pub fn add_binding(&mut self, info: &impl DescriptorBindingCI, stages: vk::ShaderStageFlags) {
 
-        let binding_content = info.borrow_binding_content();
+        let meta = info.meta_mirror();
 
         let binding = vk::DescriptorSetLayoutBinding {
             // binding is the binding number of this entry and corresponds to a resource of the same binding number in the shader stages.
-            binding: binding_content.binding,
+            binding: meta.binding,
             // desc_type specifies which type of resource descriptors are used for this binding.
-            descriptor_type : binding_content.descriptor_type.into(),
+            descriptor_type: meta.descriptor_type.into(),
             // descriptor_count is the number of descriptors contained in the binding, accessed in a shader as an array.
             // If descriptor_count is zero, this binding entry is reserved and the resource must not be accessed from any stage via this binding within any pipeline using the set layout.
-            descriptor_count: binding_content.count,
+            descriptor_count: meta.count,
             // stage_flags specifying which pipeline shader stages can access a resource for this binding.
             // ShaderStageType::AllStage is a shorthand specifying that all defined shader stages,
             // including any additional stages defined by extensions, can access the resource.
@@ -48,10 +47,11 @@ impl DescriptorSetLayoutCI {
             p_immutable_samplers: ptr::null(),
         };
 
-        let binding_index = self.bindings.len();
         self.bindings.push(binding);
+    }
 
-        binding_index
+    pub fn set_flags(&mut self, flags: vk::DescriptorSetLayoutCreateFlags) {
+        self.flags = flags;
     }
 
     pub fn build(&self, device: &GsDevice) -> VkResult<GsDescriptorSetLayout> {

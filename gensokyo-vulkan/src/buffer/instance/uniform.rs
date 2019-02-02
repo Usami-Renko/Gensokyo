@@ -6,8 +6,8 @@ use crate::buffer::entity::BufferBlock;
 use crate::buffer::instance::types::BufferCIApi;
 use crate::buffer::traits::{ BufferInstance, BufferCopiable, BufferCopyInfo };
 
-use crate::descriptor::DescriptorBufferBindableTarget;
-use crate::descriptor::{ DescriptorBindingContent, DescriptorBufferBindingInfo };
+use crate::descriptor::binding::DescriptorMeta;
+use crate::descriptor::binding::{ DescriptorBindingBufInfo, DescriptorBindingBufTgt };
 use crate::descriptor::{ GsDescriptorType, BufferDescriptorType };
 
 use crate::memory::transfer::MemoryDataDelegate;
@@ -21,7 +21,8 @@ use crate::utils::memory::bound_to_alignment;
 pub struct UniformBufferCI {
 
     usage: UniformUsage,
-    binding: DescriptorBindingContent,
+
+    descriptor: DescriptorMeta,
     /// the actual data size of each element.
     element_size: vkbytes,
     /// the minimum uniform buffer offset alignment required by Vulkan.
@@ -37,13 +38,12 @@ enum UniformUsage {
 impl GsUniformBuffer {
 
     /// Prepare to create a Common Uniform Buffer.
-    pub fn new(binding: vkuint, descriptor_count: vkuint, element_size: vkbytes) -> UniformBufferCI {
+    pub fn new(binding: vkuint, element_size: vkbytes) -> UniformBufferCI {
 
         UniformBufferCI {
             usage: UniformUsage::Common,
-            binding: DescriptorBindingContent {
+            descriptor: DescriptorMeta {
                 binding,
-                count: descriptor_count,
                 descriptor_type: GsDescriptorType::Buffer(BufferDescriptorType::UniformBuffer),
             },
             element_size,
@@ -52,16 +52,15 @@ impl GsUniformBuffer {
     }
 
     /// Prepare to create a Dynamic Uniform Buffer.
-    pub fn new_dyn(binding: vkuint, descriptor_count: vkuint, slice_size: vkbytes, slice_count: usize) -> UniformBufferCI {
+    pub fn new_dyn(binding: vkuint, slice_size: vkbytes, slice_count: usize) -> UniformBufferCI {
 
         UniformBufferCI {
             usage: UniformUsage::Dynamic {
                 slice_count: slice_count as vkuint,
                 slice_size,
             },
-            binding: DescriptorBindingContent {
+            descriptor: DescriptorMeta {
                 binding,
-                count: descriptor_count,
                 descriptor_type: GsDescriptorType::Buffer(BufferDescriptorType::DynamicUniformBuffer),
             },
             element_size: slice_size * (slice_count as vkbytes),
@@ -87,10 +86,10 @@ impl BufferCIApi for UniformBufferCI {
 
         match self.usage {
             | UniformUsage::Common => {
-                (self.binding.count as vkbytes) * self.element_size
+                self.element_size
             },
             | UniformUsage::Dynamic { slice_count, slice_size } => {
-                bound_to_alignment(slice_size, self.alignment) * (slice_count as vkbytes) * (self.binding.count as vkbytes)
+                bound_to_alignment(slice_size, self.alignment) * (slice_count as vkbytes)
             },
         }
     }
@@ -98,10 +97,10 @@ impl BufferCIApi for UniformBufferCI {
     fn into_index(self) -> IUniform {
         
         IUniform {
-            usage: self.usage,
-            binding: self.binding,
+            usage       : self.usage,
+            descriptor  : self.descriptor,
             element_size: self.element_size,
-            alignment: self.alignment,
+            alignment   : self.alignment,
         }
     }
 
@@ -114,7 +113,7 @@ impl BufferCIApi for UniformBufferCI {
 pub struct IUniform {
 
     usage: UniformUsage,
-    binding: DescriptorBindingContent,
+    descriptor: DescriptorMeta,
     alignment: vkbytes,
     element_size: vkbytes,
 }
@@ -145,15 +144,14 @@ impl BufferInstance for GsUniformBuffer {
     }
 }
 
-impl DescriptorBufferBindableTarget for GsUniformBuffer {
+impl DescriptorBindingBufTgt for GsUniformBuffer {
 
-    fn binding_info(&self, sub_block_indices: Option<Vec<vkuint>>) -> DescriptorBufferBindingInfo {
+    fn binding_info(&self) -> DescriptorBindingBufInfo {
 
-        DescriptorBufferBindingInfo {
-            content: self.iuniform.binding.clone(),
-            element_indices: sub_block_indices.unwrap_or(vec![0]),
+        DescriptorBindingBufInfo {
+            meta: self.iuniform.descriptor.clone(),
             buffer_handle: self.block.handle,
-            element_size: self.element_size(),
+            element_size : self.element_size(),
         }
     }
 }

@@ -139,7 +139,7 @@ impl VulkanExample {
 
         // allocate uniform data buffer.
         // refer to `layout (binding = 0) uniform UBO` in phong.vert.glsl, toon.vert.glsl or wireframe.vert.glsl.
-        let ubo_vertex_info = GsUniformBuffer::new(0, 1, data_size!(UBOVS));
+        let ubo_vertex_info = GsUniformBuffer::new(0, data_size!(UBOVS));
         let ubo_vertex_index = ubo_allocator.assign(ubo_vertex_info)?;
 
         // allocate model data buffer.

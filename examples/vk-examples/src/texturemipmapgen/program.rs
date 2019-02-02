@@ -159,7 +159,7 @@ impl VulkanExample {
 
         // allocate uniform data buffer.
         // refer to `layout (set = 0, binding = 1) uniform UBO {` in texture.vert.glsl
-        let ubo_vertex_info = GsUniformBuffer::new(0, 1, data_size!(UBOVS));
+        let ubo_vertex_info = GsUniformBuffer::new(0, data_size!(UBOVS));
         let ubo_vertex_index = ubo_allocator.assign(ubo_vertex_info)?;
 
         // allocate model data buffer.
@@ -203,7 +203,7 @@ impl VulkanExample {
         let image_storage = ImageLoader::new(initializer).load_2d(Path::new(TEXTURE_PATH))?;
 
         // refer to `layout (set = 0, binding = 2) uniform texture2D textureColor;` in texture.frag.glsl.
-        let mut sampled_image_info = GsSampledImage::new(2, 1, image_storage, ImagePipelineStage::FragmentStage);
+        let mut sampled_image_info = GsSampledImage::new(2, image_storage, ImagePipelineStage::FragmentStage);
         // get the mipmap level of this image.
         let mip_level = sampled_image_info.estimate_mip_levels();
         sampled_image_info.set_samples(vk::SampleCountFlags::TYPE_1, mip_level, 1);
@@ -214,7 +214,7 @@ impl VulkanExample {
 
         // create samplers.
         // refer to `layout (set = 0, binding = 3) uniform sampler samplers[3];` in texture.frag.glsl.
-        let sampler_template = GsSampler::new_descriptor(3, 3)
+        let sampler_template = GsSampler::new_descriptor(3)
             .filter(vk::Filter::LINEAR, vk::Filter::LINEAR)
             .mipmap(vk::SamplerMipmapMode::LINEAR, vk::SamplerAddressMode::REPEAT, vk::SamplerAddressMode::REPEAT, vk::SamplerAddressMode::REPEAT)
             .lod(0.0, 0.0, 0.0)

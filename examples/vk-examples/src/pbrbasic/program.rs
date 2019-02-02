@@ -196,10 +196,10 @@ impl VulkanExample {
 
         // allocate uniform data buffer.
         // refer to `layout (binding = 0) uniform UBO` in pbr.frag.glsl.
-        let ubo_matrix_info = GsUniformBuffer::new(0, 1, data_size!(UBOMatrices));
+        let ubo_matrix_info = GsUniformBuffer::new(0, data_size!(UBOMatrices));
         let ubo_matrix_index = ubo_allocator.assign(ubo_matrix_info)?;
         // refer to `layout (binding = 1) uniform UBOShared` in pbr.frag.glsl.
-        let ubo_params_info = GsUniformBuffer::new(1, 1, data_size!(UboParams));
+        let ubo_params_info = GsUniformBuffer::new(1, data_size!(UboParams));
         let ubo_params_index = ubo_allocator.assign(ubo_params_info)?;
 
         let ubo_distributor = ubo_allocator.allocate()?;

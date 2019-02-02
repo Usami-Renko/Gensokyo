@@ -98,14 +98,7 @@ impl GsDescriptorAllocator {
 
         let mut map = HashMap::new();
         for config in self.set_configs.iter() {
-            for info in config.iter_binding() {
-
-                let descriptor_binding = info.borrow_binding_content();
-
-                let count = map.entry(descriptor_binding.descriptor_type)
-                    .or_insert(0);
-                *count += descriptor_binding.count;
-            }
+            config.add_pool_size(&mut map);
         }
 
         let result = map.into_iter().collect();

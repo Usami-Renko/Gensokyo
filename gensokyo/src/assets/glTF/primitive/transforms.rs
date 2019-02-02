@@ -40,7 +40,7 @@ impl GsglTFNodesData {
 
     pub fn uniform_info(&self, uniform_binding: vkuint) -> UniformBufferCI {
 
-        GsUniformBuffer::new_dyn(uniform_binding, 1, self.element_size, self.content.data_length())
+        GsUniformBuffer::new_dyn(uniform_binding, self.element_size, self.content.data_length())
     }
 
     pub fn data_content_mut(&mut self) -> &mut Box<dyn GNProperties> {

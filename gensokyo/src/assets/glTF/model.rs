@@ -14,7 +14,8 @@ use gsvk::pipeline::target::GsPipelineStage;
 use gsvk::pipeline::layout::GsPushConstantRange;
 
 use gsvk::command::{ GsCmdRecorder, GsCmdGraphicsApi, CmdDescriptorSetBindInfo };
-use gsvk::descriptor::{ DescriptorSet, DescriptorBufferBindableTarget, DescriptorBufferBindingInfo };
+use gsvk::descriptor::DescriptorSet;
+use gsvk::descriptor::binding::{ DescriptorBindingBufInfo, DescriptorBindingBufTgt };
 use gsvk::memory::transfer::{ GsBufferDataUploader, GsBufferUploadable };
 
 use gsvk::utils::allot::GsDistributeApi;
@@ -145,11 +146,12 @@ impl<'d, 's: 'd> GsglTFEntity {
     }
 }
 
-impl DescriptorBufferBindableTarget for GsglTFEntity {
+impl DescriptorBindingBufTgt for GsglTFEntity {
 
-    fn binding_info(&self, sub_block_indices: Option<Vec<vkuint>>) -> DescriptorBufferBindingInfo {
+    fn binding_info(&self) -> DescriptorBindingBufInfo {
+
         if let Some(ref uniform_buffer) = self.uniform {
-            uniform_buffer.binding_info(sub_block_indices)
+            uniform_buffer.binding_info()
         } else {
             panic!("Uniform Buffer must be set(GsglTFEntity::acquire_uniform()) before calling this function.")
         }

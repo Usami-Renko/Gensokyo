@@ -111,7 +111,7 @@ impl UniformBufferProcedure {
         let vertex_info = GsVertexBuffer::new(data_size!(Vertex), vertex_data.len());
         let vertex_index = buffer_allocator.assign(vertex_info)?;
 
-        let uniform_info = GsUniformBuffer::new(0, 1, data_size!(UboObject));
+        let uniform_info = GsUniformBuffer::new(0, data_size!(UboObject));
         let uniform_index = buffer_allocator.assign(uniform_info)?;
 
         let buffer_distributor = buffer_allocator.allocate()?;

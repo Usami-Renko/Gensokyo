@@ -26,9 +26,8 @@ impl GsDistributeApi<IDescriptorSet, DescriptorSet, GsDescriptorRepository> for 
 
         let set_index = index.assign_index;
         let set = &self.sets[set_index];
-        let config = &self.configs[set_index];
 
-        DescriptorSet::new(set, config, set_index)
+        DescriptorSet::new(set, set_index)
     }
 }
 
@@ -51,19 +50,23 @@ impl GsDescriptorDistributor {
 
     fn update_descriptors(&self) {
 
-        let mut write_infos = VKWrapperInfo::new();
+        let mut buffer_write_infos = VKWrapperInfo::new();
+        let mut  image_write_infos = VKWrapperInfo::new();
 
         for &set_index in self.update_sets.iter() {
 
             let config = &self.configs[set_index];
             let update_set = &self.sets[set_index];
 
-            for binding in config.iter_binding() {
-                let write_pair = binding.write_set(update_set);
-                write_infos.push(write_pair);
-            }
+            config.add_write_set(update_set, &mut buffer_write_infos, &mut image_write_infos);
         }
 
-        self.device.logic.update_descriptor_sets(write_infos.borrow_info());
+        if buffer_write_infos.is_empty() == false {
+            self.device.logic.update_descriptor_sets(buffer_write_infos.borrow_info());
+        }
+
+        if image_write_infos.is_empty() == false {
+            self.device.logic.update_descriptor_sets(image_write_infos.borrow_info());
+        }
     }
 }

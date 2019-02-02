@@ -13,7 +13,8 @@ use crate::image::instance::api::ImageCIInheritApi;
 use crate::image::instance::sampledimg::image::{ GsSampledImage, ISampledImg };
 use crate::image::allocator::ImageAllotCI;
 
-use crate::descriptor::{ DescriptorBindingContent, GsDescriptorType, ImageDescriptorType };
+use crate::descriptor::binding::DescriptorMeta;
+use crate::descriptor::{ GsDescriptorType, ImageDescriptorType };
 
 use crate::error::VkResult;
 use crate::types::vkuint;
@@ -23,12 +24,12 @@ pub struct SampledImageCI {
     pipeline_stage: ImagePipelineStage,
     backend: GsBackendImage,
 
-    binding: DescriptorBindingContent,
+    descriptor: DescriptorMeta,
 }
 
 impl GsSampledImage {
 
-    pub fn new(binding: vkuint, count: vkuint, storage: ImageStorageInfo, pipeline_stage: ImagePipelineStage) -> SampledImageCI {
+    pub fn new(binding: vkuint, storage: ImageStorageInfo, pipeline_stage: ImagePipelineStage) -> SampledImageCI {
 
         let mut backend = GsBackendImage::from(storage);
         backend.image_ci.property.image_type = vk::ImageType::TYPE_2D;
@@ -36,12 +37,12 @@ impl GsSampledImage {
         backend.image_ci.property.usages     = vk::ImageUsageFlags::SAMPLED | vk::ImageUsageFlags::TRANSFER_DST;
         backend.image_ci.property.mipmap     = MipmapMethod::Disable;
 
-        let binding = DescriptorBindingContent {
-            binding, count,
+        let descriptor = DescriptorMeta {
+            binding,
             descriptor_type: GsDescriptorType::Image(ImageDescriptorType::SampledImage),
         };
 
-        SampledImageCI { pipeline_stage, backend, binding }
+        SampledImageCI { pipeline_stage, backend, descriptor }
     }
 }
 
@@ -55,7 +56,7 @@ impl ImageCISpecificApi for SampledImageCI {
 
     fn refactor(self, _device: &GsDevice, image: GsImage) -> VkResult<(ImageAllotCI, Self::IConveyor)> {
 
-        let isi = ISampledImg::new(self.binding);
+        let isi = ISampledImg::new(self.descriptor);
 
         let allot_cis = ImageAllotCI::new(
             ImageInstanceType::SampledImage { stage: self.pipeline_stage },

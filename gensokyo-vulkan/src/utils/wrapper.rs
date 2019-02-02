@@ -1,4 +1,6 @@
 
+use std::iter::Extend;
+
 pub struct VKWrapperInfo<C, I>
     where
         C: Sized,
@@ -36,6 +38,7 @@ impl<C, I> VKWrapperInfo<C, I> {
         }
     }
 
+    #[allow(dead_code)]
     pub fn push(&mut self, pair: VKWrapperPair<C, I>) {
         self.contents.push(pair.content);
         self.infos.push(pair.info);
@@ -44,5 +47,19 @@ impl<C, I> VKWrapperInfo<C, I> {
     pub fn borrow_info(&self) -> &Vec<I> {
         &self.infos
     }
+
+    pub fn is_empty(&self) -> bool {
+        self.infos.is_empty() || self.contents.is_empty()
+    }
 }
 
+impl<C, I> Extend<VKWrapperPair<C, I>> for VKWrapperInfo<C, I> {
+
+    fn extend<T: IntoIterator<Item=VKWrapperPair<C, I>>>(&mut self, iter: T) {
+
+        for pair in iter.into_iter() {
+            self.contents.push(pair.content);
+            self.infos.push(pair.info);
+        }
+    }
+}

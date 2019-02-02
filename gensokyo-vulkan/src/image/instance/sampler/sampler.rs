@@ -4,13 +4,13 @@ use ash::version::DeviceV1_0;
 
 use crate::core::GsDevice;
 
-use crate::descriptor::DescriptorBindingContent;
-use crate::descriptor::{ DescriptorImageBindingInfo, DescriptorImageBindableTarget };
+use crate::descriptor::binding::DescriptorMeta;
+use crate::descriptor::binding::{ DescriptorBindingImgInfo, DescriptorBindingImgTgt };
 
 pub struct GsSampler {
 
     pub(crate) handle : vk::Sampler,
-    pub(crate) binding: DescriptorBindingContent,
+    pub(crate) descriptor: DescriptorMeta,
 }
 
 impl GsSampler {
@@ -26,12 +26,12 @@ impl GsSampler {
     }
 }
 
-impl DescriptorImageBindableTarget for GsSampler {
+impl DescriptorBindingImgTgt for GsSampler {
 
-    fn binding_info(&self) -> DescriptorImageBindingInfo {
+    fn binding_info(&self) -> DescriptorBindingImgInfo {
 
-        DescriptorImageBindingInfo {
-            content        : self.binding.clone(),
+        DescriptorBindingImgInfo {
+            meta           : self.descriptor.clone(),
             sampler_handle : self.handle,
             dst_layout     : vk::ImageLayout::SHADER_READ_ONLY_OPTIMAL,
             view_handle    : vk::ImageView::null(),

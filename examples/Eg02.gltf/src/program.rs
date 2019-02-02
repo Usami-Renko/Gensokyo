@@ -127,7 +127,7 @@ impl<T: ShaderInputDefinition> GltfModelViewer<T> {
         let mut model_allocator = GsBufferAllocator::new(initializer, BufferStorageType::DEVICE);
 
         // allocate uniform data buffer.
-        let ubo_info = GsUniformBuffer::new(0, 1, data_size!(UboObject));
+        let ubo_info = GsUniformBuffer::new(0, data_size!(UboObject));
         let ubo_index = ubo_allocator.assign(ubo_info)?;
 
         // load and allocate model data.
