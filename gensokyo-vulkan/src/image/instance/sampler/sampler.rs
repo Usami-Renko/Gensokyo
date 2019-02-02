@@ -41,7 +41,7 @@ impl DescriptorBindingImgTgt for GsSampler {
 
 // ----------------------------------------------------------------------------------------
 #[derive(Debug, Clone, Hash, PartialEq, Eq)]
-pub struct GsSamplerMirror(vk::Sampler);
+pub struct GsSamplerMirror(pub(super) vk::Sampler);
 
 impl GsSamplerMirror {
 

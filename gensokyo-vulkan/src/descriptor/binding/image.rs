@@ -74,10 +74,10 @@ pub trait DescriptorBindingImgArrayTgt {
 pub struct DescriptorBindingImgArrayInfo {
 
     pub meta: DescriptorArrayMeta,
-    pub content: BindingImgArrayContent,
+    pub content: ImgArrayBinding,
 }
 
-pub enum BindingImgArrayContent {
+pub enum ImgArrayBinding {
 
     MultiSamplers {
         /// the handle of multiple sampler.
@@ -100,7 +100,7 @@ impl DescriptorBindingCI for DescriptorBindingImgArrayInfo {
     fn write_info(&self, set: &GsDescriptorSet) -> Self::DescriptorWriteType {
 
         let contents: Vec<vk::DescriptorImageInfo> = match &self.content {
-            | BindingImgArrayContent::MultiSamplers { samplers, view_handle, dst_layout } => {
+            | ImgArrayBinding::MultiSamplers { samplers, view_handle, dst_layout } => {
 
                 debug_assert_eq!(samplers.len(), self.meta.count as usize);
 

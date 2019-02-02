@@ -14,7 +14,7 @@ A Rust implementation of [Vulkan examples](https://github.com/SaschaWillems/Vulk
 | 04 - Dynamic uniform buffers  | ✅      |                           |
 | 05 - Push constants           | ✅      |                           |
 | 06 - Specialization constants | ✅      |                           |
-| 07 - Texture mapping          | ⚠️      | Unimplement: mipmap level |
+| 07 - Texture mapping          | ✅️      | Use runtime mipmap generation. |
 | 08 - Cube map textures        |        |                           |
 | 09 - Texture arrays           |        |                           |
 | 10 - 3D textures              |        |                           |
@@ -37,7 +37,7 @@ A Rust implementation of [Vulkan examples](https://github.com/SaschaWillems/Vulk
 | 04 - Shadow mapping                 |        |      |
 | 05 - Cascaded shadow mapping        |        |      |
 | 06 - Omnidirectional shadow mapping |        |      |
-| 07 - Run-time mip-map generation    |        |      |
+| 07 - Run-time mip-map generation    | ✅️      |      |
 | 08 - Skeletal animation             |        |      |
 | 09 - Capturing screenshots          |        |      |
 

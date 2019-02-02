@@ -7,7 +7,7 @@ pub use crate::image::GsImageRepository;
 pub use crate::image::instance::combinedimg::{ GsCombinedImgSampler, ICombinedImg };
 pub use crate::image::instance::sampledimg::{ GsSampledImage, ISampledImg };
 pub use crate::image::instance::depth::{ GsDSAttachment, IDepthStencilImg };
-pub use crate::image::instance::sampler::GsSampler;
+pub use crate::image::instance::sampler::{ GsSampler, GsSamplerArray };
 
 pub use crate::image::allocator::types::ImageStorageType;
 

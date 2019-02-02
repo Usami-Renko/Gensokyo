@@ -44,7 +44,7 @@ pub struct VulkanExample {
     #[allow(dead_code)]
     sampled_image: GsSampledImage,
     #[allow(dead_code)]
-    samplers: [GsSampler; 3],
+    samplers: GsSamplerArray,
     depth_attachment: GsDSAttachment,
     #[allow(dead_code)]
     image_storage   : GsImageRepository<Device>,
@@ -191,7 +191,7 @@ impl VulkanExample {
         Ok((model_entity, model_repository, ubo_buffer, ubo_repository))
     }
 
-    fn image(initializer: &AssetInitializer, dimension: vkDim2D) -> GsResult<(GsDSAttachment, GsSampledImage, [GsSampler; 3], GsImageRepository<Device>)> {
+    fn image(initializer: &AssetInitializer, dimension: vkDim2D) -> GsResult<(GsDSAttachment, GsSampledImage, GsSamplerArray, GsImageRepository<Device>)> {
 
         // depth attachment image.
         let mut image_allocator = GsImageAllocator::new(initializer, ImageStorageType::DEVICE);
@@ -214,7 +214,9 @@ impl VulkanExample {
 
         // create samplers.
         // refer to `layout (set = 0, binding = 3) uniform sampler samplers[3];` in texture.frag.glsl.
-        let sampler_template = GsSampler::new_descriptor(3)
+        let mut sampler_array_ci = GsSamplerArray::new(3);
+
+        let sampler_template = GsSampler::new()
             .filter(vk::Filter::LINEAR, vk::Filter::LINEAR)
             .mipmap(vk::SamplerMipmapMode::LINEAR, vk::SamplerAddressMode::REPEAT, vk::SamplerAddressMode::REPEAT, vk::SamplerAddressMode::REPEAT)
             .lod(0.0, 0.0, 0.0)
@@ -224,20 +226,20 @@ impl VulkanExample {
 
         // sampler 1.
         let sampler1_info = sampler_template.clone();
-        let sampler1 = image_allocator.assign(sampler1_info)?;
+        sampler_array_ci.add_sampler(sampler1_info);
 
         // sampler 2.
         let sampler2_info = sampler_template.clone()
             .lod(0.0, 0.0, mip_level as vkfloat);
-        let sampler2 = image_allocator.assign(sampler2_info)?;
+        sampler_array_ci.add_sampler(sampler2_info);
 
         // sampler 3.
         let sampler3_info = sampler_template
             .lod(0.0, 0.0, mip_level as vkfloat)
             .anisotropy(Some(16.0)); // TODO: Replace this with maxSamplerAnisotropy query from device.
-        let sampler3 = image_allocator.assign(sampler3_info)?;
+        sampler_array_ci.add_sampler(sampler3_info);
 
-        let samplers = [sampler1, sampler2, sampler3];
+        let sampler_array = image_allocator.assign(sampler_array_ci)?;
 
         // allocate image.
         let image_distributor = image_allocator.allocate()?;
@@ -247,17 +249,17 @@ impl VulkanExample {
 
         let image_storage = image_distributor.into_repository();
 
-        Ok((depth_attachment, sampled_image, samplers, image_storage))
+        Ok((depth_attachment, sampled_image, sampler_array, image_storage))
     }
 
-    fn ubo(initializer: &AssetInitializer, ubo_buffer: &GsUniformBuffer, model: &GsglTFEntity, sampled_image: &GsSampledImage, samplers: &[GsSampler; 3]) -> GsResult<(DescriptorSet, GsDescriptorRepository)> {
+    fn ubo(initializer: &AssetInitializer, ubo_buffer: &GsUniformBuffer, model: &GsglTFEntity, sampled_image: &GsSampledImage, samplers: &GsSamplerArray) -> GsResult<(DescriptorSet, GsDescriptorRepository)> {
 
         // descriptor
         let mut descriptor_set_config = DescriptorSetConfig::new();
         descriptor_set_config.add_buffer_binding(ubo_buffer, GsPipelineStage::VERTEX); // binding 0.
         descriptor_set_config.add_buffer_binding(model, GsPipelineStage::VERTEX); // binding 1.
         descriptor_set_config.add_image_binding(sampled_image, GsPipelineStage::FRAGMENT); // binding 2.
-        descriptor_set_config.add_image_binding(&samplers[0], GsPipelineStage::FRAGMENT); // binding 3.
+        descriptor_set_config.add_image_array_binding(samplers, GsPipelineStage::FRAGMENT); // binding 3.
 
         let mut descriptor_allocator = GsDescriptorAllocator::new(initializer);
         let desc_index = descriptor_allocator.assign(descriptor_set_config);

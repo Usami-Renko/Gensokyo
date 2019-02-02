@@ -11,6 +11,7 @@ use crate::image::instance::base::{ GsBackendImage, SampleImageBarrierBundle };
 use crate::image::instance::traits::{ ImageCIApi, ImageCISpecificApi, ImageBarrierBundleAbs };
 use crate::image::instance::traits::{ IImageConveyor, ImageInstanceInfoDesc };
 use crate::image::instance::sampler::{ GsSampler, SamplerCI };
+use crate::image::instance::sampler::{ GsSamplerArray, SamplerArrayCI };
 use crate::image::instance::depth::DSImageBarrierBundle;
 use crate::image::instance::sampler::GsSamplerMirror;
 use crate::image::allocator::types::ImageMemoryTypeAbs;
@@ -92,6 +93,21 @@ impl<M> GsAllocatorApi<SamplerCI, GsImageDistributor<M>> for GsImageAllocator<M>
         self.samplers.insert(sampler.mirror());
 
         Ok(sampler)
+    }
+}
+
+impl<M> GsAllocatorApi<SamplerArrayCI, GsImageDistributor<M>> for GsImageAllocator<M>
+    where
+        M: ImageMemoryTypeAbs {
+
+    type AssignResult = VkResult<GsSamplerArray>;
+
+    fn assign(&mut self, ci: SamplerArrayCI) -> Self::AssignResult {
+
+        let sampler_array = ci.build(&self.device)?;
+        self.samplers.extend(sampler_array.mirrors());
+
+        Ok(sampler_array)
     }
 }
 

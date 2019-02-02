@@ -96,6 +96,10 @@ impl SamplerCI {
     pub(crate) fn reset_ci(&mut self, sampler_ci: SamplerCI) {
         self.ci = sampler_ci.ci;
     }
+
+    pub(crate) fn take_ci(self) -> vk::SamplerCreateInfo {
+        self.ci
+    }
 }
 
 impl SamplerCI {

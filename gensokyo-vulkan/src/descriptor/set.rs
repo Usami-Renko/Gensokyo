@@ -7,6 +7,7 @@ use crate::descriptor::types::GsDescriptorType;
 use crate::descriptor::layout::{ GsDescriptorSetLayout, DescriptorSetLayoutCI };
 use crate::descriptor::binding::{ DescriptorBindingBufInfo, DescriptorBindingBufTgt };
 use crate::descriptor::binding::{ DescriptorBindingImgInfo, DescriptorBindingImgTgt };
+use crate::descriptor::binding::{ DescriptorBindingImgArrayInfo, DescriptorBindingImgArrayTgt };
 
 use crate::pipeline::target::GsPipelineStage;
 use crate::descriptor::binding::DescriptorBindingCI;
@@ -42,7 +43,9 @@ pub struct DescriptorSetConfig {
     layout_flags: vk::DescriptorSetLayoutCreateFlags,
 
     binding_bufs: Vec<BindingContent<DescriptorBindingBufInfo>>,
+
     binding_imgs: Vec<BindingContent<DescriptorBindingImgInfo>>,
+    binding_img_arrays: Vec<BindingContent<DescriptorBindingImgArrayInfo>>,
 }
 
 struct BindingContent<T> {
@@ -74,6 +77,15 @@ impl DescriptorSetConfig {
         self.binding_imgs.push(binding);
     }
 
+    pub fn add_image_array_binding(&mut self, bind_target: &impl DescriptorBindingImgArrayTgt, stage: GsPipelineStage) {
+
+        let binding = BindingContent {
+            info: bind_target.binding_info(),
+            stage_flags: stage.0
+        };
+        self.binding_img_arrays.push(binding);
+    }
+
     pub fn to_layout_ci(&self) -> DescriptorSetLayoutCI {
 
         let binding_count = self.binding_bufs.len() + self.binding_imgs.len();
@@ -85,6 +97,10 @@ impl DescriptorSetConfig {
         }
 
         for binding in self.binding_imgs.iter() {
+            layout_info.add_binding(&binding.info, binding.stage_flags);
+        }
+
+        for binding in self.binding_img_arrays.iter() {
             layout_info.add_binding(&binding.info, binding.stage_flags);
         }
 
@@ -108,6 +124,14 @@ impl DescriptorSetConfig {
                 .or_insert(0);
             *count += meta.count;
         }
+
+        for binding in self.binding_img_arrays.iter() {
+
+            let meta = binding.info.meta_mirror();
+            let count = pool_map.entry(meta.descriptor_type)
+                .or_insert(0);
+            *count += meta.count;
+        }
     }
 
     pub(super) fn add_write_set(&self, set: &GsDescriptorSet,
@@ -121,6 +145,10 @@ impl DescriptorSetConfig {
         buffers.extend(write_iter);
 
         let write_iter = self.binding_imgs.iter()
+            .map(|binding| binding.info.write_info(set));
+        images.extend(write_iter);
+
+        let write_iter = self.binding_img_arrays.iter()
             .map(|binding| binding.info.write_info(set));
         images.extend(write_iter);
     }
