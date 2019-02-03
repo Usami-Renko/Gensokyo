@@ -5,8 +5,8 @@ use crate::core::GsDevice;
 use crate::core::device::GsLogicalDevice;
 use crate::core::device::queue::GsTransfer;
 
-use crate::buffer::BufferCopyInfo;
-use crate::image::ImageCopyInfo;
+use crate::buffer::BufferFullCopyInfo;
+use crate::image::ImageFullCopyInfo;
 use crate::command::{ GsCmdRecorder, GsCmdTransferApi };
 use crate::error::VkResult;
 use crate::utils::phantom::Transfer;
@@ -32,26 +32,21 @@ impl DataCopyer {
         Ok(copyer)
     }
 
-    // TODO: Currently only support copy the whole buffer to another buffer.
-    pub fn copy_buffer_to_buffer(&self, src: BufferCopyInfo, dst: BufferCopyInfo) -> &DataCopyer {
+    pub fn copy_buffer_to_buffer(&self, src: BufferFullCopyInfo, dst: BufferFullCopyInfo) -> &DataCopyer {
 
-        // TODO: Only support one region.
-        let copy_region = [
-            vk::BufferCopy {
-                // TODO: Only support copy buffer from beginning.
-                src_offset: src.offset,
-                dst_offset: dst.offset,
-                size: src.size,
-            },
-        ];
+        let copy_region = vk::BufferCopy {
+            src_offset: 0,
+            dst_offset: 0,
+            size: src.size,
+        };
 
-        let _ = self.recorder.copy_buf2buf(src.handle, dst.handle, &copy_region);
+        let _ = self.recorder.copy_buf2buf(src.handle, dst.handle, &[copy_region]);
 
         self
     }
 
     // TODO: Currently only support copy the whole buffer to the image.
-    pub fn copy_buffer_to_image(&self, src: BufferCopyInfo, dst: ImageCopyInfo) -> &DataCopyer {
+    pub fn copy_buffer_to_image(&self, src: BufferFullCopyInfo, dst: ImageFullCopyInfo) -> &DataCopyer {
 
         // TODO: Only support one region.
         let copy_regions = [
@@ -76,7 +71,7 @@ impl DataCopyer {
     }
 
     // TODO: Currently only support copy the whole image data to buffer.
-    pub fn copy_image_to_buffer(&self, src: ImageCopyInfo, dst: BufferCopyInfo) -> &DataCopyer {
+    pub fn copy_image_to_buffer(&self, src: ImageFullCopyInfo, dst: BufferFullCopyInfo) -> &DataCopyer {
 
         let copy_regions = [
             vk::BufferImageCopy {
@@ -95,7 +90,7 @@ impl DataCopyer {
     }
 
     // TODO: Currently only support copy the whole image data to another image.
-    pub fn copy_image(&self, src: ImageCopyInfo, dst: ImageCopyInfo) -> &DataCopyer {
+    pub fn copy_image(&self, src: ImageFullCopyInfo, dst: ImageFullCopyInfo) -> &DataCopyer {
 
         let copy_regions = [
             vk::ImageCopy {

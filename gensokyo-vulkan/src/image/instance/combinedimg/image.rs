@@ -3,7 +3,7 @@ use ash::vk;
 
 use crate::image::entity::ImageEntity;
 use crate::image::traits::{ ImageInstance, ImageCopiable };
-use crate::image::utils::{ ImageCopyInfo, ImageCopySubrange };
+use crate::image::utils::{ ImageFullCopyInfo, ImageCopySubrange };
 use crate::image::instance::sampler::{ GsSampler, GsSamplerMirror };
 use crate::image::instance::traits::{ IImageConveyor, ImageInstanceInfoDesc };
 
@@ -54,9 +54,9 @@ impl DescriptorBindingImgTgt for GsCombinedImgSampler {
 
 impl ImageCopiable for GsCombinedImgSampler {
 
-    fn copy_range(&self, subrange: ImageCopySubrange) -> ImageCopyInfo {
+    fn copy_range(&self, subrange: ImageCopySubrange) -> ImageFullCopyInfo {
 
-        ImageCopyInfo {
+        ImageFullCopyInfo {
             handle: self.entity.image,
             layout: self.desc.current_layout,
             extent: self.desc.dimension,

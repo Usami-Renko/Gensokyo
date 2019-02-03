@@ -4,6 +4,7 @@ name        = "vk-examples"
 version     = "0.1.0"
 authors     = ["usami-renko <usami-ssc@protonmail.com>"]
 edition     = "2018"
+workspace   = "../.."
 description = "A Rust implementation of Vulkan Examples(https://github.com/SaschaWillems/Vulkan) via Gensokyo Engine."
 
 [dependencies]

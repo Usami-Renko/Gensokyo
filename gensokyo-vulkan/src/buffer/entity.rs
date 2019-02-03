@@ -2,7 +2,7 @@
 use ash::vk;
 
 use crate::buffer::target::GsBuffer;
-use crate::buffer::traits::{ BufferHandleEntity, BufferCopiable, BufferCopyInfo };
+use crate::buffer::traits::{ BufferCopiable, BufferFullCopyInfo };
 
 use crate::types::vkbytes;
 
@@ -40,18 +40,14 @@ impl BufferBlock {
     }
 }
 
-impl BufferHandleEntity for BufferBlock {
-
-    fn handle(&self) -> vk::Buffer {
-        self.handle
-    }
-}
-
 impl BufferCopiable for BufferBlock {
 
-    fn copy_whole(&self) -> BufferCopyInfo {
+    fn copy_whole(&self) -> BufferFullCopyInfo {
 
-        BufferCopyInfo::new(self, 0, self.size)
+        BufferFullCopyInfo {
+            handle: self.handle,
+            size  : self.size,
+        }
     }
 }
 

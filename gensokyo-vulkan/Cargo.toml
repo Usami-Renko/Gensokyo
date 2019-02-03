@@ -4,6 +4,7 @@ name        = "gensokyo-vulkan"
 version     = "0.1.0"
 authors     = ["usami-renko <usami-ssc@protonmail.com>"]
 edition     = "2018"
+workspace   = ".."
 description = "Vulkan Wrapper written in Rust."
 license     = "MIT"
 keywords    = ["Vulkan", "Rust", "Graphics"]

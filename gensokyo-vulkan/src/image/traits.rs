@@ -2,7 +2,7 @@
 use ash::vk;
 
 use crate::image::entity::ImageEntity;
-use crate::image::utils::{ ImageCopyInfo, ImageCopySubrange };
+use crate::image::utils::{ ImageFullCopyInfo, ImageCopySubrange };
 use crate::image::instance::traits::ImageInstanceInfoDesc;
 
 pub trait ImageHandleEntity: Sized {
@@ -17,5 +17,5 @@ pub trait ImageInstance<I>: ImageCopiable {
 
 pub trait ImageCopiable: Sized {
 
-    fn copy_range(&self, subrange: ImageCopySubrange) -> ImageCopyInfo;
+    fn copy_range(&self, subrange: ImageCopySubrange) -> ImageFullCopyInfo;
 }

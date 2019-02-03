@@ -1,4 +1,6 @@
 
+use failure_derive::Fail;
+
 use crate::error::GsError;
 
 #[derive(Debug, Fail)]

@@ -18,15 +18,20 @@ pub trait BufferInstance: BufferCopiable {
 
 pub trait BufferCopiable: Sized {
 
-    fn copy_whole(&self) -> BufferCopyInfo;
+    fn copy_whole(&self) -> BufferFullCopyInfo;
 }
 
-pub trait BufferHandleEntity: Sized {
+pub struct BufferFullCopyInfo {
 
-    fn handle(&self) -> vk::Buffer;
+    /// `handle` is the handle of buffer whose data is copied from or copy to.
+    pub(crate) handle: vk::Buffer,
+    /// If this is the buffer for data source, `size` is the number of bytes to copy.
+    ///
+    /// If this is the buffer for data destination, `size` will be ignored.
+    pub(crate) size: vkbytes,
 }
 
-pub struct BufferCopyInfo {
+pub struct BufferRangeCopyInfo {
 
     /// `handle` is the handle of buffer whose data is copied from or copy to.
     pub(crate) handle: vk::Buffer,
@@ -38,16 +43,4 @@ pub struct BufferCopyInfo {
     ///
     /// If this is the buffer for data destination, `size` will be ignored.
     pub(crate) size: vkbytes,
-}
-
-impl BufferCopyInfo {
-
-    pub fn new(buffer: &impl BufferHandleEntity, offset: vkbytes, size: vkbytes) -> BufferCopyInfo {
-
-        BufferCopyInfo {
-            handle: buffer.handle(),
-            offset,
-            size,
-        }
-    }
 }

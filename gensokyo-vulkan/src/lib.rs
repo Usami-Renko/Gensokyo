@@ -14,5 +14,3 @@ pub mod types;
 pub mod prelude;
 
 pub mod error;
-
-#[macro_use] extern crate failure_derive;

@@ -1,5 +1,6 @@
 
 use toml;
+use serde_derive::Deserialize;
 
 use gsvk::core::config::CoreConfig;
 use gsvk::pipeline::config::PipelineConfig;

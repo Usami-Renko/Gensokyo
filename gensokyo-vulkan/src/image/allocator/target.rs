@@ -6,7 +6,7 @@ use crate::core::GsDevice;
 use crate::image::target::GsImage;
 use crate::image::enums::ImageInstanceType;
 use crate::image::traits::ImageCopiable;
-use crate::image::utils::{ ImageCopyInfo, ImageCopySubrange };
+use crate::image::utils::{ ImageFullCopyInfo, ImageCopySubrange };
 use crate::image::instance::base::{ GsBackendImage, SampleImageBarrierBundle };
 use crate::image::instance::traits::{ ImageCIApi, ImageCISpecificApi, ImageBarrierBundleAbs };
 use crate::image::instance::traits::{ IImageConveyor, ImageInstanceInfoDesc };
@@ -226,11 +226,11 @@ impl ImageAllotCI {
 
 impl ImageCopiable for ImageAllotCI {
 
-    fn copy_range(&self, subrange: ImageCopySubrange) -> ImageCopyInfo {
+    fn copy_range(&self, subrange: ImageCopySubrange) -> ImageFullCopyInfo {
 
         // The layout parameter is the destination layout after data copy.
         // This value should be vk::TransferDstOptimal.
-        ImageCopyInfo {
+        ImageFullCopyInfo {
             handle: self.image.handle,
             layout: self.current_layout,
             extent: self.backend.storage.dimension,

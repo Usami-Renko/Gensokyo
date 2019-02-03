@@ -1,4 +1,6 @@
 
+use serde_derive::Serialize;
+
 use crate::assets::glTF::asset::GsglTFPhyLimits;
 use crate::assets::error::GltfError;
 

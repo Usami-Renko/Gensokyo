@@ -4,6 +4,7 @@ name        = "gensokyo"
 version     = "0.1.0"
 authors     = ["usami-renko <usami-ssc@protonmail.com>"]
 edition     = "2018"
+workspace   = ".."
 description = "Rendering Engine implemented in Vulkan and Rust."
 license     = "MIT"
 keywords    = ["Vulkan", "Rust", "Graphics"]

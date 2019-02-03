@@ -1,6 +1,8 @@
 
 use ash::vk;
 
+use failure_derive::Fail;
+
 use gsma::collect_handle;
 
 use crate::core::GsDevice;

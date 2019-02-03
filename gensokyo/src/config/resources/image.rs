@@ -1,5 +1,6 @@
 
 use toml;
+use serde_derive::Deserialize;
 
 use crate::assets::io::ImageLoadConfig;
 use crate::config::engine::ConfigMirror;

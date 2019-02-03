@@ -1,5 +1,6 @@
 
 use toml;
+use serde_derive::Deserialize;
 
 use crate::config::engine::ConfigMirror;
 use crate::error::{ GsResult, GsError };

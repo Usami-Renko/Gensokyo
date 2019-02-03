@@ -1,5 +1,7 @@
 
 use toml;
+use serde_derive::Deserialize;
+
 use ash::vk;
 
 use crate::config::engine::ConfigMirror;

@@ -3,7 +3,7 @@ use ash::vk;
 
 use crate::buffer::entity::BufferBlock;
 use crate::buffer::instance::types::BufferCIApi;
-use crate::buffer::traits::{ BufferInstance, BufferCopiable, BufferCopyInfo };
+use crate::buffer::traits::{ BufferInstance, BufferCopiable, BufferFullCopyInfo };
 
 use crate::memory::transfer::MemoryDataDelegate;
 use crate::memory::MemoryWritePtr;
@@ -86,8 +86,11 @@ impl BufferInstance for GsIndexBuffer {
 
 impl BufferCopiable for GsIndexBuffer {
 
-    fn copy_whole(&self) -> BufferCopyInfo {
-        BufferCopyInfo::new(&self.block, 0, self.block.size)
+    fn copy_whole(&self) -> BufferFullCopyInfo {
+        BufferFullCopyInfo {
+            handle: self.block.handle,
+            size  : self.block.size,
+        }
     }
 }
 

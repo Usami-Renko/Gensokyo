@@ -1,5 +1,6 @@
 
 use ash::vk_make_version;
+use serde_derive::Deserialize;
 
 use crate::config::engine::ConfigMirror;
 use crate::error::{ GsResult, GsError };

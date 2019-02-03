@@ -1,4 +1,6 @@
 
+use serde_derive::Serialize;
+
 use ash::vk;
 use gsvk::prelude::pipeline::*;
 

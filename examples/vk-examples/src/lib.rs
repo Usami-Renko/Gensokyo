@@ -1,5 +1,5 @@
 
-#[macro_use] extern crate lazy_static;
+use lazy_static::lazy_static;
 
 use ash::vk;
 use nalgebra::Matrix4;

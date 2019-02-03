@@ -4,7 +4,7 @@ use ash::vk;
 use crate::image::view::ImageSubRange;
 use crate::types::{ vkuint, vkDim3D };
 
-pub struct ImageCopyInfo {
+pub struct ImageFullCopyInfo {
 
     /// `handle` is the handle of image whose data is copied from or copy to.
     pub(crate) handle: vk::Image,
