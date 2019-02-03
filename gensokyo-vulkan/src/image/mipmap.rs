@@ -66,7 +66,7 @@ pub(super) struct MipmapBlitInfo {
     pub blit: vk::ImageBlit,
 }
 
-pub(super) fn blit_info(image_info: &mut ImageAllotCI, round: vkuint) -> MipmapBlitInfo {
+pub(super) fn blit_info(image_info: &mut ImageAllotCI, round: vkuint, blit_layer_count: vkuint) -> MipmapBlitInfo {
 
     let image_dimension = &image_info.backend.image_ci.specific.dimension;
 
@@ -75,29 +75,29 @@ pub(super) fn blit_info(image_info: &mut ImageAllotCI, round: vkuint) -> MipmapB
         src_subresource: vk::ImageSubresourceLayers {
             aspect_mask: image_info.backend.view_ci.subrange.0.aspect_mask,
             mip_level  : round - 1,
-            base_array_layer: 0, // TODO: the base layer and layer count are not taken into account yet.
-            layer_count     : 1,
+            base_array_layer: 0, // TODO: the base layer are not taken into account yet.
+            layer_count     : blit_layer_count,
         },
         src_offsets: [
             vk::Offset3D { x: 0, y: 0, z: 0 },
             vk::Offset3D {
                 x: max((image_dimension.width  >> (round - 1)) as vksint, 1),
                 y: max((image_dimension.height >> (round - 1)) as vksint, 1),
-                z: 1,
+                z: blit_layer_count as vksint,
             },
         ],
         dst_subresource: vk::ImageSubresourceLayers {
             aspect_mask: image_info.backend.view_ci.subrange.0.aspect_mask,
             mip_level  : round,
-            base_array_layer: 0,
-            layer_count     : 1,
+            base_array_layer: 0, // TODO: the base layer are not taken into account yet.
+            layer_count     : blit_layer_count,
         },
         dst_offsets: [
             vk::Offset3D { x: 0, y: 0, z: 0 },
             vk::Offset3D {
                 x: max((image_dimension.width  >> round) as vksint, 1),
                 y: max((image_dimension.height >> round) as vksint, 1),
-                z: 1,
+                z: blit_layer_count as vksint,
             },
         ],
     };

@@ -18,7 +18,13 @@ pub trait BufferInstance: BufferCopiable {
 
 pub trait BufferCopiable: Sized {
 
-    fn copy_whole(&self) -> BufferFullCopyInfo;
+    fn full_copy(&self) -> BufferFullCopyInfo;
+
+    fn copy_split_ranges(&self, range_count: usize) -> BufferCopyRanges {
+
+        let full_range = self.full_copy();
+        BufferCopyRanges::from_stride(full_range.handle, full_range.size / range_count as vkbytes, range_count)
+    }
 }
 
 pub struct BufferFullCopyInfo {
@@ -31,7 +37,8 @@ pub struct BufferFullCopyInfo {
     pub(crate) size: vkbytes,
 }
 
-pub struct BufferRangeCopyInfo {
+#[allow(dead_code)]
+pub struct BufferCopyRange {
 
     /// `handle` is the handle of buffer whose data is copied from or copy to.
     pub(crate) handle: vk::Buffer,
@@ -43,4 +50,29 @@ pub struct BufferRangeCopyInfo {
     ///
     /// If this is the buffer for data destination, `size` will be ignored.
     pub(crate) size: vkbytes,
+}
+
+pub struct BufferCopyRanges {
+
+    /// `handle` is the handle of buffer whose data is copied from or copy to.
+    pub(crate) handle: vk::Buffer,
+    /// `offsets` is the starting offset of each subrange of the buffer.
+    pub(crate) offsets: Vec<vkbytes>,
+}
+
+impl BufferCopyRanges {
+
+    pub fn from_stride(handle: vk::Buffer, stride: vkbytes, stride_count: usize) -> BufferCopyRanges {
+
+        let mut offsets = Vec::with_capacity(stride_count);
+        for i in 0..(stride_count as vkbytes) {
+            offsets.push(i * stride);
+        }
+
+        BufferCopyRanges { handle, offsets }
+    }
+
+    pub fn subrange_count(&self) -> usize {
+        self.offsets.len()
+    }
 }

@@ -7,7 +7,7 @@ pub use self::barrier::ImageBarrierCI;
 pub use self::mipmap::MipmapMethod;
 pub use self::entity::ImageEntity;
 pub use self::repository::GsImageRepository;
-pub use self::utils::ImageFullCopyInfo;
+pub use self::copy::{ ImageFullCopyInfo, ImageRangesCopyInfo, ImageCopyRange };
 
 mod target;
 mod view;
@@ -16,7 +16,7 @@ mod enums;
 mod repository;
 mod barrier;
 mod mipmap;
-mod utils;
+mod copy;
 mod traits;
 
 pub mod instance;

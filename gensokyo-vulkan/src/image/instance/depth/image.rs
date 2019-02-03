@@ -1,12 +1,15 @@
 
+use ash::vk;
+
 use crate::image::entity::ImageEntity;
 use crate::image::traits::{ ImageInstance, ImageCopiable };
-use crate::image::utils::{ ImageFullCopyInfo, ImageCopySubrange };
+use crate::image::copy::ImageFullCopyInfo;
 use crate::image::instance::sampler::GsSamplerMirror;
 use crate::image::instance::traits::{ IImageConveyor, ImageInstanceInfoDesc };
 
 use crate::pipeline::pass::{ RenderAttachmentCI, DepthStencil };
 use crate::types::format::GsFormat;
+use crate::types::{ vkuint, vkDim3D };
 
 pub struct GsDSAttachment {
 
@@ -18,6 +21,7 @@ pub struct GsDSAttachment {
 
 pub struct IDepthStencilImg {
 
+    aspect: vk::ImageAspectFlags,
     format: GsFormat,
 }
 
@@ -39,20 +43,31 @@ impl GsDSAttachment {
 
 impl IDepthStencilImg {
 
-    pub(super) fn new(format: GsFormat) -> IDepthStencilImg {
-        IDepthStencilImg { format }
+    pub(super) fn new(format: GsFormat, aspect: vk::ImageAspectFlags) -> IDepthStencilImg {
+        IDepthStencilImg { format, aspect }
     }
 }
 
 impl ImageCopiable for GsDSAttachment {
 
-    fn copy_range(&self, subrange: ImageCopySubrange) -> ImageFullCopyInfo {
+    fn full_copy_mipmap(&self, copy_mip_level: vkuint) -> ImageFullCopyInfo {
+
+        use std::cmp::max;
 
         ImageFullCopyInfo {
             handle: self.entity.image,
             layout: self.desc.current_layout,
-            extent: self.desc.dimension,
-            sub_resource_layers: subrange,
+            extent: vkDim3D {
+                width  : max(self.desc.dimension.width  >> copy_mip_level, 1),
+                height : max(self.desc.dimension.height >> copy_mip_level, 1),
+                depth  : 1,
+            },
+            sub_resource_layers: vk::ImageSubresourceLayers {
+                aspect_mask      : self.idsi.aspect,
+                mip_level        : copy_mip_level,
+                base_array_layer : 0,
+                layer_count      : 1,
+            },
         }
     }
 }

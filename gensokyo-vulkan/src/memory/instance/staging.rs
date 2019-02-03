@@ -225,7 +225,7 @@ impl UploadStagingResource {
 
         let mut data_copyer = DataCopyer::new(device)?;
         for (src, dst) in self.src_blocks.iter().zip(self.dst_blocks.iter()) {
-            data_copyer.copy_buffer_to_buffer(src.copy_whole(), dst.copy_whole());
+            data_copyer.copy_buffer_to_buffer(src.full_copy(), dst.full_copy());
         }
 
         data_copyer.done()?;

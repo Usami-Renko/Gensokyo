@@ -3,8 +3,9 @@ use ash::vk;
 
 use crate::image::target::GsImage;
 use crate::image::view::ImageSubRange;
-use crate::command::IntoVKBarrier;
+use crate::image::allocator::ImageAllotCI;
 
+use crate::command::IntoVKBarrier;
 use crate::types::vkuint;
 
 use std::ptr;
@@ -80,4 +81,33 @@ impl IntoVKBarrier for ImageBarrierCI {
     fn into_barrier(self) -> Self::BarrierType {
         self.0
     }
+}
+
+
+/// return the image barrier used to transfer image data from buffer to image.
+pub(super) fn transfer_dst_barrier(info: &mut ImageAllotCI, subrange: ImageSubRange) -> ImageBarrierCI {
+
+    let barrier = ImageBarrierCI::new(&info.image, subrange)
+        .access_mask(info.current_access, vk::AccessFlags::TRANSFER_WRITE)
+        .layout(info.current_layout, vk::ImageLayout::TRANSFER_DST_OPTIMAL)
+        .build();
+
+    info.current_access = vk::AccessFlags::TRANSFER_WRITE;
+    info.current_layout = vk::ImageLayout::TRANSFER_DST_OPTIMAL;
+
+    barrier
+}
+
+/// return the image barrier used to transfer image data from buffer to image.
+pub(super) fn transfer_src_barrier(info: &mut ImageAllotCI, subrange: ImageSubRange) -> ImageBarrierCI {
+
+    let barrier = ImageBarrierCI::new(&info.image, subrange)
+        .access_mask(info.current_access, vk::AccessFlags::TRANSFER_READ)
+        .layout(info.current_layout, vk::ImageLayout::TRANSFER_SRC_OPTIMAL)
+        .build();
+
+    info.current_access = vk::AccessFlags::TRANSFER_READ;
+    info.current_layout = vk::ImageLayout::TRANSFER_SRC_OPTIMAL;
+
+    barrier
 }

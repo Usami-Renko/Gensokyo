@@ -4,49 +4,41 @@ use ash::vk;
 use crate::image::entity::ImageEntity;
 use crate::image::traits::{ ImageInstance, ImageCopiable };
 use crate::image::copy::ImageFullCopyInfo;
-use crate::image::instance::sampler::GsSamplerMirror;
+use crate::image::instance::sampler::{ GsSampler, GsSamplerMirror };
 use crate::image::instance::traits::{ IImageConveyor, ImageInstanceInfoDesc };
 
-use crate::descriptor::binding::DescriptorMeta;
 use crate::descriptor::binding::{ DescriptorBindingImgInfo, DescriptorBindingImgTgt };
-
 use crate::types::{ vkuint, vkDim3D };
 
-/// Wrapper class of Sampled Image in Vulkan.
-pub struct GsSampledImage {
+pub struct GsCubeMapImg {
 
-    isi: ISampledImg,
+    icm: ICubeMap,
 
-    entity: ImageEntity,
-    desc: ImageInstanceInfoDesc,
+    entity : ImageEntity,
+    desc   : ImageInstanceInfoDesc,
 }
 
-pub struct ISampledImg {
+impl ImageInstance<ICubeMap> for GsCubeMapImg {
 
-    descriptor: DescriptorMeta,
-}
-
-impl ImageInstance<ISampledImg> for GsSampledImage {
-
-    fn build(isi: ISampledImg, entity: ImageEntity, desc: ImageInstanceInfoDesc) -> Self where Self: Sized {
-        GsSampledImage { isi, entity, desc }
+    fn build(icm: ICubeMap, entity: ImageEntity, desc: ImageInstanceInfoDesc) -> Self where Self: Sized {
+        GsCubeMapImg { icm, entity, desc }
     }
 }
 
-impl DescriptorBindingImgTgt for GsSampledImage {
+impl DescriptorBindingImgTgt for GsCubeMapImg {
 
     fn binding_info(&self) -> DescriptorBindingImgInfo {
 
         DescriptorBindingImgInfo {
-            meta           : self.isi.descriptor.clone(),
-            sampler_handle : vk::Sampler::null(),
+            meta           : self.icm.sampler.descriptor.clone(),
+            sampler_handle : self.icm.sampler.handle,
             dst_layout     : vk::ImageLayout::SHADER_READ_ONLY_OPTIMAL,
             view_handle    : self.entity.view,
         }
     }
 }
 
-impl ImageCopiable for GsSampledImage {
+impl ImageCopiable for GsCubeMapImg {
 
     fn full_copy_mipmap(&self, copy_mip_level: vkuint) -> ImageFullCopyInfo {
 
@@ -64,22 +56,27 @@ impl ImageCopiable for GsSampledImage {
                 aspect_mask      : vk::ImageAspectFlags::COLOR,
                 mip_level        : copy_mip_level,
                 base_array_layer : 0,
-                layer_count      : 1,
+                layer_count      : 6,
             },
         }
     }
 }
 
-impl IImageConveyor for ISampledImg {
+pub struct ICubeMap {
 
-    fn sampler_mirror(&self) -> Option<GsSamplerMirror> {
-        None
+    sampler: GsSampler,
+}
+
+impl ICubeMap {
+
+    pub(super) fn new(sampler: GsSampler) -> ICubeMap {
+        ICubeMap { sampler }
     }
 }
 
-impl ISampledImg {
+impl IImageConveyor for ICubeMap {
 
-    pub(super) fn new(descriptor: DescriptorMeta) -> ISampledImg {
-        ISampledImg { descriptor }
+    fn sampler_mirror(&self) -> Option<GsSamplerMirror> {
+        Some(self.sampler.mirror())
     }
 }

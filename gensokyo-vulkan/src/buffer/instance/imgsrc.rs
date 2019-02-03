@@ -54,11 +54,8 @@ impl BufferInstance for GsImgsrcBuffer {
 
 impl BufferCopiable for GsImgsrcBuffer {
 
-    fn copy_whole(&self) -> BufferFullCopyInfo {
-        BufferFullCopyInfo {
-            handle: self.block.handle,
-            size  : self.block.size,
-        }
+    fn full_copy(&self) -> BufferFullCopyInfo {
+        self.block.full_copy()
     }
 }
 

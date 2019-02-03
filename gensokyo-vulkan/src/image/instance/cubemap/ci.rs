@@ -5,12 +5,12 @@ use crate::core::GsDevice;
 
 use crate::image::target::GsImage;
 use crate::image::enums::{ ImageInstanceType, ImagePipelineStage };
-use crate::image::storage::ImageStorageInfo;
 use crate::image::instance::base::GsBackendImage;
 use crate::image::mipmap::MipmapMethod;
+use crate::image::storage::ImageStorageInfo;
 use crate::image::instance::traits::ImageCISpecificApi;
-use crate::image::instance::combinedimg::image::{ GsCombinedImgSampler, ICombinedImg };
 use crate::image::instance::api::ImageCIInheritApi;
+use crate::image::instance::cubemap::image::{ GsCubeMapImg, ICubeMap };
 use crate::image::instance::sampler::{ GsSampler, SamplerCI };
 use crate::image::allocator::ImageAllotCI;
 
@@ -20,8 +20,7 @@ use crate::descriptor::{ GsDescriptorType, ImageDescriptorType };
 use crate::error::VkResult;
 use crate::types::vkuint;
 
-/// Combined Image Sampler Create Info.
-pub struct CombinedImgSamplerCI {
+pub struct CubeMapImgCI {
 
     pipeline_stage: ImagePipelineStage,
     backend: GsBackendImage,
@@ -29,35 +28,40 @@ pub struct CombinedImgSamplerCI {
     sampler_ci: SamplerCI,
 }
 
-impl GsCombinedImgSampler {
+impl GsCubeMapImg {
 
-    pub fn new(binding: vkuint, storage: ImageStorageInfo, pipeline_stage: ImagePipelineStage) -> CombinedImgSamplerCI {
+    pub fn new(binding: vkuint, storage: ImageStorageInfo, pipeline_stage: ImagePipelineStage) -> CubeMapImgCI {
 
         let mut backend = GsBackendImage::from(storage);
-        backend.image_ci.property.image_type = vk::ImageType::TYPE_2D;
-        backend.image_ci.property.tiling     = vk::ImageTiling::OPTIMAL;
-        backend.image_ci.property.usages     = vk::ImageUsageFlags::SAMPLED | vk::ImageUsageFlags::TRANSFER_DST;
-        backend.image_ci.property.mipmap     = MipmapMethod::Disable; // default to disable mipmap generation.
+        backend.image_ci.property.flags        = vk::ImageCreateFlags::CUBE_COMPATIBLE;
+        backend.image_ci.property.image_type   = vk::ImageType::TYPE_2D;
+        backend.image_ci.property.tiling       = vk::ImageTiling::OPTIMAL;
+        backend.image_ci.property.usages       = vk::ImageUsageFlags::SAMPLED | vk::ImageUsageFlags::TRANSFER_DST;
+        backend.image_ci.property.mipmap       = MipmapMethod::Disable;
+        backend.image_ci.property.array_layers = 6; // cube map is always load from an 2D image with 6 layers.
+
+        backend.view_ci.view_type = vk::ImageViewType::CUBE;
+        backend.view_ci.subrange.0.layer_count = 6;
 
         let mut sampler_ci = GsSampler::new();
         sampler_ci.reset_descriptor(DescriptorMeta {
             binding,
-            descriptor_type: GsDescriptorType::Image(ImageDescriptorType::CombinedImageSampler),
+            descriptor_type: GsDescriptorType::Image(ImageDescriptorType::CombinedImageSampler)
         });
 
-        CombinedImgSamplerCI { pipeline_stage, sampler_ci, backend }
+        CubeMapImgCI { pipeline_stage, backend, sampler_ci }
     }
 }
 
-impl CombinedImgSamplerCI {
+impl CubeMapImgCI {
 
     pub fn reset_sampler(&mut self, sampler_ci: SamplerCI) {
-        self.sampler_ci.reset_ci(sampler_ci);
+        self.sampler_ci = sampler_ci;
     }
 }
 
-impl ImageCISpecificApi for CombinedImgSamplerCI {
-    type IConveyor = ICombinedImg;
+impl ImageCISpecificApi for CubeMapImgCI {
+    type IConveyor = ICubeMap;
 
     fn check_physical_support(&self, device: &GsDevice) -> VkResult<()> {
 
@@ -67,7 +71,7 @@ impl ImageCISpecificApi for CombinedImgSamplerCI {
     fn refactor(self, device: &GsDevice, image: GsImage) -> VkResult<(ImageAllotCI, Self::IConveyor)> {
 
         let sampler = self.sampler_ci.build(device)?;
-        let isi = ICombinedImg::new(sampler);
+        let isi = ICubeMap::new(sampler);
 
         let allot_cis = ImageAllotCI::new(
             ImageInstanceType::CombinedImageSampler { stage: self.pipeline_stage },
@@ -78,7 +82,7 @@ impl ImageCISpecificApi for CombinedImgSamplerCI {
     }
 }
 
-impl ImageCIInheritApi for CombinedImgSamplerCI {
+impl ImageCIInheritApi for CubeMapImgCI {
 
     fn backend(&self) -> &GsBackendImage {
         &self.backend

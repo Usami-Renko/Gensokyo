@@ -57,11 +57,8 @@ impl BufferInstance for GsVertexBuffer {
 
 impl BufferCopiable for GsVertexBuffer {
 
-    fn copy_whole(&self) -> BufferFullCopyInfo {
-        BufferFullCopyInfo {
-            handle: self.block.handle,
-            size  : self.block.size,
-        }
+    fn full_copy(&self) -> BufferFullCopyInfo {
+        self.block.full_copy()
     }
 }
 

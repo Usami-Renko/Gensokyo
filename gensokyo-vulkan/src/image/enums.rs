@@ -1,14 +1,26 @@
 
 use ash::vk;
 use crate::types::format::GsFormat;
+use crate::types::vkuint;
 
 #[derive(Debug, Clone, Eq, PartialEq, Hash)]
 pub enum ImageInstanceType {
 
     CombinedImageSampler { stage: ImagePipelineStage },
     SampledImage { stage: ImagePipelineStage },
+    CubeMapImage { stage: ImagePipelineStage },
     DepthStencilAttachment,
     DepthStencilImage { format: GsFormat, stage: ImagePipelineStage },
+}
+
+impl ImageInstanceType {
+
+    pub(super) fn layer_count(&self) -> vkuint {
+        match self {
+            | ImageInstanceType::CubeMapImage { .. } => 6,
+            | _ => 1,
+        }
+    }
 }
 
 /// ImagePipelineStage indicate in which pipeline stage this image is used.

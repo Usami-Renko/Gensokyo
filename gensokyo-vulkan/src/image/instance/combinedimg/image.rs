@@ -3,11 +3,12 @@ use ash::vk;
 
 use crate::image::entity::ImageEntity;
 use crate::image::traits::{ ImageInstance, ImageCopiable };
-use crate::image::utils::{ ImageFullCopyInfo, ImageCopySubrange };
+use crate::image::copy::ImageFullCopyInfo;
 use crate::image::instance::sampler::{ GsSampler, GsSamplerMirror };
 use crate::image::instance::traits::{ IImageConveyor, ImageInstanceInfoDesc };
 
 use crate::descriptor::binding::{ DescriptorBindingImgInfo, DescriptorBindingImgTgt };
+use crate::types::{ vkuint, vkDim3D };
 
 /// Wrapper class of Combined Image Sampler in Vulkan.
 pub struct GsCombinedImgSampler {
@@ -18,24 +19,10 @@ pub struct GsCombinedImgSampler {
     desc: ImageInstanceInfoDesc,
 }
 
-pub struct ICombinedImg {
-
-    // no need to destroy sampler manually.
-    // it will automatically destroy by GsImageRepository.
-    sampler: GsSampler,
-}
-
 impl ImageInstance<ICombinedImg> for GsCombinedImgSampler {
 
     fn build(isi: ICombinedImg, entity: ImageEntity, desc: ImageInstanceInfoDesc) -> Self where Self: Sized {
         GsCombinedImgSampler { isi, entity, desc }
-    }
-}
-
-impl ICombinedImg {
-
-    pub(super) fn new(sampler: GsSampler) -> ICombinedImg {
-        ICombinedImg { sampler }
     }
 }
 
@@ -54,14 +41,39 @@ impl DescriptorBindingImgTgt for GsCombinedImgSampler {
 
 impl ImageCopiable for GsCombinedImgSampler {
 
-    fn copy_range(&self, subrange: ImageCopySubrange) -> ImageFullCopyInfo {
+    fn full_copy_mipmap(&self, copy_mip_level: vkuint) -> ImageFullCopyInfo {
+
+        use std::cmp::max;
 
         ImageFullCopyInfo {
             handle: self.entity.image,
             layout: self.desc.current_layout,
-            extent: self.desc.dimension,
-            sub_resource_layers: subrange,
+            extent: vkDim3D {
+                width : max(self.desc.dimension.width  >> copy_mip_level, 1),
+                height: max(self.desc.dimension.height >> copy_mip_level, 1),
+                depth : 1,
+            },
+            sub_resource_layers: vk::ImageSubresourceLayers {
+                aspect_mask      : vk::ImageAspectFlags::COLOR,
+                mip_level        : copy_mip_level,
+                base_array_layer : 0,
+                layer_count      : 1,
+            },
         }
+    }
+}
+
+pub struct ICombinedImg {
+
+    // no need to destroy sampler manually.
+    // it will automatically destroy by GsImageRepository.
+    sampler: GsSampler,
+}
+
+impl ICombinedImg {
+
+    pub(super) fn new(sampler: GsSampler) -> ICombinedImg {
+        ICombinedImg { sampler }
     }
 }
 

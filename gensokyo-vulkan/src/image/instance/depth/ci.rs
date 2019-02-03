@@ -38,8 +38,8 @@ impl GsDSAttachment {
         let mut backend = GsBackendImage::from(storage);
 
         backend.image_ci.property.image_type = vk::ImageType::TYPE_2D;
-        backend.image_ci.property.tiling = vk::ImageTiling::OPTIMAL;
-        backend.image_ci.property.usages = vk::ImageUsageFlags::DEPTH_STENCIL_ATTACHMENT;
+        backend.image_ci.property.tiling     = vk::ImageTiling::OPTIMAL;
+        backend.image_ci.property.usages     = vk::ImageUsageFlags::DEPTH_STENCIL_ATTACHMENT;
 
         backend.view_ci.view_type = vk::ImageViewType::TYPE_2D;
         backend.view_ci.subrange.0.aspect_mask = format.aspect_mask();
@@ -74,7 +74,7 @@ impl ImageCISpecificApi for DSAttachmentCI {
 
     fn refactor(self, _: &GsDevice, image: GsImage) -> VkResult<(ImageAllotCI, Self::IConveyor)> {
 
-        let idsi = IDepthStencilImg::new(self.backend.image_ci.specific.format);
+        let idsi = IDepthStencilImg::new(self.backend.image_ci.specific.format, self.backend.view_ci.subrange.0.aspect_mask);
 
         let allot_cis = ImageAllotCI::new(
             ImageInstanceType::DepthStencilAttachment,

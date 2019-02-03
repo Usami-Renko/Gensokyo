@@ -6,7 +6,8 @@ use crate::core::GsDevice;
 use crate::image::target::GsImage;
 use crate::image::enums::ImageInstanceType;
 use crate::image::traits::ImageCopiable;
-use crate::image::utils::{ ImageFullCopyInfo, ImageCopySubrange };
+use crate::image::copy::ImageFullCopyInfo;
+
 use crate::image::instance::base::{ GsBackendImage, SampleImageBarrierBundle };
 use crate::image::instance::traits::{ ImageCIApi, ImageCISpecificApi, ImageBarrierBundleAbs };
 use crate::image::instance::traits::{ IImageConveyor, ImageInstanceInfoDesc };
@@ -22,7 +23,7 @@ use crate::memory::transfer::DataCopyer;
 
 use crate::error::{ VkResult, VkError };
 use crate::utils::allot::{ GsAssignIndex, GsAllocatorApi, GsAllotIntoDistributor };
-use crate::types::vkbytes;
+use crate::types::{ vkuint, vkbytes, vkDim3D };
 
 use std::collections::{ HashMap, HashSet };
 use std::marker::PhantomData;
@@ -226,15 +227,29 @@ impl ImageAllotCI {
 
 impl ImageCopiable for ImageAllotCI {
 
-    fn copy_range(&self, subrange: ImageCopySubrange) -> ImageFullCopyInfo {
+    fn full_copy_mipmap(&self, copy_mip_level: vkuint) -> ImageFullCopyInfo {
 
-        // The layout parameter is the destination layout after data copy.
-        // This value should be vk::TransferDstOptimal.
+        debug_assert_eq!(self.current_layout, vk::ImageLayout::TRANSFER_DST_OPTIMAL);
+
+        use std::cmp::max;
+
         ImageFullCopyInfo {
             handle: self.image.handle,
+            // layout parameter is the destination layout after data copy.
             layout: self.current_layout,
-            extent: self.backend.storage.dimension,
-            sub_resource_layers: subrange,
+            extent: vkDim3D {
+                width : max(self.backend.storage.dimension.width  >> copy_mip_level, 1),
+                height: max(self.backend.storage.dimension.height >> copy_mip_level, 1),
+                // TODO: This parameter may be wrong setting.
+                depth : self.backend.image_ci.property.array_layers,
+            },
+            sub_resource_layers: vk::ImageSubresourceLayers {
+                aspect_mask      : self.backend.view_ci.subrange.0.aspect_mask,
+                mip_level        : copy_mip_level,
+                // copy all the layers.
+                base_array_layer : 0,
+                layer_count      : self.typ.layer_count(),
+            },
         }
     }
 }
@@ -265,11 +280,15 @@ fn collect_barrier_bundle(image_infos: &[ImageAllotCI]) -> Vec<Box<dyn ImageBarr
 
             match image_type {
                 | ImageInstanceType::CombinedImageSampler { stage } => {
-                    let bundle = SampleImageBarrierBundle::new(stage, indices);
+                    let bundle = SampleImageBarrierBundle::new(stage, image_type.clone(), indices);
                     Box::new(bundle) as Box<dyn ImageBarrierBundleAbs>
                 },
                 | ImageInstanceType::SampledImage { stage } => {
-                    let bundle = SampleImageBarrierBundle::new(stage, indices);
+                    let bundle = SampleImageBarrierBundle::new(stage, image_type.clone(), indices);
+                    Box::new(bundle) as Box<dyn ImageBarrierBundleAbs>
+                },
+                | ImageInstanceType::CubeMapImage { stage } => {
+                    let bundle = SampleImageBarrierBundle::new(stage, image_type.clone(), indices);
                     Box::new(bundle) as Box<dyn ImageBarrierBundleAbs>
                 },
                 | ImageInstanceType::DepthStencilAttachment => {

@@ -5,5 +5,6 @@ pub(super) mod base;
 pub mod depth;
 pub mod combinedimg;
 pub mod sampledimg;
-pub mod traits;
+pub mod cubemap;
 pub mod sampler;
+pub mod traits;

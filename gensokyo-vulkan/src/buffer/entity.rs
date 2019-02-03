@@ -42,7 +42,7 @@ impl BufferBlock {
 
 impl BufferCopiable for BufferBlock {
 
-    fn copy_whole(&self) -> BufferFullCopyInfo {
+    fn full_copy(&self) -> BufferFullCopyInfo {
 
         BufferFullCopyInfo {
             handle: self.handle,
