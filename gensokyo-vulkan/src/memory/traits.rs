@@ -43,7 +43,7 @@ pub trait GsMemoryAbstract {
         }
     }
 
-    fn destroy(&mut self, device: &GsDevice) {
+    fn discard(&mut self, device: &GsDevice) {
         unsafe {
             device.logic.handle.free_memory(self.target().handle, None);
         }
@@ -121,5 +121,5 @@ pub trait MemoryMappable {
 pub trait MemoryDstEntity: Sized {
 
     fn type_bytes(&self) -> vkuint;
-    fn alignment_size(&self) -> vkbytes;
+    fn aligned_size(&self) -> vkbytes;
 }

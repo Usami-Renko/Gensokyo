@@ -4,6 +4,8 @@ A Rust implementation of [Vulkan examples](https://github.com/SaschaWillems/Vulk
 
 **Note: Text rendering is not implement yet in all examples.**
 
+**Note: All textures are load from png instead of ktx for simpleness.**
+
 ## Basic
 
 | example                       | status | Note                      |
@@ -15,8 +17,8 @@ A Rust implementation of [Vulkan examples](https://github.com/SaschaWillems/Vulk
 | 05 - Push constants           | ✅      |                           |
 | 06 - Specialization constants | ✅      |                           |
 | 07 - Texture mapping          | ✅️      | Use runtime mipmap generation. |
-| 08 - Cube map textures        |        |                           |
-| 09 - Texture arrays           |        |                           |
+| 08 - Cube map textures        | ❌ | Get stuck in ktx format loading. |
+| 09 - Texture arrays           | ❌ | Get stuck in ktx format loading. |
 | 10 - 3D textures              |        |                           |
 | 11 - Model rendering          |        |                           |
 | 12 - Input attachments        |        |                           |

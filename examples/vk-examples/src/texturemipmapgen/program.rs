@@ -234,9 +234,10 @@ impl VulkanExample {
         sampler_array_ci.add_sampler(sampler2_info);
 
         // sampler 3.
+        let max_sampler_anisotropy = initializer.physical_limits().max_sampler_anisotropy;
         let sampler3_info = sampler_template
             .lod(0.0, 0.0, mip_level as vkfloat)
-            .anisotropy(Some(16.0)); // TODO: Replace this with maxSamplerAnisotropy query from device.
+            .anisotropy(Some(max_sampler_anisotropy));
         sampler_array_ci.add_sampler(sampler3_info);
 
         let sampler_array = image_allocator.assign(sampler_array_ci)?;
@@ -308,7 +309,7 @@ impl VulkanExample {
         let render_pass = render_pass_builder.build()?;
         let depth_stencil = GsDepthStencilState::setup(GsDepthStencilPrefab::EnableDepth);
         let mut rasterization = GsRasterizerState::setup(RasterizerPrefab::Common);
-        rasterization.set_cull_mode(vk::CullModeFlags::NONE);
+        rasterization.set_cull_mode(vk::CullModeFlags::NONE); // disable face culling.
 
         let pipeline_config = GfxPipelineConfig::new(shader_infos, vertex_input_desc, render_pass, initializer.screen_dimension())
             .with_depth_stencil(depth_stencil)

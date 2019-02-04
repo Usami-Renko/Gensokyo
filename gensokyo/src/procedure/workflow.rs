@@ -27,16 +27,7 @@ pub trait GraphicsRoutine {
         Ok(())
     }
 
-    fn clean_resources(&mut self, _device: &GsDevice) -> GsResult<()> {
-        // Do nothing.
-        Ok(())
-    }
-
     fn reload_res(&mut self, initializer: AssetInitializer) -> GsResult<()>;
-
-    fn clean_routine(&mut self, _device: &GsDevice) {
-        // Empty...
-    }
 
     // input
     fn react_input(&mut self, inputer: &ActionNerve, delta_time: f32) -> SceneAction;

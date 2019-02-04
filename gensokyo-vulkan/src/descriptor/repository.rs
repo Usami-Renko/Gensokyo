@@ -27,8 +27,8 @@ impl Drop for GsDescriptorRepository {
 
     fn drop(&mut self) {
 
-        self.pool.destroy(&self.device);
+        self.pool.discard(&self.device);
 
-        self.sets.iter().for_each(|set| set.destroy(&self.device));
+        self.sets.iter().for_each(|set| set.discard(&self.device));
     }
 }

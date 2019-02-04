@@ -51,13 +51,13 @@ impl GsRenderPass {
         self.framebuffers.len()
     }
 
-    pub fn destroy(&self, device: &GsDevice) {
+    pub fn discard(&self, device: &GsDevice) {
 
         unsafe {
             device.logic.handle.destroy_render_pass(self.handle, None);
         }
 
         self.framebuffers.iter()
-            .for_each(|f| f.destroy(device));
+            .for_each(|f| f.discard(device));
     }
 }

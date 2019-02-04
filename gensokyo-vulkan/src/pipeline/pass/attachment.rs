@@ -2,7 +2,7 @@
 use ash::vk;
 
 use crate::pipeline::pass::subpass::AttachmentRawType;
-use crate::types::format::GsFormat;
+use crate::types::format::Format;
 
 pub trait RenderAttType: Sized {
     const IMAGE_LAYOUT: vk::ImageLayout;
@@ -39,7 +39,7 @@ impl<T> RenderAttachmentCI<T>
         T: RenderAttType {
 
     /// `format` is a vk::Format value specifying the format of the image view that will be used for the attachment.
-    pub fn create(att_type: T, attachment_format: GsFormat) -> RenderAttachmentCI<T> {
+    pub fn create(att_type: T, attachment_format: Format) -> RenderAttachmentCI<T> {
 
         let mut attachment = T::build();
         attachment.format = attachment_format.0;

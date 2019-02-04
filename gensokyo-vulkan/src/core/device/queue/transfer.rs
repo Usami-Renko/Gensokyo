@@ -41,8 +41,8 @@ impl GsTransferQueue {
         &self.queue
     }
 
-    pub fn destroy(&self, device: &GsLogicalDevice) {
-        self.pool.destroy(device);
+    pub fn discard(&self, device: &GsLogicalDevice) {
+        self.pool.discard(device);
     }
 }
 
@@ -191,7 +191,7 @@ impl TransferCommandPool {
         }
     }
 
-    fn destroy(&self, device: &GsLogicalDevice) {
+    fn discard(&self, device: &GsLogicalDevice) {
 
         unsafe {
             device.handle.destroy_command_pool(self.handle, None);

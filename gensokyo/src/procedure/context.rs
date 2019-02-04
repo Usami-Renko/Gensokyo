@@ -127,14 +127,14 @@ impl VulkanContext {
     }
 
     /// use destroy function, so that the order of deinitialization can be customizable.
-    pub fn destroy(&self) {
+    pub fn discard(&self) {
 
-        self.device.logic.destroy();
-        self.device.phys.destroy();
+        self.device.logic.discard();
+        self.device.phys.discard();
 
-        self.surface.destroy();
+        self.surface.discard();
 
-        self.debugger.destroy();
-        self.instance.destroy();
+        self.debugger.discard();
+        self.instance.discard();
     }
 }

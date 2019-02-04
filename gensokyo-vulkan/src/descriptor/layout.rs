@@ -82,7 +82,7 @@ pub struct GsDescriptorSetLayout {
 
 impl GsDescriptorSetLayout {
 
-    pub fn destroy(&self, device: &GsDevice) {
+    pub fn discard(&self, device: &GsDevice) {
         unsafe {
             device.logic.handle.destroy_descriptor_set_layout(self.handle, None);
         }

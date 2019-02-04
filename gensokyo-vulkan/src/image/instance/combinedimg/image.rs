@@ -2,10 +2,9 @@
 use ash::vk;
 
 use crate::image::entity::ImageEntity;
-use crate::image::traits::{ ImageInstance, ImageCopiable };
-use crate::image::copy::ImageFullCopyInfo;
+use crate::image::copy::{ ImageCopiable, ImageFullCopyInfo };
 use crate::image::instance::sampler::{ GsSampler, GsSamplerMirror };
-use crate::image::instance::traits::{ IImageConveyor, ImageInstanceInfoDesc };
+use crate::image::instance::traits::{ ImageInstance, IImageConveyor, ImageInstanceInfoDesc };
 
 use crate::descriptor::binding::{ DescriptorBindingImgInfo, DescriptorBindingImgTgt };
 use crate::types::{ vkuint, vkDim3D };

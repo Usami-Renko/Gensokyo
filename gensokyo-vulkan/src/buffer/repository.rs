@@ -67,8 +67,8 @@ impl<M> Drop for GsBufferRepository<M>
 
     fn drop(&mut self) {
 
-        self.buffers.iter().for_each(|buffer| buffer.destroy(&self.device));
+        self.buffers.iter().for_each(|buffer| buffer.discard(&self.device));
 
-        self.memory.destroy(&self.device);
+        self.memory.discard(&self.device);
     }
 }

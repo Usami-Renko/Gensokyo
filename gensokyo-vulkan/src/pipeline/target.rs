@@ -70,8 +70,8 @@ impl<T> Drop for GsPipeline<T>
             self.device.logic.handle.destroy_pipeline(self.handle, None);
         }
 
-        self.layout.destroy(&self.device);
-        self.pass.destroy(&self.device);
+        self.layout.discard(&self.device);
+        self.pass.discard(&self.device);
     }
 }
 
@@ -153,8 +153,8 @@ impl<T> Drop for GsPipelineSet<T>
                 self.device.logic.handle.destroy_pipeline(handle, None);
             }
         }
-        self.layout.destroy(&self.device);
-        self.pass.destroy(&self.device);
+        self.layout.discard(&self.device);
+        self.pass.discard(&self.device);
     }
 }
 

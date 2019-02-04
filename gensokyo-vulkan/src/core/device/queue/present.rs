@@ -19,7 +19,7 @@ impl GsPresentQueue {
         &self.queue
     }
 
-    pub fn destroy(&self) {
+    pub fn discard(&self) {
         // nothing to clean
     }
 }

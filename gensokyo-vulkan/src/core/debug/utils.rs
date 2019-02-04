@@ -73,7 +73,7 @@ impl GsDebugUtils {
 impl DebugInstance for GsDebugUtils {
 
     /// Destroy the `vk::DebugUtils` object.
-    fn destroy(&self) {
+    fn discard(&self) {
         unsafe {
             self.loader.destroy_debug_utils_messenger(self.utils_messenger, None);
         }

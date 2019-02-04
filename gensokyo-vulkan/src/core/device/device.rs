@@ -108,12 +108,12 @@ impl GsLogicalDevice {
         }
     }
 
-    pub fn destroy(&self) {
+    pub fn discard(&self) {
 
         unsafe {
-            self.graphics_queue.destroy();
-            self.present_queue.destroy();
-            self.transfer_queue.destroy(self);
+            self.graphics_queue.discard();
+            self.present_queue.discard();
+            self.transfer_queue.discard(self);
 
             self.handle.destroy_device(None);
         }

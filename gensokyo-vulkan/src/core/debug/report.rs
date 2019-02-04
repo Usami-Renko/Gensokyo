@@ -75,7 +75,7 @@ impl GsDebugReport {
 impl DebugInstance for GsDebugReport {
 
     /// Destroy the `vk::DebugReport` object.
-    fn destroy(&self) {
+    fn discard(&self) {
         unsafe {
             self.loader.destroy_debug_report_callback(self.callback, None);
         }

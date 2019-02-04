@@ -233,10 +233,10 @@ impl UploadStagingResource {
         Ok(())
     }
 
-    pub fn destroy(&mut self, device: &GsDevice) {
+    pub fn discard(&mut self, device: &GsDevice) {
 
         self.buffers.iter()
-            .for_each(|buffer| buffer.destroy(device));
-        self.src_memory.destroy(device);
+            .for_each(|buffer| buffer.discard(device));
+        self.src_memory.discard(device);
     }
 }

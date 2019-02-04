@@ -26,9 +26,7 @@ impl<Routine> RoutineFlow<Routine>
 
     pub(super) fn new(routine: Routine, chain: ChainResource) -> RoutineFlow<Routine> {
 
-        RoutineFlow {
-            routine, chain,
-        }
+        RoutineFlow { routine, chain }
     }
 
     pub fn launch(mut self, context: ProgramContext) -> GsResult<()> {
@@ -42,13 +40,12 @@ impl<Routine> RoutineFlow<Routine>
 
         self.routine.closure(device)?;
         self.wait_device_idle(device)?;
-        self.routine.clean_routine(device);
-        self.chain.destroy(device);
+        self.chain.discard(device);
 
         // free the program specific resource.
         drop(self);
         // and then free vulkan environment resource.
-        vulkan_context.destroy();
+        vulkan_context.discard();
 
         Ok(())
     }
@@ -86,8 +83,9 @@ impl<Routine> RoutineFlow<Routine>
             match actioner.get_reaction() {
                 | SceneReaction::Rendering => {},
                 | SceneReaction::SwapchainRecreate => {
+
                     self.wait_device_idle(device)?;
-                    self.routine.clean_resources(device)?;
+
                     self.chain.reload(&vulkan_context, &config.core.swapchain)?;
 
                     let asset_loader = self.chain.assets_loader(&vulkan_context, &config.resources);

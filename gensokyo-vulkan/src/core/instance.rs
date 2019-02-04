@@ -111,7 +111,7 @@ impl GsInstance {
     /// Destroy the `vk::Instance` object. This function must be called before this wrapper class is dropped.
     ///
     /// In Vulkan, all child objects created using instance must have been destroyed prior to destroying instance.
-    pub fn destroy(&self) {
+    pub fn discard(&self) {
         unsafe {
             self.handle.destroy_instance(None);
         }

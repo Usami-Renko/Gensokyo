@@ -45,7 +45,7 @@ pub struct GsSamplerMirror(pub(super) vk::Sampler);
 
 impl GsSamplerMirror {
 
-    pub(crate) fn destroy(&self, device: &GsDevice) {
+    pub(crate) fn discard(&self, device: &GsDevice) {
         unsafe {
             device.logic.handle.destroy_sampler(self.0, None);
         }

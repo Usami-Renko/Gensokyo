@@ -4,13 +4,13 @@ use ash::version::DeviceV1_0;
 
 use crate::core::GsDevice;
 
-use crate::image::traits::ImageHandleEntity;
 use crate::image::mipmap::MipmapMethod;
+use crate::image::compress::ImageCompressType;
 use crate::memory::MemoryDstEntity;
 
 use crate::error::{ VkResult, VkError };
 use crate::types::{ vkuint, vkbytes, vkDim3D };
-use crate::types::format::GsFormat;
+use crate::types::format::Format;
 
 use std::ptr;
 
@@ -41,7 +41,7 @@ impl GsImage {
         Ok(image)
     }
 
-    pub fn destroy(&self, device: &GsDevice) {
+    pub fn discard(&self, device: &GsDevice) {
 
         unsafe {
             device.logic.handle.destroy_image(self.handle, None);
@@ -63,20 +63,13 @@ impl From<vk::Image> for GsImage {
     }
 }
 
-impl ImageHandleEntity for GsImage {
-
-    fn handle(&self) -> vk::Image {
-        self.handle
-    }
-}
-
 impl MemoryDstEntity for GsImage {
 
     fn type_bytes(&self) -> vkuint {
         self.requirement.memory_type_bits
     }
 
-    fn alignment_size(&self) -> vkbytes {
+    fn aligned_size(&self) -> vkbytes {
 
         use crate::utils::memory::bound_to_alignment;
         bound_to_alignment(self.requirement.size, self.requirement.alignment)
@@ -148,7 +141,9 @@ pub struct ImageSpecificCI {
     /// `dimension` describes the number of data elements in each dimension of the base level.
     pub dimension: vkDim3D,
     /// `format` describes the format and type of the data elements that will be contained in the image.
-    pub format: GsFormat,
+    pub format: Format,
+    /// `compression` describes the compression algorithm of this image.
+    pub compression: ImageCompressType,
     /// `sharing` specifies the sharing mode of the image when it will be accessed by multiple queue families.
     ///
     /// Default is vk::SharingMode::Exclusive.
@@ -196,7 +191,7 @@ impl Default for ImageSpecificCI {
     fn default() -> ImageSpecificCI {
 
         ImageSpecificCI {
-            format: GsFormat::UNDEFINED,
+            format: Format::UNDEFINED,
             dimension: vkDim3D {
                 width : 0,
                 height: 0,

@@ -13,7 +13,7 @@ use crate::image::{ GsImage, GsImageView, ImageViewCI };
 use crate::sync::{ GsFence, GsSemaphore };
 
 use crate::types::{ vkuint, vklint, vkDim2D };
-use crate::types::format::GsFormat;
+use crate::types::format::Format;
 
 use std::ptr;
 
@@ -33,7 +33,7 @@ pub struct GsSwapchain {
     /// the corresponding image views associated with the presentable images created by swapchain.
     views: Vec<GsImageView>,
     /// the format of presentable images.
-    format: GsFormat,
+    format: Format,
     /// the dimension of presentable images.
     extent: vkDim2D,
     /// the count of presentable image in swapchain.
@@ -45,7 +45,7 @@ pub struct GsSwapchain {
 
 impl GsSwapchain {
 
-    pub(crate) fn construct(handle: vk::SwapchainKHR, device: &GsDevice, loader: ash::extensions::khr::Swapchain, format: GsFormat, extent: vkDim2D, image_acquire_time: vklint) -> VkResult<GsSwapchain> {
+    pub(crate) fn construct(handle: vk::SwapchainKHR, device: &GsDevice, loader: ash::extensions::khr::Swapchain, format: Format, extent: vkDim2D, image_acquire_time: vklint) -> VkResult<GsSwapchain> {
 
         let images: Vec<GsImage> = unsafe {
             loader.get_swapchain_images(handle)
@@ -144,10 +144,10 @@ impl GsSwapchain {
     /// Destroy the `vk::SwapchainKHR` object.
     ///
     /// The application must not destroy `vk::SwapchainKHR` until after completion of all outstanding operations on images that were acquired from the `vk::SwapchainKHR`.
-    pub fn destroy(&self, device: &GsDevice) {
+    pub fn discard(&self, device: &GsDevice) {
 
         // destroy all the presentable images created by this swapchain.
-        self.views.iter().for_each(|v| v.destroy(device));
+        self.views.iter().for_each(|v| v.discard(device));
 
         // destroy the swapchain itself.
         unsafe {
@@ -156,7 +156,7 @@ impl GsSwapchain {
     }
 
     // TODO: Remove the following function.
-    pub fn format(&self) -> GsFormat {
+    pub fn format(&self) -> Format {
         self.format
     }
 
@@ -181,7 +181,7 @@ pub struct SwapchainConfig {
     /// the value of layers property in vk::Framebuffer.
     pub framebuffer_layers: vkuint,
 
-    pub prefer_surface_format      : GsFormat,
+    pub prefer_surface_format      : Format,
     pub prefer_surface_color_space : vk::ColorSpaceKHR,
 
     pub prefer_primary_present_mode   : vk::PresentModeKHR,

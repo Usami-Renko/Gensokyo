@@ -168,7 +168,7 @@ pub(super) fn compile_shaders(device: &GsDevice, compiler: &mut GsShaderCompiler
 
 pub(super) fn destroy_modules(device: &GsDevice, modules: &[GsShaderModule]) {
     for module in modules.iter() {
-        module.destroy(device);
+        module.discard(device);
     }
 }
 

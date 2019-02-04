@@ -78,6 +78,7 @@ impl SampleImageBarrierBundle {
         let mut staging_allocator = GsBufferAllocator::create(device, BufferStorageType::STAGING);
 
         for &index in self.info_indices.iter() {
+
             let img_info = GsImgsrcBuffer::new(infos[index].space);
             let buffer_index = staging_allocator.assign(img_info)?;
             staging_indices.push(buffer_index);

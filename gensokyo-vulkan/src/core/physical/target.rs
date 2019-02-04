@@ -26,7 +26,7 @@ impl GsPhysicalDevice {
         &self.properties.handle.limits
     }
 
-    pub fn destroy(&self) {
+    pub fn discard(&self) {
         // No method for delete physical device.
         // leave it empty
     }

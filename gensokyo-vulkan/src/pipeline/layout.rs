@@ -65,7 +65,7 @@ pub struct GsPipelineLayout {
 
 impl GsPipelineLayout {
 
-    pub fn destroy(&self, device: &GsDevice) {
+    pub fn discard(&self, device: &GsDevice) {
         unsafe {
             device.logic.handle.destroy_pipeline_layout(self.handle, None);
         }

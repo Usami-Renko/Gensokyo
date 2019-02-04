@@ -30,8 +30,8 @@ impl GsDescriptorSet {
         GsDescriptorSet { handle, layout }
     }
 
-    pub fn destroy(&self, device: &GsDevice) {
-        self.layout.destroy(device);
+    pub fn discard(&self, device: &GsDevice) {
+        self.layout.discard(device);
     }
 }
 

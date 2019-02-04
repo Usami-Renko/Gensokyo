@@ -3,8 +3,10 @@ use image;
 use image::GenericImageView;
 
 use gsvk::image::storage::{ ImageStorageInfo, ImageSource, ImageData };
+use gsvk::image::GsImageFormat;
+
 use gsvk::types::{ vkbytes, vkDim3D };
-use gsvk::types::format::GsFormat;
+use gsvk::types::format::Format;
 
 use crate::assets::error::AssetsError;
 use crate::error::{ GsResult, GsError };
@@ -26,7 +28,13 @@ impl From<ImageLoadConfig> for ImageLoader {
 
 impl ImageLoader {
 
+    // Load texture with default format.
     pub fn load_2d(&self, path: &Path) -> GsResult<ImageStorageInfo> {
+
+        self.load_2d_with_format(path, GsImageFormat::Uncompressed(Format::RGBA8_UNORM))
+    }
+
+    pub fn load_2d_with_format(&self, path: &Path, format: GsImageFormat) -> GsResult<ImageStorageInfo> {
 
         let mut image_obj = image::open(path)
             .map_err(|e| GsError::assets(AssetsError::Image(e)))?;
@@ -61,7 +69,7 @@ impl ImageLoader {
                 // TODO: Currently not support muti-level image.
                 width, height, depth: 1
             },
-            format: self.config.img_format,
+            format,
         };
 
         Ok(info)
@@ -79,6 +87,4 @@ pub struct ImageLoadConfig {
     pub byte_per_pixel: u32,
     /// force_rgba define whether to load the image from file with rgba channel.
     pub force_rgba: bool,
-    ///
-    pub img_format: GsFormat,
 }

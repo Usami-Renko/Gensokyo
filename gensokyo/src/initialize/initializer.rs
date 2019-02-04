@@ -1,4 +1,6 @@
 
+use ash::vk;
+
 use gsvk::core::GsDevice;
 use gsvk::core::swapchain::GsChain;
 
@@ -27,5 +29,9 @@ impl AssetInitializer {
 
     pub fn screen_dimension(&self) -> vkDim2D {
         self.swapchain.dimension()
+    }
+
+    pub fn physical_limits(&self) -> &vk::PhysicalDeviceLimits {
+        self.device.phys.limits()
     }
 }

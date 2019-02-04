@@ -5,8 +5,7 @@ use crate::core::GsDevice;
 
 use crate::image::target::GsImage;
 use crate::image::enums::ImageInstanceType;
-use crate::image::traits::ImageCopiable;
-use crate::image::copy::ImageFullCopyInfo;
+use crate::image::copy::{ ImageCopiable, ImageFullCopyInfo };
 
 use crate::image::instance::base::{ GsBackendImage, SampleImageBarrierBundle };
 use crate::image::instance::traits::{ ImageCIApi, ImageCISpecificApi, ImageBarrierBundleAbs };
@@ -140,7 +139,7 @@ impl<M> GsAllotIntoDistributor<GsImageDistributor<M>> for GsImageAllocator<M>
             offset += image_info.space;
         }
 
-        // 4.record image barrier transitions(copy data, generate mipmap...etc, if needed).
+        // 4.record image barrier transitions(upload data, generate mipmap...etc, if needed).
         let mut copyer = DataCopyer::new(&self.device)?;
 
         let mut barrier_bundles = collect_barrier_bundle(&self.image_infos);
@@ -157,7 +156,7 @@ impl<M> GsAllotIntoDistributor<GsImageDistributor<M>> for GsImageAllocator<M>
 
     fn reset(&mut self) {
 
-        self.image_infos.iter().for_each(|ci| ci.destroy(&self.device));
+        self.image_infos.iter().for_each(|ci| ci.discard(&self.device));
         self.image_infos.clear();
         self.memory_filter.reset();
     }
@@ -203,7 +202,7 @@ impl ImageAllotCI {
 
     pub fn new(typ: ImageInstanceType, image: GsImage, backend: GsBackendImage) -> ImageAllotCI {
 
-        let space = image.alignment_size();
+        let space = image.aligned_size();
         let current_layout = backend.image_ci.property.initial_layout;
         let current_access = vk::AccessFlags::empty();
 
@@ -219,9 +218,9 @@ impl ImageAllotCI {
         }
     }
 
-    pub fn destroy(&self, device: &GsDevice) {
+    pub fn discard(&self, device: &GsDevice) {
 
-        self.image.destroy(device);
+        self.image.discard(device);
     }
 }
 

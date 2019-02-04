@@ -21,7 +21,7 @@ pub struct GsDebugger {
 pub(super) trait DebugInstance {
 
     /// Destroy this validation tool.
-    fn destroy(&self);
+    fn discard(&self);
 }
 
 /// An enum type indicates all support validation tools used in `GsDebugger`.
@@ -85,10 +85,10 @@ impl GsDebugger {
     }
 
     /// Destroy this validation tool.
-    pub fn destroy(&self) {
+    pub fn discard(&self) {
 
         if let Some(ref debug_instance) = self.target {
-            debug_instance.destroy();
+            debug_instance.discard();
         }
     }
 }

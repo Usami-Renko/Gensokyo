@@ -5,7 +5,7 @@ use ash::version::DeviceV1_0;
 use crate::core::GsDevice;
 use crate::image::target::{ GsImage, ImageSpecificCI };
 use crate::error::{ VkResult, VkError };
-use crate::types::format::GsFormat;
+use crate::types::format::Format;
 use crate::types::vkuint;
 
 use std::ptr;
@@ -22,7 +22,7 @@ pub struct GsImageView {
 
 impl GsImageView {
 
-    pub fn destroy(&self, device: &GsDevice) {
+    pub fn discard(&self, device: &GsDevice) {
         unsafe {
             device.logic.handle.destroy_image_view(self.handle, None);
         }
@@ -80,7 +80,7 @@ impl ImageViewCI {
         Ok(view)
     }
 
-    pub(crate) fn build_for_swapchain(&self, device: &GsDevice, image: &GsImage, format: GsFormat) -> VkResult<GsImageView> {
+    pub(crate) fn build_for_swapchain(&self, device: &GsDevice, image: &GsImage, format: Format) -> VkResult<GsImageView> {
 
         let mut specific = ImageSpecificCI::default();
         specific.format = format;

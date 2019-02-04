@@ -2,7 +2,7 @@
 use ash::vk;
 use ash::vk::Format;
 
-use crate::types::format::GsFormat;
+use crate::types::format::Format;
 
 //macro_rules! parse_config_value_type_func {
 //    (bool) => { as_bool };
@@ -26,14 +26,14 @@ macro_rules! raw_str2vk_format {
     ($raw_name:ident, $path_name:ident, {$($raw_content:ident,)*}) => {
         match $raw_name.as_str() {
             $(
-                stringify!($raw_content) => GsFormat::any($path_name::$raw_content),
+                stringify!($raw_content) => Format::any($path_name::$raw_content),
             )*
             _ => panic!(),
         }
     };
 }
 
-pub fn vk_string_to_format(raw: &String) -> GsFormat {
+pub fn vk_string_to_format(raw: &String) -> Format {
 
     let format = raw_str2vk_format!(raw, Format, {
         UNDEFINED,

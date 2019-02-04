@@ -1,6 +1,6 @@
 
 use ash::vk;
-use crate::types::format::GsFormat;
+use crate::types::format::Format;
 use crate::types::vkuint;
 
 #[derive(Debug, Clone, Eq, PartialEq, Hash)]
@@ -10,7 +10,7 @@ pub enum ImageInstanceType {
     SampledImage { stage: ImagePipelineStage },
     CubeMapImage { stage: ImagePipelineStage },
     DepthStencilAttachment,
-    DepthStencilImage { format: GsFormat, stage: ImagePipelineStage },
+    DepthStencilImage { format: Format, stage: ImagePipelineStage },
 }
 
 impl ImageInstanceType {
@@ -49,14 +49,14 @@ pub enum DepthStencilImageFormat {
     Depth24BitStencil8Bit,
 }
 
-impl From<DepthStencilImageFormat> for GsFormat {
+impl From<DepthStencilImageFormat> for Format {
 
-    fn from(image_format: DepthStencilImageFormat) -> GsFormat {
+    fn from(image_format: DepthStencilImageFormat) -> Format {
 
         match image_format {
-            | DepthStencilImageFormat::Depth32Bit => GsFormat::D32_SFLOAT,
-            | DepthStencilImageFormat::Depth24BitStencil8Bit => GsFormat::D24_UNORM_S8_UINT,
-            | DepthStencilImageFormat::Depth32BitStencil8Bit => GsFormat::D32_SFLOAT_S8_UINT,
+            | DepthStencilImageFormat::Depth32Bit => Format::D32_SFLOAT,
+            | DepthStencilImageFormat::Depth24BitStencil8Bit => Format::D24_UNORM_S8_UINT,
+            | DepthStencilImageFormat::Depth32BitStencil8Bit => Format::D32_SFLOAT_S8_UINT,
         }
     }
 }

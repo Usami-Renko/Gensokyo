@@ -59,7 +59,7 @@ impl<M, I> GsAllocatorApi<I, GsBufferDistributor<M>> for GsBufferAllocator<M>
         };
 
         // get buffer alignment.
-        let alignment_space = buffer.alignment_size();
+        let alignment_space = buffer.aligned_size();
 
         self.spaces.push(alignment_space);
         self.buffers.push(buffer);
@@ -109,7 +109,7 @@ impl<M> GsAllotIntoDistributor<GsBufferDistributor<M>> for GsBufferAllocator<M>
 
     fn reset(&mut self) {
 
-        self.buffers.iter().for_each(|b| b.destroy(&self.device));
+        self.buffers.iter().for_each(|b| b.discard(&self.device));
         self.buffers.clear();
         self.spaces.clear();
         self.memory_filter.reset();

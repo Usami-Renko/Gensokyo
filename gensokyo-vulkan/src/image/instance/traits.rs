@@ -6,6 +6,9 @@ use crate::core::GsDevice;
 use crate::image::target::GsImage;
 use crate::image::instance::sampler::GsSamplerMirror;
 use crate::image::view::ImageSubRange;
+use crate::image::entity::ImageEntity;
+use crate::image::copy::ImageCopiable;
+use crate::image::compress::ImageCompressType;
 use crate::image::mipmap::MipmapMethod;
 use crate::image::allocator::ImageAllotCI;
 use crate::memory::transfer::DataCopyer;
@@ -39,6 +42,7 @@ pub trait ImageTgtCIApi: Sized {
     fn set_initial_layout(&mut self, layout: vk::ImageLayout);
     fn set_samples(&mut self, count: vk::SampleCountFlags, mip_levels: vkuint, array_layers: vkuint);
     fn set_share_queues(&mut self, queue_family_indices: Vec<vkuint>);
+    fn set_compression(&mut self, compression: ImageCompressType);
 }
 
 pub trait ImageViewCIApi: Sized {
@@ -69,6 +73,11 @@ pub trait ImageBarrierBundleAbs {
 pub trait IImageConveyor {
 
     fn sampler_mirror(&self) -> Option<GsSamplerMirror>;
+}
+
+pub trait ImageInstance<I>: ImageCopiable {
+
+    fn build(img: I, entity: ImageEntity, desc: ImageInstanceInfoDesc) -> Self where Self: Sized;
 }
 
 #[derive(Debug, Default)]

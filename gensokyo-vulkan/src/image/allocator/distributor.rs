@@ -3,9 +3,9 @@ use crate::core::GsDevice;
 
 use crate::image::entity::ImageEntity;
 use crate::image::view::GsImageView;
-use crate::image::traits::ImageInstance;
 use crate::image::allocator::ImageAllotCI;
 use crate::image::allocator::types::ImageMemoryTypeAbs;
+use crate::image::instance::traits::ImageInstance;
 use crate::image::instance::sampler::GsSamplerMirror;
 use crate::image::repository::GsImageRepository;
 

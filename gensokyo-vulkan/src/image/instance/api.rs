@@ -5,6 +5,7 @@ use crate::core::GsDevice;
 
 use crate::image::target::GsImage;
 use crate::image::instance::base::GsBackendImage;
+use crate::image::compress::ImageCompressType;
 use crate::image::mipmap::MipmapMethod;
 use crate::image::instance::traits::{ ImageCIApi, ImageCICommonApi, ImageCISpecificApi };
 use crate::image::instance::traits::{ ImageTgtCIApi, ImageViewCIApi };
@@ -37,6 +38,10 @@ impl<T> ImageTgtCIApi for T
 
     fn set_share_queues(&mut self, queue_family_indices: Vec<vkuint>) {
         self.backend_mut().set_share_queues(queue_family_indices);
+    }
+
+    fn set_compression(&mut self, compression: ImageCompressType) {
+        self.backend_mut().set_compression(compression);
     }
 }
 

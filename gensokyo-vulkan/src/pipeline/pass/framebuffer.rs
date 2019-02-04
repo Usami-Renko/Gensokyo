@@ -25,7 +25,7 @@ impl GsFramebuffer {
         }
     }
 
-    pub fn destroy(&self, device: &GsDevice) {
+    pub fn discard(&self, device: &GsDevice) {
         unsafe {
             device.logic.handle.destroy_framebuffer(self.handle, None);
         }

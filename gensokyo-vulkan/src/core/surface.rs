@@ -72,7 +72,7 @@ impl GsSurface {
     }
 
     /// Destroy the `vk::SurfaceKHR` object.
-    pub fn destroy(&self) {
+    pub fn discard(&self) {
 
         unsafe {
             self.loader.destroy_surface(self.handle, None);

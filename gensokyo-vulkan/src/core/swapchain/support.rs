@@ -6,7 +6,7 @@ use num::clamp;
 use crate::core::surface::GsSurface;
 use crate::core::swapchain::SwapchainConfig;
 use crate::types::{ vkDim2D, vkuint };
-use crate::types::format::GsFormat;
+use crate::types::format::Format;
 use crate::error::VkResult;
 
 pub struct SwapchainSupport {
@@ -83,7 +83,7 @@ impl SwapchainSupport {
 
         GsSwapchainFormat {
             surface: self.formats[0],
-            image_format: GsFormat::any(self.formats[0].format.clone()),
+            image_format: Format::any(self.formats[0].format.clone()),
         }
     }
 
@@ -107,5 +107,5 @@ impl SwapchainSupport {
 pub struct GsSwapchainFormat {
 
     pub surface: vk::SurfaceFormatKHR,
-    pub image_format: GsFormat,
+    pub image_format: Format,
 }

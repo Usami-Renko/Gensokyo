@@ -3,7 +3,7 @@ use ash::vk;
 
 use crate::image::mipmap::MipmapMethod;
 use crate::image::allocator::ImageAllotCI;
-use crate::image::traits::ImageCopiable;
+use crate::image::copy::ImageCopiable;
 use crate::image::barrier::ImageBarrierCI;
 
 use crate::buffer::BufferCopiable;

@@ -18,94 +18,6 @@ impl GsVkCommandType for Graphics {
     // Empty...
 }
 
-pub trait GsCmdGraphicsApi {
-
-    fn begin_render_pass(&self, pipeline: &impl CmdPipelineAbs, framebuffer_index: usize) -> &Self;
-
-    /// Set the viewport dynamically.
-    /// Before using this function, the `ViewportStateType::Dynamic` or `ViewportStateType::DynamicViewportFixedScissor` must be set to ViewportState in pipeline creation(by calling `GraphicsPipelineConfig::setup_viewport()`).
-    ///
-    /// `first_viewport` is the index of the first viewport whose parameters are updated by the command.
-    ///
-    /// `viewports` specifies the new value to use as viewports.
-    fn set_viewport(&self, first_viewport: vkuint, viewports: &[CmdViewportInfo]) -> &Self;
-
-    /// Set the scissor rectangles dynamically.
-    /// Before using this function, the `ViewportStateType::Dynamic` or `ViewportStateType::FixedViewportDynamicScissor` must be set to ViewportState in pipeline creation(by calling `GraphicsPipelineConfig::setup_viewport()`).
-    ///
-    /// `first_scissor` is the index of the first scissor whose state is updated by the command.
-    ///
-    /// `scissors` specifies the new value to use as scissor rectangles.
-    fn set_scissor(&self, first_scissor: vkuint, scissors: &[CmdScissorInfo]) -> &Self;
-
-    /// Set the line width dynamically.
-    /// Before using this function, the `DynamicableValue::Dynamic` must be set in function `GsRasterizerState::set_line_width()` on RasterizerState during pipeline creation.
-    ///
-    /// `width` specifies the new value to use as the width of rasterized line segments.
-    fn set_line_width(&self, width: vkfloat) -> &Self;
-
-    /// Set the depth bias dynamically.
-   /// Before using this function, the `DynamicableValue::Dynamic` must be set in function `GsRasterizerState::set_depth_bias()` on RasterizerState during pipeline creation.
-   ///
-   /// `bias` specifies the new value to use as depth bias.
-    fn set_depth_bias(&self, bias: CmdDepthBiasInfo) -> &Self;
-
-    /// Set the blend constants dynamically.
-    /// Before using this function, the `DynamicableValue::Dynamic` must be set in function `GsBlendState::set_blend_constants()` on BlendState during pipeline creation.
-    ///
-    /// `constants` specifies the new value to use as blend constants.
-    fn set_blend_constants(&self, constants: [vkfloat; 4]) -> &Self;
-
-    /// Set the depth bound dynamically.
-    /// Before using this function, the `DynamicableValue::Dynamic` must be set in function `DepthTest::set_depth_bound()` on DepthStencilState during pipeline creation.
-    ///
-    /// `bound` specifies the new value to use as depth bound.
-    fn set_depth_bound(&self, bound: CmdDepthBoundInfo) -> &Self;
-
-    /// Set the stencil compare mask dynamically.
-    /// Before using this function, the `DynamicableValue::Dynamic` must be set in function `StencilTest::set_compare_mask()` on DepthStencilState during pipeline creation.
-    ///
-    /// `face` specifies the set of stencil state for which to update the compare mask.
-    ///
-    /// `mask` specifies the new value to use as the stencil compare mask.
-    fn set_stencil_compare_mask(&self, face: vk::StencilFaceFlags, mask: vkuint) -> &Self;
-
-    /// Set the stencil write mask dynamically.
-    /// Before using this function, the `DynamicableValue::Dynamic` must be set in function `StencilTest::set_write_mask()` on DepthStencilState during pipeline creation.
-    ///
-    /// `face` specifies the set of stencil state for which to update the write mask.
-    ///
-    /// `mask` specifies the new value to use as the stencil write mask.
-    fn set_stencil_write_mask(&self, face: vk::StencilFaceFlags, mask: vkuint) -> &Self;
-
-    /// Set the stencil reference dynamically.
-    /// Before using this function, the `DynamicableValue::Dynamic` must be set in function `StencilTest::set_reference()` on DepthStencilState during pipeline creation.
-    ///
-    /// `face` specifies the set of stencil state for which to update the reference value.
-    ///
-    /// `reference` specifies the set of stencil state for which to update the reference value.
-    fn set_stencil_reference(&self, face: vk::StencilFaceFlags, reference: vkuint) -> &Self;
-
-    fn push_constants(&self, stage: GsPipelineStage, offset: vkuint, data: &[u8]) -> &Self;
-
-    fn bind_pipeline(&self) -> &Self;
-
-    /// `first_binding` is correspond to `vk::VertexInputBindingDescription.binding` value.
-    fn bind_vertex_buffers(&self, first_binding: vkuint, buffers: &[&GsVertexBuffer]) -> &Self;
-
-    fn bind_index_buffer(&self, buffer: &GsIndexBuffer, offset: vkbytes) -> &Self;
-
-    fn bind_descriptor_sets(&self, first_set: vkuint, sets: &[&DescriptorSet]) -> &Self;
-
-    fn bind_descriptor_sets_dynamic(&self, first_set: vkuint, sets: &[&DescriptorSet], dynamics: &[vkuint]) -> &Self;
-
-    fn draw(&self, vertex_count: vkuint, instance_count: vkuint, first_vertex: vkuint, first_instance: vkuint) -> &Self;
-
-    fn draw_indexed(&self, index_count: vkuint, instance_count: vkuint, first_index: vkuint, vertex_offset: vksint, first_instance: vkuint) -> &Self;
-
-    fn end_render_pass(&self) -> &Self;
-}
-
 impl GsCmdGraphicsApi for GsCmdRecorder<Graphics> {
 
     fn begin_render_pass(&self, pipeline: &impl CmdPipelineAbs, framebuffer_index: usize) -> &Self {
@@ -116,6 +28,12 @@ impl GsCmdGraphicsApi for GsCmdRecorder<Graphics> {
         } self
     }
 
+    /// Set the viewport dynamically.
+    /// Before using this function, the `ViewportStateType::Dynamic` or `ViewportStateType::DynamicViewportFixedScissor` must be set to ViewportState in pipeline creation(by calling `GraphicsPipelineConfig::setup_viewport()`).
+    ///
+    /// `first_viewport` is the index of the first viewport whose parameters are updated by the command.
+    ///
+    /// `viewports` specifies the new value to use as viewports.
     fn set_viewport(&self, first_viewport: vkuint, viewports: &[CmdViewportInfo]) -> &Self {
 
         let ports: Vec<vk::Viewport> = viewports.iter()
@@ -125,6 +43,12 @@ impl GsCmdGraphicsApi for GsCmdRecorder<Graphics> {
         } self
     }
 
+    /// Set the scissor rectangles dynamically.
+    /// Before using this function, the `ViewportStateType::Dynamic` or `ViewportStateType::FixedViewportDynamicScissor` must be set to ViewportState in pipeline creation(by calling `GraphicsPipelineConfig::setup_viewport()`).
+    ///
+    /// `first_scissor` is the index of the first scissor whose state is updated by the command.
+    ///
+    /// `scissors` specifies the new value to use as scissor rectangles.
     fn set_scissor(&self, first_scissor: vkuint, scissors: &[CmdScissorInfo]) -> &Self {
 
         let scissors: Vec<vk::Rect2D> = scissors.iter()
@@ -134,42 +58,76 @@ impl GsCmdGraphicsApi for GsCmdRecorder<Graphics> {
         } self
     }
 
+    /// Set the line width dynamically.
+    /// Before using this function, the `DynamicableValue::Dynamic` must be set in function `GsRasterizerState::set_line_width()` on RasterizerState during pipeline creation.
+    ///
+    /// `width` specifies the new value to use as the width of rasterized line segments.
     fn set_line_width(&self, width: vkfloat) -> &Self {
         unsafe {
             self.device.logic.handle.cmd_set_line_width(self.cmd_handle, width);
         } self
     }
 
+    /// Set the depth bias dynamically.
+    /// Before using this function, the `DynamicableValue::Dynamic` must be set in function `GsRasterizerState::set_depth_bias()` on RasterizerState during pipeline creation.
+    ///
+    /// `bias` specifies the new value to use as depth bias.
     fn set_depth_bias(&self, bias: CmdDepthBiasInfo) -> &Self {
         unsafe {
             self.device.logic.handle.cmd_set_depth_bias(self.cmd_handle, bias.constant_factor, bias.clamp, bias.slope_factor);
         } self
     }
 
+    /// Set the blend constants dynamically.
+    /// Before using this function, the `DynamicableValue::Dynamic` must be set in function `GsBlendState::set_blend_constants()` on BlendState during pipeline creation.
+    ///
+    /// `constants` specifies the new value to use as blend constants.
     fn set_blend_constants(&self, constants: [vkfloat; 4]) -> &Self {
         unsafe {
             self.device.logic.handle.cmd_set_blend_constants(self.cmd_handle, constants);
         } self
     }
 
+    /// Set the depth bound dynamically.
+    /// Before using this function, the `DynamicableValue::Dynamic` must be set in function `DepthTest::set_depth_bound()` on DepthStencilState during pipeline creation.
+    ///
+    /// `bound` specifies the new value to use as depth bound.
     fn set_depth_bound(&self, bound: CmdDepthBoundInfo) -> &Self {
         unsafe {
             self.device.logic.handle.cmd_set_depth_bounds(self.cmd_handle, bound.min_bound, bound.max_bound);
         } self
     }
 
+    /// Set the stencil compare mask dynamically.
+    /// Before using this function, the `DynamicableValue::Dynamic` must be set in function `StencilTest::set_compare_mask()` on DepthStencilState during pipeline creation.
+    ///
+    /// `face` specifies the set of stencil state for which to update the compare mask.
+    ///
+    /// `mask` specifies the new value to use as the stencil compare mask.
     fn set_stencil_compare_mask(&self, face: vk::StencilFaceFlags, mask: vkuint) -> &Self {
         unsafe {
             self.device.logic.handle.cmd_set_stencil_compare_mask(self.cmd_handle, face, mask);
         } self
     }
 
+    /// Set the stencil write mask dynamically.
+    /// Before using this function, the `DynamicableValue::Dynamic` must be set in function `StencilTest::set_write_mask()` on DepthStencilState during pipeline creation.
+    ///
+    /// `face` specifies the set of stencil state for which to update the write mask.
+    ///
+    /// `mask` specifies the new value to use as the stencil write mask.
     fn set_stencil_write_mask(&self, face: vk::StencilFaceFlags, mask: vkuint) -> &Self {
         unsafe {
             self.device.logic.handle.cmd_set_stencil_write_mask(self.cmd_handle, face, mask);
         } self
     }
 
+    /// Set the stencil reference dynamically.
+    /// Before using this function, the `DynamicableValue::Dynamic` must be set in function `StencilTest::set_reference()` on DepthStencilState during pipeline creation.
+    ///
+    /// `face` specifies the set of stencil state for which to update the reference value.
+    ///
+    /// `reference` specifies the set of stencil state for which to update the reference value.
     fn set_stencil_reference(&self, face: vk::StencilFaceFlags, reference: vkuint) -> &Self {
         unsafe {
             self.device.logic.handle.cmd_set_stencil_reference(self.cmd_handle, face, reference);
@@ -188,6 +146,7 @@ impl GsCmdGraphicsApi for GsCmdRecorder<Graphics> {
         } self
     }
 
+    /// `first_binding` is correspond to `vk::VertexInputBindingDescription.binding` value.
     fn bind_vertex_buffers(&self, first_binding: vkuint, buffers: &[&GsVertexBuffer]) -> &Self {
 
         let mut handles = vec![];
@@ -247,4 +206,45 @@ impl GsCmdGraphicsApi for GsCmdRecorder<Graphics> {
             self.device.logic.handle.cmd_end_render_pass(self.cmd_handle);
         } self
     }
+}
+
+pub trait GsCmdGraphicsApi {
+
+    fn begin_render_pass(&self, pipeline: &impl CmdPipelineAbs, framebuffer_index: usize) -> &Self;
+
+    fn set_viewport(&self, first_viewport: vkuint, viewports: &[CmdViewportInfo]) -> &Self;
+
+    fn set_scissor(&self, first_scissor: vkuint, scissors: &[CmdScissorInfo]) -> &Self;
+
+    fn set_line_width(&self, width: vkfloat) -> &Self;
+
+    fn set_depth_bias(&self, bias: CmdDepthBiasInfo) -> &Self;
+
+    fn set_blend_constants(&self, constants: [vkfloat; 4]) -> &Self;
+
+    fn set_depth_bound(&self, bound: CmdDepthBoundInfo) -> &Self;
+
+    fn set_stencil_compare_mask(&self, face: vk::StencilFaceFlags, mask: vkuint) -> &Self;
+
+    fn set_stencil_write_mask(&self, face: vk::StencilFaceFlags, mask: vkuint) -> &Self;
+
+    fn set_stencil_reference(&self, face: vk::StencilFaceFlags, reference: vkuint) -> &Self;
+
+    fn push_constants(&self, stage: GsPipelineStage, offset: vkuint, data: &[u8]) -> &Self;
+
+    fn bind_pipeline(&self) -> &Self;
+
+    fn bind_vertex_buffers(&self, first_binding: vkuint, buffers: &[&GsVertexBuffer]) -> &Self;
+
+    fn bind_index_buffer(&self, buffer: &GsIndexBuffer, offset: vkbytes) -> &Self;
+
+    fn bind_descriptor_sets(&self, first_set: vkuint, sets: &[&DescriptorSet]) -> &Self;
+
+    fn bind_descriptor_sets_dynamic(&self, first_set: vkuint, sets: &[&DescriptorSet], dynamics: &[vkuint]) -> &Self;
+
+    fn draw(&self, vertex_count: vkuint, instance_count: vkuint, first_vertex: vkuint, first_instance: vkuint) -> &Self;
+
+    fn draw_indexed(&self, index_count: vkuint, instance_count: vkuint, first_index: vkuint, vertex_offset: vksint, first_instance: vkuint) -> &Self;
+
+    fn end_render_pass(&self) -> &Self;
 }

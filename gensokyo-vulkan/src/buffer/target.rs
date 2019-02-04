@@ -45,7 +45,8 @@ impl GsBuffer {
         Ok(buffer)
     }
 
-    pub fn destroy(&self, device: &GsDevice) {
+    /// Destroy vk::Buffer object in Vulkan.
+    pub fn discard(&self, device: &GsDevice) {
 
         unsafe {
             device.logic.handle.destroy_buffer(self.handle, None);
@@ -59,7 +60,7 @@ impl MemoryDstEntity for GsBuffer {
         self.requirement.memory_type_bits
     }
 
-    fn alignment_size(&self) -> vkbytes {
+    fn aligned_size(&self) -> vkbytes {
 
         use crate::utils::memory::bound_to_alignment;
         bound_to_alignment(self.requirement.size, self.requirement.alignment)
@@ -111,7 +112,7 @@ impl BufferCI {
         if let Some(ref families) = self.sharing_queue_families {
             buffer_ci.sharing_mode = vk::SharingMode::CONCURRENT;
             buffer_ci.queue_family_index_count = families.len() as _;
-            buffer_ci.p_queue_family_indices = families.as_ptr();
+            buffer_ci.p_queue_family_indices   = families.as_ptr();
         };
 
         GsBuffer::build(device, buffer_ci)

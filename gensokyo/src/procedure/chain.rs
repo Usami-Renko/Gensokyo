@@ -91,7 +91,7 @@ impl ChainResource {
     pub fn reload(&mut self, vulkan: &VulkanContext, config: &SwapchainConfig) -> GsResult<()> {
 
         let new_chain = vulkan.new_chain(config, Some(&self.swapchain), &self.window)?;
-        self.destroy(&vulkan.device);
+        self.discard(&vulkan.device);
 
         self.swapchain = new_chain;
         self.recreate_syncs(&vulkan.device)?;
@@ -99,9 +99,9 @@ impl ChainResource {
         Ok(())
     }
 
-    pub fn destroy(&self, device: &GsDevice) {
+    pub fn discard(&self, device: &GsDevice) {
 
-        self.swapchain.destroy(device);
+        self.swapchain.discard(device);
         // image_awaits and sync_fences will be drop in its drop func,
     }
 

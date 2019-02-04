@@ -101,7 +101,6 @@ pub(super) fn manifest_toml() -> Value {
 //        flip_horizontal = false
 //        force_rgba      = true
 //        byte_per_pixel  = 4
-//        image_format    = "R8G8B8A8_UNORM"
 //    }
 //}
 
@@ -190,5 +189,4 @@ pub(super) fn manifest_toml() -> Value {
 //    flip_horizontal = false
 //    force_rgba      = true
 //    byte_per_pixel  = 4
-//    image_format    = "B8G8R8A8_UNORM"
 //}

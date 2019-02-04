@@ -151,7 +151,7 @@ impl GsShaderModule {
         }
     }
 
-    pub fn destroy(&self, device: &GsDevice) {
+    pub fn discard(&self, device: &GsDevice) {
 
         unsafe {
             device.logic.handle.destroy_shader_module(self.handle, None);

@@ -92,7 +92,7 @@ impl MemoryDataDelegate for CachedDataAgency {
 
         self.res.finish_src_transfer(device)?;
         self.res.transfer(device)?;
-        self.res.destroy(device);
+        self.res.discard(device);
 
         Ok(())
     }
