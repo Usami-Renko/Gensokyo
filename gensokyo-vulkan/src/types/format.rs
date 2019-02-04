@@ -2,18 +2,28 @@
 use ash::vk;
 
 macro_rules! impl_format_convert {
-    ($raw_format:ident, $new_format:ident) => {
-        impl From<$raw_format> for $new_format {
+    ($new_format:ident) => {
+        impl From<vk::Format> for $new_format {
 
-            fn from(f: $raw_format) -> $new_format {
-                Format(f)
+            fn from(f: vk::Format) -> $new_format {
+                $new_format(f)
             }
         }
 
-        impl From<$new_format> for $raw_format {
+        impl From<$new_format> for vk::Format {
 
-            fn from(f: $new_format) -> $raw_format {
+            fn from(f: $new_format) -> vk::Format {
                 f.0
+            }
+        }
+    };
+    ($new_format:ident, $specific_format:ident) => {
+        impl_format_convert!($new_format);
+
+        impl From<$new_format> for $specific_format {
+
+            fn from(f: $new_format) -> $specific_format {
+                $specific_format(f.0)
             }
         }
     };
@@ -34,12 +44,13 @@ impl Format {
     }
 }
 
-impl_format_convert!(vk::Format, Format);
+impl_format_convert!(Format);
 
+
+#[derive(Debug, Clone, Copy, Eq, PartialEq, Hash)]
 pub struct TexBCCompressFormat(pub(crate) vk::Format);
 
 impl TexBCCompressFormat {
-
 
     pub const BC1_RGB_UNORM  : TexBCCompressFormat = TexBCCompressFormat(vk::Format::BC1_RGB_UNORM_BLOCK);
     pub const BC1_RGBA_UNORM : TexBCCompressFormat = TexBCCompressFormat(vk::Format::BC1_RGBA_UNORM_BLOCK);
@@ -65,20 +76,11 @@ impl TexBCCompressFormat {
     pub const BC7_UNORM      : TexBCCompressFormat = TexBCCompressFormat(vk::Format::BC7_UNORM_BLOCK);
 }
 
-impl From<TexBCCompressFormat> for Format {
+impl_format_convert!(TexBCCompressFormat, Format);
 
-    fn from(v: TexBCCompressFormat) -> Format {
-        Format(v.0)
-    }
-}
 
-impl From<TexBCCompressFormat> for vk::Format {
 
-    fn from(f: TexBCCompressFormat) -> vk::Format {
-        f.0
-    }
-}
-
+#[derive(Debug, Clone, Copy, Eq, PartialEq, Hash)]
 pub struct TexASTCLdrCompressFormat(pub(crate) vk::Format);
 
 impl TexASTCLdrCompressFormat {
@@ -113,20 +115,11 @@ impl TexASTCLdrCompressFormat {
     pub const ASTC_12X12_SRGB  : TexASTCLdrCompressFormat = TexASTCLdrCompressFormat(vk::Format::ASTC_12X12_SRGB_BLOCK);
 }
 
-impl From<TexASTCLdrCompressFormat> for Format {
+impl_format_convert!(TexASTCLdrCompressFormat, Format);
 
-    fn from(v: TexASTCLdrCompressFormat) -> Format {
-        Format(v.0)
-    }
-}
 
-impl From<TexASTCLdrCompressFormat> for vk::Format {
 
-    fn from(f: TexASTCLdrCompressFormat) -> vk::Format {
-        f.0
-    }
-}
-
+#[derive(Debug, Clone, Copy, Eq, PartialEq, Hash)]
 pub struct TexETCCompressFormat(pub(crate) vk::Format);
 
 impl TexETCCompressFormat {
@@ -146,16 +139,4 @@ impl TexETCCompressFormat {
     pub const EAC_R11G11_SNORM  : TexETCCompressFormat = TexETCCompressFormat(vk::Format::EAC_R11G11_SNORM_BLOCK);
 }
 
-impl From<TexETCCompressFormat> for Format {
-
-    fn from(v: TexETCCompressFormat) -> Format {
-        Format(v.0)
-    }
-}
-
-impl From<TexETCCompressFormat> for vk::Format {
-
-    fn from(f: TexETCCompressFormat) -> vk::Format {
-        f.0
-    }
-}
+impl_format_convert!(TexETCCompressFormat, Format);

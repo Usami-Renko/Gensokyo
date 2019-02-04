@@ -1,6 +1,7 @@
 
 use crate::types::{ vkbytes, vkDim3D };
-use crate::types::format::Format;
+
+use crate::image::format::GsImageFormat;
 
 pub struct ImageStorageInfo {
 
@@ -8,7 +9,7 @@ pub struct ImageStorageInfo {
     /// dimension describes the number of data elements in each dimension of the base level.
     pub dimension: vkDim3D,
     /// format describes the format and type of the data elements that will be contained in the image.
-    pub format: Format,
+    pub format: GsImageFormat,
 }
 
 pub enum ImageSource {

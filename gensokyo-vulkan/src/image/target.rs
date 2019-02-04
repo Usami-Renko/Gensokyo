@@ -5,7 +5,7 @@ use ash::version::DeviceV1_0;
 use crate::core::GsDevice;
 
 use crate::image::mipmap::MipmapMethod;
-use crate::image::compress::ImageCompressType;
+use crate::image::format::GsImageFormat;
 use crate::memory::MemoryDstEntity;
 
 use crate::error::{ VkResult, VkError };
@@ -92,7 +92,7 @@ impl ImageTgtCI {
             s_type : vk::StructureType::IMAGE_CREATE_INFO,
             p_next : ptr::null(),
             flags  : self.property.flags,
-            format : self.specific.format.0,
+            format : self.specific.format.clone().into(),
             extent : self.specific.dimension,
             tiling : self.property.tiling,
             usage  : self.property.usages,
@@ -141,9 +141,7 @@ pub struct ImageSpecificCI {
     /// `dimension` describes the number of data elements in each dimension of the base level.
     pub dimension: vkDim3D,
     /// `format` describes the format and type of the data elements that will be contained in the image.
-    pub format: Format,
-    /// `compression` describes the compression algorithm of this image.
-    pub compression: ImageCompressType,
+    pub format: GsImageFormat,
     /// `sharing` specifies the sharing mode of the image when it will be accessed by multiple queue families.
     ///
     /// Default is vk::SharingMode::Exclusive.
@@ -191,7 +189,7 @@ impl Default for ImageSpecificCI {
     fn default() -> ImageSpecificCI {
 
         ImageSpecificCI {
-            format: Format::UNDEFINED,
+            format: GsImageFormat::Uncompressed(Format::UNDEFINED.into()),
             dimension: vkDim3D {
                 width : 0,
                 height: 0,

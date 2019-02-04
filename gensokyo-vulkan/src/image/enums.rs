@@ -1,5 +1,8 @@
 
 use ash::vk;
+
+use crate::image::format::GsImageFormat;
+
 use crate::types::format::Format;
 use crate::types::vkuint;
 
@@ -49,14 +52,14 @@ pub enum DepthStencilImageFormat {
     Depth24BitStencil8Bit,
 }
 
-impl From<DepthStencilImageFormat> for Format {
+impl From<DepthStencilImageFormat> for GsImageFormat {
 
-    fn from(image_format: DepthStencilImageFormat) -> Format {
+    fn from(image_format: DepthStencilImageFormat) -> GsImageFormat {
 
         match image_format {
-            | DepthStencilImageFormat::Depth32Bit => Format::D32_SFLOAT,
-            | DepthStencilImageFormat::Depth24BitStencil8Bit => Format::D24_UNORM_S8_UINT,
-            | DepthStencilImageFormat::Depth32BitStencil8Bit => Format::D32_SFLOAT_S8_UINT,
+            | DepthStencilImageFormat::Depth32Bit => GsImageFormat::Uncompressed(Format::D32_SFLOAT),
+            | DepthStencilImageFormat::Depth24BitStencil8Bit => GsImageFormat::Uncompressed(Format::D24_UNORM_S8_UINT),
+            | DepthStencilImageFormat::Depth32BitStencil8Bit => GsImageFormat::Uncompressed(Format::D32_SFLOAT_S8_UINT),
         }
     }
 }

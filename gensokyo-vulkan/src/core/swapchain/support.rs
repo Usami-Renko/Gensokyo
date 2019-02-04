@@ -63,7 +63,7 @@ impl SwapchainSupport {
         if self.formats.len() == 1 && self.formats[0].format == vk::Format::UNDEFINED {
             return GsSwapchainFormat{
                 surface: vk::SurfaceFormatKHR {
-                    format      : self.config.prefer_surface_format.0,
+                    format      : self.config.prefer_surface_format.into(),
                     color_space : self.config.prefer_surface_color_space,
                 },
                 image_format: self.config.prefer_surface_format,
@@ -71,7 +71,7 @@ impl SwapchainSupport {
         }
 
         for available_format in self.formats.iter() {
-            if available_format.format == self.config.prefer_surface_format.0 &&
+            if available_format.format == self.config.prefer_surface_format.into() &&
                 available_format.color_space == self.config.prefer_surface_color_space {
 
                 return GsSwapchainFormat {

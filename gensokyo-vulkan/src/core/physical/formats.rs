@@ -27,7 +27,7 @@ impl PhysicalFormats {
 
         for &query_format in config.query_formats.iter() {
             let format_property = unsafe {
-                instance.handle.get_physical_device_format_properties(physical_device, query_format.0)
+                instance.handle.get_physical_device_format_properties(physical_device, query_format.into())
             };
             formats.insert(query_format, format_property);
         }

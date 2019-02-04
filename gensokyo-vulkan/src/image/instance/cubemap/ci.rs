@@ -65,7 +65,7 @@ impl ImageCISpecificApi for CubeMapImgCI {
 
     fn check_physical_support(&self, device: &GsDevice) -> VkResult<()> {
 
-        self.backend.check_mipmap_support(device)
+        self.backend.check_physical_support(device)
     }
 
     fn refactor(self, device: &GsDevice, image: GsImage) -> VkResult<(ImageAllotCI, Self::IConveyor)> {

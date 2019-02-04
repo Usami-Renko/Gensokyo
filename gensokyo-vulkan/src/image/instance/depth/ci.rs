@@ -55,10 +55,10 @@ impl ImageCISpecificApi for DSAttachmentCI {
 
         let is_depth_support = match self.backend.image_ci.property.tiling {
             | vk::ImageTiling::LINEAR => {
-                device.phys.formats.query_format_linear(self.backend.image_ci.specific.format, vk::FormatFeatureFlags::DEPTH_STENCIL_ATTACHMENT)?
+                device.phys.formats.query_format_linear(self.backend.image_ci.specific.format.clone().into(), vk::FormatFeatureFlags::DEPTH_STENCIL_ATTACHMENT)?
             },
             | vk::ImageTiling::OPTIMAL => {
-                device.phys.formats.query_format_optimal(self.backend.image_ci.specific.format, vk::FormatFeatureFlags::DEPTH_STENCIL_ATTACHMENT)?
+                device.phys.formats.query_format_optimal(self.backend.image_ci.specific.format.clone().into(), vk::FormatFeatureFlags::DEPTH_STENCIL_ATTACHMENT)?
             },
             | _ => {
                 unreachable!("vk::ImageTiling should be LINEAR or OPTIMAL.")
@@ -74,7 +74,7 @@ impl ImageCISpecificApi for DSAttachmentCI {
 
     fn refactor(self, _: &GsDevice, image: GsImage) -> VkResult<(ImageAllotCI, Self::IConveyor)> {
 
-        let idsi = IDepthStencilImg::new(self.backend.image_ci.specific.format, self.backend.view_ci.subrange.0.aspect_mask);
+        let idsi = IDepthStencilImg::new(self.backend.storage.format.clone(), self.backend.view_ci.subrange.0.aspect_mask);
 
         let allot_cis = ImageAllotCI::new(
             ImageInstanceType::DepthStencilAttachment,

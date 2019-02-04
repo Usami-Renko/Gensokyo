@@ -1,6 +1,6 @@
 
 use ash::vk;
-use ash::vk::Format;
+use ash::vk::Format as VkFormat;
 
 use crate::types::format::Format;
 
@@ -35,7 +35,7 @@ macro_rules! raw_str2vk_format {
 
 pub fn vk_string_to_format(raw: &String) -> Format {
 
-    let format = raw_str2vk_format!(raw, Format, {
+    let format = raw_str2vk_format!(raw, VkFormat, {
         UNDEFINED,
         B8G8R8A8_UNORM,
         R8G8B8A8_UNORM,

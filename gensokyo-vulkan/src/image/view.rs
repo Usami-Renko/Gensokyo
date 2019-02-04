@@ -3,7 +3,10 @@ use ash::vk;
 use ash::version::DeviceV1_0;
 
 use crate::core::GsDevice;
+
 use crate::image::target::{ GsImage, ImageSpecificCI };
+use crate::image::format::GsImageFormat;
+
 use crate::error::{ VkResult, VkError };
 use crate::types::format::Format;
 use crate::types::vkuint;
@@ -66,7 +69,7 @@ impl ImageViewCI {
             flags      : vk::ImageViewCreateFlags::empty(),
             image      : image.handle,
             view_type  : self.view_type,
-            format     : specific.format.0,
+            format     : specific.format.clone().into(),
             components : self.components,
             subresource_range : self.subrange.0,
         };
@@ -83,7 +86,7 @@ impl ImageViewCI {
     pub(crate) fn build_for_swapchain(&self, device: &GsDevice, image: &GsImage, format: Format) -> VkResult<GsImageView> {
 
         let mut specific = ImageSpecificCI::default();
-        specific.format = format;
+        specific.format = GsImageFormat::Uncompressed(format);
         self.build(device, image, &specific)
     }
 }

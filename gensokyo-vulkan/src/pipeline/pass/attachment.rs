@@ -42,7 +42,7 @@ impl<T> RenderAttachmentCI<T>
     pub fn create(att_type: T, attachment_format: Format) -> RenderAttachmentCI<T> {
 
         let mut attachment = T::build();
-        attachment.format = attachment_format.0;
+        attachment.format = attachment_format.into();
 
         RenderAttachmentCI {
             phantom    : att_type,

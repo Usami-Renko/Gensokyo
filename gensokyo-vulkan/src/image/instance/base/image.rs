@@ -8,7 +8,6 @@ use crate::image::view::{ ImageViewCI, ImageSubRange };
 use crate::image::storage::ImageStorageInfo;
 use crate::image::instance::traits::{ ImageCICommonApi, ImageTgtCIApi, ImageViewCIApi };
 use crate::image::mipmap::MipmapMethod;
-use crate::image::compress::ImageCompressType;
 
 use crate::error::{ VkResult, VkError };
 use crate::types::vkuint;
@@ -28,7 +27,7 @@ impl From<ImageStorageInfo> for GsBackendImage {
         let property = ImagePropertyCI::default();
 
         let mut specific = ImageSpecificCI::default();
-        specific.format    = storage.format;
+        specific.format    = storage.format.clone().into();
         specific.dimension = storage.dimension;
 
         GsBackendImage {
@@ -96,10 +95,6 @@ impl ImageTgtCIApi for GsBackendImage {
     fn set_share_queues(&mut self, queue_family_indices: Vec<vkuint>) {
         self.image_ci.specific.share_queue_families(Some(queue_family_indices));
     }
-
-    fn set_compression(&mut self, compression: ImageCompressType) {
-        self.image_ci.specific.compression = compression;
-    }
 }
 
 // Property setting for vk::ImageView.
@@ -116,10 +111,16 @@ impl ImageViewCIApi for GsBackendImage {
 
 impl GsBackendImage {
 
-    pub fn check_mipmap_support(&self, device: &GsDevice) -> VkResult<()> {
+    pub fn check_physical_support(&self, device: &GsDevice) -> VkResult<()> {
 
+        // check mipmap support.
         if self.image_ci.property.mipmap.is_support_by_device(device, &self.image_ci)? == false {
-            return Err(VkError::other(format!("vk::Format: {:?} is not support for mipmap generation", self.image_ci.specific.format)))
+            return Err(VkError::other(format!("vk::Format: {:?} is not support for mipmap generation.", self.image_ci.specific.format)))
+        }
+
+        // check compression format support.
+        if self.image_ci.specific.format.is_support_by_device(device) == false {
+            return Err(VkError::other(format!("Compress texture format {:?} is not support by device.", self.image_ci.specific.format)))
         }
 
         Ok(())

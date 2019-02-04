@@ -36,13 +36,13 @@ impl MipmapMethod {
                 match image_ci.property.tiling {
                     | vk::ImageTiling::LINEAR => {
                         device.phys.formats.query_format_linear(
-                            image_ci.specific.format,
+                            image_ci.specific.format.clone().into(),
                             vk::FormatFeatureFlags::BLIT_SRC | vk::FormatFeatureFlags::BLIT_DST
                         )
                     },
                     | vk::ImageTiling::OPTIMAL => {
                         device.phys.formats.query_format_optimal(
-                            image_ci.specific.format,
+                            image_ci.specific.format.clone().into(),
                             vk::FormatFeatureFlags::BLIT_SRC | vk::FormatFeatureFlags::BLIT_DST
                         )
                     },
