@@ -15,6 +15,13 @@ pub enum GsImageFormat {
     CompressionETC2(TexETCCompressFormat),
 }
 
+impl Default for GsImageFormat {
+
+    fn default() -> GsImageFormat {
+        GsImageFormat::Uncompressed(Format::RGBA8_UNORM)
+    }
+}
+
 impl GsImageFormat {
 
     pub(crate) fn is_support_by_device(&self, device: &GsDevice) -> bool {

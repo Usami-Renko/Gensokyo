@@ -15,15 +15,15 @@ use gsvk::prelude::api::*;
 use gsma::data_size;
 
 use vk_examples::{ Y_CORRECTION, DEFAULT_CLEAR_COLOR };
-use super::data::{ Vertex, UBOVS, UniformResource, PipelineResource, ModelResource, SpecializationData };
+use super::data::{ Vertex, UBOVS, UniformResource, PipelineResource, ModelResource };
 
 use nalgebra::{ Matrix4, Point3, Vector4 };
 use std::path::Path;
 use std::mem;
 use std::ffi::c_void;
 
-const VERTEX_SHADER_SOURCE_PATH  : &'static str = "src/specializationconstants/uber.vert.glsl";
-const FRAGMENT_SHADER_SOURCE_PATH: &'static str = "src/specializationconstants/uber.frag.glsl";
+const VERTEX_SHADER_SOURCE_PATH  : &'static str = "src/deferred/uber.vert.glsl";
+const FRAGMENT_SHADER_SOURCE_PATH: &'static str = "src/deferred/uber.frag.glsl";
 const MODEL_PATH  : &'static str = "models/color_teapot_spheres.gltf";
 const TEXTURE_PATH: &'static str = "textures/metalplate_nomips_rgba.png";
 
@@ -201,7 +201,7 @@ impl VulkanExample {
         let depth_image_index = image_allocator.assign(depth_attachment_info)?;
 
         // Combined Sample Image
-        let image_storage = ImageLoader::new(initializer).load_2d(Path::new(TEXTURE_PATH), GsImageFormat::default())?; // texture.
+        let image_storage = ImageLoader::new(initializer).load_2d(Path::new(TEXTURE_PATH))?; // texture.
         // refer to `layout (set = 0, binding = 2) sampler2D samplerColorMap` in uber.frag.glsl. Accessible from the fragment shader only.
         let image_info = GsCombinedImgSampler::new(2, image_storage, ImagePipelineStage::FragmentStage);
         let sample_image_index = image_allocator.assign(image_info)?;

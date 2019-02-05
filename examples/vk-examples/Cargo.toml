@@ -21,36 +21,44 @@ bincode      = "1.0.1"
 rand         = "0.6"
 
 # Basics ----------------------------------------------
+# 01 - Triangle
 [[bin]]
 name = "triangle"
 path = "src/triangle/main.rs"
 
+# 02 - Pipelines
 [[bin]]
 name = "pipelines"
 path = "src/pipelines/main.rs"
 
+# 03 - Descriptor sets
 [[bin]]
 name = "descriptorsets"
 path = "src/descriptorsets/main.rs"
 
+# 04 - Dynamic uniform buffers
 [[bin]]
 name = "dynamicuniformbuffer"
 path = "src/dynamicuniformbuffer/main.rs"
 
+# 05 - Push constants
 [[bin]]
 name = "pushconstants"
 path = "src/pushconstants/main.rs"
 
+# 06 - Specialization constants
 [[bin]]
 name = "specializationconstants"
 path = "src/specializationconstants/main.rs"
 
+# 07 - Texture mapping
 [[bin]]
 name = "texture"
 path = "src/texture/main.rs"
 # -----------------------------------------------------
 
 #  Advanced -------------------------------------------
+# 07 - Run-time mip-map generation
 [[bin]]
 name = "texturemipmapgen"
 path = "src/texturemipmapgen/main.rs"
@@ -60,4 +68,11 @@ path = "src/texturemipmapgen/main.rs"
 [[bin]]
 name = "pbrbasic"
 path = "src/pbrbasic/main.rs"
+# -----------------------------------------------------
+
+# Deferred --------------------------------------------
+# 01 - Deferred shading basics
+[[bin]]
+name = "deferred"
+path = "src/deferred/main.rs"
 # -----------------------------------------------------

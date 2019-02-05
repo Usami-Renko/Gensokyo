@@ -126,7 +126,7 @@ impl TextureMappingProcedure {
     fn image_sampler(initializer: &AssetInitializer) -> GsResult<(GsCombinedImgSampler, GsImageRepository<Device>)> {
 
         let image_loader = ImageLoader::new(initializer);
-        let image_storage_info = image_loader.load_2d(Path::new(TEXTURE_PATH))?;
+        let image_storage_info = image_loader.load_2d(Path::new(TEXTURE_PATH), GsImageFormat::default())?;
 
         let image_info = GsCombinedImgSampler::new(0, image_storage_info, ImagePipelineStage::FragmentStage);
 

@@ -6,7 +6,6 @@ use gsvk::image::storage::{ ImageStorageInfo, ImageSource, ImageData };
 use gsvk::image::GsImageFormat;
 
 use gsvk::types::{ vkbytes, vkDim3D };
-use gsvk::types::format::Format;
 
 use crate::assets::error::AssetsError;
 use crate::error::{ GsResult, GsError };
@@ -29,12 +28,7 @@ impl From<ImageLoadConfig> for ImageLoader {
 impl ImageLoader {
 
     // Load texture with default format.
-    pub fn load_2d(&self, path: &Path) -> GsResult<ImageStorageInfo> {
-
-        self.load_2d_with_format(path, GsImageFormat::Uncompressed(Format::RGBA8_UNORM))
-    }
-
-    pub fn load_2d_with_format(&self, path: &Path, format: GsImageFormat) -> GsResult<ImageStorageInfo> {
+    pub fn load_2d(&self, path: &Path, format: GsImageFormat) -> GsResult<ImageStorageInfo> {
 
         let mut image_obj = image::open(path)
             .map_err(|e| GsError::assets(AssetsError::Image(e)))?;
@@ -74,6 +68,7 @@ impl ImageLoader {
 
         Ok(info)
     }
+
 }
 
 #[derive(Debug, Clone)]

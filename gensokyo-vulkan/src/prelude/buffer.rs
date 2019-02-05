@@ -8,3 +8,7 @@ pub use crate::buffer::instance::GsIndexBuffer;
 pub use crate::buffer::instance::GsUniformBuffer;
 
 pub use crate::buffer::allocator::types::BufferStorageType;
+
+pub use crate::buffer::instance::IVertex;
+pub use crate::buffer::instance::IIndices;
+pub use crate::buffer::instance::IUniform;

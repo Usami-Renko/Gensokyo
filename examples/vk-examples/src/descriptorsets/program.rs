@@ -231,8 +231,8 @@ impl VulkanExample {
 
         // Combined Sample Image
         let image_loader = ImageLoader::new(initializer);
-        let image_storage1 = image_loader.load_2d(Path::new(TEXTURE1_PATH))?; // texture 1 for cube 1
-        let image_storage2 = image_loader.load_2d(Path::new(TEXTURE2_PATH))?; // texture 2 for cube 2
+        let image_storage1 = image_loader.load_2d(Path::new(TEXTURE1_PATH), GsImageFormat::default())?; // texture 1 for cube 1
+        let image_storage2 = image_loader.load_2d(Path::new(TEXTURE2_PATH), GsImageFormat::default())?; // texture 2 for cube 2
         // refer to `layout (set = 0, binding = 2) sampler2D samplerColorMap` in cube.frag.glsl. Accessible from the fragment shader only.
         let image_info1 = GsCombinedImgSampler::new(2, image_storage1, ImagePipelineStage::FragmentStage);
         let image_info2 = GsCombinedImgSampler::new(2, image_storage2, ImagePipelineStage::FragmentStage);

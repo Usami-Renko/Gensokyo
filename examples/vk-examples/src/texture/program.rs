@@ -193,7 +193,7 @@ impl VulkanExample {
         let depth_image_index = image_allocator.assign(depth_attachment_info)?;
 
         // combined image sampler.
-        let image_storage = ImageLoader::new(initializer).load_2d(Path::new(TEXTURE_PATH))?;
+        let image_storage = ImageLoader::new(initializer).load_2d(Path::new(TEXTURE_PATH), GsImageFormat::default())?;
 
         let sampler = GsSampler::new()
             .filter(vk::Filter::LINEAR, vk::Filter::LINEAR)
