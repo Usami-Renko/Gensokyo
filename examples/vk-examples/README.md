@@ -2,7 +2,7 @@
 
 A Rust implementation of [Vulkan examples](https://github.com/SaschaWillems/Vulkan) using Gensokyo Rendering Engine.
 
-**Note: Text rendering is not implement yet in all examples.**
+**Note: Text rendering is not implement yet for all examples.**
 
 **Note: All textures are load from png instead of ktx for simpleness.**
 
@@ -71,7 +71,7 @@ A Rust implementation of [Vulkan examples](https://github.com/SaschaWillems/Vulk
 
 | example                              | status | Note |
 | ------------------------------------ | ------ | ---- |
-| 01 - Deferred shading basics         |        |      |
+| 01 - Deferred shading basics         | ❌      |      |
 | 02 - Deferred multi sampling         |        |      |
 | 03 - Deferred shading shadow mapping |        |      |
 | 04 - Screen space ambient occlusion  |        |      |
