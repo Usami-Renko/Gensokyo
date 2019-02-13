@@ -1,0 +1,12 @@
+
+[core.device.print]
+device_name        = true
+device_api_version = true
+device_type        = true
+
+[window]
+title = "Vulkan Example - Basic indexed triangle"
+
+[window.dimension]
+width  = 1280
+height = 720

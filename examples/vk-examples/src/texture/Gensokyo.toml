@@ -1,0 +1,19 @@
+
+[core.device.print]
+device_name        = true
+device_api_version = true
+device_type        = true
+
+[window]
+title = "Vulkan Example - Texture loading"
+
+[window.dimension]
+width  = 1280
+height = 720
+
+[core.physical]
+features = ["sampler_anisotropy"]
+
+[window.cursor]
+is_grab = true
+is_hide = true

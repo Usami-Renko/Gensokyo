@@ -2,29 +2,28 @@
 mod data;
 mod program;
 
-#[macro_use]
-extern crate hakurei_macros;
-extern crate hakurei;
-extern crate cgmath;
+use gs::prelude::*;
 
-use hakurei::prelude::*;
-
-const MANIFEST_PATH: &str = "src/06.depth/hakurei.toml";
+const MANIFEST_PATH: &str = "src/06.depth/Gensokyo.toml";
 
 use self::program::DepthProcedure;
 use std::path::PathBuf;
 
 fn main() {
 
-    let procecure = DepthProcedure::new(Dimension2D { width: 800, height: 600 });
-
     let manifest = PathBuf::from(MANIFEST_PATH);
-    let mut program = ProgramEnv::new(Some(manifest), procecure).unwrap();
+    let mut program_context = ProgramContext::new(Some(manifest)).unwrap();
 
-    match program.launch() {
+    let builder = program_context.routine().unwrap();
+
+    let asset_loader = builder.assets_loader();
+    let routine = DepthProcedure::new(asset_loader).unwrap();
+    let routine_flow = builder.build(routine);
+
+    match routine_flow.launch(program_context) {
         | Ok(_) => (),
         | Err(err) => {
             panic!("[Error] {}", err)
-        }
+        },
     }
 }

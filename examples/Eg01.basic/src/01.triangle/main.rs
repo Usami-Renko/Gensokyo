@@ -1,20 +1,22 @@
 
-#[macro_use]
-extern crate hakurei_macros;
-extern crate hakurei;
+// TODO: Remove all #[allow(dead_code)]
 
-use hakurei::prelude::*;
-use hakurei::prelude::queue::*;
-use hakurei::prelude::pipeline::*;
-use hakurei::prelude::resources::*;
-use hakurei::prelude::sync::*;
-use hakurei::prelude::input::*;
+use ash::vk;
+use gs::prelude::*;
+use gsvk::prelude::common::*;
+use gsvk::prelude::buffer::*;
+use gsvk::prelude::pipeline::*;
+use gsvk::prelude::command::*;
+use gsvk::prelude::sync::*;
+use gsvk::prelude::api::*;
+
+use gsma::{ define_input, offset_of, vk_format, vertex_rate, data_size };
 
 use std::path::{ Path, PathBuf };
 
-const MANIFEST_PATH: &str = "src/01.triangle/hakurei.toml";
-const VERTEX_SHADER_SPIRV_PATH  : &str = "src/01.triangle/triangle.vert.spv";
-const FRAGMENT_SHADER_SPIRV_PATH: &str = "src/01.triangle/triangle.frag.spv";
+const MANIFEST_PATH: &'static str = "src/01.triangle/Gensokyo.toml";
+const VERTEX_SHADER_SPIRV_PATH  : &'static str = "src/01.triangle/triangle.vert.spv";
+const FRAGMENT_SHADER_SPIRV_PATH: &'static str = "src/01.triangle/triangle.frag.spv";
 
 define_input! {
     #[binding = 0, rate = vertex]
@@ -35,176 +37,183 @@ const VERTEX_DATA: [Vertex; 3] = [
 struct TriangleProcedure {
 
     vertex_data: Vec<Vertex>,
-    vertex_storage: HaBufferRepository,
-    vertex_buffer : HaVertexBlock,
+    #[allow(dead_code)]
+    vertex_storage: GsBufferRepository<Host>,
+    vertex_buffer : GsVertexBuffer,
 
-    graphics_pipeline: HaGraphicsPipeline,
+    graphics_pipeline: GsPipeline<Graphics>,
 
-    command_pool   : HaCommandPool,
-    command_buffers: Vec<HaCommandBuffer>,
+    command_pool   : GsCommandPool,
+    command_buffers: Vec<GsCommandBuffer>,
 
-    present_availables: Vec<HaSemaphore>,
+    present_availables: Vec<GsSemaphore>,
 }
 
 impl TriangleProcedure {
 
-    fn new() -> TriangleProcedure {
-        TriangleProcedure {
-            vertex_data: VERTEX_DATA.to_vec(),
-            vertex_storage: HaBufferRepository::empty(),
-            vertex_buffer : HaVertexBlock::uninitialize(),
+    fn new(initializer: AssetInitializer) -> GsResult<TriangleProcedure> {
 
-            graphics_pipeline: HaGraphicsPipeline::uninitialize(),
+        let vertex_data = VERTEX_DATA.to_vec();
 
-            command_pool: HaCommandPool::uninitialize(),
-            command_buffers: vec![],
+        let (vertex_buffer, vertex_storage) = {
+            TriangleProcedure::assets(&initializer, &vertex_data)
+        }?;
 
-            present_availables: vec![],
-        }
+        let graphics_pipeline = {
+            TriangleProcedure::pipelines(&initializer)
+        }?;
+
+        let present_availables = {
+            TriangleProcedure::sync_resources(&initializer, &graphics_pipeline)
+        }?;
+
+        let (command_pool, command_buffers) = {
+            TriangleProcedure::commands(&initializer, &graphics_pipeline, &vertex_buffer, &vertex_data)
+        }?;
+
+        let procedure = TriangleProcedure {
+            vertex_data, vertex_storage, vertex_buffer,
+            graphics_pipeline,
+            command_pool, command_buffers,
+            present_availables,
+        };
+
+        Ok(procedure)
     }
-}
 
-impl ProgramProc for TriangleProcedure {
-
-    fn assets(&mut self, kit: AllocatorKit) -> Result<(), ProcedureError> {
+    fn assets(initializer: &AssetInitializer, vertex_data: &Vec<Vertex>) -> GsResult<(GsVertexBuffer, GsBufferRepository<Host>)> {
 
         // vertex buffer
-        let mut vertex_allocator = kit.buffer(BufferStorageType::Cached);
+        let mut vertex_allocator = GsBufferAllocator::new(initializer, BufferStorageType::HOST);
 
-        let vertex_info = VertexBlockInfo::new(data_size!(self.vertex_data, Vertex));
-        self.vertex_buffer = vertex_allocator.append_vertex(vertex_info)?;
+        let vertex_info = GsVertexBuffer::new(data_size!(Vertex), vertex_data.len());
+        let vertex_index = vertex_allocator.assign(vertex_info)?;
 
-        self.vertex_storage = vertex_allocator.allocate()?;
+        let buffer_distributor = vertex_allocator.allocate()?;
+        let vertex_buffer = buffer_distributor.acquire(vertex_index);
 
-        self.vertex_storage.data_uploader()?
-            .upload(&self.vertex_buffer, &self.vertex_data)?
-            .done()?;
+        let mut vertex_storage = buffer_distributor.into_repository();
 
-        Ok(())
+        vertex_storage.data_uploader()?
+            .upload(&vertex_buffer, vertex_data)?
+            .finish()?;
+
+        Ok((vertex_buffer, vertex_storage))
     }
 
-    fn pipelines(&mut self, kit: PipelineKit, swapchain: &HaSwapchain) -> Result<(), ProcedureError> {
+    fn pipelines(initializer: &AssetInitializer) -> GsResult<GsPipeline<Graphics>> {
+
         // shaders
-        let vertex_shader = HaShaderInfo::from_spirv(
-            ShaderStageFlag::VertexStage,
+        let vertex_shader = GsShaderCI::from_spirv(
+            GsPipelineStage::VERTEX,
             Path::new(VERTEX_SHADER_SPIRV_PATH),
             None);
-        let fragment_shader = HaShaderInfo::from_spirv(
-            ShaderStageFlag::FragmentStage,
+        let fragment_shader = GsShaderCI::from_spirv(
+            GsPipelineStage::FRAGMENT,
             Path::new(FRAGMENT_SHADER_SPIRV_PATH),
             None);
-        let shader_infos = vec![
-            vertex_shader,
-            fragment_shader,
-        ];
+        let shader_infos = vec![vertex_shader, fragment_shader];
         let vertex_input_desc = Vertex::desc();
 
         // pipeline
-        let mut render_pass_builder = kit.pass_builder();
-        let first_subpass = render_pass_builder.new_subpass(PipelineType::Graphics);
+        let mut render_pass_builder = GsRenderPass::new(initializer);
+        let first_subpass = render_pass_builder.new_subpass();
 
-        let color_attachment = RenderAttachement::setup(RenderAttachementPrefab::BackColorAttachment, swapchain.format);
-        let _attachment_index = render_pass_builder.add_attachemnt(color_attachment, first_subpass, AttachmentType::Color);
+        let color_attachment = RenderAttachmentCI::<Present>::new(initializer);
+        let _attachment_index = render_pass_builder.add_attachment(color_attachment, first_subpass);
 
-        let mut dependency = RenderDependency::setup(RenderDependencyPrefab::Common, SUBPASS_EXTERAL, first_subpass);
-        dependency.set_stage(PipelineStageFlag::ColorAttachmentOutputBit, PipelineStageFlag::ColorAttachmentOutputBit);
-        dependency.set_access(&[], &[
-            AccessFlag::ColorAttachmentReadBit,
-            AccessFlag::ColorAttachmentWriteBit,
-        ]);
-        render_pass_builder.add_dependenty(dependency);
+        let dependency0 = RenderDependencyCI::new(SubpassStage::BeginExternal, SubpassStage::AtIndex(first_subpass))
+            .stage(vk::PipelineStageFlags::BOTTOM_OF_PIPE, vk::PipelineStageFlags::COLOR_ATTACHMENT_OUTPUT)
+            .access(vk::AccessFlags::MEMORY_READ, vk::AccessFlags::COLOR_ATTACHMENT_READ | vk::AccessFlags::COLOR_ATTACHMENT_WRITE)
+            .with_flags(vk::DependencyFlags::BY_REGION);
+        render_pass_builder.add_dependency(dependency0);
 
-        let render_pass = render_pass_builder.build(swapchain)?;
-        let viewport = HaViewportState::single(ViewportStateInfo::new(swapchain.extent));
-        let pipeline_config = GraphicsPipelineConfig::new(shader_infos, vertex_input_desc, render_pass)
-            .setup_viewport(ViewportStateType::Fixed { state: viewport })
+        let dependency1 = RenderDependencyCI::new(SubpassStage::AtIndex(first_subpass), SubpassStage::EndExternal)
+            .stage(vk::PipelineStageFlags::COLOR_ATTACHMENT_OUTPUT, vk::PipelineStageFlags::BOTTOM_OF_PIPE)
+            .access(vk::AccessFlags::COLOR_ATTACHMENT_READ | vk::AccessFlags::COLOR_ATTACHMENT_WRITE, vk::AccessFlags::MEMORY_READ)
+            .with_flags(vk::DependencyFlags::BY_REGION);
+        render_pass_builder.add_dependency(dependency1);
+
+        let render_pass = render_pass_builder.build()?;
+
+        let pipeline_config = GfxPipelineConfig::new(shader_infos, vertex_input_desc, render_pass, initializer.screen_dimension())
             .finish();
 
-        let mut pipeline_builder = kit.pipeline_builder(PipelineType::Graphics)?;
-        let pipeline_index = pipeline_builder.add_config(pipeline_config);
+        let mut pipeline_builder = GfxPipelineBuilder::new(initializer)?;
+        let graphics_pipeline = pipeline_builder.build(pipeline_config)?;
 
-        let mut pipelines = pipeline_builder.build()?;
-        self.graphics_pipeline = pipelines.take_at(pipeline_index)?;
-
-        Ok(())
+        Ok(graphics_pipeline)
     }
 
-    fn subresources(&mut self, device: &HaDevice) -> Result<(), ProcedureError> {
+    fn sync_resources(initializer: &AssetInitializer, pipeline: &GsPipeline<Graphics>) -> GsResult<Vec<GsSemaphore>> {
+
         // sync
-        for _ in 0..self.graphics_pipeline.frame_count() {
-            let present_available = HaSemaphore::setup(device)?;
-            self.present_availables.push(present_available);
+        let mut present_availables = Vec::with_capacity(pipeline.frame_count());
+        for _ in 0..pipeline.frame_count() {
+            let semaphore = GsSemaphore::new(initializer)?;
+            present_availables.push(semaphore);
         }
-
-        Ok(())
+        Ok(present_availables)
     }
 
-    fn commands(&mut self, kit: CommandKit) -> Result<(), ProcedureError> {
+    fn commands(initializer: &AssetInitializer, pipeline: &GsPipeline<Graphics>, vertex_buffer: &GsVertexBuffer, data: &Vec<Vertex>) -> GsResult<(GsCommandPool, Vec<GsCommandBuffer>)> {
 
-        self.command_pool = kit.pool(DeviceQueueIdentifier::Graphics)?;
+        let command_pool = GsCommandPool::new(initializer, DeviceQueueIdentifier::Graphics)?;
+        let mut command_buffers = vec![];
 
-        let command_buffer_count = self.graphics_pipeline.frame_count();
-        let raw_commands = self.command_pool
-            .allocate(CommandBufferUsage::UnitaryCommand, command_buffer_count)?;
+        let command_buffer_count = pipeline.frame_count();
+        let raw_commands = command_pool.allocate(CmdBufferUsage::UnitaryCommand, command_buffer_count)?;
 
         for (frame_index, command) in raw_commands.into_iter().enumerate() {
-            let mut recorder = kit.recorder(command);
+            let mut recorder = GsCmdRecorder::<Graphics>::new(initializer, pipeline, command);
 
-            recorder.begin_record(&[CommandBufferUsageFlag::SimultaneousUseBit])?
-                .begin_render_pass(&self.graphics_pipeline, frame_index)
-                .bind_pipeline(&self.graphics_pipeline)
-                .bind_vertex_buffers(0, &[CmdVertexBindingInfo { block: &self.vertex_buffer, sub_block_index: None }])
-                .draw(self.vertex_data.len() as uint32_t, 1, 0, 0)
+            recorder.begin_record(vk::CommandBufferUsageFlags::SIMULTANEOUS_USE)?
+                .begin_render_pass(pipeline, frame_index)
+                .bind_pipeline()
+                .bind_vertex_buffers(0, &[vertex_buffer])
+                .draw(data.len() as vkuint, 1, 0, 0)
                 .end_render_pass();
 
             let command_recorded = recorder.end_record()?;
-            self.command_buffers.push(command_recorded);
+            command_buffers.push(command_recorded);
         }
 
-        Ok(())
+        Ok((command_pool, command_buffers))
     }
+}
 
-    fn draw(&mut self, device: &HaDevice, device_available: &HaFence, image_available: &HaSemaphore, image_index: usize, _: f32)
-            -> Result<&HaSemaphore, ProcedureError> {
+impl GraphicsRoutine for TriangleProcedure {
 
-        let submit_infos = [
-            QueueSubmitBundle {
-                wait_semaphores: &[image_available],
-                sign_semaphores: &[&self.present_availables[image_index]],
-                wait_stages    : &[PipelineStageFlag::ColorAttachmentOutputBit],
-                commands       : &[&self.command_buffers[image_index]],
-            },
-        ];
+    fn draw(&mut self, device: &GsDevice, device_available: &GsFence, image_available: &GsSemaphore, image_index: usize, _: f32) -> GsResult<&GsSemaphore> {
 
-        device.submit(&submit_infos, Some(device_available), DeviceQueueIdentifier::Graphics)?;
+        let submit_info = QueueSubmitBundle {
+            wait_semaphores: &[image_available],
+            sign_semaphores: &[&self.present_availables[image_index]],
+            wait_stages    : &[vk::PipelineStageFlags::COLOR_ATTACHMENT_OUTPUT],
+            commands       : &[&self.command_buffers[image_index]],
+        };
+
+        device.logic.submit_single(&submit_info, Some(device_available), DeviceQueueIdentifier::Graphics)?;
 
         return Ok(&self.present_availables[image_index])
     }
 
-    fn clean_resources(&mut self, _: &HaDevice) -> Result<(), ProcedureError> {
+    fn reload_res(&mut self, initializer: AssetInitializer) -> GsResult<()> {
 
-        self.present_availables.iter()
-            .for_each(|semaphore| semaphore.cleanup());
-        self.present_availables.clear();
-        self.command_buffers.clear();
-        self.graphics_pipeline.cleanup();
-        self.command_pool.cleanup();
+        self.graphics_pipeline = TriangleProcedure::pipelines(&initializer)?;
+
+        self.present_availables = TriangleProcedure::sync_resources(&initializer, &self.graphics_pipeline)?;
+
+        let (command_pool, command_buffers) = TriangleProcedure::commands(&initializer, &self.graphics_pipeline, &self.vertex_buffer, &self.vertex_data)?;
+        self.command_pool = command_pool;
+        self.command_buffers = command_buffers;
 
         Ok(())
     }
 
-    fn cleanup(&mut self, _: &HaDevice) {
-
-        self.present_availables.iter()
-            .for_each(|semaphore| semaphore.cleanup());
-        self.graphics_pipeline.cleanup();
-        self.command_pool.cleanup();
-        self.vertex_storage.cleanup();
-    }
-
     fn react_input(&mut self, inputer: &ActionNerve, _: f32) -> SceneAction {
 
-        if inputer.is_key_pressed(HaKeycode::Escape) {
+        if inputer.is_key_pressed(GsKeycode::ESCAPE) {
             return SceneAction::Terminal
         }
 
@@ -214,16 +223,21 @@ impl ProgramProc for TriangleProcedure {
 
 fn main() {
 
-    let procecure = TriangleProcedure::new();
+    // TODO: handle unwrap().
 
     let manifest = PathBuf::from(MANIFEST_PATH);
-    // TODO: handle the Result.
-    let mut program = ProgramEnv::new(Some(manifest), procecure).unwrap();
+    let mut program_context = ProgramContext::new(Some(manifest)).unwrap();
 
-    match program.launch() {
+    let builder = program_context.routine().unwrap();
+
+    let asset_loader = builder.assets_loader();
+    let routine = TriangleProcedure::new(asset_loader).unwrap();
+    let routine_flow = builder.build(routine);
+
+    match routine_flow.launch(program_context) {
         | Ok(_) => (),
         | Err(err) => {
             panic!("[Error] {}", err)
-        }
+        },
     }
 }

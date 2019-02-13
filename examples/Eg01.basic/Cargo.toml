@@ -1,13 +1,20 @@
+
 [package]
-name = "hakurei-ex01-baisc"
-version = "0.1.0"
-authors = ["usami-renko <usami-ssc@protonmail.com>"]
-description = "Basic examples of hakurei Engine."
+name        = "example01"
+version     = "0.1.0"
+authors     = ["usami-renko <usami-ssc@protonmail.com>"]
+edition     = "2018"
+workspace   = "../.."
+description = "Basic examples of gensokyo Engine."
 
 [dependencies]
-hakurei = { path = "../../hakurei" }
-hakurei-macros = { path = "../../hakurei-macros" }
-cgmath = "0.16.1"
+ash      = "0.27.1"
+nalgebra = "0.16"
+
+gsma = { package = "gensokyo-macros", path = "../../gensokyo-macros" }
+gsvk = { package = "gensokyo-vulkan", path = "../../gensokyo-vulkan" }
+gs   = { package = "gensokyo", path = "../../gensokyo" }
+
 
 [[bin]]
 name = "01"
@@ -32,7 +39,3 @@ path = "src/05.cube/main.rs"
 [[bin]]
 name = "06"
 path = "src/06.depth/main.rs"
-
-[[bin]]
-name = "07"
-path = "src/07.model/main.rs"
